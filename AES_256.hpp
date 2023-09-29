@@ -1,4 +1,3 @@
-
 #ifndef _included_KeyExpansion
 #define _included_KeyExpansion
 
@@ -6,11 +5,14 @@ typedef unsigned char ui08;
 
 class AES_256 {
 	char    keyExpansion[240];
-	char invKeyExpansion[240];
+	int       Nk = 8, Nr = 14;
 
-	// -Notice that the value of the left most char
-	//  in polynomial form is 2^i.
-	const ui08 Rcon[10][4] = {
+	char a[4] = {0x02, 0x03, 0x01, 0x01};       // For MixColumns.
+	char aInv[4] = {0x0E, 0x0B, 0x0D, 0x09}; // For InvMixColumns.
+
+	// -Notice that the value of the left most char in
+	//  polynomial form is 2^i.
+	const char Rcon[10][4] = {
 		{0x01, 0x00, 0x00, 0x00},
   		{0x02, 0x00, 0x00, 0x00},
   		{0x04, 0x00, 0x00, 0x00},
@@ -18,7 +20,7 @@ class AES_256 {
   		{0x10, 0x00, 0x00, 0x00},
   		{0x20, 0x00, 0x00, 0x00},
   		{0x40, 0x00, 0x00, 0x00},
-  		{0x80, 0x00, 0x00, 0x00},
+  		{(char)0x80, 0x00, 0x00, 0x00},
 		{0x1B, 0x00, 0x00, 0x00},
   		{0x36, 0x00, 0x00, 0x00}
   	};
@@ -86,10 +88,10 @@ class AES_256 {
 	void printState(const char word[16]);
 
 	// -Coping an array of 4 bytes.
-	void CopyWord(const char word[4], char copy[4]);
+	void CopyWord(const char source[4], char destination[4]);
 
 	// -XOR of arrays of 4 bytes.
-	void XORword(const char w1[4], const char w2[4], char w[4]);
+	void XORword(const char w1[4], const char w2[4], char resDest[4]);
 
 	// -Rotation of bytes to the left.
 	void RotWord(char word[4]);
@@ -97,7 +99,7 @@ class AES_256 {
 	// -Apply SBox to each char of the word.
 	void SubWord(char word[4]);
 
-		// -Applies a substitution table (S-box) to each char.
+	// -Applies a substitution table (S-box) to each char.
 	void SubBytes(char state[16]);
 
 	// -Shift rows of the state array by different offset.
@@ -107,11 +109,7 @@ class AES_256 {
 	void MixColumns(char state[16]);
 
 	// -Combines a round key with the state.
-	void AddRoundKey(char state[16], char w[], char round);
-
-	// -XOR's two blocks of bytes. The process is done byte
-	//  to byte, this is r[i] =  b1[i] xor b2[i].
-	void XORblocks(char b1[16], char b2[16], char r[16]);
+	void AddRoundKey(char state[16], char round);
 
 	// -Applies the inverse substitution table (InvSBox) to each char.
 	void InvSubBytes(char state[16]);
@@ -126,7 +124,7 @@ class AES_256 {
 	void InvAddRoundKey(char state[16], char w[], char round);
 
 	// -Encrypts an array of 16 bytes.
-	void encryptBlock(char block[16]);
+	public: void encryptBlock(char block[16]);
 
 	// -Decrypt an array of 16 bytes.
 	void decryptBlock(char block[16]);
@@ -134,7 +132,7 @@ class AES_256 {
 	// -Gets the initial vector from an integer.
 	// -Required for the decryption process in the CBC mode.
 	// -The initial vector will be saved in the IV array.
-	void getIV(int _iv, char IV[16]);
+	private: void getIV(int _iv, char IV[16]);
 
 	// -Sets the initial vector value.
 	// -Required for the CBC operation mode.
