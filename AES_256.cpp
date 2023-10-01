@@ -1,6 +1,5 @@
 #include<iostream>
 #include"AES_256.hpp"
-#include"OperationsGF256.hpp"
 
 AES_256::AES_256(char key[32]) {
     char temp[4];
@@ -129,7 +128,7 @@ void AES_256::SubWord(char word[4]) {
 
 // -Applies a substitution table (S-box) to each char.
 void AES_256::SubBytes(char state[16]) {
-	for(int i = 0; i < 16; i++) state[i] = SBox[(ui08)state[i]];
+	for(int i = 0; i < 16; i++) state[i] = (char)SBox[(ui08)state[i]];
 }
 
 // -Shift rows of the state array by different offset.
@@ -152,18 +151,18 @@ void AES_256::MixColumns(char state[16]) {
 		for(k = 0; k < 4; k++) temp[k] = state[I + k]; // Copying row.
 		for(j = 0; j < 4; j++) {
 		    // -First state column element times matrix first column
-			state[I + j] =
-			multiply[ a[(4 - j) & 3] ][ (ui08)temp[0] ];
+			state[I + j] = (char)
+			multiply[ (int)(ui08)a[(4 - j) & 3] ][ (int)(ui08)temp[0] ];
 			for(k = 1; k < 4; k++) {
 				state[I + j] ^= (char)
-				multiply[ a[(k - j + 4) & 3] ][ (ui08)temp[k] ];
+				multiply[ (int)(ui08)a[(k - j + 4)&3] ][ (int)(ui08)temp[k] ];
 			}
 		}
 	}
 }
 
 // -Combines a round key with the state.
-void AES_256::AddRoundKey(char state[16], char round) {
+void AES_256::AddRoundKey(char state[16], int round) {
     round <<= 4; // -Each round uses 16 bytes and r << 4 == r *= 16.
 	for(int i = 0; i < 16; i++) state[i] ^= keyExpansion[round + i];
 }
@@ -235,10 +234,8 @@ void AES_256::encryptBlock(char block[]) {
         for(i = 0; i < 4; i++) {
             i == 1 ? std::cout << " "  << "input"  << "  ": std::cout << "        " ;
             std::cout << " | ";
-            //printWord(&SOR[i << 2]);
             printBlockRow(SOR, i);
             std::cout << " |               |               |               | ";
-            //printWord(&w[i << 2]);
             printBlockRow(keyExpansion, i);
             std::cout << '\n';
         }
@@ -248,22 +245,19 @@ void AES_256::encryptBlock(char block[]) {
             for(j = 0; j < 4; j++) {
                 if(j == 1) {
                     std::cout << "    ";
-                    if(i < 10) std::cout << int(i)  << "   ";
-                    else std::cout << int(i)  << "  ";
+                    if(i < 10) std::cout << i  << "   ";
+                    else std::cout << i  << "  ";
                 }
                 else std::cout << "        " ;
 
                 std::cout << " | ";
-                //printWord(&SOR[(i << 4) + (j << 2)]);
                 printBlockRow(&SOR[(i << 4)], j);
                 std::cout << " | ";
-                //printWord(&ASB[((i - 1) << 4) + (j << 2)]);
                 printBlockRow(&ASB[((i - 1) << 4)], j);
                 std::cout << " | ";
-                //printWord(&ASR[((i - 1) << 4) + (j << 2)]);
                 printBlockRow(&ASR[((i - 1) << 4)], j);
                 std::cout << " | ";
-                if(i < 10) printBlockRow(&AMC[((i - 1) << 4)], j);
+                if(i < Nr) printBlockRow(&AMC[((i - 1) << 4)], j);
                 else std::cout << "             ";
                 std::cout << " | ";
                 printBlockRow(&keyExpansion[(i << 4)], j);
@@ -289,7 +283,7 @@ void AES_256::encryptBlock(char block[]) {
 }
 
 void AES_256::InvSubBytes(char state[16]) {
-    for(int i = 0; i < 16; i++) state[i] = InvSBox[(ui08)state[i]];
+    for(int i = 0; i < 16; i++) state[i] = (char)InvSBox[(ui08)state[i]];
 }
 
 void AES_256::InvShiftRows(char state[16]) {
@@ -303,17 +297,18 @@ void AES_256::InvShiftRows(char state[16]) {
 }
 
 void AES_256::InvMixColumns(char state[16]) {
-	char temp[4], i, j, k, I;
+    int  i, j, k, I;
+	char temp[4];
 	for(i = 0; i < 4; i ++) {
 	    I = i << 2; // I = i * 4
 		for(j = 0; j < 4; j++)
 			temp[j] = state[I + j];
 		for(j = 0; j < 4; j++) {
-			state[I + j] =
-			multiply[ aInv[(4 - j) & 0x03] ][ (ui08)temp[0] ];
+			state[I + j] = (char)
+			multiply[ (int)(ui08)aInv[(4 - j) & 0x03] ][ (int)(ui08)temp[0] ];
 			for(k = 1; k < 4; k++)
-				state[I + j] ^=
-				multiply[ aInv[(k - j + 4) & 0x03] ][ (ui08)temp[k]];
+				state[I + j] ^= (char)
+				multiply[(int)(ui08)aInv[(k - j + 4)&3] ][ (int)(ui08)temp[k]];
 		}
 	}
 }

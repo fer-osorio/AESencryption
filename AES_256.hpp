@@ -1,7 +1,7 @@
 #ifndef _included_KeyExpansion
 #define _included_KeyExpansion
 
-typedef unsigned char ui08;
+#include"OperationsGF256.hpp"
 
 class AES_256 {
 	char    keyExpansion[240];
@@ -109,7 +109,7 @@ class AES_256 {
 	void MixColumns(char state[16]);
 
 	// -Combines a round key with the state.
-	void AddRoundKey(char state[16], char round);
+	void AddRoundKey(char state[16], int round);
 
 	// -Applies the inverse substitution table (InvSBox) to each char.
 	void InvSubBytes(char state[16]);
