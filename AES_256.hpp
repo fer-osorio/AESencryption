@@ -120,9 +120,6 @@ class AES_256 {
 	// -Inverse function of MixColumns.
 	void InvMixColumns(char state[16]);
 
-	// -AddRoundKey is its own inverse function.
-	void InvAddRoundKey(char state[16], char w[], char round);
-
 	// -Encrypts an array of 16 bytes.
 	public: void encryptBlock(char block[16]);
 

@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
 
     AES_256 e(key256);
     e.encryptBlock(Input);
+    e.decryptBlock(Input);
 
     return 0;
 }

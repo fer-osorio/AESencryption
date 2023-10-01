@@ -95,6 +95,20 @@ void AES_256::printWord(const char word[4]) {
 	std::cout << ']';
 }
 
+void AES_256::printState(const char state[16]) {
+	int i, j, temp;
+	for(i = 0; i < 4; i++) {
+		std::cout << '[';
+		for(j = 0; j < 4; j++) {
+		    temp = (unsigned char)0xFF & (unsigned char)state[(j << 2) + i];
+			if(temp < 16) std::cout << '0';
+			printf("%X", temp);
+			if(j != 3) std::cout << ", ";
+		}
+		std::cout << "]\n";
+	}
+}
+
 void AES_256::CopyWord(const char source[4], char destination[4]) {
     for(int i = 0; i < 4; i++) destination[i] = source[i];
 }
@@ -302,5 +316,20 @@ void AES_256::InvMixColumns(char state[16]) {
 				multiply[ aInv[(k - j + 4) & 0x03] ][ (ui08)temp[k]];
 		}
 	}
+}
+
+void AES_256::decryptBlock(char *block) {
+    int i = Nr;
+	AddRoundKey(block, i);
+	for(i--; i > 0; i--) {
+		InvShiftRows(block);
+		InvSubBytes(block);
+		AddRoundKey(block, i);
+		InvMixColumns(block);
+	}
+	InvShiftRows(block);
+	InvSubBytes(block);
+	AddRoundKey(block, 0);
+	printState(block);
 }
 
