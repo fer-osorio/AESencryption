@@ -81,6 +81,9 @@ class AES_256 {
 	void decrypt(char* data_ptr, int size, int _iv);
 
 	private:
+	// -Xor operation over 16 bytes array.
+	void XORblocks(char b1[16], char b2[16], char r[16]);
+
 	// -Prints an array of 4 bytes.
 	void printWord(const char word[4]);
 

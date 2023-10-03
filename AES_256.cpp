@@ -1,4 +1,5 @@
 #include<iostream>
+#include<ctime>
 #include"AES_256.hpp"
 
 AES_256::AES_256(char key[32]) {
@@ -6,7 +7,7 @@ AES_256::AES_256(char key[32]) {
 	int i, keyLen = 32;
 	int keyExpansionLen = 60; // -Length of the key expansion in words.
 
-	bool debug = true; // -Show the construction of the key expansion.
+	bool debug = false; // -Show the construction of the key expansion.
 
 	// -The first 8 words are the key itself.
 	for(i = 0; i < keyLen; i++) keyExpansion[i] = key[i];
@@ -94,6 +95,94 @@ void AES_256::printWord(const char word[4]) {
 	std::cout << ']';
 }
 
+int AES_256::encrypt(char* data_ptr, int size) {
+    // -Padding process needed. We'll suppose that
+    //  the size is a multiple of 16.
+    char IV[16], *previous;
+    int iv = setIV(IV), i;
+    int numofBlocks = size >> 4;
+    printState(IV);
+
+    // -Encryption of the first block.
+    XORblocks(data_ptr, IV, data_ptr);
+    encryptBlock(data_ptr);
+    //std::cout << (long long)data_ptr << '\n';
+
+    // -Encryption of the rest of the blocks.
+    for(i = 1; i < numofBlocks; i++) {
+        previous = data_ptr;
+        data_ptr += 16;
+        //std::cout << (long long)data_ptr << '\n';
+        XORblocks(data_ptr, previous, data_ptr);
+        encryptBlock(data_ptr);
+    }
+
+    return iv;
+}
+
+void AES_256::decrypt(char* data_ptr, int size, int _iv) {
+    char IV[16], *previous;
+    int numofBlocks = size >> 4, i;
+
+    // -Getting the initial vector.
+    getIV(_iv, IV);
+    printState(IV);
+
+    // -Deciphering the first block.
+    decryptBlock(data_ptr);
+    XORblocks(data_ptr, IV, data_ptr);
+    //std::cout << (long long)data_ptr << '\n';
+
+    // -Decryption of the rest of the blocks.
+    for(i = 1; i < numofBlocks; i++) {
+        previous = data_ptr;
+        data_ptr += 16;
+        std::cout << (long long)data_ptr << ',' << (long long)previous <<'\n';
+        decryptBlock(data_ptr);
+        XORblocks(data_ptr, previous, data_ptr);
+    }
+}
+
+int AES_256::setIV(char IV[16]) {
+    int FF = 255, iv = time(NULL), i, j, k;
+    for(i = 0; i < 4; i++, iv++) {
+        k = i << 2; // k = i * 4
+        for(j = 0; j < 4; j++)// j * 8
+            IV[k + j] = char ((iv >> (j << 3)) & FF);
+    }
+    encryptBlock(IV);
+
+    // Debugging purposes
+    /*for(i = 0; i < 16; i++) {
+        std::cout << '|' << i << ':';
+        std::cout << int(IV[i]);
+    }
+    std::cout << '\n';*/
+
+    return iv-4;
+}
+
+void AES_256::getIV(int _iv, char IV[16]) {
+    int FF = 255, i, j, k;
+    for(i = 0; i < 4; i++, _iv++) {
+        k = i << 2;
+        for(j = 0; j < 4; j++)
+            IV[k + j] = char ((_iv >> (j << 3)) & FF);
+    }
+    encryptBlock(IV);
+
+    // Debugging purposes
+    /*for(i = 0; i < 16; i++) {
+        std::cout << '|' << i << ':';
+        std::cout << int(IV[i]);
+    }
+    std::cout << '\n';*/
+}
+
+void AES_256::XORblocks(char b1[16], char b2[16], char r[16]) {
+    for(int i = 0; i < 16; i++) r[i] = b1[i] ^ b2[i];
+}
+
 void AES_256::printState(const char state[16]) {
 	int i, j, temp;
 	for(i = 0; i < 4; i++) {
@@ -170,7 +259,7 @@ void AES_256::AddRoundKey(char state[16], int round) {
 void AES_256::encryptBlock(char block[]) {
 	int i, j;
 
-	bool debug = true; // True to show every encryption step.
+	bool debug = false; // True to show every encryption step.
 
 	// -Debugging purposes.
 	// -Columns of the debugging table.
@@ -325,6 +414,6 @@ void AES_256::decryptBlock(char *block) {
 	InvShiftRows(block);
 	InvSubBytes(block);
 	AddRoundKey(block, 0);
-	printState(block);
+	//printState(block);
 }
 
