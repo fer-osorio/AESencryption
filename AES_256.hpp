@@ -93,6 +93,9 @@ class AES_256 {
 	// -Coping an array of 4 bytes.
 	void CopyWord(const char source[4], char destination[4]);
 
+	// -Coping an array of 16 bytes.
+	void CopyBlock(const char source[16], char destination[16]);
+
 	// -XOR of arrays of 4 bytes.
 	void XORword(const char w1[4], const char w2[4], char resDest[4]);
 

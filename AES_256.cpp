@@ -96,24 +96,20 @@ void AES_256::printWord(const char word[4]) {
 }
 
 int AES_256::encrypt(char* data_ptr, int size) {
-    // -Padding process needed. We'll suppose that
-    //  the size is a multiple of 16.
-    char IV[16], *previous;
-    int iv = setIV(IV), i;
-    int numofBlocks = size >> 4;
-    printState(IV);
+    // -Padding process needed. Supposing that size as a multiple of 16.
+    char IV[16], *prevblk;        // -Initial vector and previous block.
+    int numofBlocks = size >> 4;  //  numofBlocks = size / 16.
+    int iv = setIV(IV), i;        // -Setting initial vector.
 
     // -Encryption of the first block.
     XORblocks(data_ptr, IV, data_ptr);
     encryptBlock(data_ptr);
-    //std::cout << (long long)data_ptr << '\n';
 
     // -Encryption of the rest of the blocks.
     for(i = 1; i < numofBlocks; i++) {
-        previous = data_ptr;
+        prevblk = data_ptr;
         data_ptr += 16;
-        //std::cout << (long long)data_ptr << '\n';
-        XORblocks(data_ptr, previous, data_ptr);
+        XORblocks(data_ptr, prevblk, data_ptr);
         encryptBlock(data_ptr);
     }
 
@@ -121,25 +117,25 @@ int AES_256::encrypt(char* data_ptr, int size) {
 }
 
 void AES_256::decrypt(char* data_ptr, int size, int _iv) {
-    char IV[16], *previous;
-    int numofBlocks = size >> 4, i;
+    char CB[16], prevCB[16];     // -Cipher block and previous cipher block.
+    int numofBlocks = size >> 4; // -Number of blocks, assuming size is a
+                                 //  multiple of 16.
+    int i;
 
-    // -Getting the initial vector.
-    getIV(_iv, IV);
-    printState(IV);
+    getIV(_iv, CB);              // -Getting the initial vector.
+    CopyBlock(data_ptr, prevCB); // -Copying the first ciphered block.
 
     // -Deciphering the first block.
     decryptBlock(data_ptr);
-    XORblocks(data_ptr, IV, data_ptr);
-    //std::cout << (long long)data_ptr << '\n';
+    XORblocks(data_ptr, CB, data_ptr);
 
     // -Decryption of the rest of the blocks.
     for(i = 1; i < numofBlocks; i++) {
-        previous = data_ptr;
         data_ptr += 16;
-        std::cout << (long long)data_ptr << ',' << (long long)previous <<'\n';
+        CopyBlock(data_ptr, CB); // -Saving cipher block for the next round.
         decryptBlock(data_ptr);
-        XORblocks(data_ptr, previous, data_ptr);
+        XORblocks(data_ptr, prevCB, data_ptr);
+        CopyBlock(CB, prevCB);
     }
 }
 
@@ -151,14 +147,6 @@ int AES_256::setIV(char IV[16]) {
             IV[k + j] = char ((iv >> (j << 3)) & FF);
     }
     encryptBlock(IV);
-
-    // Debugging purposes
-    /*for(i = 0; i < 16; i++) {
-        std::cout << '|' << i << ':';
-        std::cout << int(IV[i]);
-    }
-    std::cout << '\n';*/
-
     return iv-4;
 }
 
@@ -170,13 +158,6 @@ void AES_256::getIV(int _iv, char IV[16]) {
             IV[k + j] = char ((_iv >> (j << 3)) & FF);
     }
     encryptBlock(IV);
-
-    // Debugging purposes
-    /*for(i = 0; i < 16; i++) {
-        std::cout << '|' << i << ':';
-        std::cout << int(IV[i]);
-    }
-    std::cout << '\n';*/
 }
 
 void AES_256::XORblocks(char b1[16], char b2[16], char r[16]) {
@@ -199,6 +180,10 @@ void AES_256::printState(const char state[16]) {
 
 void AES_256::CopyWord(const char source[4], char destination[4]) {
     for(int i = 0; i < 4; i++) destination[i] = source[i];
+}
+
+void AES_256::CopyBlock(const char source[16], char destination[16]) {
+    for(int i = 0; i < 16; i++) destination[i] = source[i];
 }
 
 void AES_256::XORword(const char w1[4], const char w2[4], char resDest[4]) {

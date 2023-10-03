@@ -16,15 +16,12 @@ int main(int argc, char *argv[]) {
                     char(0x31), char(0x31), char(0x98), char(0xA2),
                     char(0xE0), char(0x37), char(0x07), char(0x34)};*/
     char input[] = "This is a test for the encryption algorithm.....";
-    int iv;
     AES_256 e(key256);
-    iv = e.encrypt(input, 48);
-    //std::cout << input;
+    int iv = e.encrypt(input, 48);
+    std::cout << input;
     std::cout << "\n----------------------------------------------------\n";
     e.decrypt(input, 48, iv);
-    //std::cout << input << '\n';
-    //e.encryptBlock(Input);
-    //e.decryptBlock(Input);
+    std::cout << input << '\n';
 
     return 0;
 }
