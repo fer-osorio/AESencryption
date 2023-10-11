@@ -2,6 +2,13 @@
 #include"AES_256.hpp"
 
 int main(int argc, char *argv[]) {
+    if(argc > 1) {
+        std::cout << "\nFiles are not supported\n\n";
+        for(int i = 1; i < argc; i ++)
+            std::cout << argv[i] << " won't be read\n";
+        std::cout << '\n';
+        return 1;
+    }
     char key256[] = {(char)0x60, (char)0x3D, (char)0xEB, (char)0x10,
                      (char)0x15, (char)0xCA, (char)0x71, (char)0xBE,
                      (char)0x2B, (char)0x73, (char)0xAE, (char)0xF0,
@@ -11,18 +18,28 @@ int main(int argc, char *argv[]) {
                      (char)0x2D, (char)0x98, (char)0x10, (char)0xA3,
                      (char)0x09, (char)0x14, (char)0xDF, (char)0xF4};
 
-    /*char Input[] = {char(0x32), char(0x43), char(0xF6), char(0xA8),
-                    char(0x88), char(0x5A), char(0x30), char(0x8D),
-                    char(0x31), char(0x31), char(0x98), char(0xA2),
-                    char(0xE0), char(0x37), char(0x07), char(0x34)};*/
-    char input[] = "This is a test for the encryption algorithm....."
-                   "12345";
+    char input[1025]; // Maximum size 1024 characters without EOS.
+    int size = 0;
+    std::cout << "\nWrite the string you want to encrypt. To process the "
+                 "string sent the value 'EOF', which you can do by:\n\n"
+                 "- Pressing twice the keys CTRL-Z for Windows.\n"
+                 "- Pressing twice the keys CTRL-D for Unix and Linux.\n\n";
+    while((input[size++] = getchar()) != EOF) { // Input from terminal.
+        if(size > 1024) {
+            std::cout << "Maximum size (1024 characters) reached. Processing"
+                         " the first 1024 characters.";
+            break;
+        }
+    }
+    input[--size] = 0; // End of string.
+
     AES_256 e(key256);
-    int iv = e.encrypt(input, 53);
-    std::cout << input;
-    std::cout << "\n----------------------------------------------------\n";
-    e.decrypt(input, 53, iv);
-    std::cout << input << '\n';
+    int iv = e.encrypt(input, size);
+    std::cout << "\nEncryption::\n" << input << '\n';
+    std::cout << "\n------------------------------------------------------"
+                 "------------------------------------------------------\n";
+    e.decrypt(input, size, iv);
+    std::cout << "\nDecryption::\n" << input << '\n';
 
     return 0;
 }
