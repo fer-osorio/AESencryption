@@ -99,6 +99,7 @@ int AES_256::encrypt(char* data_ptr, int size) {
     // -Padding process needed. Supposing that size as a multiple of 16.
     char IV[16], *prevblk;        // -Initial vector and previous block.
     int numofBlocks = size >> 4;  //  numofBlocks = size / 16.
+    int rem = size & 15;          // -Bytes remaining rem = size % 16
     int iv = setIV(IV), i;        // -Setting initial vector.
 
     // -Encryption of the first block.
@@ -112,14 +113,22 @@ int AES_256::encrypt(char* data_ptr, int size) {
         XORblocks(data_ptr, prevblk, data_ptr);
         encryptBlock(data_ptr);
     }
+    // -This part of the code is for encrypt data that its size is not
+    //  multiple of 16. This is not specified in the NIST standard.
+    if(rem != 0) {
+        prevblk = data_ptr;
+        data_ptr += 16;
+        for(i = 0; i < rem; i++) data_ptr[i] = data_ptr[i] ^ prevblk[i];
+        encryptBlock(prevblk + rem);
+    }
 
     return iv;
 }
 
 void AES_256::decrypt(char* data_ptr, int size, int _iv) {
     char CB[16], prevCB[16];     // -Cipher block and previous cipher block.
-    int numofBlocks = size >> 4; // -Number of blocks, assuming size is a
-                                 //  multiple of 16.
+    int numofBlocks = size >> 4; // -Number of blocks numofBlocks = size / 16
+    int rem = size & 15;         // -Rest of the bytes rem = size % 16
     int i;
 
     getIV(_iv, CB);              // -Getting the initial vector.
@@ -130,12 +139,23 @@ void AES_256::decrypt(char* data_ptr, int size, int _iv) {
     XORblocks(data_ptr, CB, data_ptr);
 
     // -Decryption of the rest of the blocks.
+    numofBlocks--; // -Last hole block is going to be processed differently.
     for(i = 1; i < numofBlocks; i++) {
         data_ptr += 16;
         CopyBlock(data_ptr, CB); // -Saving cipher block for the next round.
         decryptBlock(data_ptr);
         XORblocks(data_ptr, prevCB, data_ptr);
         CopyBlock(CB, prevCB);
+    }
+    data_ptr += 16;
+    if(rem == 0) { // -Data size is a multiple of 16.
+        decryptBlock(data_ptr);
+        XORblocks(data_ptr, prevCB, data_ptr);
+    } else {      // -Data size isn't a multiple of 16.
+        decryptBlock(data_ptr + rem);
+        for(i = 0; i < rem; i++) data_ptr[i+16] = data_ptr[i+16] ^ data_ptr[i];
+        decryptBlock(data_ptr);
+        XORblocks(data_ptr, prevCB, data_ptr);
     }
 }
 
