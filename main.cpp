@@ -26,19 +26,19 @@ int main(int argc, char *argv[]) {
                  "- Pressing twice the keys CTRL-D for Unix and Linux.\n\n";
     while((input[size++] = getchar()) != EOF) { // Input from terminal.
         if(size > 1024) {
-            std::cout << "Maximum size (1024 characters) reached. Processing"
-                         " the first 1024 characters.";
+            std::cout << "\n\nMaximum size (1024 characters) reached. "
+                         "Processing the first 1024 characters.\n\n";
             break;
         }
     }
     input[--size] = 0; // End of string.
 
     AES_256 e(key256);
-    int iv = e.encrypt(input, size);
+    int iv = e.encryptCBC(input, size);
     std::cout << "\nEncryption::\n" << input << '\n';
     std::cout << "\n------------------------------------------------------"
                  "------------------------------------------------------\n";
-    e.decrypt(input, size, iv);
+    e.decryptCBC(input, size, iv);
     std::cout << "\nDecryption::\n" << input << '\n';
 
     return 0;

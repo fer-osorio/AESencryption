@@ -69,16 +69,17 @@ class AES_256 {
 	//  using the CBC mode of operation.
 	// -The size of  the message ( in bytes ) is
 	//  provided by the 'size' argument.
-	// -The integer returned is formed by the
-	//  initial vector required by the CBC mode.
-	int encrypt(char* data_ptr, int size);
+	// -The integer returned is the integer
+	//  necessary to build the initial vector.
+	int encryptCBC(char* data_ptr, int size);
 
 	// -Decrypts the message pointed by 'data_ptr'
 	//  using the CBC mode of operation.
 	// -The size of the message is provided by the
 	//  'size' argument.
-	// -IV stands for < initial vector >.
-	void decrypt(char* data_ptr, int size, int _iv);
+	// -The integer '_iv' is the integer
+	//  necessary to build the initial vector.
+	void decryptCBC(char* data_ptr, int size, int _iv);
 
 	private:
 	// -Xor operation over 16 bytes array.

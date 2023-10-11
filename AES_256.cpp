@@ -95,7 +95,7 @@ void AES_256::printWord(const char word[4]) {
 	std::cout << ']';
 }
 
-int AES_256::encrypt(char* data_ptr, int size) {
+int AES_256::encryptCBC(char* data_ptr, int size) {
     // -Padding process needed. Supposing that size as a multiple of 16.
     char IV[16], *prevblk;        // -Initial vector and previous block.
     int numofBlocks = size >> 4;  //  numofBlocks = size / 16.
@@ -125,7 +125,7 @@ int AES_256::encrypt(char* data_ptr, int size) {
     return iv;
 }
 
-void AES_256::decrypt(char* data_ptr, int size, int _iv) {
+void AES_256::decryptCBC(char* data_ptr, int size, int _iv) {
     char CB[16], prevCB[16];     // -Cipher block and previous cipher block.
     int numofBlocks = size >> 4; // -Number of blocks numofBlocks = size / 16
     int rem = size & 15;         // -Rest of the bytes rem = size % 16
