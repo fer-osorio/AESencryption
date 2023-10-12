@@ -1,6 +1,7 @@
 // -Handling bitmap format images.
 #include <iostream>
 #include <stdlib.h>
+#include "AES_256.hpp"
 
 typedef unsigned char  ui08;
 typedef unsigned short ui16;
@@ -12,7 +13,7 @@ struct RGB {
 	ui08 blue;
 };
 
-class Bitmap{
+class Bitmap {
 	struct FileHeader {
 		char bm[2];			// [B, M] for bmp files
 		unsigned size;  	// File size
@@ -42,6 +43,8 @@ class Bitmap{
 	Bitmap(const char* fname);
 	void save(const char* fname);
 	~Bitmap();
+
+	void encrypt(char key[32]);
 
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 };

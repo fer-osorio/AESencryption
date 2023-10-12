@@ -1,5 +1,5 @@
-#ifndef _included_KeyExpansion
-#define _included_KeyExpansion
+#ifndef _INCLUDED_AES_256_
+#define _INCLUDED_AES_256_
 
 #include"OperationsGF256.hpp"
 

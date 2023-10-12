@@ -1,6 +1,9 @@
 #include <fstream>
 #include "Bitmap.hpp"
 
+#ifndef _INCLUDED_BITMAP_
+#define _INCLUDED_BITMAP_
+
 Bitmap::Bitmap(const char* fname) {
     std::ifstream file;
     file.open(fname, std::ios::binary);
@@ -32,6 +35,7 @@ Bitmap::Bitmap(const char* fname) {
             file.read((char*)data, ih.SizeOfBitmap);
 
             // Pixel matrix
+            img = new RGB*[ih.Height];
             for(i = ih.Height - 1, j = 0; i >= 0; i--, j++) {
                 img[j] = (RGB*)&data[3 * i * ih.Width];
             }
@@ -77,8 +81,14 @@ void Bitmap::save(const char *fname) {
 }
 
 Bitmap::~Bitmap() {
-    if(data != NULL) delete data;
-    if(img  != NULL) delete img;
+    if(data != NULL) delete[] data;
+    if(img  != NULL) delete[] img;
+}
+
+void Bitmap::encrypt(char key[32]) {
+    AES_256 e(key);
+    e.encryptCBC(data, ih.SizeOfBitmap);
+    save("Encryption.bmp");
 }
 
 std::ostream& operator << (std::ostream &stream, const Bitmap &bmp) {
@@ -105,3 +115,4 @@ std::ostream& operator << (std::ostream &stream, const Bitmap &bmp) {
         return stream;
 }
 
+#endif
