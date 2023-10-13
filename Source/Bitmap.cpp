@@ -4,7 +4,7 @@
 #ifndef _INCLUDED_BITMAP_
 #define _INCLUDED_BITMAP_
 
-Bitmap::Bitmap(const char* fname, char key[32]) : AES_256(key) {
+Bitmap::Bitmap(const char* fname) : data(NULL), img(NULL) {
     std::ifstream file;
     file.open(fname, std::ios::binary);
     int i, j;
@@ -83,11 +83,6 @@ void Bitmap::save(const char *fname) {
 Bitmap::~Bitmap() {
     if(data != NULL) delete[] data;
     if(img  != NULL) delete[] img;
-}
-
-void Bitmap::encrypt() {
-    encryptCBC(data, ih.SizeOfBitmap);
-    save("Encryption.bmp");
 }
 
 void encrypt(Bitmap bmp, AES_256 e) {
