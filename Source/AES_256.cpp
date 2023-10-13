@@ -3,6 +3,9 @@
 #include"AES_256.hpp"
 
 AES_256::AES_256(char key[32]) {
+    if(key == NULL) {
+        key = defaultKey;
+    }
     char temp[4];
 	int i, keyLen = 32;
 	int keyExpansionLen = 60; // -Length of the key expansion in words.
