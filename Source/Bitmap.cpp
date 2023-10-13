@@ -89,9 +89,9 @@ void Bitmap::save(const char *fname) {
     std::ofstream file;
     file.open(fname, std::ios::binary);
     if(file.is_open()) {
-        file.write((char*)fh.bm, 2);
         if(fh.bm[0] == 'B' && fh.bm[1] == 'M') {
             // -File Header.
+            file.write((char*)fh.bm, 2);
             file.write((char*)&fh.size, 4);
             file.write((char*)&fh.reserved1, 2);
             file.write((char*)&fh.reserved2, 2);
@@ -110,7 +110,9 @@ void Bitmap::save(const char *fname) {
             file.write((char*)&ih.ColorsUsed, 4);
             file.write((char*)&ih.ColorsImportant, 4);
             file.write((char*)data, ih.SizeOfBitmap);
+            file.close();
         } else {
+            file.close();
             throw "Not a valid bitmap file.";
         }
     } else {
@@ -150,8 +152,20 @@ Bitmap& Bitmap::operator = (const Bitmap &bmp) {
 }
 
 void encrypt(Bitmap& bmp, const AES_256& e) {
-    e.encryptCBC(bmp.data, bmp.ih.SizeOfBitmap);
+    int sz = -1; // -Creating name for the .kiv
+    char* kivName; int i;               // file
+    while(bmp.name[++sz] != 0) {}
+    kivName = new char[sz+5];
+    for(i = 0; i < sz; i++) kivName[i] = bmp.name[i];
+    kivName[i++] = '.';
+    kivName[i++] = 'k';
+    kivName[i++] = 'i';
+    kivName[i++] = 'v';
+    kivName[i] = 0;
+    // Encryption
+    e.writeKIV(e.encryptCBC(bmp.data, bmp.ih.SizeOfBitmap), kivName);
     bmp.save(bmp.name);
+    delete[] kivName;
 }
 
 std::ostream& operator << (std::ostream &stream, const Bitmap &bmp) {

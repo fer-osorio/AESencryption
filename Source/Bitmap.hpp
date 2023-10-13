@@ -1,6 +1,5 @@
 // -Handling bitmap format images.
 #include <iostream>
-#include <stdlib.h>
 #include "AES_256.hpp"
 
 #define NAME_MAX_LEN 100

@@ -1,6 +1,8 @@
 #include<iostream>
+#include<fstream>
 #include<ctime>
 #include"AES_256.hpp"
+#include"OperationsGF256.hpp"
 
 AES_256::AES_256(char key[32]) {
     if(key == NULL) {
@@ -159,6 +161,21 @@ void AES_256::decryptCBC(char* data_ptr, int size, int _iv) const {
         for(i = 0; i < rem; i++) data_ptr[i+16] = data_ptr[i+16] ^ data_ptr[i];
         decryptBlock(data_ptr);
         XORblocks(data_ptr, prevCB, data_ptr);
+    }
+}
+
+
+void AES_256::writeKIV(int iv, const char fname[]) const{
+    const char kiv[3] = {'K', 'I', 'V'};
+    std::ofstream file;
+    file.open(fname, std::ios::binary);
+    if(file.is_open()) {
+        file.write((char*)kiv, 3);
+        file.write((char*)keyExpansion, 32);
+        file.write((char*)&iv, 4);
+        file.close();
+    } else {
+        throw "File could not be written.";
     }
 }
 
