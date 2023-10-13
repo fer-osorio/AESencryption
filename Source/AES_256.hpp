@@ -72,6 +72,7 @@ class AES_256 {
          (char)0x3B, (char)0x61, (char)0x08, (char)0xD7,
          (char)0x2D, (char)0x98, (char)0x10, (char)0xA3,
          (char)0x09, (char)0x14, (char)0xDF, (char)0xF4};
+
 	public:
 	AES_256(char key[32]);
 
@@ -81,7 +82,7 @@ class AES_256 {
 	//  provided by the 'size' argument.
 	// -The integer returned is the integer
 	//  necessary to build the initial vector.
-	int encryptCBC(char* data_ptr, int size);
+	int encryptCBC(char* data_ptr, int size) const;
 
 	// -Decrypts the message pointed by 'data_ptr'
 	//  using the CBC mode of operation.
@@ -89,11 +90,11 @@ class AES_256 {
 	//  'size' argument.
 	// -The integer '_iv' is the integer
 	//  necessary to build the initial vector.
-	void decryptCBC(char* data_ptr, int size, int _iv);
+	void decryptCBC(char* data_ptr, int size, int _iv) const;
 
 	private:
 	// -Xor operation over 16 bytes array.
-	void XORblocks(char b1[16], char b2[16], char r[16]);
+	void XORblocks(char b1[16], char b2[16], char r[16]) const;
 
 	// -Prints an array of 4 bytes.
 	void printWord(const char word[4]);
@@ -102,55 +103,55 @@ class AES_256 {
 	void printState(const char word[16]);
 
 	// -Coping an array of 4 bytes.
-	void CopyWord(const char source[4], char destination[4]);
+	void CopyWord(const char source[4], char destination[4]) const;
 
 	// -Coping an array of 16 bytes.
-	void CopyBlock(const char source[16], char destination[16]);
+	void CopyBlock(const char source[16], char destination[16]) const;
 
 	// -XOR of arrays of 4 bytes.
-	void XORword(const char w1[4], const char w2[4], char resDest[4]);
+	void XORword(const char w1[4], const char w2[4], char resDest[4]) const;
 
 	// -Rotation of bytes to the left.
-	void RotWord(char word[4]);
+	void RotWord(char word[4]) const;
 
 	// -Apply SBox to each char of the word.
-	void SubWord(char word[4]);
+	void SubWord(char word[4]) const;
 
 	// -Applies a substitution table (S-box) to each char.
-	void SubBytes(char state[16]);
+	void SubBytes(char state[16]) const;
 
 	// -Shift rows of the state array by different offset.
-	void ShiftRows(char state[16]);
+	void ShiftRows(char state[16]) const;
 
 	// -Mixes the data within each column of the state array.
-	void MixColumns(char state[16]);
+	void MixColumns(char state[16]) const;
 
 	// -Combines a round key with the state.
-	void AddRoundKey(char state[16], int round);
+	void AddRoundKey(char state[16], int round) const;
 
 	// -Applies the inverse substitution table (InvSBox) to each char.
-	void InvSubBytes(char state[16]);
+	void InvSubBytes(char state[16]) const;
 
 	// -Inverse function of shift rows.
-	void InvShiftRows(char state[16]);
+	void InvShiftRows(char state[16]) const;
 
 	// -Inverse function of MixColumns.
-	void InvMixColumns(char state[16]);
+	void InvMixColumns(char state[16]) const;
 
 	// -Encrypts an array of 16 bytes.
-	public: void encryptBlock(char block[16]);
+	void encryptBlock(char block[16]) const;
 
 	// -Decrypt an array of 16 bytes.
-	void decryptBlock(char block[16]);
+	void decryptBlock(char block[16]) const;
 
 	// -Gets the initial vector from an integer.
 	// -Required for the decryption process in the CBC mode.
 	// -The initial vector will be saved in the IV array.
-	private: void getIV(int _iv, char IV[16]);
+	void getIV(int _iv, char IV[16]) const;
 
 	// -Sets the initial vector value.
 	// -Required for the CBC operation mode.
-	int setIV(char IV[16]);
+	int setIV(char IV[16]) const;
 };
 
 #endif

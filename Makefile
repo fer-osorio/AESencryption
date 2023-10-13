@@ -12,7 +12,7 @@ AES_256: Makefile $(SOURCE) $(HEADERS)
 	$(CXX) -o $@ $(WARNINGS) $(DEBUG) $(OPTIMIZE) $(STANDARD) $(SOURCE)
 
 clean:
-	rm -f AES_256
+	rm -f AES_256 Encryption.bmp
 
 # Builder will call this to install the application before running.
 install:

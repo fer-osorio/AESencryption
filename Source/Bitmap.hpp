@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include "AES_256.hpp"
 
+#define NAME_MAX_LEN 100
+
 typedef unsigned char  ui08;
 typedef unsigned short ui16;
 typedef unsigned int   ui32;
@@ -38,16 +40,21 @@ class Bitmap {
 
 	char* data;
 	RGB** img;
+	char* name;
 
 	public:
 	Bitmap(const char* fname);
-	void save(const char* fname);
+	Bitmap(const Bitmap& bmp);
 	~Bitmap();
+
+	// Saves in hard disk.
+	void save(const char* fname);
+	Bitmap& operator = (const Bitmap& bmp);
 
 	// -This function will allow us to encrypt
 	//  several images with just one AES_256
 	//  object.
-	friend void encrypt(Bitmap bmp, AES_256 e);
+	friend void encrypt(Bitmap& bmp, const AES_256& e);
 
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 };

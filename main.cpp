@@ -16,6 +16,10 @@ int main(int argc, char *argv[]) {
         Bitmap img(argv[1]);
         AES_256 e(key256);
         encrypt(img, e);
+        for(int i = 2; i < argc; i++) {
+            img = Bitmap(argv[i]);
+            encrypt(img, e);
+        }
         std::cout << '\n';
         return 0;
     }

@@ -4,7 +4,7 @@
 #ifndef _INCLUDED_BITMAP_
 #define _INCLUDED_BITMAP_
 
-Bitmap::Bitmap(const char* fname) : data(NULL), img(NULL) {
+Bitmap::Bitmap(const char* fname) : data(NULL), img(NULL), name(NULL) {
     std::ifstream file;
     file.open(fname, std::ios::binary);
     int i, j;
@@ -39,12 +39,50 @@ Bitmap::Bitmap(const char* fname) : data(NULL), img(NULL) {
             for(i = ih.Height - 1, j = 0; i >= 0; i--, j++) {
                 img[j] = (RGB*)&data[3 * i * ih.Width];
             }
+            // Name
+            ui32 sz = 0;
+            while(fname[sz++] != 0) {} // -Getting name size.
+            name = new char[sz];
+            for(i = 0; i < sz; i++) name[i] = fname[i];
         } else {
             throw "Not a valid bitmap file.";
         }
     } else {
         throw "File could not be opened/created.";
     }
+}
+
+Bitmap::Bitmap(const Bitmap& bmp) : data(NULL), img(NULL), name(NULL) {
+    // Initializing file header.
+    this->fh.bm[0] = bmp.fh.bm[0];
+    this->fh.bm[1] = bmp.fh.bm[1];
+    this->fh.size = bmp.fh.size;
+    this->fh.reserved1 = bmp.fh.reserved1;
+    this->fh.reserved2 = bmp.fh.reserved2;
+    this->fh.offset = bmp.fh.offset;
+
+    // -Initializing image header.
+    // -Using the default member
+    //  to member copy.
+    this->ih = bmp.ih;
+
+    ui32 i; // -Initializing data.
+    this->data = new char[bmp.ih.SizeOfBitmap];
+    for(i = 0; i < bmp.ih.SizeOfBitmap; i++) this->data[i] = bmp.data[i];
+
+    this->img = new RGB*[bmp.ih.Height];
+    for(i = 0; i < bmp.ih.Height; i++) this->img[i] = bmp.img[i];
+
+    ui32 sz = 0; // Initializing name
+    while(bmp.name[sz++] != 0) {} // -Getting name size.
+    name = new char[sz];
+    for(i = 0; i < sz; i++) name[i] = bmp.name[i];
+}
+
+Bitmap::~Bitmap() {
+    if(data != NULL) delete[] data;
+    if(img  != NULL) delete[] img;
+    if(name != NULL) delete[] name;
 }
 
 void Bitmap::save(const char *fname) {
@@ -80,14 +118,40 @@ void Bitmap::save(const char *fname) {
     }
 }
 
-Bitmap::~Bitmap() {
-    if(data != NULL) delete[] data;
-    if(img  != NULL) delete[] img;
+Bitmap& Bitmap::operator = (const Bitmap &bmp) {
+    if(this != &bmp) { // Guarding against bmp = bmp
+        this->~Bitmap();
+        // Copying file header.
+        this->fh.bm[0] = bmp.fh.bm[0];
+        this->fh.bm[1] = bmp.fh.bm[1];
+        this->fh.size = bmp.fh.size;
+        this->fh.reserved1 = bmp.fh.reserved1;
+        this->fh.reserved2 = bmp.fh.reserved2;
+        this->fh.offset = bmp.fh.offset;
+
+        // -Copying image header.
+        // -Using the default member
+        //  to member copy.
+        this->ih = bmp.ih;
+
+        ui32 i; // -Copying data.
+        this->data = new char[bmp.ih.SizeOfBitmap];
+        for(i = 0; i < bmp.ih.SizeOfBitmap; i++) this->data[i] = bmp.data[i];
+
+        this->img = new RGB*[bmp.ih.Height];
+        for(i = 0; i < bmp.ih.Height; i++) this->img[i] = bmp.img[i];
+
+        ui32 sz = 0; // Copying name
+        while(bmp.name[sz++] != 0) {} // -Getting name size.
+        this->name = new char[sz];
+        for(i = 0; i < sz; i++) this->name[i] = bmp.name[i];
+    }
+    return *this;
 }
 
-void encrypt(Bitmap bmp, AES_256 e) {
+void encrypt(Bitmap& bmp, const AES_256& e) {
     e.encryptCBC(bmp.data, bmp.ih.SizeOfBitmap);
-    bmp.save("Encryption.bmp");
+    bmp.save(bmp.name);
 }
 
 std::ostream& operator << (std::ostream &stream, const Bitmap &bmp) {
