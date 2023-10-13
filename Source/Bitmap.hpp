@@ -13,7 +13,7 @@ struct RGB {
 	ui08 blue;
 };
 
-class Bitmap {
+class Bitmap : public AES_256 {
 	struct FileHeader {
 		char bm[2];			// [B, M] for bmp files
 		unsigned size;  	// File size
@@ -40,11 +40,16 @@ class Bitmap {
 	RGB** img;
 
 	public:
-	Bitmap(const char* fname);
+	Bitmap(const char* fname, char key[32] = NULL);
 	void save(const char* fname);
 	~Bitmap();
 
-	void encrypt(char key[32]);
+	void encrypt();
+
+	// -This function will allow us to encrypt
+	//  several images with just one AES_256
+	//  object.
+	friend void encrypt(Bitmap bmp, AES_256 e);
 
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 };

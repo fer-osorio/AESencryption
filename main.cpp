@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
         if(argc > 2) std::cout << "\nExcess in the number of arguments. Reading"
                                   " just the first one.\n\n";
         Bitmap img(argv[1]);
-        img.encrypt(key256);
+        img.encrypt();
         std::cout << '\n';
         return 0;
     }

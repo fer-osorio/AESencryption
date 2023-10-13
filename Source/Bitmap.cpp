@@ -4,7 +4,7 @@
 #ifndef _INCLUDED_BITMAP_
 #define _INCLUDED_BITMAP_
 
-Bitmap::Bitmap(const char* fname) {
+Bitmap::Bitmap(const char* fname, char key[32]) : AES_256(key) {
     std::ifstream file;
     file.open(fname, std::ios::binary);
     int i, j;
@@ -85,34 +85,38 @@ Bitmap::~Bitmap() {
     if(img  != NULL) delete[] img;
 }
 
-void Bitmap::encrypt(char key[32]) {
-    AES_256 e(key);
-    e.encryptCBC(data, ih.SizeOfBitmap);
+void Bitmap::encrypt() {
+    encryptCBC(data, ih.SizeOfBitmap);
     save("Encryption.bmp");
 }
 
+void encrypt(Bitmap bmp, AES_256 e) {
+    e.encryptCBC(bmp.data, bmp.ih.SizeOfBitmap);
+    bmp.save("Encryption.bmp");
+}
+
 std::ostream& operator << (std::ostream &stream, const Bitmap &bmp) {
-        stream << "File Header: ";
-        stream << "\n\tbm: " << bmp.fh.bm[0] << bmp.fh.bm[1];
-        stream << "\n\tsize: " << bmp.fh.size;
-        stream << "\n\treserved1: " << bmp.fh.reserved1;
-        stream << "\n\treserved2: " << bmp.fh.reserved2;
-        stream << "\n\toffset: " << bmp.fh.offset;
+    stream << "File Header: ";
+    stream << "\n\tbm: " << bmp.fh.bm[0] << bmp.fh.bm[1];
+    stream << "\n\tsize: " << bmp.fh.size;
+    stream << "\n\treserved1: " << bmp.fh.reserved1;
+    stream << "\n\treserved2: " << bmp.fh.reserved2;
+    stream << "\n\toffset: " << bmp.fh.offset;
 
-        stream << "\nImage Header: ";
-        stream << "\n\tsize: " << bmp.ih.size;
-        stream << "\n\twidth: " << bmp.ih.Width;
-        stream << "\n\theight: " << bmp.ih.Height;
-        stream << "\n\tplanes: " << bmp.ih.Planes;
-        stream << "\n\tbits per pixel: " << bmp.ih.BitsPerPixel;
-        stream << "\n\tcompression: " << bmp.ih.Compression;
-        stream << "\n\timage size: " << bmp.ih.SizeOfBitmap;
-        stream << "\n\thorizontal resolution: " << bmp.ih.HorzResolution;
-        stream << "\n\tvertical resolution: " << bmp.ih.VertResolution;
-        stream << "\n\tcolors used: " << bmp.ih.ColorsUsed;
-        stream << "\n\tcolors important: " << bmp.ih.ColorsImportant;
+    stream << "\nImage Header: ";
+    stream << "\n\tsize: " << bmp.ih.size;
+    stream << "\n\twidth: " << bmp.ih.Width;
+    stream << "\n\theight: " << bmp.ih.Height;
+    stream << "\n\tplanes: " << bmp.ih.Planes;
+    stream << "\n\tbits per pixel: " << bmp.ih.BitsPerPixel;
+    stream << "\n\tcompression: " << bmp.ih.Compression;
+    stream << "\n\timage size: " << bmp.ih.SizeOfBitmap;
+    stream << "\n\thorizontal resolution: " << bmp.ih.HorzResolution;
+    stream << "\n\tvertical resolution: " << bmp.ih.VertResolution;
+    stream << "\n\tcolors used: " << bmp.ih.ColorsUsed;
+    stream << "\n\tcolors important: " << bmp.ih.ColorsImportant;
 
-        return stream;
+    return stream;
 }
 
 #endif
