@@ -18,7 +18,6 @@ int main(int argc, char *argv[]) {
             img = Bitmap(argv[i]);
             encrypt(img, e);
         }
-        std::cout << '\n';
         return 0;
     }
 

@@ -55,5 +55,10 @@ class Bitmap {
 	//  object.
 	friend void encrypt(Bitmap& bmp, const AES_256& e);
 
+	// -This function will allow us to decrypt
+	//  several images with just one AES_256
+	//  object.
+	friend void decrypt(Bitmap& bmp, const AES_256& e, int iv);
+
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 };

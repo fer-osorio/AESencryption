@@ -168,6 +168,11 @@ void encrypt(Bitmap& bmp, const AES_256& e) {
     delete[] kivName;
 }
 
+void decrypt(Bitmap& bmp, const AES_256& e, int iv) {
+    e.decryptCBC(bmp.data, bmp.ih.SizeOfBitmap, iv);
+    bmp.save(bmp.name);
+}
+
 std::ostream& operator << (std::ostream &stream, const Bitmap &bmp) {
     stream << "File Header: ";
     stream << "\n\tbm: " << bmp.fh.bm[0] << bmp.fh.bm[1];

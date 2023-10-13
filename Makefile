@@ -1,15 +1,17 @@
-all: encrypt
-
+all: encrypt decrypt
 
 WARNINGS = -Wall -Weffc++ -Wextra -Wsign-conversion -pedantic-errors
 DEBUG = -ggdb -fno-omit-frame-pointer
 OPTIMIZE = -O2
 STANDARD = -std=c++2a
-SOURCE = encrypt.cpp Source/AES_256.cpp Source/Bitmap.cpp
+SOURCE = Source/AES_256.cpp Source/Bitmap.cpp
 HEADERS = Source/AES_256.hpp Source/Bitmap.hpp Source/OperationsGF256.hpp
 
-encrypt: Makefile $(SOURCE) $(HEADERS)
-	$(CXX) -o $@ $(WARNINGS) $(DEBUG) $(OPTIMIZE) $(STANDARD) $(SOURCE)
+encrypt: Makefile encrypt.cpp $(SOURCE) $(HEADERS)
+	$(CXX) -o $@ $(WARNINGS) $(DEBUG) $(OPTIMIZE) $(STANDARD) encrypt.cpp $(SOURCE)
+
+decrypt: Makefile decrypt.cpp $(SOURCE) $(HEADERS)
+	$(CXX) -o $@ $(WARNINGS) $(DEBUG) $(OPTIMIZE) $(STANDARD) decrypt.cpp $(SOURCE)
 
 clean:
 	rm -f encrypt Encryption.bmp
