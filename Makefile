@@ -14,7 +14,7 @@ decrypt: Makefile decrypt.cpp $(SOURCE) $(HEADERS)
 	$(CXX) -o $@ $(WARNINGS) $(DEBUG) $(OPTIMIZE) $(STANDARD) decrypt.cpp $(SOURCE)
 
 clean:
-	rm -f encrypt Encryption.bmp
+	rm -f encrypt decrypt *.kiv
 
 # Builder will call this to install the application before running.
 install:
