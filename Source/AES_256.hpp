@@ -73,6 +73,9 @@ class AES_256 {
 
 	public:
 	AES_256(char key[32]);
+	AES_256(const AES_256& e);
+
+	AES_256& operator = (const AES_256& e);
 
 	// -Encrypts the message pointed by 'data_ptr'
 	//  using the CBC mode of operation.
@@ -80,7 +83,7 @@ class AES_256 {
 	//  provided by the 'size' argument.
 	// -The integer returned is the integer
 	//  necessary to build the initial vector.
-	int encryptCBC(char* data_ptr, int size) const;
+	int encryptCBC(char* data_ptr, unsigned size) const;
 
 	// -Decrypts the message pointed by 'data_ptr'
 	//  using the CBC mode of operation.
@@ -88,7 +91,7 @@ class AES_256 {
 	//  'size' argument.
 	// -The integer '_iv' is the integer
 	//  necessary to build the initial vector.
-	void decryptCBC(char* data_ptr, int size, int _iv) const;
+	void decryptCBC(char* data_ptr, unsigned size, int _iv) const;
 
 	// -Writes a file with the following structure:
 	// ·First three bytes are the corresponding values of the
