@@ -4,11 +4,11 @@
 
 // -Handling the file where the key and the integer necessary for the
 class KIV { // creation of the initial vector are stored.
-    char kiv[3];
-    char key[32];
-    int  iv;
+    char kiv[3];  // Identifier
+    char key[32]; // Cryptographic key
+    int  iv;      // int for the construction of the initial vector
 
-    public: KIV(const char* fname) {
+    public: KIV(const char* fname) : kiv{0,0,0}, key{0,0,0}, iv(0) {
         std::ifstream file;
         file.open(fname, std::ios::binary);
         if(file.is_open()) {
@@ -18,6 +18,29 @@ class KIV { // creation of the initial vector are stored.
                 file.read((char*)&iv, 4);
             } else throw "Not a KIV file.";
         } else throw "Could not open file.";
+    }
+
+    KIV(const KIV& kivObj) : kiv{0,0,0}, key{0,0,0}, iv(0) {
+        this->kiv[0] = kivObj.kiv[0];
+        this->kiv[1] = kivObj.kiv[1];
+        this->kiv[2] = kivObj.kiv[2];
+
+        for(int i = 0; i < 32;i++) this->key[i] = kivObj.key[i];
+
+        this->iv = kivObj.iv;
+    }
+
+    KIV& operator = (const KIV& kivObj) {
+        if(this != &kivObj) { // Guarding against kibObj = kibObj
+            this->kiv[0] = kivObj.kiv[0];
+            this->kiv[1] = kivObj.kiv[1];
+            this->kiv[2] = kivObj.kiv[2];
+
+            for(int i = 0; i < 32;i++) this->key[i] = kivObj.key[i];
+
+            this->iv = kivObj.iv;
+        }
+        return *this;
     }
 
     int  return_iv()  { return iv; }
@@ -34,11 +57,14 @@ int main(int argc, char *argv[]) {
         AES_256 e(key);
         Bitmap img(argv[2]);
         decrypt(img, e, kiv.return_iv());
-        /*for(int i = 2; i < argc; i++) {
-            img = Bitmap(argv[i]);
-            encrypt(img, e);
-        }*/
-        //std::cout << '\n';
+
+        for(int i = 3; i < argc; i++) {
+            kiv = KIV(argv[i]);
+            kiv.return_key(key);
+            e = AES_256(key);
+            img = Bitmap(argv[++i]);
+            decrypt(img, e, kiv.return_iv());
+        }
         return 0;
     } else {
         std::cout << "\nNot enough arguments passed (at least two). "

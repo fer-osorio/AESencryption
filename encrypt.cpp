@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     }
 
     char input[1025]; // Maximum size 1024 characters without EOS.
-    int size = 0;
+    unsigned size = 0;
     std::cout << "\nWrite the string you want to encrypt. To process the "
                  "string sent the value 'EOF', which you can do by:\n\n"
                  "- Pressing twice the keys CTRL-Z for Windows.\n"
