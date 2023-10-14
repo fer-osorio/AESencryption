@@ -4,10 +4,11 @@
 #ifndef _INCLUDED_BITMAP_
 #define _INCLUDED_BITMAP_
 
-Bitmap::Bitmap(const char* fname) : data(NULL), img(NULL), name(NULL) {
+Bitmap::Bitmap(const char* fname) : fh{0,0,0,0,0,0}, ih{0,0,0,0,0,0,0,0,0,0,0},
+data(NULL), img(NULL), name(NULL) {
     std::ifstream file;
     file.open(fname, std::ios::binary);
-    int i, j;
+    int i, j, sz = 0;
     if(file.is_open()) {
         file.read((char*)fh.bm, 2);
         if(fh.bm[0] == 'B' && fh.bm[1] == 'M') {
@@ -40,7 +41,6 @@ Bitmap::Bitmap(const char* fname) : data(NULL), img(NULL), name(NULL) {
                 img[j] = (RGB*)&data[3 * i * ih.Width];
             }
             // Name
-            ui32 sz = 0;
             while(fname[sz++] != 0) {} // -Getting name size.
             name = new char[sz];
             for(i = 0; i < sz; i++) name[i] = fname[i];
@@ -52,7 +52,8 @@ Bitmap::Bitmap(const char* fname) : data(NULL), img(NULL), name(NULL) {
     }
 }
 
-Bitmap::Bitmap(const Bitmap& bmp) : data(NULL), img(NULL), name(NULL) {
+Bitmap::Bitmap(const Bitmap& bmp) : fh{0,0,0,0,0,0}, ih{0,0,0,0,0,0,0,0,0,0,0},
+data(NULL), img(NULL), name(NULL) {
     // Initializing file header.
     this->fh.bm[0] = bmp.fh.bm[0];
     this->fh.bm[1] = bmp.fh.bm[1];
@@ -71,7 +72,7 @@ Bitmap::Bitmap(const Bitmap& bmp) : data(NULL), img(NULL), name(NULL) {
     for(i = 0; i < bmp.ih.SizeOfBitmap; i++) this->data[i] = bmp.data[i];
 
     this->img = new RGB*[bmp.ih.Height];
-    for(i = 0; i < bmp.ih.Height; i++) this->img[i] = bmp.img[i];
+    for(i = 0; (int)i < bmp.ih.Height; i++) this->img[i] = bmp.img[i];
 
     ui32 sz = 0; // Initializing name
     while(bmp.name[sz++] != 0) {} // -Getting name size.
@@ -141,7 +142,7 @@ Bitmap& Bitmap::operator = (const Bitmap &bmp) {
         for(i = 0; i < bmp.ih.SizeOfBitmap; i++) this->data[i] = bmp.data[i];
 
         this->img = new RGB*[bmp.ih.Height];
-        for(i = 0; i < bmp.ih.Height; i++) this->img[i] = bmp.img[i];
+        for(i = 0; (int)i < bmp.ih.Height; i++) this->img[i] = bmp.img[i];
 
         ui32 sz = 0; // Copying name
         while(bmp.name[sz++] != 0) {} // -Getting name size.
