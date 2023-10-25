@@ -1,11 +1,14 @@
+#include"AESkey.hpp"
+
 #ifndef _INCLUDED_AES_256_
-#define _INCLUDED_AES_256_
+#define  _INCLUDED_AES_256_
 
 class AES_256 {
-	char    keyExpansion[240];
-	int       Nk = 8, Nr = 14;
+	AESkey::Length keylen;
+	int   Nk, Nr, keyExpLen;
+	char* keyExpansion = NULL;
 
-	char a[4] = {0x02, 0x03, 0x01, 0x01};       // For MixColumns.
+	char a[4] 	 = {0x02, 0x03, 0x01, 0x01};    // For MixColumns.
 	char aInv[4] = {0x0E, 0x0B, 0x0D, 0x09}; // For InvMixColumns.
 
 	// -Notice that the value of the left most char in
@@ -72,10 +75,11 @@ class AES_256 {
          (char)0x09, (char)0x14, (char)0xDF, (char)0xF4};
 
 	public:
-	AES_256(char key[32]);
-	AES_256(const AES_256& e);
+	AES_256(const char* const key, AESkey::Length len);
+	AES_256(const AES_256& a);
+	~AES_256();
 
-	AES_256& operator = (const AES_256& e);
+	AES_256& operator = (const AES_256& a);
 
 	// -Encrypts the message pointed by 'data_ptr'
 	//  using the CBC mode of operation.

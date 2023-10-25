@@ -1,12 +1,16 @@
 // -Handling the keys for AES.
 #include <iostream>
 
+#ifndef _INCLUDED_AESKEY_
+#define  _INCLUDED_AESKEY_
 struct AESkey {
-	private: enum Length {
+	enum Length {
 		_128 = 128,
 		_192 = 192,
 		_256 = 256
-	} length ;
+	};
+	private:
+	Length length;
 	unsigned lenBytes; // -Length in bytes.
 	char* key = NULL;
 
@@ -17,3 +21,4 @@ struct AESkey {
 
 	AESkey& operator = (const AESkey&);
 };
+#endif

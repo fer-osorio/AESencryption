@@ -4,18 +4,20 @@
 #include"AES_256.hpp"
 #include"OperationsGF256.hpp"
 
-AES_256::AES_256(char key[32]) {
-    if(key == NULL) {
-        key = defaultKey;
-    }
-    char temp[4];
-	int i, keyLen = 32;
-	int keyExpansionLen = 60; // -Length of the key expansion in words.
+AES_256::AES_256(const char* const key, AESkey::Length len)
+: keylen(len), Nk(len >> 5), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
+    char temp[4];         // (Nr+1)*16
+	int i, keyExpansionLen = keyExpLen;// Length of the key expansion in bytes
+
+	keyExpansion = new char[keyExpansionLen];
+	keyExpansionLen >>= 2; // keyExpansionLen in words (block of 4 bytes)
+	// ^~~ == keyExpansionLen /= 4;
 
 	bool debug = false; // -Show the construction of the key expansion.
 
-	// -The first 8 words are the key itself.
-	for(i = 0; i < keyLen; i++) keyExpansion[i] = key[i];
+	// -The first Nk words of the key expansion are the key itself.
+	int NkBytes = Nk << 2; // Nk * 4
+	for(i = 0; i < NkBytes; i++) keyExpansion[i] = key[i];
 
 	if(debug) {
 	    std::cout <<
@@ -27,7 +29,7 @@ AES_256::AES_256(char key[32]) {
         "-------------------------------------------------------------------------------------------------------------------\n";
 	}
 
-	for(i = 8; i < keyExpansionLen; i++) {
+	for(i = Nk; i < keyExpansionLen; i++) {
 		// -Guarding against modify things
 		//   that we don't want to modify.
 		CopyWord(&(keyExpansion[(i - 1) << 2]), temp);
@@ -37,7 +39,7 @@ AES_256::AES_256(char key[32]) {
 		    printWord(temp);
         }
 		// -i is a multiple of Nk, witch value is 8
-		if((i & 7) == 0) { // i & 7 == i % 8.
+		if((i % Nk) == 0) {
 			RotWord(temp);
 			if(debug) {
 			    std::cout << " | ";
@@ -58,7 +60,7 @@ AES_256::AES_256(char key[32]) {
 			    printWord(temp);
 			}
 		} else {
-		    if((i & 7) == 4) {
+		    if(Nk > 6 && (i % Nk) == 4) {
 		        if(debug) std::cout << " | ------------- | ";
 			    SubWord(temp);
 			    if(debug) {
@@ -70,7 +72,6 @@ AES_256::AES_256(char key[32]) {
 		            std::cout << " |               |               |               |              ";
 		    }
 		}
-
 		if(debug) {
 			std::cout << " | ";
 			printWord(&(keyExpansion[(i - Nk) << 2]));
@@ -87,13 +88,28 @@ AES_256::AES_256(char key[32]) {
 	debug = false;
 }
 
-AES_256::AES_256(const AES_256& e){
-    for(int i = 0; i < 240; i++) this->keyExpansion[i] = e.keyExpansion[i];
+AES_256::AES_256(const AES_256& a) : keylen(a.keylen), Nk(a.Nk), Nr(a.Nr),
+keyExpLen(a.keyExpLen) {
+    this->keyExpansion = new char[a.keyExpLen];
+    for(int i = 0; i < a.keyExpLen; i++)
+        this->keyExpansion[i] = a.keyExpansion[i];
 }
 
-AES_256& AES_256::operator = (const AES_256& e) {
-    if(this != &e) {
-        for(int i = 0; i < 240; i++) this->keyExpansion[i] = e.keyExpansion[i];
+AES_256::~AES_256() {
+    if(keyExpansion != NULL) delete[] keyExpansion;
+    keyExpansion = NULL;
+}
+
+AES_256& AES_256::operator = (const AES_256& a) {
+    if(this != &a) {
+        this->keylen = a.keylen;
+        this->Nk = a.Nk;
+        this->Nr = a.Nr;
+        this->keyExpLen = a.keyExpLen;
+        if(this->keyExpansion != NULL) delete[] keyExpansion;
+        this->keyExpansion = new char[a.keyExpLen];
+        for(int i = 0; i < a.keyExpLen; i++)
+            this->keyExpansion[i] = a.keyExpansion[i];
     }
     return *this;
 }
@@ -291,7 +307,7 @@ void AES_256::MixColumns(char state[16]) const{
 
 // -Combines a round key with the state.
 void AES_256::AddRoundKey(char state[16], int round) const{
-    round <<= 4; // -Each round uses 16 bytes and r << 4 == r *= 16.
+    round <<= 4; // -Each round uses 16 bytes and r <<= 4 == r *= 16.
 	for(int i = 0; i < 16; i++) state[i] ^= keyExpansion[round + i];
 }
 
