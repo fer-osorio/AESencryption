@@ -1,9 +1,9 @@
 #include"AESkey.hpp"
 
-#ifndef _INCLUDED_AES_256_
-#define  _INCLUDED_AES_256_
+#ifndef _INCLUDED_AES_
+#define  _INCLUDED_AES_
 
-class AES_256 {
+class AES {
 	AESkey::Length keylen;
 	int   Nk, Nr, keyExpLen;
 	char* keyExpansion = NULL;
@@ -75,11 +75,11 @@ class AES_256 {
          (char)0x09, (char)0x14, (char)0xDF, (char)0xF4};
 
 	public:
-	AES_256(const char* const key, AESkey::Length len);
-	AES_256(const AES_256& a);
-	~AES_256();
+	AES(const char* const key, AESkey::Length len);
+	AES(const AES& a);
+	~AES();
 
-	AES_256& operator = (const AES_256& a);
+	AES& operator = (const AES& a);
 
 	// -Encrypts the message pointed by 'data_ptr'
 	//  using the CBC mode of operation.

@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
                     char(0x09), char(0xCF), char(0x4F), char(0x3C)};
     if(argc > 1) {
         Bitmap img(argv[1]);
-        AES_256 e(key256, AESkey::_256);
+        AES e(key256, AESkey::_256);
         encrypt(img, e);
         for(int i = 2; i < argc; i++) {
             img = Bitmap(argv[i]);
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     }
     input[--size] = 0; // End of string.
 
-    AES_256 e(key256, AESkey::_256);
+    AES e(key256, AESkey::_256);
 
     int iv = e.encryptCBC(input, size);
     std::cout << "\nEncryption with a key of 256 bits:\n" << input << '\n';
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     e.decryptCBC(input, size, iv);
     std::cout << "\nDecryption::\n" << input << '\n';
 
-    e = AES_256(key192, AESkey::_192);
+    e = AES(key192, AESkey::_192);
 
     iv = e.encryptCBC(input, size);
     std::cout << "\nEncryption with a key of 192 bits:\n" << input << '\n';
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     e.decryptCBC(input, size, iv);
     std::cout << "\nDecryption::\n" << input << '\n';
 
-    e = AES_256(key128, AESkey::_128);
+    e = AES(key128, AESkey::_128);
 
     iv = e.encryptCBC(input, size);
     std::cout << "\nEncryption with a key of 128 bits:\n" << input << '\n';

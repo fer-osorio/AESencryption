@@ -1,6 +1,6 @@
 // -Handling bitmap format images.
 #include <iostream>
-#include "AES_256.hpp"
+#include "AES.hpp"
 
 #define NAME_MAX_LEN 100
 
@@ -21,7 +21,7 @@ class Bitmap {
 		ui16 reserved1;		// Dependent on the originator application
 		ui16 reserved2;		// Dependent on the originator application
 		ui32 offset;		// Starting address of the image data
-	} fh ;
+	} fh = {0,0,0,0,0,0};
 
 	struct ImageHeader {
 		ui32 size;				// Size of this header
@@ -35,11 +35,11 @@ class Bitmap {
 		int VertResolution; 	// Vertical pixel per meter
 		ui32 ColorsUsed;		// Colors in the color palette, 0 to default
 		ui32 ColorsImportant;	// Zero when every color is important
-	} ih ;
+	} ih = {0,0,0,0,0,0,0,0,0,0,0};
 
-	char* data;
-	RGB** img;
-	char* name;
+	char* data = NULL;
+	RGB** img  = NULL;
+	char* name = NULL;
 
 	public:
 	Bitmap(const char* fname);
@@ -51,14 +51,14 @@ class Bitmap {
 	Bitmap& operator = (const Bitmap& bmp);
 
 	// -This function will allow us to encrypt
-	//  several images with just one AES_256
+	//  several images with just one AES
 	//  object.
-	friend void encrypt(Bitmap& bmp, const AES_256& e);
+	friend void encrypt(Bitmap& bmp, const AES& e);
 
 	// -This function will allow us to decrypt
-	//  several images with just one AES_256
+	//  several images with just one AES
 	//  object.
-	friend void decrypt(Bitmap& bmp, const AES_256& e, int iv);
+	friend void decrypt(Bitmap& bmp, const AES& e, int iv);
 
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 };

@@ -4,8 +4,8 @@ WARNINGS = -Wall -Weffc++ -Wextra -Wsign-conversion -pedantic-errors
 DEBUG = -ggdb -fno-omit-frame-pointer
 OPTIMIZE = -O2
 STANDARD = -std=c++2a
-SOURCE = Source/AES_256.cpp Source/Bitmap.cpp
-HEADERS = Source/AES_256.hpp Source/Bitmap.hpp Source/OperationsGF256.hpp
+SOURCE = Source/AES.cpp Source/Bitmap.cpp
+HEADERS = Source/AES.hpp Source/Bitmap.hpp Source/OperationsGF256.hpp
 
 encrypt: Makefile encrypt.cpp $(SOURCE) $(HEADERS)
 	$(CXX) -o $@ $(WARNINGS) $(DEBUG) $(OPTIMIZE) $(STANDARD) encrypt.cpp $(SOURCE)

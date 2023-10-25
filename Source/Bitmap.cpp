@@ -4,8 +4,7 @@
 #ifndef _INCLUDED_BITMAP_
 #define _INCLUDED_BITMAP_
 
-Bitmap::Bitmap(const char* fname) : fh{0,0,0,0,0,0}, ih{0,0,0,0,0,0,0,0,0,0,0},
-data(NULL), img(NULL), name(NULL) {
+Bitmap::Bitmap(const char* fname) {
     std::ifstream file;
     file.open(fname, std::ios::binary);
     int i, j, sz = 0;
@@ -52,8 +51,7 @@ data(NULL), img(NULL), name(NULL) {
     }
 }
 
-Bitmap::Bitmap(const Bitmap& bmp) : fh{0,0,0,0,0,0}, ih{0,0,0,0,0,0,0,0,0,0,0},
-data(NULL), img(NULL), name(NULL) {
+Bitmap::Bitmap(const Bitmap& bmp) {
     // Initializing file header.
     this->fh.bm[0] = bmp.fh.bm[0];
     this->fh.bm[1] = bmp.fh.bm[1];
@@ -81,9 +79,18 @@ data(NULL), img(NULL), name(NULL) {
 }
 
 Bitmap::~Bitmap() {
-    if(data != NULL) delete[] data;
-    if(img  != NULL) delete[] img;
-    if(name != NULL) delete[] name;
+    if(data != NULL) {
+        delete[] data;
+        data = NULL;
+    }
+    if(img  != NULL) {
+        delete[] img;
+        img = NULL;
+    }
+    if(name != NULL) {
+        delete[] name;
+        name = NULL;
+    }
 }
 
 void Bitmap::save(const char *fname) {
@@ -152,7 +159,7 @@ Bitmap& Bitmap::operator = (const Bitmap &bmp) {
     return *this;
 }
 
-void encrypt(Bitmap& bmp, const AES_256& e) {
+void encrypt(Bitmap& bmp, const AES& e) {
     int sz = -1; // -Creating name for the .kiv
     char* kivName; int i;               // file
     while(bmp.name[++sz] != 0) {}
@@ -169,7 +176,7 @@ void encrypt(Bitmap& bmp, const AES_256& e) {
     delete[] kivName;
 }
 
-void decrypt(Bitmap& bmp, const AES_256& e, int iv) {
+void decrypt(Bitmap& bmp, const AES& e, int iv) {
     e.decryptCBC(bmp.data, bmp.ih.SizeOfBitmap, iv);
     bmp.save(bmp.name);
 }

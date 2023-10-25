@@ -1,10 +1,10 @@
 #include<iostream>
 #include<fstream>
 #include<ctime>
-#include"AES_256.hpp"
+#include"AES.hpp"
 #include"OperationsGF256.hpp"
 
-AES_256::AES_256(const char* const key, AESkey::Length len)
+AES::AES(const char* const key, AESkey::Length len)
 : keylen(len), Nk(len >> 5), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
     char temp[4];         // (Nr+1)*16
 	int i, keyExpansionLen = keyExpLen;// Length of the key expansion in bytes
@@ -88,19 +88,19 @@ AES_256::AES_256(const char* const key, AESkey::Length len)
 	debug = false;
 }
 
-AES_256::AES_256(const AES_256& a) : keylen(a.keylen), Nk(a.Nk), Nr(a.Nr),
+AES::AES(const AES& a) : keylen(a.keylen), Nk(a.Nk), Nr(a.Nr),
 keyExpLen(a.keyExpLen) {
     this->keyExpansion = new char[a.keyExpLen];
     for(int i = 0; i < a.keyExpLen; i++)
         this->keyExpansion[i] = a.keyExpansion[i];
 }
 
-AES_256::~AES_256() {
+AES::~AES() {
     if(keyExpansion != NULL) delete[] keyExpansion;
     keyExpansion = NULL;
 }
 
-AES_256& AES_256::operator = (const AES_256& a) {
+AES& AES::operator = (const AES& a) {
     if(this != &a) {
         this->keylen = a.keylen;
         this->Nk = a.Nk;
@@ -114,7 +114,7 @@ AES_256& AES_256::operator = (const AES_256& a) {
     return *this;
 }
 
-void AES_256::printWord(const char word[4]) {
+void AES::printWord(const char word[4]) {
     unsigned int temp = 0;
 	std::cout << '[';
 	for(int i = 0; i < 4; i++) {
@@ -127,7 +127,7 @@ void AES_256::printWord(const char word[4]) {
 	std::cout << ']';
 }
 
-int AES_256::encryptCBC(char* data_ptr, unsigned size) const {
+int AES::encryptCBC(char* data_ptr, unsigned size) const {
     // -Padding process needed. Supposing that size as a multiple of 16.
     char IV[16], *prevblk;             // -Initial vector and previous block.
     int numofBlocks = (int)size >> 4;  //  numofBlocks = size / 16.
@@ -157,7 +157,7 @@ int AES_256::encryptCBC(char* data_ptr, unsigned size) const {
     return iv;
 }
 
-void AES_256::decryptCBC(char* data_ptr, unsigned size, int _iv) const {
+void AES::decryptCBC(char* data_ptr, unsigned size, int _iv) const {
     if(size == 0) return;
     char CB[16], prevCB[16];     // -Cipher block and previous cipher block.
     int numofBlocks = (int)size >> 4; // numofBlocks = size / 16
@@ -194,7 +194,7 @@ void AES_256::decryptCBC(char* data_ptr, unsigned size, int _iv) const {
 }
 
 
-void AES_256::writeKIV(int iv, const char fname[]) const{
+void AES::writeKIV(int iv, const char fname[]) const{
     const char kiv[3] = {'K', 'I', 'V'};
     std::ofstream file;
     file.open(fname, std::ios::binary);
@@ -208,7 +208,7 @@ void AES_256::writeKIV(int iv, const char fname[]) const{
     }
 }
 
-int AES_256::setIV(char IV[16]) const {
+int AES::setIV(char IV[16]) const {
     int FF = 255, iv = time(NULL), i, j, k;
     for(i = 0; i < 4; i++, iv++) {
         k = i << 2; // k = i * 4
@@ -219,7 +219,7 @@ int AES_256::setIV(char IV[16]) const {
     return iv-4;
 }
 
-void AES_256::getIV(int _iv, char IV[16]) const {
+void AES::getIV(int _iv, char IV[16]) const {
     int FF = 255, i, j, k;
     for(i = 0; i < 4; i++, _iv++) {
         k = i << 2;
@@ -229,11 +229,11 @@ void AES_256::getIV(int _iv, char IV[16]) const {
     encryptBlock(IV);
 }
 
-void AES_256::XORblocks(char b1[16], char b2[16], char r[16]) const {
+void AES::XORblocks(char b1[16], char b2[16], char r[16]) const {
     for(int i = 0; i < 16; i++) r[i] = b1[i] ^ b2[i];
 }
 
-void AES_256::printState(const char state[16]) {
+void AES::printState(const char state[16]) {
 	int i, j, temp;
 	for(i = 0; i < 4; i++) {
 		std::cout << '[';
@@ -247,36 +247,36 @@ void AES_256::printState(const char state[16]) {
 	}
 }
 
-void AES_256::CopyWord(const char source[4], char destination[4]) const {
+void AES::CopyWord(const char source[4], char destination[4]) const {
     for(int i = 0; i < 4; i++) destination[i] = source[i];
 }
 
-void AES_256::CopyBlock(const char source[16], char destination[16]) const {
+void AES::CopyBlock(const char source[16], char destination[16]) const {
     for(int i = 0; i < 16; i++) destination[i] = source[i];
 }
 
-void AES_256::XORword(const char w1[4], const char w2[4], char resDest[4])
+void AES::XORword(const char w1[4], const char w2[4], char resDest[4])
 const{
     for(int i = 0; i < 4; i++) resDest[i] = w1[i] ^ w2[i];
 }
 
-void AES_256::RotWord(char word[4]) const{
+void AES::RotWord(char word[4]) const{
     char temp = word[0]; int i;
 	for(i = 0; i < 3; i++) word[i] = word[i + 1];
 	word[3] = temp;
 }
 
-void AES_256::SubWord(char word[4]) const{
+void AES::SubWord(char word[4]) const{
     for(int i = 0; i < 4; i++) word[i] = (char)SBox[(ui08)word[i]];
 }
 
 // -Applies a substitution table (S-box) to each char.
-void AES_256::SubBytes(char state[16]) const{
+void AES::SubBytes(char state[16]) const{
 	for(int i = 0; i < 16; i++) state[i] = (char)SBox[(ui08)state[i]];
 }
 
 // -Shift rows of the state array by different offset.
-void AES_256::ShiftRows(char state[16]) const{
+void AES::ShiftRows(char state[16]) const{
 	int i, j; char tmp[4];
 	for(i = 1; i < 4; i++) {
 		for(j = 0; j < 4; j++)
@@ -287,7 +287,7 @@ void AES_256::ShiftRows(char state[16]) const{
 }
 
 // -Mixes the data within each column of the state array.
-void AES_256::MixColumns(char state[16]) const{
+void AES::MixColumns(char state[16]) const{
     int i, I, j, k;
 	char temp[4];
 	for(i = 0; i < 4; i++) {
@@ -306,12 +306,12 @@ void AES_256::MixColumns(char state[16]) const{
 }
 
 // -Combines a round key with the state.
-void AES_256::AddRoundKey(char state[16], int round) const{
+void AES::AddRoundKey(char state[16], int round) const{
     round <<= 4; // -Each round uses 16 bytes and r <<= 4 == r *= 16.
 	for(int i = 0; i < 16; i++) state[i] ^= keyExpansion[round + i];
 }
 
-void AES_256::encryptBlock(char block[]) const {
+void AES::encryptBlock(char block[]) const {
 	int i, j;
 
 	bool debug = false; // True to show every encryption step.
@@ -426,11 +426,11 @@ void AES_256::encryptBlock(char block[]) const {
     debug = false;
 }
 
-void AES_256::InvSubBytes(char state[16]) const{
+void AES::InvSubBytes(char state[16]) const{
     for(int i = 0; i < 16; i++) state[i] = (char)InvSBox[(ui08)state[i]];
 }
 
-void AES_256::InvShiftRows(char state[16]) const{
+void AES::InvShiftRows(char state[16]) const{
     int i, j; char temp[4];
 	for(i = 1; i < 4; i++) {
 		for(j = 0; j < 4; j++)
@@ -440,7 +440,7 @@ void AES_256::InvShiftRows(char state[16]) const{
 	}
 }
 
-void AES_256::InvMixColumns(char state[16]) const{
+void AES::InvMixColumns(char state[16]) const{
     int  i, j, k, I;
 	char temp[4];
 	for(i = 0; i < 4; i ++) {
@@ -457,7 +457,7 @@ void AES_256::InvMixColumns(char state[16]) const{
 	}
 }
 
-void AES_256::decryptBlock(char block[16]) const {
+void AES::decryptBlock(char block[16]) const {
     int i = Nr;
 	AddRoundKey(block, i);
 	for(i--; i > 0; i--) {

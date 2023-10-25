@@ -1,5 +1,5 @@
 #include<iostream>
-#include <fstream>
+#include<fstream>
 #include"Source/Bitmap.hpp"
 
 // -Handling the file where the key and the integer necessary for the
@@ -54,14 +54,14 @@ int main(int argc, char *argv[]) {
         KIV kiv(argv[1]); // Getting the key
         char key[32]; kiv.return_key(key);
 
-        AES_256 e(key, AESkey::_256);
+        AES e(key, AESkey::_256);
         Bitmap img(argv[2]);
         decrypt(img, e, kiv.return_iv());
 
         for(int i = 3; i < argc; i++) {
             kiv = KIV(argv[i]);
             kiv.return_key(key);
-            e = AES_256(key, AESkey::_256);
+            e = AES(key, AESkey::_256);
             img = Bitmap(argv[++i]);
             decrypt(img, e, kiv.return_iv());
         }
