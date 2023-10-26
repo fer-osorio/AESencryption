@@ -6,10 +6,49 @@
 
 AES::AES(const char* const _key, AESkey::Length len)
 : key(_key, len, AESkey::ECB), Nk(len >> 5), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
+    this->create_KeyExpansion(_key);
+}
+
+AES::AES(const AESkey& ak) :key(ak), Nk((int)ak.get_LenBytes() >> 2), Nr(Nk+6),
+    keyExpLen((Nr+1)<<4) {
+    char* _key = new char[ak.get_LenBytes()];
+    ak.write_Key(_key);
+    this->create_KeyExpansion(_key);
+
+    delete[] _key;
+}
+
+AES::AES(const AES& a) : key(a.key), Nk(a.Nk), Nr(a.Nr),
+    keyExpLen(a.keyExpLen) {
+    this->keyExpansion = new char[(unsigned)a.keyExpLen];
+    for(int i = 0; i < a.keyExpLen; i++)
+        this->keyExpansion[i] = a.keyExpansion[i];
+}
+
+AES::~AES() {
+    if(keyExpansion != NULL) delete[] keyExpansion;
+    keyExpansion = NULL;
+}
+
+AES& AES::operator = (const AES& a) {
+    if(this != &a) {
+        this->key = a.key;
+        this->Nk = a.Nk;
+        this->Nr = a.Nr;
+        this->keyExpLen = a.keyExpLen;
+        if(this->keyExpansion != NULL) delete[] keyExpansion;
+        this->keyExpansion = new char[(unsigned)a.keyExpLen];
+        for(int i = 0; i < a.keyExpLen; i++)
+            this->keyExpansion[i] = a.keyExpansion[i];
+    }
+    return *this;
+}
+
+void AES::create_KeyExpansion(const char* const _key) {
     char temp[4];         // (Nr+1)*16
 	int i, keyExpansionLen = keyExpLen;// Length of the key expansion in bytes
 
-	keyExpansion = new char[keyExpansionLen];
+	keyExpansion = new char[(unsigned)keyExpansionLen];
 	keyExpansionLen >>= 2; // keyExpansionLen in words (block of 4 bytes)
 	// ^~~ == keyExpansionLen /= 4;
 
@@ -86,32 +125,6 @@ AES::AES(const char* const _key, AESkey::Length len)
 	if(debug) std::cout << "--------------------------------------------------"
 	"-----------------------------------------------------------------\n\n";
 	debug = false;
-}
-
-AES::AES(const AES& a) : key(a.key), Nk(a.Nk), Nr(a.Nr),
-    keyExpLen(a.keyExpLen) {
-    this->keyExpansion = new char[a.keyExpLen];
-    for(int i = 0; i < a.keyExpLen; i++)
-        this->keyExpansion[i] = a.keyExpansion[i];
-}
-
-AES::~AES() {
-    if(keyExpansion != NULL) delete[] keyExpansion;
-    keyExpansion = NULL;
-}
-
-AES& AES::operator = (const AES& a) {
-    if(this != &a) {
-        this->key = a.key;
-        this->Nk = a.Nk;
-        this->Nr = a.Nr;
-        this->keyExpLen = a.keyExpLen;
-        if(this->keyExpansion != NULL) delete[] keyExpansion;
-        this->keyExpansion = new char[a.keyExpLen];
-        for(int i = 0; i < a.keyExpLen; i++)
-            this->keyExpansion[i] = a.keyExpansion[i];
-    }
-    return *this;
 }
 
 void AES::printWord(const char word[4]) {

@@ -51,19 +51,25 @@ class KIV { // creation of the initial vector are stored.
 
 int main(int argc, char *argv[]) {
     if(argc > 2) {
-        KIV kiv(argv[1]); // Getting the key
-        char key[32]; kiv.return_key(key);
+        AESkey aeskey(argv[1]);
+        //KIV kiv(argv[1]); // Getting the key
+        //char key[32]; //kiv.return_key(key);
+        //aeskey.write_Key(key);
+        //aeskey.write_IV(IV);
 
-        AES e(key, AESkey::_256);
+        AES e(aeskey);
         Bitmap img(argv[2]);
-        decrypt(img, e, kiv.return_iv());
+        decrypt(img, e);
 
         for(int i = 3; i < argc; i++) {
-            kiv = KIV(argv[i]);
-            kiv.return_key(key);
-            e = AES(key, AESkey::_256);
+            //kiv = KIV(argv[i]);
+            aeskey = AESkey(argv[i]);
+            //kiv.return_key(key);
+            //aeskey.write_Key(key);
+            //aeskey.write_IV(IV);
+            e = AES(aeskey);
             img = Bitmap(argv[++i]);
-            decrypt(img, e, kiv.return_iv());
+            decrypt(img, e);
         }
         return 0;
     } else {

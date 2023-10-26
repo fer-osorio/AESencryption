@@ -2,6 +2,8 @@
 #include <iostream>
 #include "AES.hpp"
 
+#ifndef _INCLUDED_BITMAP_
+#define  _INCLUDED_BITMAP_
 #define NAME_MAX_LEN 100
 
 typedef unsigned char  ui08;
@@ -60,5 +62,10 @@ class Bitmap {
 	//  object.
 	friend void decrypt(Bitmap& bmp, const AES& e, int iv);
 
+	friend void decrypt(Bitmap& bmp, const AES& e, const char*const IV);
+
+	friend void decrypt(Bitmap& bmp, const AES& e);
+
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 };
+#endif

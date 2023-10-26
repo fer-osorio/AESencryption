@@ -76,11 +76,13 @@ class AES {
 
 	public:
 	AES(const char* const _key, AESkey::Length len);
+	AES(const AESkey&);
 	AES(const AES& a);
 	~AES();
 
 	AES& operator = (const AES& a);
 
+	void create_KeyExpansion(const char* const);
 	// -Encrypts the message pointed by 'data_ptr'
 	//  using the CBC mode of operation.
 	// -The size of  the message ( in bytes ) is

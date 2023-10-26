@@ -1,9 +1,6 @@
 #include <fstream>
 #include "Bitmap.hpp"
 
-#ifndef _INCLUDED_BITMAP_
-#define _INCLUDED_BITMAP_
-
 Bitmap::Bitmap(const char* fname) {
     std::ifstream file;
     file.open(fname, std::ios::binary);
@@ -160,18 +157,11 @@ Bitmap& Bitmap::operator = (const Bitmap &bmp) {
 }
 
 void encrypt(Bitmap& bmp, const AES& e) {
-    int sz = -1; // -Creating name for the .kiv
-    char* kivName, *keyName; int i;               // file
+    int sz = -1; // -Creating name for the .key
+    char* keyName; int i;
     while(bmp.name[++sz] != 0) {}
-    kivName = new char[sz+5];
     keyName = new char[sz+5];
-    for(i = 0; i < sz; i++) kivName[i] = bmp.name[i];
-    kivName[i++] = '.';
-    kivName[i++] = 'k';
-    kivName[i++] = 'i';
-    kivName[i++] = 'v';
-    kivName[i] = 0;
-    for(i = 0; i < sz && bmp.name[i] != '.'; i++) kivName[i] = bmp.name[i];
+    for(i = 0; i < sz && bmp.name[i] != '.'; i++) keyName[i] = bmp.name[i];
     keyName[i++] = '.';
     keyName[i++] = 'k';
     keyName[i++] = 'e';
@@ -179,14 +169,24 @@ void encrypt(Bitmap& bmp, const AES& e) {
     keyName[i] = 0;
     // Encryption
     e.saveKey(keyName);
-    e.writeKIV(e.encryptCBC(bmp.data, bmp.ih.SizeOfBitmap), kivName);
+    e.encryptCBC(bmp.data, bmp.ih.SizeOfBitmap);
     bmp.save(bmp.name);
-    delete[] kivName;
     delete[] keyName;
 }
 
 void decrypt(Bitmap& bmp, const AES& e, int iv) {
     e.decryptCBC(bmp.data, bmp.ih.SizeOfBitmap, iv);
+    bmp.save(bmp.name);
+}
+
+void decrypt(Bitmap& bmp, const AES& e, const char*const IV) {
+    e.decryptCBC(bmp.data, bmp.ih.SizeOfBitmap, IV);
+    bmp.save(bmp.name);
+}
+
+void decrypt(Bitmap& bmp, const AES& e) {
+    char IV[16]; e.writeIV(IV);
+    e.decryptCBC(bmp.data, bmp.ih.SizeOfBitmap,  IV);
     bmp.save(bmp.name);
 }
 
@@ -214,4 +214,3 @@ std::ostream& operator << (std::ostream &stream, const Bitmap &bmp) {
     return stream;
 }
 
-#endif

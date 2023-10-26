@@ -33,17 +33,22 @@ struct AESkey {
 		   OperationMode,				//	'outside' of the
 		   const char* const = NULL);	//	object.
 	AESkey(const AESkey&);
+	AESkey(const char*const fname);		// -Building from binary file.
 	~AESkey();
 
 	AESkey& operator = (const AESkey&);
 
 	inline void set_OperationMode(OperationMode _opM) {opM = _opM;}
-	inline void set_IV(const char* const _IV) {
+	inline void set_IV(const char*const _IV) {
 		for(int i = 0; i < 16; i++) this->IV[i] = _IV[i];
 	}
-	inline void write_IV(char* const destination) {
+	inline void write_IV(char*const destination) const {
 		for(int i = 0; i < 16; i++) destination[i] = this->IV[i];
 	}
+	inline void write_Key(char*const destination) const {
+		for(unsigned i = 0; i < lenBytes; i++) destination[i] = this->key[i];
+	}
+	inline unsigned get_LenBytes() const {return this->lenBytes;}
 	void save(const char* const) const; // -Saving information in a binary file.
 };
 #endif
