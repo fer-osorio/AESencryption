@@ -161,19 +161,28 @@ Bitmap& Bitmap::operator = (const Bitmap &bmp) {
 
 void encrypt(Bitmap& bmp, const AES& e) {
     int sz = -1; // -Creating name for the .kiv
-    char* kivName; int i;               // file
+    char* kivName, *keyName; int i;               // file
     while(bmp.name[++sz] != 0) {}
     kivName = new char[sz+5];
+    keyName = new char[sz+5];
     for(i = 0; i < sz; i++) kivName[i] = bmp.name[i];
     kivName[i++] = '.';
     kivName[i++] = 'k';
     kivName[i++] = 'i';
     kivName[i++] = 'v';
     kivName[i] = 0;
+    for(i = 0; i < sz && bmp.name[i] != '.'; i++) kivName[i] = bmp.name[i];
+    keyName[i++] = '.';
+    keyName[i++] = 'k';
+    keyName[i++] = 'e';
+    keyName[i++] = 'y';
+    keyName[i] = 0;
     // Encryption
+    e.saveKey(keyName);
     e.writeKIV(e.encryptCBC(bmp.data, bmp.ih.SizeOfBitmap), kivName);
     bmp.save(bmp.name);
     delete[] kivName;
+    delete[] keyName;
 }
 
 void decrypt(Bitmap& bmp, const AES& e, int iv) {

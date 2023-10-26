@@ -4,9 +4,9 @@
 #define  _INCLUDED_AES_
 
 class AES {
-	AESkey::Length keylen;
-	int   Nk, Nr, keyExpLen;
-	char* keyExpansion = NULL;
+	mutable	AESkey key;
+	int    Nk, Nr, keyExpLen;
+	char*  keyExpansion = NULL;
 
 	char a[4] 	 = {0x02, 0x03, 0x01, 0x01};    // For MixColumns.
 	char aInv[4] = {0x0E, 0x0B, 0x0D, 0x09}; // For InvMixColumns.
@@ -75,7 +75,7 @@ class AES {
          (char)0x09, (char)0x14, (char)0xDF, (char)0xF4};
 
 	public:
-	AES(const char* const key, AESkey::Length len);
+	AES(const char* const _key, AESkey::Length len);
 	AES(const AES& a);
 	~AES();
 
@@ -97,12 +97,23 @@ class AES {
 	//  necessary to build the initial vector.
 	void decryptCBC(char* data_ptr, unsigned size, int _iv) const;
 
+	// -Decrypts the message pointed by 'data_ptr'. The message must had been
+	//  encrypted using the CBC mode operation.
+	// -The size of the message is provided by the 'size' argument.
+	// -The integer 'IV' is the array with the initial vector.
+	void decryptCBC(char* data_ptr, unsigned size, const char* const IV)const;
+
 	// -Writes a file with the following structure:
 	// ·First three bytes are the corresponding values of the
 	//  characters 'K', 'I' and 'V' in the ASCII code.
 	// ·Next 32 bytes are the key bytes.
 	// ·Next 4 bytes form the integer iv.
 	void writeKIV(int iv, const char fname[]) const;
+
+	inline void writeIV(char*const destination)const{
+		key.write_IV(destination);
+	}
+	inline void saveKey(const char*const fname) const {key.save(fname);}
 
 	private:
 	// -Xor operation over 16 bytes array.

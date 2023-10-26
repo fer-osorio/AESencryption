@@ -49,12 +49,13 @@ int main(int argc, char *argv[]) {
     input[--size] = 0; // End of string.
 
     AES e(key256, AESkey::_256);
+    char IV[16];
 
-    int iv = e.encryptCBC(input, size);
+    int iv = e.encryptCBC(input, size); e.writeIV(IV);
     std::cout << "\nEncryption with a key of 256 bits:\n" << input << '\n';
     std::cout << "\n------------------------------------------------------"
                  "------------------------------------------------------\n";
-    e.decryptCBC(input, size, iv);
+    e.decryptCBC(input, size, IV);
     std::cout << "\nDecryption::\n" << input << '\n';
 
     e = AES(key192, AESkey::_192);

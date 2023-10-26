@@ -4,8 +4,8 @@
 #include"AES.hpp"
 #include"OperationsGF256.hpp"
 
-AES::AES(const char* const key, AESkey::Length len)
-: keylen(len), Nk(len >> 5), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
+AES::AES(const char* const _key, AESkey::Length len)
+: key(_key, len, AESkey::ECB), Nk(len >> 5), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
     char temp[4];         // (Nr+1)*16
 	int i, keyExpansionLen = keyExpLen;// Length of the key expansion in bytes
 
@@ -17,7 +17,7 @@ AES::AES(const char* const key, AESkey::Length len)
 
 	// -The first Nk words of the key expansion are the key itself.
 	int NkBytes = Nk << 2; // Nk * 4
-	for(i = 0; i < NkBytes; i++) keyExpansion[i] = key[i];
+	for(i = 0; i < NkBytes; i++) keyExpansion[i] = _key[i];
 
 	if(debug) {
 	    std::cout <<
@@ -88,8 +88,8 @@ AES::AES(const char* const key, AESkey::Length len)
 	debug = false;
 }
 
-AES::AES(const AES& a) : keylen(a.keylen), Nk(a.Nk), Nr(a.Nr),
-keyExpLen(a.keyExpLen) {
+AES::AES(const AES& a) : key(a.key), Nk(a.Nk), Nr(a.Nr),
+    keyExpLen(a.keyExpLen) {
     this->keyExpansion = new char[a.keyExpLen];
     for(int i = 0; i < a.keyExpLen; i++)
         this->keyExpansion[i] = a.keyExpansion[i];
@@ -102,7 +102,7 @@ AES::~AES() {
 
 AES& AES::operator = (const AES& a) {
     if(this != &a) {
-        this->keylen = a.keylen;
+        this->key = a.key;
         this->Nk = a.Nk;
         this->Nr = a.Nr;
         this->keyExpLen = a.keyExpLen;
@@ -128,11 +128,13 @@ void AES::printWord(const char word[4]) {
 }
 
 int AES::encryptCBC(char* data_ptr, unsigned size) const {
-    // -Padding process needed. Supposing that size as a multiple of 16.
     char IV[16], *prevblk;             // -Initial vector and previous block.
     int numofBlocks = (int)size >> 4;  //  numofBlocks = size / 16.
     int rem = (int)size & 15, i;       // -Bytes remaining rem = size % 16
+
+    this->key.set_OperationMode(AESkey::CBC); // -Setting operation mode.
     int iv = setIV(IV);                // -Setting initial vector.
+    this->key.set_IV(IV);
 
     // -Encryption of the first block.
     XORblocks(data_ptr, IV, data_ptr);
@@ -193,6 +195,41 @@ void AES::decryptCBC(char* data_ptr, unsigned size, int _iv) const {
     }
 }
 
+void AES::decryptCBC(char* data_ptr, unsigned size, const char*const IV)const{
+    if(size == 0) return;
+    char CB[16], prevCB[16];     // -Cipher block and previous cipher block.
+    int numofBlocks = (int)size >> 4; // numofBlocks = size / 16
+    int rem = (int)size & 15;         // -Rest of the bytes rem = size % 16
+    int i;
+
+    for(i = 0; i < 16; i++) CB[i] = IV[i];
+    CopyBlock(data_ptr, prevCB); // -Copying the first ciphered block.
+
+    // -Deciphering the first block.
+    decryptBlock(data_ptr);
+    XORblocks(data_ptr, CB, data_ptr);
+
+    // -Decryption of the rest of the blocks.
+    // -Last block is going to be processed differently.
+    if(numofBlocks > 0) numofBlocks--;
+    for(i = 1; i < numofBlocks; i++) {
+        data_ptr += 16;
+        CopyBlock(data_ptr, CB); // -Saving cipher block for the next round.
+        decryptBlock(data_ptr);
+        XORblocks(data_ptr, prevCB, data_ptr);
+        CopyBlock(CB, prevCB);
+    }
+    data_ptr += 16;
+    if(rem == 0) { // -Data size is a multiple of 16.
+        decryptBlock(data_ptr);
+        XORblocks(data_ptr, prevCB, data_ptr);
+    } else {      // -Data size isn't a multiple of 16.
+        decryptBlock(data_ptr + rem);
+        for(i = 0; i < rem; i++) data_ptr[i+16] = data_ptr[i+16] ^ data_ptr[i];
+        decryptBlock(data_ptr);
+        XORblocks(data_ptr, prevCB, data_ptr);
+    }
+}
 
 void AES::writeKIV(int iv, const char fname[]) const{
     const char kiv[3] = {'K', 'I', 'V'};
@@ -208,6 +245,7 @@ void AES::writeKIV(int iv, const char fname[]) const{
     }
 }
 
+// This is a (maybe naive) way of setting the initial vector.
 int AES::setIV(char IV[16]) const {
     int FF = 255, iv = time(NULL), i, j, k;
     for(i = 0; i < 4; i++, iv++) {
@@ -469,6 +507,5 @@ void AES::decryptBlock(char block[16]) const {
 	InvShiftRows(block);
 	InvSubBytes(block);
 	AddRoundKey(block, 0);
-	//printState(block);
 }
 

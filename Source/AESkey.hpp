@@ -1,4 +1,5 @@
-// -Handling the keys for AES.
+// -Class AESkey will hold the necessary information for the decryption of
+//  whatever we have encrypted.
 #include <iostream>
 
 #ifndef _INCLUDED_AESKEY_
@@ -9,16 +10,40 @@ struct AESkey {
 		_192 = 192,
 		_256 = 256
 	};
+	enum OperationMode {
+		ECB, // -Electronic Code Book (not recommended).
+		CBC, // -Cipher Block Chaining.
+		CFB,
+		OFB,
+		CTR
+	};
 	private:
-	Length length;
-	unsigned lenBytes; // -Length in bytes.
+	Length 	 length;	// -Length in bits.
+	unsigned lenBytes;  // -Length in bytes.
+	OperationMode opM;
 	char* key = NULL;
+	char IV[16] = {0, 0, 0, 0,	// -Initial vector for the CBC operation mode.
+				   0, 0, 0, 0,	// -This default value (just zeros) is left
+				   0, 0, 0, 0,	//  for the case in which we do not use CBC.
+				   0, 0, 0, 0};
 
 	public:
-	AESkey(const char* const, Length);
+	AESkey(const char* const,			// -Initializing all
+		   Length, 						//  arguments from
+		   OperationMode,				//	'outside' of the
+		   const char* const = NULL);	//	object.
 	AESkey(const AESkey&);
 	~AESkey();
 
 	AESkey& operator = (const AESkey&);
+
+	inline void set_OperationMode(OperationMode _opM) {opM = _opM;}
+	inline void set_IV(const char* const _IV) {
+		for(int i = 0; i < 16; i++) this->IV[i] = _IV[i];
+	}
+	inline void write_IV(char* const destination) {
+		for(int i = 0; i < 16; i++) destination[i] = this->IV[i];
+	}
+	void save(const char* const) const; // -Saving information in a binary file.
 };
 #endif
