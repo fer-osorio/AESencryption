@@ -46,7 +46,7 @@ AES& AES::operator = (const AES& a) {
 
 void AES::create_KeyExpansion(const char* const _key) {
     char temp[4];         // (Nr+1)*16
-	int i, keyExpansionLen = keyExpLen;// Length of the key expansion in bytes
+	int i, keyExpansionLen = this->keyExpLen;// Key expansion length in bytes
 
 	keyExpansion = new char[(unsigned)keyExpansionLen];
 	keyExpansionLen >>= 2; // keyExpansionLen in words (block of 4 bytes)
@@ -230,7 +230,7 @@ void AES::decryptCBC(char* data_ptr, unsigned size, const char*const IV)const{
         CopyBlock(data_ptr, CB); // -Saving cipher block for the next round.
         decryptBlock(data_ptr);
         XORblocks(data_ptr, prevCB, data_ptr);
-        CopyBlock(CB, prevCB);
+        CopyBlock(CB, prevCB);  // -Cipher block now becomes previous block.
     }
     data_ptr += 16;
     if(rem == 0) { // -Data size is a multiple of 16.
@@ -241,20 +241,6 @@ void AES::decryptCBC(char* data_ptr, unsigned size, const char*const IV)const{
         for(i = 0; i < rem; i++) data_ptr[i+16] = data_ptr[i+16] ^ data_ptr[i];
         decryptBlock(data_ptr);
         XORblocks(data_ptr, prevCB, data_ptr);
-    }
-}
-
-void AES::writeKIV(int iv, const char fname[]) const{
-    const char kiv[3] = {'K', 'I', 'V'};
-    std::ofstream file;
-    file.open(fname, std::ios::binary);
-    if(file.is_open()) {
-        file.write((char*)kiv, 3);
-        file.write((char*)keyExpansion, 32);
-        file.write((char*)&iv, 4);
-        file.close();
-    } else {
-        throw "File could not be written.";
     }
 }
 

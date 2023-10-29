@@ -105,13 +105,6 @@ class AES {
 	// -The integer 'IV' is the array with the initial vector.
 	void decryptCBC(char* data_ptr, unsigned size, const char* const IV)const;
 
-	// -Writes a file with the following structure:
-	// ·First three bytes are the corresponding values of the
-	//  characters 'K', 'I' and 'V' in the ASCII code.
-	// ·Next 32 bytes are the key bytes.
-	// ·Next 4 bytes form the integer iv.
-	void writeKIV(int iv, const char fname[]) const;
-
 	inline void writeIV(char*const destination)const{
 		key.write_IV(destination);
 	}
