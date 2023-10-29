@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    char input[1025]; // Maximum size 1024 characters without EOS.
+    char input[1025]; // Maximum size 1024 characters without EOF.
     unsigned size = 0;
     std::cout << "\nWrite the string you want to encrypt. To process the "
                  "string sent the value 'EOF', which you can do by:\n\n"
@@ -49,7 +49,11 @@ int main(int argc, char *argv[]) {
     input[--size] = 0; // End of string.
 
     AES e(key256, AESkey::_256);
-    char IV[16];
+    char IV[16], copy[1025];
+
+    unsigned i; // -Setting up a test for the decryption algorithm
+    for(i = 0; i < size; i++) {copy[i] = input[i];} copy[size] = 0;
+    bool decryptionSuccesfull = true;
 
     int iv = e.encryptCBC(input, size); e.writeIV(IV);
     std::cout << "\nEncryption with a key of 256 bits:\n" << input << '\n';
@@ -75,6 +79,11 @@ int main(int argc, char *argv[]) {
                  "------------------------------------------------------\n";
     e.decryptCBC(input, size, iv);
     std::cout << "\nDecryption::\n" << input << '\n';
+
+    i = 0; // -Testing the decryption process.
+    while((decryptionSuccesfull = input[i] == copy[i]) && input[i] != 0) {i++;}
+    if(decryptionSuccesfull) std::cout << "\nDecryption successful.\n\n";
+    else std::cout << "\nDecryption failure.\n\n";
 
     return 0;
 }
