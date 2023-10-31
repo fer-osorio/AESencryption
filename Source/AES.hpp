@@ -89,6 +89,16 @@ class AES {
 
 	void create_KeyExpansion(const char* const);
 
+	// -Encrypts the message pointed by 'data' using the ECB operation mode.
+	// -The data size (in bytes) is  provided by the 'size' argument.
+	// -This mode is not recommended.
+	void encryptECB(char*const data, unsigned size) const;
+
+	// -Decrypts the message pointed by 'data' using the ECB operation mode.
+	// -The data size (in bytes) is  provided by the 'size' argument.
+	// -This mode is not recommended.
+	void decryptECB(char*const data, unsigned size) const;
+
 	// -Encrypts the message pointed by 'data' using the CBC operation mode.
 	// -The data size (in bytes) is  provided by the 'size' argument.
 	// -The initial vector utilized to encrypt the data is written in

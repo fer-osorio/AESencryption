@@ -139,12 +139,59 @@ void AES::printWord(const char word[4]) {
 	std::cout << ']';
 }
 
+void AES::encryptECB(char*const data, unsigned size) const{
+    if(size == 0) return; // Exception here.
+    this->key.set_OperationMode(AESkey::ECB); // -Setting operation mode.
+
+    char* currentBlk = data;
+    int numofBlocks = int(size >> 4);//  numofBlocks = size / 16.
+    int rem = int(size & 15), i;     // -Bytes remaining rem = size % 16
+
+    --numofBlocks; // Last block will be treated differently.
+    for(i = 0; i < numofBlocks; i++) {
+        encryptBlock(currentBlk);
+        currentBlk += 16;
+    }
+    // -This part of the code is for encrypt data that its size is not
+    //  multiple of 16. This is not specified in the NIST standard.
+    if(rem != 0) { // Not handling the case size < 16
+        encryptBlock(currentBlk);
+        encryptBlock(currentBlk + rem);
+        return;
+    }
+    encryptBlock(currentBlk);
+}
+
+void AES::decryptECB(char *const data, unsigned int size) const{
+    if(size == 0) return; // Exception here.
+
+    char* currentBlk = data;
+    int numofBlocks = int(size >> 4);//  numofBlocks = size / 16.
+    int rem = int(size & 15), i;     // -Bytes remaining rem = size % 16
+
+    --numofBlocks; // Last block will be treated differently.
+    for(i = 0; i < numofBlocks; i++) {
+        decryptBlock(currentBlk);
+        currentBlk += 16;
+    }
+    // -This part of the code is for encrypt data that its size is not
+    //  multiple of 16. This is not specified in the NIST standard.
+    if(rem != 0) { // Not handling the case size < 16
+        decryptBlock(currentBlk + rem);
+        decryptBlock(currentBlk);
+        return;
+    }
+    decryptBlock(currentBlk);
+}
+
 void AES::encryptCBC(char*const data,unsigned size, char IVlocation[16])const{
+    if(size == 0) return; // Exception here.
+    this->key.set_OperationMode(AESkey::CBC); // -Setting operation mode.
+
     char *previousBlk, *currentBlk = data;
     int numofBlocks = (int)size >> 4;  //  numofBlocks = size / 16.
     int rem = (int)size & 15, i;       // -Bytes remaining rem = size % 16
 
-    this->key.set_OperationMode(AESkey::CBC); // -Setting operation mode.
     setIV(IVlocation);                        // -Setting initial vector.
     this->key.set_IV(IVlocation);
 
@@ -171,7 +218,8 @@ void AES::encryptCBC(char*const data,unsigned size, char IVlocation[16])const{
 
 
 void AES::decryptCBC(char*const data, unsigned size, const char IV[16]) const{
-    if(size == 0) return;
+    if(size == 0) return; // Exception here.
+
     char *currentBlk = data, previousBlk[16], cipherCopy[16];
     int numofBlocks = (int)size >> 4; // numofBlocks = size / 16
     int rem = (int)size & 15;         // -Rest of the bytes rem = size % 16
