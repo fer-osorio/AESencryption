@@ -2,6 +2,7 @@
 #include<random>
 #include"Source/Bitmap.hpp"
 
+// Initializing keys with the ones showed in the NIST standard.
 char key256[] = {(char)0x60, (char)0x3D, (char)0xEB, (char)0x10,
                  (char)0x15, (char)0xCA, (char)0x71, (char)0xBE,
                  (char)0x2B, (char)0x73, (char)0xAE, (char)0xF0,
@@ -23,7 +24,8 @@ char key128[]= {char(0x2B), char(0x7E), char(0x15), char(0x16),
                 char(0xAB), char(0xF7), char(0x15), char(0x88),
                 char(0x09), char(0xCF), char(0x4F), char(0x3C)};
 
-char* set_key(AESkey::Length len); // Not proved to be secure.
+void set_key(AESkey::Length len); // Not proved to be secure.
+void printKey(AESkey::Length len, const char* = NULL, const char* = NULL);
 
 int main(int argc, char *argv[]) {
     char IV[16];
@@ -40,7 +42,6 @@ int main(int argc, char *argv[]) {
 
     char input[1025]; // Maximum size 1024 characters without EOF.
     char copy[1025];
-    char* key = set_key(AESkey::_256);
     unsigned size = 0, i;
     std::cout << "\nWrite the string you want to encrypt. To process the "
                  "string sent the value 'EOF', which you can do by:\n\n"
@@ -54,10 +55,14 @@ int main(int argc, char *argv[]) {
         }
     }
     input[--size] = 0; // End of string.
-    AES e(key, AESkey::_256);
+
     // -Setting up a test for the decryption algorithm
     for(i = 0; i < size; i++) {copy[i] = input[i];} copy[size] = 0;
     bool decryptionSuccesfull = true;
+
+    set_key(AESkey::_256);
+    AES e(key256, AESkey::_256);
+    printKey(AESkey::_256, "\nkey256 = ");
 
     e.encryptCBC(input, size, IV);
     std::cout << "\nEncryption with a key of 256 bits:\n" << input << '\n';
@@ -66,8 +71,9 @@ int main(int argc, char *argv[]) {
     e.decryptCBC(input, size, IV);
     std::cout << "\nDecryption::\n" << input << '\n';
 
-    key = set_key(AESkey::_192);
-    e = AES(key, AESkey::_192);
+    set_key(AESkey::_192);
+    e = AES(key192, AESkey::_192);
+    printKey(AESkey::_192, "\nkey192 = ");
 
     e.encryptCBC(input, size, IV);
     std::cout << "\nEncryption with a key of 192 bits:\n" << input << '\n';
@@ -76,8 +82,9 @@ int main(int argc, char *argv[]) {
     e.decryptCBC(input, size, IV);
     std::cout << "\nDecryption::\n" << input << '\n';
 
-    key = set_key(AESkey::_256);
-    e = AES(key, AESkey::_128);
+    set_key(AESkey::_128);
+    e = AES(key128, AESkey::_128);
+    printKey(AESkey::_128, "\nkey128 = ");
 
     e.encryptCBC(input, size, IV);
     std::cout << "\nEncryption with a key of 128 bits:\n" << input << '\n';
@@ -94,12 +101,11 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-char* set_key(AESkey::Length len) {
+void set_key(AESkey::Length len) {
     std::random_device dev; std::mt19937 seed(dev());
     std::uniform_int_distribution<std::mt19937::result_type> distribution;
     int i, j;
     intToChar buff;
-
     switch(len) {
         case AESkey::_128:
             for(i = 0; i < 4; i++) {
@@ -110,7 +116,6 @@ char* set_key(AESkey::Length len) {
                 key128[j+2] = buff.chars[2];
                 key128[j+3] = buff.chars[3];
             }
-            return key128;
             break;
         case AESkey::_192:
             for(i = 0; i < 6; i++) {
@@ -121,7 +126,6 @@ char* set_key(AESkey::Length len) {
                 key192[j+2] = buff.chars[2];
                 key192[j+3] = buff.chars[3];
             }
-            return key192;
             break;
         case AESkey::_256:
             for(i = 0; i < 8; i++) {
@@ -132,9 +136,43 @@ char* set_key(AESkey::Length len) {
                 key256[j+2] = buff.chars[2];
                 key256[j+3] = buff.chars[3];
             }
-            return key256;
             break;
         default:
             throw "Key length not allowed.";
     }
+}
+
+void printKey(AESkey::Length len, const char* front, const char* back) {
+    int i;
+    unsigned char t;
+    if(front != NULL) std::cout << front;
+    std::cout << '[';
+    switch(len) {
+        case AESkey::_128:
+            for(i = 0; i < 16; i++) {
+                t = key128[i];// Implicit cast.
+                if(i != 0 && (i&3) == 0) std::cout << ',';
+                if(t < 16) std::cout << '0';
+                printf("%X", t);
+            }
+            break;
+        case AESkey::_192:
+            for(i = 0; i < 24; i++) {
+                t = key192[i];// Implicit cast.
+                if(i != 0 && (i&3) == 0) std::cout << ',';
+                if(t < 16) std::cout << '0';
+                printf("%X", t);
+            }
+            break;
+        case AESkey::_256:
+            for(i = 0; i < 32; i++) {
+                t = key256[i];// Implicit cast.
+                if(i != 0 && (i&3) == 0) std::cout << ',';
+                if(t < 16) std::cout << '0';
+                printf("%X", t);
+            }
+            break;
+    }
+    std::cout << ']';
+    if(back != NULL) std::cout << back;
 }
