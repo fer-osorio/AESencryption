@@ -1,4 +1,5 @@
 #include<iostream>
+#include<fstream>
 #include"Source/Bitmap.hpp"
 
 int main(int argc, char *argv[]) {
@@ -18,8 +19,39 @@ int main(int argc, char *argv[]) {
         }
         return EXIT_SUCCESS;
     }
-    std::cout << "\nNot enough arguments passed (at least two). "
-                 "Nothing to do.\n\n";
+    std::ifstream file;
+    char  fname[64], kname[64], buffer[1025];
+    unsigned sz = 0;
+    std::cout << "Decryption of .txt files.\nWrite the name of the .txt file "
+                 "you want to decrypt and then press enter: ";
+    while(sz < 64 && (fname[sz++] = getchar()) != '\n') {}
+    fname[--sz] = 0;
+    file.open(fname);
+    if(file.is_open()) {
+        std::cout << "Write the name of the .key file where the encryption key "
+                 "is saved: ";
+        sz = 0;
+        while(sz < 64 && (kname[sz++] = getchar()) != '\n') {}
+        kname[--sz] = 0;
+        AESkey aeskey(kname);
+        AES e(aeskey);
+        sz = 0;
+        while(file.get(buffer[sz++])) {
+            if(sz == 1024) {
+                buffer[sz] = 0;
+                e.decryptECB(buffer, sz);
+                std::cout << buffer;
+                sz = 0;
+            }
+        }
+        buffer[--sz] = 0;
+        e.decryptECB(buffer, sz);
+        std::cout << buffer << '\n';
+    } else {
+        std::cout << "Could not open file...\n";
+        return EXIT_FAILURE;
+    }
+
     return EXIT_SUCCESS;
 }
 

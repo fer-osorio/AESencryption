@@ -1,5 +1,6 @@
 #include<iostream>
 #include<random>
+#include<fstream>
 #include"Source/Bitmap.hpp"
 
 // Initializing keys with the ones showed in the NIST standard.
@@ -40,7 +41,36 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    char input[1025]; // Maximum size 1024 characters without EOF.
+    char buffer[1024], fname[] = "encryption.txt";
+    unsigned size = 0, i;
+    std::ofstream file(fname);
+
+    set_key(AESkey::_128);
+    AES e(key128, AESkey::_128);
+
+    std::cout << "\nWrite the string you want to encrypt. To process the "
+                 "string sent the value 'EOF', which you can do by:\n\n"
+                 "- Pressing twice the keys CTRL-Z for Windows.\n"
+                 "- Pressing twice the keys CTRL-D for Unix and Linux.\n\n";
+    if(file.is_open()) {
+        while((buffer[size++] = getchar()) != EOF) { // Input from CLI.
+            if(size == 1024) {
+                e.encryptECB(buffer, size);
+                for(i = 0; i < size; i++) file.put(buffer[i]);
+                size = 0;
+            }
+        }
+        e.encryptECB(buffer, size);
+        for(i = 0; i < size; i++) file.put(buffer[i]);
+        file.close();
+        printKey(AESkey::_128, "\n\nKey = ", "\n");
+        e.saveKey("encryption.key");
+    }
+    else {
+        std::cout << "Could not create output file, terminating the program\n";
+        return EXIT_FAILURE;
+    }
+    /*char input[1025]; // Maximum size 1024 characters without EOF.
     char copy[1025];
     unsigned size = 0, i;
     std::cout << "\nWrite the string you want to encrypt. To process the "
@@ -96,7 +126,7 @@ int main(int argc, char *argv[]) {
     i = 0; // -Testing the decryption process.
     while((decryptionSuccesfull = input[i] == copy[i]) && input[i] != 0) {i++;}
     if(decryptionSuccesfull) std::cout << "\nDecryption successful.\n\n";
-    else std::cout << "\nDecryption failure.\n\n";
+    else std::cout << "\nDecryption failure.\n\n";*/
 
     return 0;
 }
@@ -150,7 +180,7 @@ void printKey(AESkey::Length len, const char* front, const char* back) {
     switch(len) {
         case AESkey::_128:
             for(i = 0; i < 16; i++) {
-                t = key128[i];// Implicit cast.
+                t = (unsigned char)key128[i];
                 if(i != 0 && (i&3) == 0) std::cout << ',';
                 if(t < 16) std::cout << '0';
                 printf("%X", t);
@@ -158,7 +188,7 @@ void printKey(AESkey::Length len, const char* front, const char* back) {
             break;
         case AESkey::_192:
             for(i = 0; i < 24; i++) {
-                t = key192[i];// Implicit cast.
+                t = (unsigned char)key192[i];
                 if(i != 0 && (i&3) == 0) std::cout << ',';
                 if(t < 16) std::cout << '0';
                 printf("%X", t);
@@ -166,7 +196,7 @@ void printKey(AESkey::Length len, const char* front, const char* back) {
             break;
         case AESkey::_256:
             for(i = 0; i < 32; i++) {
-                t = key256[i];// Implicit cast.
+                t = (unsigned char)key256[i];
                 if(i != 0 && (i&3) == 0) std::cout << ',';
                 if(t < 16) std::cout << '0';
                 printf("%X", t);
