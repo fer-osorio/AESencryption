@@ -1,5 +1,4 @@
 // -Handling bitmap format images.
-#include <iostream>
 #include "AES.hpp"
 
 #ifndef _INCLUDED_BITMAP_
@@ -52,19 +51,9 @@ class Bitmap {
 	void save(const char* fname);
 	Bitmap& operator = (const Bitmap& bmp);
 
-	// -This function will allow us to encrypt
-	//  several images with just one AES
-	//  object.
-	friend void encrypt(Bitmap& bmp, const AES& e);
-
-	// -This function will allow us to decrypt
-	//  several images with just one AES
-	//  object.
-	friend void decrypt(Bitmap& bmp, const AES& e, int iv);
-
-	friend void decrypt(Bitmap& bmp, const AES& e, const char*const IV);
-
-	friend void decrypt(Bitmap& bmp, const AES& e);
+	// -The initial vector utilized in encryption is written in 'IVlocation'.
+	friend void encryptCBC(Bitmap& bmp, const AES& e, char IVlocation[16]);
+	friend void decryptCBC(Bitmap& bmp, const AES& e, const char IV[16]);
 
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 };

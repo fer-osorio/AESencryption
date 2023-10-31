@@ -1,6 +1,5 @@
 #include<iostream>
 #include<fstream>
-#include<ctime>
 #include"AES.hpp"
 #include"OperationsGF256.hpp"
 
@@ -140,128 +139,85 @@ void AES::printWord(const char word[4]) {
 	std::cout << ']';
 }
 
-int AES::encryptCBC(char* data_ptr, unsigned size) const {
-    char IV[16], *prevblk;             // -Initial vector and previous block.
+void AES::encryptCBC(char*const data,unsigned size, char IVlocation[16])const{
+    char *previousBlk, *currentBlk = data;
     int numofBlocks = (int)size >> 4;  //  numofBlocks = size / 16.
     int rem = (int)size & 15, i;       // -Bytes remaining rem = size % 16
 
     this->key.set_OperationMode(AESkey::CBC); // -Setting operation mode.
-    int iv = setIV(IV);                // -Setting initial vector.
-    this->key.set_IV(IV);
+    setIV(IVlocation);                        // -Setting initial vector.
+    this->key.set_IV(IVlocation);
 
     // -Encryption of the first block.
-    XORblocks(data_ptr, IV, data_ptr);
-    encryptBlock(data_ptr);
+    XORblocks(currentBlk, IVlocation, currentBlk);
+    encryptBlock(currentBlk);
 
     // -Encryption of the rest of the blocks.
     for(i = 1; i < numofBlocks; i++) {
-        prevblk = data_ptr;
-        data_ptr += 16;
-        XORblocks(data_ptr, prevblk, data_ptr);
-        encryptBlock(data_ptr);
+        previousBlk = currentBlk;
+        currentBlk += 16;
+        XORblocks(currentBlk, previousBlk, currentBlk);
+        encryptBlock(currentBlk);
     }
     // -This part of the code is for encrypt data that its size is not
     //  multiple of 16. This is not specified in the NIST standard.
     if(rem != 0) {
-        prevblk = data_ptr;
-        data_ptr += 16;
-        for(i = 0; i < rem; i++) data_ptr[i] = data_ptr[i] ^ prevblk[i];
-        encryptBlock(prevblk + rem);
+        previousBlk = currentBlk;
+        currentBlk += 16;
+        for(i=0; i<rem; i++) currentBlk[i] = currentBlk[i] ^ previousBlk[i];
+        encryptBlock(previousBlk + rem);
     }
-
-    return iv;
 }
 
-void AES::decryptCBC(char* data_ptr, unsigned size, int _iv) const {
+
+void AES::decryptCBC(char*const data, unsigned size, const char IV[16]) const{
     if(size == 0) return;
-    char CB[16], prevCB[16];     // -Cipher block and previous cipher block.
+    char *currentBlk = data, previousBlk[16], cipherCopy[16];
     int numofBlocks = (int)size >> 4; // numofBlocks = size / 16
     int rem = (int)size & 15;         // -Rest of the bytes rem = size % 16
     int i;
 
-    getIV(_iv, CB);              // -Getting the initial vector.
-    CopyBlock(data_ptr, prevCB); // -Copying the first ciphered block.
+    for(i = 0; i < 16; i++) cipherCopy[i] = IV[i];
+    CopyBlock(currentBlk, previousBlk); // -Copying the first ciphered block.
 
     // -Deciphering the first block.
-    decryptBlock(data_ptr);
-    XORblocks(data_ptr, CB, data_ptr);
+    decryptBlock(currentBlk);
+    XORblocks(currentBlk, cipherCopy, currentBlk);
 
     // -Decryption of the rest of the blocks.
     // -Last block is going to be processed differently.
     if(numofBlocks > 0) numofBlocks--;
     for(i = 1; i < numofBlocks; i++) {
-        data_ptr += 16;
-        CopyBlock(data_ptr, CB); // -Saving cipher block for the next round.
-        decryptBlock(data_ptr);
-        XORblocks(data_ptr, prevCB, data_ptr);
-        CopyBlock(CB, prevCB);
+        currentBlk += 16;
+        // -Saving cipher block for the next round.
+        CopyBlock(currentBlk, cipherCopy);
+        decryptBlock(currentBlk);
+        XORblocks(currentBlk, previousBlk, currentBlk);
+        // -Cipher block now becomes previous block.
+        CopyBlock(cipherCopy, previousBlk);
     }
-    data_ptr += 16;
+    currentBlk += 16;
     if(rem == 0) { // -Data size is a multiple of 16.
-        decryptBlock(data_ptr);
-        XORblocks(data_ptr, prevCB, data_ptr);
+        decryptBlock(currentBlk);
+        XORblocks(currentBlk, previousBlk, currentBlk);
     } else {      // -Data size isn't a multiple of 16.
-        decryptBlock(data_ptr + rem);
-        for(i = 0; i < rem; i++) data_ptr[i+16] = data_ptr[i+16] ^ data_ptr[i];
-        decryptBlock(data_ptr);
-        XORblocks(data_ptr, prevCB, data_ptr);
+        decryptBlock(currentBlk + rem);
+        for(i = 0; i < rem; i++)
+            currentBlk[i+16] = currentBlk[i+16] ^ currentBlk[i];
+        decryptBlock(currentBlk);
+        XORblocks(currentBlk, previousBlk, currentBlk);
     }
 }
 
-void AES::decryptCBC(char* data_ptr, unsigned size, const char*const IV)const{
-    if(size == 0) return;
-    char CB[16], prevCB[16];     // -Cipher block and previous cipher block.
-    int numofBlocks = (int)size >> 4; // numofBlocks = size / 16
-    int rem = (int)size & 15;         // -Rest of the bytes rem = size % 16
-    int i;
-
-    for(i = 0; i < 16; i++) CB[i] = IV[i];
-    CopyBlock(data_ptr, prevCB); // -Copying the first ciphered block.
-
-    // -Deciphering the first block.
-    decryptBlock(data_ptr);
-    XORblocks(data_ptr, CB, data_ptr);
-
-    // -Decryption of the rest of the blocks.
-    // -Last block is going to be processed differently.
-    if(numofBlocks > 0) numofBlocks--;
-    for(i = 1; i < numofBlocks; i++) {
-        data_ptr += 16;
-        CopyBlock(data_ptr, CB); // -Saving cipher block for the next round.
-        decryptBlock(data_ptr);
-        XORblocks(data_ptr, prevCB, data_ptr);
-        CopyBlock(CB, prevCB);  // -Cipher block now becomes previous block.
-    }
-    data_ptr += 16;
-    if(rem == 0) { // -Data size is a multiple of 16.
-        decryptBlock(data_ptr);
-        XORblocks(data_ptr, prevCB, data_ptr);
-    } else {      // -Data size isn't a multiple of 16.
-        decryptBlock(data_ptr + rem);
-        for(i = 0; i < rem; i++) data_ptr[i+16] = data_ptr[i+16] ^ data_ptr[i];
-        decryptBlock(data_ptr);
-        XORblocks(data_ptr, prevCB, data_ptr);
-    }
-}
-
-// This is a (maybe naive) way of setting the initial vector.
-int AES::setIV(char IV[16]) const {
-    int FF = 255, iv = time(NULL), i, j, k;
-    for(i = 0; i < 4; i++, iv++) {
+// Naive way of setting the initial vector.
+void AES::setIV(char IV[16]) const {
+    intToChar ic;
+    ic.integer = time(NULL);
+    int i, j, k;
+    for(i = 0; i < 4; i++, ic.integer++) {
         k = i << 2; // k = i * 4
-        for(j = 0; j < 4; j++)// j * 8
-            IV[k + j] = char ((iv >> (j << 3)) & FF);
-    }
-    encryptBlock(IV);
-    return iv-4;
-}
-
-void AES::getIV(int _iv, char IV[16]) const {
-    int FF = 255, i, j, k;
-    for(i = 0; i < 4; i++, _iv++) {
-        k = i << 2;
         for(j = 0; j < 4; j++)
-            IV[k + j] = char ((_iv >> (j << 3)) & FF);
+            IV[k + j] = ic.chars[j];
     }
     encryptBlock(IV);
 }

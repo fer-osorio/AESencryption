@@ -3,6 +3,11 @@
 #ifndef _INCLUDED_AES_
 #define  _INCLUDED_AES_
 
+union intToChar {
+    int  integer;
+    char chars[4];
+};
+
 class AES {
 	mutable	AESkey key;
 	int    Nk, Nr, keyExpLen;
@@ -83,31 +88,19 @@ class AES {
 	AES& operator = (const AES& a);
 
 	void create_KeyExpansion(const char* const);
-	// -Encrypts the message pointed by 'data_ptr'
-	//  using the CBC mode of operation.
-	// -The size of  the message ( in bytes ) is
-	//  provided by the 'size' argument.
-	// -The integer returned is the integer
-	//  necessary to build the initial vector.
-	int encryptCBC(char* data_ptr, unsigned size) const;
 
-	// -Decrypts the message pointed by 'data_ptr'
-	//  using the CBC mode of operation.
-	// -The size of the message is provided by the
-	//  'size' argument.
-	// -The integer '_iv' is the integer
-	//  necessary to build the initial vector.
-	void decryptCBC(char* data_ptr, unsigned size, int _iv) const;
+	// -Encrypts the message pointed by 'data' using the CBC operation mode.
+	// -The data size (in bytes) is  provided by the 'size' argument.
+	// -The initial vector utilized to encrypt the data is written in
+	//	'IVlocation'.
+	void encryptCBC(char*const data, unsigned size, char IVlocation[16])const;
 
 	// -Decrypts the message pointed by 'data_ptr'. The message must had been
 	//  encrypted using the CBC mode operation.
 	// -The size of the message is provided by the 'size' argument.
 	// -The integer 'IV' is the array with the initial vector.
-	void decryptCBC(char* data_ptr, unsigned size, const char* const IV)const;
+	void decryptCBC(char*const data, unsigned size, const char IV[16]) const;
 
-	inline void writeIV(char*const destination)const{
-		key.write_IV(destination);
-	}
 	inline void saveKey(const char*const fname) const {key.save(fname);}
 
 	private:
@@ -162,14 +155,9 @@ class AES {
 	// -Decrypt an array of 16 bytes.
 	void decryptBlock(char block[16]) const;
 
-	// -Gets the initial vector from an integer.
-	// -Required for the decryption process in the CBC mode.
-	// -The initial vector will be saved in the IV array.
-	void getIV(int _iv, char IV[16]) const;
-
 	// -Sets the initial vector value.
 	// -Required for the CBC operation mode.
-	int setIV(char IV[16]) const;
+	void setIV(char IV[16]) const;
 };
 
 #endif
