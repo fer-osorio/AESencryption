@@ -47,14 +47,22 @@ This is a message with many dots................................................
 ```
 
 ### BMP images.
-Execute the file `encrypt` and pass the name of the image you want to encrypt as an argument, his will encrypt your image and 
+Execute the file `encrypt` and pass the name of the image you want to encrypt as an argument, this will encrypt your image and 
 will write the used key in a binary file with a `.key` extension. If CBC mode was used then the initial vector (IV) will be 
-writed in the same `.key` file. For the decryption, execute pass the name of the file containing the key (.key file) as first 
-argument and the name of the BMP image as second argument, for example `./decryp Test00.key Test00.bmp`.
+writed in the same `.key` file. For the decryption, execute `decrypt` and pass the name of the file containing the key (.key 
+file) as first argument and the name of the BMP image as second argument.
 
 Example of image encryption:
 
-![Before encryption](/'Image encryption example'/BeforeEncryption.png)
+Before executing `./encrypt Test01.bmp`.
+![Before encryption](/ImageEncryptionExample/BeforeEncryption.png)
+
+The last action encrypts the image and writes the binary file `Test01.key`, this file contains the cryptographic key and (since
+CBC mode was used) the initial vector. This image shows the moment before executing `./decrypt Test01.key Test01.bmp`.
+![Before decryption](/ImageEncryptionExample/BeforeDecryption.png)
+
+Finally, the last command gives us the original image.
+![After decryption](/ImageEncryptionExample/AfterDecryption.png)
 
 # Important notes:
 * Right now the unique operation modes that are implemented are ECB (Electronic Code Book) and CBC (Cipher Block Chaining).
