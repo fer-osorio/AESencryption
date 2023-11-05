@@ -1,6 +1,7 @@
 #include<iostream>
 #include<random>
 #include<fstream>
+#include"Source/TXT.hpp"
 #include"Source/Bitmap.hpp"
 
 // Initializing keys with the ones showed in the NIST standard.
@@ -31,18 +32,41 @@ void printKey(AESkey::Length len, const char* = NULL, const char* = NULL);
 int main(int argc, char *argv[]) {
     char IV[16];
     if(argc > 1) { // Encrypting Bitmap image.
-        Bitmap img(argv[1]);
+        FileName fname(argv[1]); // -Recognizing extension.
+        FileName::Extension ext = fname.getExtension();
         AES e(key256, AESkey::_256);
-        encryptCBC(img, e, IV);
-        for(int i = 2; i < argc; i++) {
+        Bitmap bmp;
+        TXT    txt;
+        switch(ext) {
+            case FileName::bmp:
+                bmp = Bitmap(argv[1]);
+                encryptCBC(bmp, e, IV);
+                break;
+            case FileName::txt:
+                std::cout << "\nEncrypting text file...\n" << std::endl;
+                try {
+                    txt = TXT(argv[1]);
+                } catch(const char* errMsg) {
+                    std::cout << errMsg;
+                }
+                encryptCBC(txt, e, IV);
+                break;
+            case FileName::key:
+                break;
+            case FileName::NoExtension:
+                break;
+            case FileName::Unrecognised:
+                break;
+        }
+        /*for(int i = 2; i < argc; i++) {
             img = Bitmap(argv[i]);
             encryptCBC(img, e, IV);
-        }
-        return 0;
+        }*/
+        return EXIT_SUCCESS;
     }
 
     char buffer[1024], fname[] = "encryption.txt";
-    unsigned size = 0, i;
+    unsigned size = 0;
     std::ofstream file(fname);
 
     set_key(AESkey::_128);
@@ -56,12 +80,12 @@ int main(int argc, char *argv[]) {
         while((buffer[size++] = getchar()) != EOF) { // Input from CLI.
             if(size == 1024) {
                 e.encryptECB(buffer, size);
-                for(i = 0; i < size; i++) file.put(buffer[i]);
+                file.write(buffer, size);
                 size = 0;
             }
         }
         e.encryptECB(buffer, size);
-        for(i = 0; i < size; i++) file.put(buffer[i]);
+        file.write(buffer, size);
         file.close();
         printKey(AESkey::_128, "\n\nKey = ", "\n");
         e.saveKey("encryption.key");
@@ -70,65 +94,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Could not create output file, terminating the program\n";
         return EXIT_FAILURE;
     }
-    /*char input[1025]; // Maximum size 1024 characters without EOF.
-    char copy[1025];
-    unsigned size = 0, i;
-    std::cout << "\nWrite the string you want to encrypt. To process the "
-                 "string sent the value 'EOF', which you can do by:\n\n"
-                 "- Pressing twice the keys CTRL-Z for Windows.\n"
-                 "- Pressing twice the keys CTRL-D for Unix and Linux.\n\n";
-    while((input[size++] = getchar()) != EOF) { // Input from terminal.
-        if(size > 1024) {
-            std::cout << "\n\nMaximum size (1024 characters) reached. "
-                         "Processing the first 1024 characters.\n\n";
-            break;
-        }
-    }
-    input[--size] = 0; // End of string.
-
-    // -Setting up a test for the decryption algorithm
-    for(i = 0; i < size; i++) {copy[i] = input[i];} copy[size] = 0;
-    bool decryptionSuccesfull = true;
-
-    set_key(AESkey::_256);
-    AES e(key256, AESkey::_256);
-    printKey(AESkey::_256, "\nkey256 = ");
-
-    e.encryptCBC(input, size, IV);
-    std::cout << "\nEncryption with a key of 256 bits:\n" << input << '\n';
-    std::cout << "\n------------------------------------------------------"
-                 "------------------------------------------------------\n";
-    e.decryptCBC(input, size, IV);
-    std::cout << "\nDecryption::\n" << input << '\n';
-
-    set_key(AESkey::_192);
-    e = AES(key192, AESkey::_192);
-    printKey(AESkey::_192, "\nkey192 = ");
-
-    e.encryptCBC(input, size, IV);
-    std::cout << "\nEncryption with a key of 192 bits:\n" << input << '\n';
-    std::cout << "\n------------------------------------------------------"
-                 "------------------------------------------------------\n";
-    e.decryptCBC(input, size, IV);
-    std::cout << "\nDecryption::\n" << input << '\n';
-
-    set_key(AESkey::_128);
-    e = AES(key128, AESkey::_128);
-    printKey(AESkey::_128, "\nkey128 = ");
-
-    e.encryptCBC(input, size, IV);
-    std::cout << "\nEncryption with a key of 128 bits:\n" << input << '\n';
-    std::cout << "\n------------------------------------------------------"
-                 "------------------------------------------------------\n";
-    e.decryptCBC(input, size, IV);
-    std::cout << "\nDecryption::\n" << input << '\n';
-
-    i = 0; // -Testing the decryption process.
-    while((decryptionSuccesfull = input[i] == copy[i]) && input[i] != 0) {i++;}
-    if(decryptionSuccesfull) std::cout << "\nDecryption successful.\n\n";
-    else std::cout << "\nDecryption failure.\n\n";*/
-
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 void set_key(AESkey::Length len) {

@@ -2,8 +2,8 @@
 #include<fstream>
 
 AESkey::AESkey(const char* const _key, Length len, OperationMode _opM,
-               const char* const _IV)
-               :length(len), lenBytes((unsigned)len >> 3), opM(_opM) {
+    const char* const _IV): length(len), lenBytes((unsigned)len >> 3),
+    opM(_opM) {
     this->key = new char[this->lenBytes];
     for(unsigned i = 0; i < this->lenBytes; i++) this->key[i] = _key[i];
     if(_IV != NULL) for(int i = 0; i < 16; i++) this->IV[i] = _IV[i];

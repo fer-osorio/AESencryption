@@ -1,28 +1,50 @@
 #include<iostream>
 #include<fstream>
 #include"Source/Bitmap.hpp"
+#include"Source/TXT.hpp"
 
 int main(int argc, char *argv[]) {
     if(argc > 2) {
         AESkey aeskey(argv[1]);
         AES e(aeskey);
-        Bitmap img(argv[2]);
-        char IV[16];
-        aeskey.write_IV(IV);
-        decryptCBC(img, e, IV);
-
-        for(int i = 3; i < argc; i++) {
+        char IV[16]; aeskey.write_IV(IV);
+        FileName fname(argv[2]); // -Recognizing extension.
+        FileName::Extension ext = fname.getExtension();
+        Bitmap bmp;
+        TXT    txt;
+        switch(ext) {
+            case FileName::bmp:
+                bmp = Bitmap(argv[2]);
+                decryptCBC(bmp, e, IV);
+                break;
+            case FileName::txt:
+                std::cout << "\nDecrypting text file...\n" << std::endl;
+                try {
+                    txt = TXT(argv[2]);
+                } catch(const char* errMsg) {
+                    std::cout << errMsg;
+                }
+                decryptCBC(txt, e, IV);
+                break;
+            case FileName::key:
+                break;
+            case FileName::NoExtension:
+                break;
+            case FileName::Unrecognised:
+                break;
+        }
+        /*for(int i = 3; i < argc; i++) {
             aeskey = AESkey(argv[i]);
             e = AES(aeskey);
             img = Bitmap(argv[++i]);
             decryptCBC(img, e, IV);
-        }
+        }*/
         return EXIT_SUCCESS;
     }
     std::ifstream file;
     char  fname[64], kname[64], buffer[1025];
     unsigned sz = 0;
-    std::cout << "Decryption of .txt files.\nWrite the name of the .txt file "
+    std::cout << "\nDecryption of .txt files.\nWrite the name of the .txt file "
                  "you want to decrypt and then press enter: ";
     while(sz < 64 && (fname[sz++] = getchar()) != '\n') {}
     fname[--sz] = 0;
@@ -40,7 +62,7 @@ int main(int argc, char *argv[]) {
             if(sz == 1024) {
                 buffer[sz] = 0;
                 e.decryptECB(buffer, sz);
-                std::cout << buffer;
+                std::cout << '\n' << buffer;
                 sz = 0;
             }
         }

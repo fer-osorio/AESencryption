@@ -43,6 +43,7 @@ class Bitmap {
 	char* name = NULL;
 
 	public:
+	Bitmap() {} // -// -Just for type declaration.
 	Bitmap(const char* fname);
 	Bitmap(const Bitmap& bmp);
 	~Bitmap();
