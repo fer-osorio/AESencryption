@@ -30,26 +30,34 @@ void set_key(AESkey::Length len); // Not proved to be secure.
 void printKey(AESkey::Length len, const char* = NULL, const char* = NULL);
 
 int main(int argc, char *argv[]) {
-    char IV[16];
     if(argc > 1) { // Encrypting Bitmap image.
         FileName fname(argv[1]); // -Recognizing extension.
+        FileName keyName = fname.returnThisNewExtension(FileName::key);
         FileName::Extension ext = fname.getExtension();
-        AES e(key256, AESkey::_256);
+        set_key(AESkey:: _192);
+        AES e(key192, AESkey::_192);
         Bitmap bmp;
         TXT    txt;
         switch(ext) {
             case FileName::bmp:
-                bmp = Bitmap(argv[1]);
-                encryptCBC(bmp, e, IV);
+                std::cout << "\nEncrypting bmp file...\n\n";
+                try {
+                    bmp = Bitmap(argv[1]);
+                } catch(const char* errMsg) {
+                    std::cout << errMsg;
+                }
+                encryptCBC(bmp, e);
+                e.saveKey(keyName.getNameString());
                 break;
             case FileName::txt:
-                std::cout << "\nEncrypting text file...\n" << std::endl;
+                std::cout << "\nEncrypting text file...\n\n";
                 try {
                     txt = TXT(argv[1]);
                 } catch(const char* errMsg) {
                     std::cout << errMsg;
                 }
-                encryptCBC(txt, e, IV);
+                encryptCBC(txt, e);
+                e.saveKey(keyName.getNameString());
                 break;
             case FileName::key:
                 break;

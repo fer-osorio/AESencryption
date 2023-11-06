@@ -89,6 +89,10 @@ class AES {
 
 	void create_KeyExpansion(const char* const);
 
+	// -Sets the initial vector value.
+	// -Required for the CBC operation mode.
+	void setIV(char IV[16]) const;
+
 	// -Encrypts the message pointed by 'data' using the ECB operation mode.
 	// -The data size (in bytes) is  provided by the 'size' argument.
 	// -This mode is not recommended.
@@ -101,15 +105,12 @@ class AES {
 
 	// -Encrypts the message pointed by 'data' using the CBC operation mode.
 	// -The data size (in bytes) is  provided by the 'size' argument.
-	// -The initial vector utilized to encrypt the data is written in
-	//	'IVlocation'.
-	void encryptCBC(char*const data, unsigned size, char IVlocation[16])const;
+	void encryptCBC(char*const data, unsigned size) const;
 
 	// -Decrypts the message pointed by 'data_ptr'. The message must had been
 	//  encrypted using the CBC mode operation.
 	// -The size of the message is provided by the 'size' argument.
-	// -The integer 'IV' is the array with the initial vector.
-	void decryptCBC(char*const data, unsigned size, const char IV[16]) const;
+	void decryptCBC(char*const data, unsigned size) const;
 
 	inline void saveKey(const char*const fname) const {key.save(fname);}
 
@@ -164,10 +165,6 @@ class AES {
 
 	// -Decrypt an array of 16 bytes.
 	void decryptBlock(char block[16]) const;
-
-	// -Sets the initial vector value.
-	// -Required for the CBC operation mode.
-	void setIV(char IV[16]) const;
 };
 
 #endif

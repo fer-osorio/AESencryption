@@ -7,24 +7,28 @@ int main(int argc, char *argv[]) {
     if(argc > 2) {
         AESkey aeskey(argv[1]);
         AES e(aeskey);
-        char IV[16]; aeskey.write_IV(IV);
         FileName fname(argv[2]); // -Recognizing extension.
         FileName::Extension ext = fname.getExtension();
         Bitmap bmp;
         TXT    txt;
         switch(ext) {
             case FileName::bmp:
-                bmp = Bitmap(argv[2]);
-                decryptCBC(bmp, e, IV);
+                std::cout << "\nDecrypting text file...\n" << std::endl;
+                try {
+                    bmp = Bitmap(argv[2]);
+                } catch(const char* err) {
+                    std::cout << err;
+                }
+                decryptCBC(bmp, e);
                 break;
             case FileName::txt:
                 std::cout << "\nDecrypting text file...\n" << std::endl;
                 try {
                     txt = TXT(argv[2]);
-                } catch(const char* errMsg) {
-                    std::cout << errMsg;
+                } catch(const char* err) {
+                    std::cout << err;
                 }
-                decryptCBC(txt, e, IV);
+                decryptCBC(txt, e);
                 break;
             case FileName::key:
                 break;

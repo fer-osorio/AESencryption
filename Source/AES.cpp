@@ -184,11 +184,12 @@ void AES::decryptECB(char *const data, unsigned int size) const{
     decryptBlock(currentBlk);
 }
 
-void AES::encryptCBC(char*const data,unsigned size, char IVlocation[16])const{
+void AES::encryptCBC(char*const data,unsigned size) const {
     if(size == 0) return; // Exception here.
     this->key.set_OperationMode(AESkey::CBC); // -Setting operation mode.
 
     char *previousBlk, *currentBlk = data;
+    char IVlocation[16];
     int numofBlocks = (int)size >> 4;  //  numofBlocks = size / 16.
     int rem = (int)size & 15, i;       // -Bytes remaining rem = size % 16
 
@@ -217,7 +218,7 @@ void AES::encryptCBC(char*const data,unsigned size, char IVlocation[16])const{
 }
 
 
-void AES::decryptCBC(char*const data, unsigned size, const char IV[16]) const{
+void AES::decryptCBC(char*const data, unsigned size) const{
     if(size == 0) return; // Exception here.
 
     char *currentBlk = data, previousBlk[16], cipherCopy[16];
@@ -225,7 +226,7 @@ void AES::decryptCBC(char*const data, unsigned size, const char IV[16]) const{
     int rem = (int)size & 15;         // -Rest of the bytes rem = size % 16
     int i;
 
-    for(i = 0; i < 16; i++) cipherCopy[i] = IV[i];
+    for(i = 0; i < 16; i++) cipherCopy[i] = this->key.getIV()[i];
     CopyBlock(currentBlk, previousBlk); // -Copying the first ciphered block.
 
     // -Deciphering the first block.

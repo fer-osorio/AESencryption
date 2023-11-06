@@ -45,6 +45,7 @@ struct AESkey {
 	inline void write_IV(char*const destination) const {
 		for(int i = 0; i < 16; i++) destination[i] = this->IV[i];
 	}
+	inline const char* getIV() const {return IV;}
 	inline void write_Key(char*const destination) const {
 		for(unsigned i = 0; i < lenBytes; i++) destination[i] = this->key[i];
 	}

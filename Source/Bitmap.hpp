@@ -52,9 +52,8 @@ class Bitmap {
 	void save(const char* fname);
 	Bitmap& operator = (const Bitmap& bmp);
 
-	// -The initial vector utilized in encryption is written in 'IVlocation'.
-	friend void encryptCBC(Bitmap& bmp, const AES& e, char IVlocation[16]);
-	friend void decryptCBC(Bitmap& bmp, const AES& e, const char IV[16]);
+	friend void encryptCBC(Bitmap& bmp, const AES& e);
+	friend void decryptCBC(Bitmap& bmp, const AES& e);
 
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 };

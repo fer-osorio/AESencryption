@@ -74,14 +74,12 @@ TXT& TXT::operator = (const TXT& t) {
     return *this;
 }
 
-void encryptCBC(TXT& txt, const AES& e, char IVlocation[16]) {
-    FileName keyname = (txt.name.returnThisNewExtension(FileName::key));
-    e.encryptCBC(txt.content, txt.size, IVlocation);
-    e.saveKey(keyname.getNameString());
+void encryptCBC(TXT& txt, const AES& e) {
+    e.encryptCBC(txt.content, txt.size);
     txt.save();
 }
 
-void decryptCBC(TXT& txt, const AES& e, const char IV[16]) {
-    e.decryptCBC(txt.content, txt.size, IV);
+void decryptCBC(TXT& txt, const AES& e) {
+    e.decryptCBC(txt.content, txt.size);
     txt.save();
 }

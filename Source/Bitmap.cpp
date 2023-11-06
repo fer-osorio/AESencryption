@@ -156,26 +156,13 @@ Bitmap& Bitmap::operator = (const Bitmap &bmp) {
     return *this;
 }
 
-void encryptCBC(Bitmap& bmp, const AES& e, char IVlocation[16]) {
-    int sz = -1; // -Creating name for the .key
-    char* keyName; int i;
-    while(bmp.name[++sz] != 0) {}
-    keyName = new char[sz+5];
-    for(i = 0; i < sz && bmp.name[i] != '.'; i++) keyName[i] = bmp.name[i];
-    keyName[i++] = '.';
-    keyName[i++] = 'k';
-    keyName[i++] = 'e';
-    keyName[i++] = 'y';
-    keyName[i] = 0;
-    // Encryption
-    e.saveKey(keyName);
-    e.encryptCBC(bmp.data, bmp.ih.SizeOfBitmap, IVlocation);
+void encryptCBC(Bitmap& bmp, const AES& e) {
+    e.encryptCBC(bmp.data, bmp.ih.SizeOfBitmap);
     bmp.save(bmp.name);
-    delete[] keyName;
 }
 
-void decryptCBC(Bitmap& bmp, const AES& e, const char IV[16]) {
-    e.decryptCBC(bmp.data, bmp.ih.SizeOfBitmap, IV);
+void decryptCBC(Bitmap& bmp, const AES& e) {
+    e.decryptCBC(bmp.data, bmp.ih.SizeOfBitmap);
     bmp.save(bmp.name);
 }
 
