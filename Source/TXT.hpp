@@ -26,5 +26,8 @@ class TXT {
     // -The initial vector utilized in encryption is written in 'IVlocation'.
 	friend void encryptCBC(TXT& txt, const AES& e);
 	friend void decryptCBC(TXT& txt, const AES& e);
+
+	friend void encryptECB(TXT& txt, const AES& e);
+	friend void decryptECB(TXT& txt, const AES& e);
 };
 #endif

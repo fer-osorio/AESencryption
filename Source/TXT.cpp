@@ -83,3 +83,13 @@ void decryptCBC(TXT& txt, const AES& e) {
     e.decryptCBC(txt.content, txt.size);
     txt.save();
 }
+
+void encryptECB(TXT& txt, const AES& e) {
+    e.encryptECB(txt.content, txt.size);
+    txt.save();
+}
+
+void decryptECB(TXT& txt, const AES& e) {
+    e.decryptECB(txt.content, txt.size);
+    txt.save();
+}
