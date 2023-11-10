@@ -11,8 +11,9 @@ encryption of BMP images.
 Supousing we are in the "Executable" directory, we can use the executables un the following ways
 
 ### Input from command line interface (CLI).
-Run the commnad `./encrypt` to encrypt text from the CLI. This action wil create a .txt file with the encrypted text. To decrypt
-the output file, just run `./decrypt`; the .txt file name and the name of the file where the key is stored will be asked for the 
+Run the commnad `./encrypt` to encrypt to either input the names/paths of files you desire to encrypt or to create a new text 
+file from the CLI. This action will not save the original text but a encrypted version of it. To decrypt the output file, just
+run `./decrypt`; the .txt file name and the name of the file where the key is stored will be asked for the 
 decryption, and the decrypted message will be shown in the CLI.
 
 An example of encryption could be:
@@ -46,22 +47,25 @@ Write the name of the .key file where the encryption key is saved: encryption.ke
 This is a message with many dots.....................................................................................�
 ```
 
-### BMP images.
-Execute the file `encrypt` and pass the name of the image you want to encrypt as an argument, this will encrypt your image and 
+### Passing arguments to the executable.
+We can pass the name/path of the file (.bmp or .txt) you want to encrypt as an argument, this will encrypt your file and 
 will write the used key in a binary file with a `.key` extension. If CBC mode was used then the initial vector (IV) will be 
 writed in the same `.key` file. For the decryption, execute `decrypt` and pass the name of the file containing the key (.key 
-file) as first argument and the name of the BMP image as second argument.
+file) used in encryption as first argument and the name of the encrypted file (.bmp or .txt) as second argument.
 
-Example of image encryption:
+**Example:**
 
 Before executing `./encrypt Test01.bmp`.
+
 ![Before encryption](/EncryptionExample/BeforeEncryption.png)
 
 The last action encrypts the image and writes the binary file `Test01.key`, this file contains the cryptographic key and (since
 CBC mode was used) the initial vector. This image shows the moment before executing `./decrypt Test01.key Test01.bmp`.
+
 ![Before decryption](/EncryptionExample/BeforeDecryption.png)
 
 Finally, the last command gives us the original image.
+
 ![After decryption](/EncryptionExample/AfterDecryption.png)
 
 # Important notes:
