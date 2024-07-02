@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
                 } catch(const char* errMsg) {
                     std::cout << errMsg;
                 }
-                encryptECB(txt, e);
+                encryptCBC(txt, e);
                 e.saveKey(keyName.getNameString());
                 break;
             case FileName::key:
