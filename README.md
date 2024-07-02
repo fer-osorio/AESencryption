@@ -5,13 +5,18 @@ AES implementation in C++.
 An implementation of AES is developed to encrypt an array of bytes (char's) with a know length; then, it is used for the 
 encryption of BMP images.
 
+#   Compilation
+
+Executing the command `make` in the command line will give you the two executable files `encrypt.exe` and `decrypt.exe`.
+To obtain just `encrypt.exe`, type `make encrypt.exe`. Same with `decrypt.exe` file.
+
 #   Usage
 
-##  Executables
-Supousing we are in the "Executable" directory, we can use the executables un the following ways
+##  Executable Files
+Supposing we are in the "Executable" directory, we can use the executable files in the following ways:
 
 ### Input from command line interface (CLI).
-Run the commnad `./encrypt` to encrypt to either input the names/paths of files you desire to encrypt or to create a new text 
+Run the command `./encrypt` to encrypt to either input the names/paths of files you desire to encrypt or to create a new text 
 file from the CLI. This action will not save the original text but a encrypted version of it. To decrypt the output file, just
 run `./decrypt`; the .txt file name and the name of the file where the key is stored will be asked for the 
 decryption, and the decrypted message will be shown in the CLI.
@@ -28,7 +33,7 @@ Write the string you want to encrypt. To process the string sent the value 'EOF'
 
 This is a message with many dots.....................................................................................
 ```
-Two files were written: `encryption.txt` that holds the encrypted message, and `encryption.key` that holds the necesary data for 
+Two files were written: `encryption.txt` that holds the encrypted message, and `encryption.key` that holds the necessary data for 
 the decryption.
 
 ```
@@ -50,7 +55,7 @@ This is a message with many dots................................................
 ### Passing arguments to the executable.
 We can pass the name/path of the file (.bmp or .txt) you want to encrypt as an argument, this will encrypt your file and 
 will write the used key in a binary file with a `.key` extension. If CBC mode was used then the initial vector (IV) will be 
-writed in the same `.key` file. For the decryption, execute `decrypt` and pass the name of the file containing the key (.key 
+written in the same `.key` file. For the decryption, execute `decrypt` and pass the name of the file containing the key (.key 
 file) used in encryption as first argument and the name of the encrypted file (.bmp or .txt) as second argument.
 
 **Example:**
