@@ -13,7 +13,7 @@ To obtain just `encrypt.exe`, type `make encrypt.exe`. Same with `decrypt.exe` f
 #   Usage
 
 ##  Executable Files
-Supposing we are in the "Executable" directory, we can use the executable files in the following ways:
+Supposing we are in the "Executable" directory, we can use the executable files in the following ways: 
 
 ### Input from command line interface (CLI).
 Run the command `./encrypt` to encrypt to either input the names/paths of files you desire to encrypt or to create a new text 
@@ -77,3 +77,4 @@ Finally, the last command gives us the original image.
 * Right now the unique operation modes that are implemented are ECB (Electronic Code Book) and CBC (Cipher Block Chaining).
 * The padding problem for the ECB and CBC mode is solved with a method not specified in the NIST standard.
 * No attempt to generate secure cryptographic keys is made. 
+
