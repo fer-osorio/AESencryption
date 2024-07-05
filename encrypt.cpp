@@ -53,9 +53,11 @@ int main(int argc, char *argv[]) {
                 std::cout << "\nEncrypting text file...\n\n";
                 try {
                     txt = TXT(argv[1]);
+                    std::cout << "encrypt.cpp; line 56; name:"; txt.printName(); std::cout << '\n';
                 } catch(const char* errMsg) {
                     std::cout << errMsg;
                 }
+                //std::cout << "\n encrypt cpp; line 59; name; " << txt.name.getNameString() << '\n';
                 encryptCBC(txt, e);
                 e.saveKey(keyName.getNameString());
                 break;
