@@ -76,18 +76,9 @@ Bitmap::Bitmap(const Bitmap& bmp) {
 }
 
 Bitmap::~Bitmap() {
-    if(data != NULL) {
-        delete[] data;
-        data = NULL;
-    }
-    if(img  != NULL) {
-        delete[] img;
-        img = NULL;
-    }
-    if(name != NULL) {
-        delete[] name;
-        name = NULL;
-    }
+    if(data != NULL) { delete[] data; data = NULL; }
+    if(img  != NULL) { delete[] img;   img = NULL; }
+    if(name != NULL) { delete[] name; name = NULL; }
 }
 
 void Bitmap::save(const char *fname) {
@@ -127,7 +118,6 @@ void Bitmap::save(const char *fname) {
 
 Bitmap& Bitmap::operator = (const Bitmap &bmp) {
     if(this != &bmp) { // Guarding against bmp = bmp
-        this->~Bitmap();
         // Copying file header.
         this->fh.bm[0] = bmp.fh.bm[0];
         this->fh.bm[1] = bmp.fh.bm[1];
@@ -142,14 +132,17 @@ Bitmap& Bitmap::operator = (const Bitmap &bmp) {
         this->ih = bmp.ih;
 
         ui32 i; // -Copying data.
+        if(this->data != NULL) delete[] this->data;
         this->data = new char[bmp.ih.SizeOfBitmap];
         for(i = 0; i < bmp.ih.SizeOfBitmap; i++) this->data[i] = bmp.data[i];
 
+        if(this->img != NULL) delete[] this->img;
         this->img = new RGB*[bmp.ih.Height];
         for(i = 0; (int)i < bmp.ih.Height; i++) this->img[i] = bmp.img[i];
 
         ui32 sz = 0; // Copying name
         while(bmp.name[sz++] != 0) {} // -Getting name size.
+        if(this->name != NULL) delete[] this->name;
         this->name = new char[sz];
         for(i = 0; i < sz; i++) this->name[i] = bmp.name[i];
     }
