@@ -1,16 +1,13 @@
 #include"AESkey.hpp"
 #include<fstream>
 
-AESkey::AESkey(const char* const _key, Length len, OperationMode _opM,
-    const char* const _IV): length(len), lenBytes((unsigned)len >> 3),
-    opM(_opM) {
+AESkey::AESkey(const char* const _key, Length len, OperationMode _opM, const char* const _IV): length(len), lenBytes((unsigned)len >> 3), opM(_opM) {
     this->key = new char[this->lenBytes];
     for(unsigned i = 0; i < this->lenBytes; i++) this->key[i] = _key[i];
     if(_IV != NULL) for(int i = 0; i < 16; i++) this->IV[i] = _IV[i];
 }
 
-AESkey::AESkey(const AESkey& ak)
-    :length(ak.length), lenBytes(ak.lenBytes), opM(ak.opM) {
+AESkey::AESkey(const AESkey& ak):length(ak.length), lenBytes(ak.lenBytes), opM(ak.opM) {
     unsigned i;
     this->key = new char[ak.lenBytes];
     for(i = 0; i < ak.lenBytes; i++) this->key[i] = ak.key[i];
@@ -114,3 +111,4 @@ void AESkey::save(const char* const fname) const {
         throw "File could not be written.";
     }
 }
+
