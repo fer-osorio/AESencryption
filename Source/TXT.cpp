@@ -1,7 +1,7 @@
 #include"TXT.hpp"
 #include<fstream>
 
-TXT::TXT(const char* fname) : name(fname) { // -Building from file.
+TXT::TXT(const char* fname): name(fname) { // -Building from file.
     std::ifstream file;
     file.open(fname);
     if(file.is_open()) {
@@ -18,9 +18,10 @@ TXT::TXT(const char* fname) : name(fname) { // -Building from file.
         std::cout << errmsg << fname << '\n';
         throw errmsg;
     }
+    std::cout << "\nTXT.cpp; line 21; name:" << this->name.getNameString() << "\n";
 }
 
-TXT::TXT(FileName& fname) : name(fname) {
+TXT::TXT(FileName& fname): name(fname) {
     std::ifstream file;
     file.open(fname.getNameString());
     if(file.is_open()) {
@@ -36,38 +37,31 @@ TXT::TXT(FileName& fname) : name(fname) {
     }
 }
 
-TXT::TXT(const TXT& t) : name(t.name), size(t.size){
+TXT::TXT(const TXT& t): name(t.name), size(t.size) {
     this->content = new char[t.size];
     for(unsigned i = 0; i < t.size; i++) this->content[i] = t.content[i];
 }
 
-TXT::~TXT() {
-    if(content != NULL) delete[] content;
-    content = NULL;
-}
-
 void TXT::save(const char* fname) {
+    std::cout << "From TXT.cpp; line 51; name: " << this->name.getNameString() << '\n';
     std::ofstream file;
-    const char* _fname = NULL;
-    if(fname == NULL) {
-        _fname = this->name.getNameString();
-        file.open(_fname);
-    } else {
-        file.open(fname);
-    }
+    if(fname == NULL) fname = this->name.getNameString();
+    std::cout << "From TXT.cpp; line 54; name: " << fname << '\n';
+    file.open(fname);
     if(file.is_open()) {
         file.write(this->content, this->size);
         file.close();
     } else {
         throw "File could not be written.";
     }
+    std::cout << "From TXT.cpp; line 61; name: " << this->name.getNameString() << '\n';
 }
 
 TXT& TXT::operator = (const TXT& t) {
     if(this != &t) {
-        this->~TXT();
-        this->name = FileName(t.name);
+        this->name = t.name;
         this->size = t.size;
+        if(content != NULL) delete[] content;
         this->content = new char[t.size];
         for(unsigned i = 0; i < t.size; i++) this->content[i] = t.content[i];
     }
@@ -75,6 +69,7 @@ TXT& TXT::operator = (const TXT& t) {
 }
 
 void encryptCBC(TXT& txt, const AES& e) {
+    std::cout << "\n TXT.cpp; line 77; name; " << txt.name.getNameString() << '\n';
     e.encryptCBC(txt.content, txt.size);
     txt.save();
 }
