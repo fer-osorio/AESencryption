@@ -3,23 +3,22 @@
 FileName::FileName(const char* _fileName, unsigned rightPadding) {
     unsigned i;
     int pointIndex = -1;
-    if(_fileName != NULL) {
-	    while(_fileName[this->nameSize] != 0 && this->nameSize <= MAX_NAME_LEN) {  // Upper bound for the name length
-	        if(_fileName[this->nameSize] == '.') pointIndex = (int)this->nameSize; // Determines index of last point
-	        this->nameSize++;
-	    }
-	    //this->nameSize++;
-	    if(rightPadding > 128) rightPadding = 128;
-	    this->nameString = new char[this->nameSize + rightPadding + 4];
-	    for(i = 0; i < this->nameSize; i++) this->nameString[i] = _fileName[i]; // Copying file name into nameString
 
-	    this->nameString[i] = 0;
+    if(_fileName == NULL) return;                                               // Guarding against null string
 
-	    if(pointIndex >= 0 && pointIndex <= MAX_NAME_LEN - 3)
-	        extension = isSupportedExtension(&_fileName[pointIndex + 1]);
-	    else extension = NoExtension;
+	while(_fileName[this->nameSize] != 0 && this->nameSize <= MAX_NAME_LEN) {   // Upper bound for the name length
+	    if(_fileName[this->nameSize] == '.') pointIndex = (int)this->nameSize;  // Determines index of last point
+	    this->nameSize++;
 	}
-	std::cout << "\n Name size = " << nameSize << '\n' << "Name: " << this->nameString << '\n';
+	if(rightPadding > 128) rightPadding = 128;                                  // Upper bound for right padding
+	this->nameString = new char[this->nameSize + rightPadding + 1];
+	for(i = 0; i < this->nameSize; i++) this->nameString[i] = _fileName[i];     // Copying file name into nameString
+
+	this->nameString[i] = 0;
+
+	if(pointIndex >= 0 && pointIndex <= MAX_NAME_LEN - 3)
+	    extension = isSupportedExtension(&_fileName[pointIndex + 1]);
+	else extension = NoExtension;
 }
 
 FileName::FileName(const FileName& nm): extension(nm.extension), nameSize(nm.nameSize) {
@@ -34,8 +33,8 @@ FileName& FileName::operator = (const FileName& nm) {
 		this->nameSize = nm.nameSize;
 		if(this->nameString != NULL) delete[] this->nameString;
 		this->nameString = new char[nm.nameSize];
-		for(unsigned i = 0; i < nm.nameSize; i++)
-			this->nameString[i] = nm.nameString[i];
+		for(unsigned i = 0; i <= nm.nameSize; i++)                              // -The <= condition is necessary to copy the '0' that ends the string. Remember this
+			this->nameString[i] = nm.nameString[i];                             //  is a formatted string.
 	}
 	return *this;
 }
@@ -81,12 +80,12 @@ FileName FileName::returnThisNewExtension(Extension newExt) {
 
 FileName::Extension FileName::isSupportedExtension(const char* str) {
     if(str == NULL || str[0] == 0) return FileName::NoExtension;
-    Extension temp[4] = {bmp, txt, key, Unrecognised};
+    Extension temp[4] = {bmp, txt, key};
     int i, j = 0;
     for(i = 0; i < 3 && supportedExtensions[i][j] != 0; i++) {
         for(j = 0; str[j] == supportedExtensions[i][j]; j++) {
-            if(supportedExtensions[i][j] == 0) break;
+            if(supportedExtensions[i][j] == 0) return temp[i];
         }
     }
-    return temp[--i];
+    return Unrecognised;
 }
