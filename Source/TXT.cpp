@@ -18,7 +18,6 @@ TXT::TXT(const char* fname): name(fname) { // -Building from file.
         std::cout << errmsg << fname << '\n';
         throw errmsg;
     }
-    std::cout << "\nTXT.cpp; line 21; name:" << this->name.getNameString() << "\n";
 }
 
 TXT::TXT(FileName& fname): name(fname) {
@@ -43,10 +42,8 @@ TXT::TXT(const TXT& t): name(t.name), size(t.size) {
 }
 
 void TXT::save(const char* fname) {
-    std::cout << "From TXT.cpp; line 51; name: " << this->name.getNameString() << '\n';
     std::ofstream file;
     if(fname == NULL) fname = this->name.getNameString();
-    std::cout << "From TXT.cpp; line 54; name: " << fname << '\n';
     file.open(fname);
     if(file.is_open()) {
         file.write(this->content, this->size);
@@ -54,7 +51,6 @@ void TXT::save(const char* fname) {
     } else {
         throw "File could not be written.";
     }
-    std::cout << "From TXT.cpp; line 61; name: " << this->name.getNameString() << '\n';
 }
 
 TXT& TXT::operator = (const TXT& t) {
@@ -69,7 +65,6 @@ TXT& TXT::operator = (const TXT& t) {
 }
 
 void encryptCBC(TXT& txt, const AES& e) {
-    std::cout << "\n TXT.cpp; line 77; name; " << txt.name.getNameString() << '\n';
     e.encryptCBC(txt.content, txt.size);
     txt.save();
 }

@@ -26,14 +26,14 @@ char key128[]= {char(0x2B), char(0x7E), char(0x15), char(0x16),
                 char(0xAB), char(0xF7), char(0x15), char(0x88),
                 char(0x09), char(0xCF), char(0x4F), char(0x3C)};
 
-void set_key(AESkey::Length len); // Not proved to be secure.
+void set_key(AESkey::Length len);                                               // Not proved to be secure.
 void printKey(AESkey::Length len, const char* = NULL, const char* = NULL);
 
 int main(int argc, char *argv[]) {
     Bitmap bmp;
     TXT    txt;
-    if(argc > 1) { // Encrypting File.
-        FileName fname(argv[1]); // -Recognizing extension.
+    if(argc > 1) {                                                              // Encrypting File.
+        FileName fname(argv[1]);                                                // -Recognizing extension.
         FileName keyName = fname.returnThisNewExtension(FileName::key);
         FileName::Extension ext = fname.getExtension();
         set_key(AESkey:: _192);
@@ -53,11 +53,9 @@ int main(int argc, char *argv[]) {
                 std::cout << "\nEncrypting text file...\n\n";
                 try {
                     txt = TXT(argv[1]);
-                    std::cout << "encrypt.cpp; line 56; name:"; txt.printName(); std::cout << '\n';
                 } catch(const char* errMsg) {
                     std::cout << errMsg;
                 }
-                //std::cout << "\n encrypt cpp; line 59; name; " << txt.name.getNameString() << '\n';
                 encryptCBC(txt, e);
                 e.saveKey(keyName.getNameString());
                 break;
