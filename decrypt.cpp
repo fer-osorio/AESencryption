@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
                 } catch(const char* err) {
                     std::cout << err;
                 }
-                decryptCBC(txt, e);
+                decryptPIVS(txt, e);
                 break;
             case FileName::key:
                 break;

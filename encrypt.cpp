@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
                 } catch(const char* errMsg) {
                     std::cout << errMsg;
                 }
-                encryptCBC(bmp, e);
+                encryptPIVS(bmp, e);
                 e.saveKey(keyName.getNameString());
                 break;
             case FileName::txt:
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
                 } catch(const char* errMsg) {
                     std::cout << errMsg;
                 }
-                encryptCBC(txt, e);
+                encryptPIVS(txt, e);
                 e.saveKey(keyName.getNameString());
                 break;
             case FileName::key:
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
                         } catch(const char* errMsg) {
                             std::cout << errMsg;
                         }
-                        encryptECB(txt, e);
+                        encryptCBC(txt, e);
                         break;
                     case FileName::key:
                         break;
