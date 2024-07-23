@@ -3,6 +3,57 @@
 #include"AES.hpp"
 #include"OperationsGF256.hpp"
 
+union uint64_uint32 {                                                           // -Useful for a casting from a 64 bits unsigned integer to an array of two 32 bits
+    unsigned long long uint64;                                                  //  integer
+    unsigned uint32[2];
+};
+
+union _16uint32_64uchar {                                                        // -Representing 256 bits in an union of 8 unsigned int and 32 char
+    unsigned uint32[16];
+    unsigned char chars[64];
+};
+
+struct UnsignedInt256bits {
+    union {                                                                     // -Representing 256 bits in a anonymous union of 8 unsigned int and 32 char
+        unsigned uint32[8];
+        unsigned char chars[32];
+    } NumberPlaces = {0,0,0,0,0,0,0,0};
+
+    UnsignedInt256bits() {}
+    UnsignedInt256bits(const char*const data) {
+        for(int i = 0; i < 32; i++) NumberPlaces.chars[i] = (unsigned char)data[i];
+    }
+
+    unsigned operator [] (int i) const {
+        if(i < 0 || i >= 8) i &= 7;                                             // -i&7 is equivalent to i%8
+        return this->NumberPlaces.uint32[i];
+    }
+    void reWriteLeastSignificantBytes(const char*const array, unsigned arraySize = 32) {    // -Rewrites the least significant bytes of the NumberPlaces union.
+        unsigned i;                                                             // -Writing the array from left to right, those bytes would be the left ones.
+        if(arraySize > 32) arraySize &= 31;                                     // -arraySize % 32
+        for(i = 0; i < arraySize; i++)
+            this->NumberPlaces.chars[i] = (unsigned char)array[i];              // -The rest of the bytes (i >= arraySize) are left untouched
+    }
+};
+
+_16uint32_64uchar operator * (const UnsignedInt256bits& a, const UnsignedInt256bits& b) { // -Multiplying two integers of 256 bits each one
+    int i, j;
+    unsigned carriage = 0;
+    uint64_uint32 buff = {0};
+    _16uint32_64uchar result = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};               // -The result will need 512 bits (for arbitrary arguments)
+
+    for(i = 0; i < 8 ; i++) {                                                   // -Implementing pencil and paper algorithm
+        for(j = 0; j < 8; j++) {
+            buff.uint64 = (unsigned long long)a[i] * b[j] + result.uint32[i+j] + carriage;
+            result.uint32[i+j] = buff.uint32[0];                                // -Equivalent to obtaining the modulus 2^32
+            carriage = buff.uint32[1];                                          // -Equivalent to obtaining the quotient 2^32
+        }
+        result.uint32[i+j] = carriage;
+        carriage = 0;
+    }
+    return result;
+}
+
 AES::AES(const char* const _key, AESkey::Length len)
 : key(_key, len, AESkey::ECB), Nk(len >> 5), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
     this->create_KeyExpansion(_key);
@@ -143,52 +194,52 @@ void AES::encryptECB(char*const data, unsigned size) const{
     if(size == 0) return; // Exception here.
     this->key.set_OperationMode(AESkey::ECB); // -Setting operation mode.
 
-    char* currentBlk = data;
+    char* currentDataBlock = data;
     int numofBlocks = int(size >> 4);//  numofBlocks = size / 16.
     int rem = int(size & 15), i;     // -Bytes remaining rem = size % 16
 
     --numofBlocks; // Last block will be treated differently.
     for(i = 0; i < numofBlocks; i++) {
-        encryptBlock(currentBlk);
-        currentBlk += 16;
+        encryptBlock(currentDataBlock);
+        currentDataBlock += 16;
     }
     // -This part of the code is for encrypt data that its size is not
     //  multiple of 16. This is not specified in the NIST standard.
     if(rem != 0) { // Not handling the case size < 16
-        encryptBlock(currentBlk);
-        encryptBlock(currentBlk + rem);
+        encryptBlock(currentDataBlock);
+        encryptBlock(currentDataBlock + rem);
         return;
     }
-    encryptBlock(currentBlk);
+    encryptBlock(currentDataBlock);
 }
 
 void AES::decryptECB(char *const data, unsigned int size) const{
     if(size == 0) return; // Exception here.
 
-    char* currentBlk = data;
+    char* currentDataBlock = data;
     int numofBlocks = int(size >> 4);//  numofBlocks = size / 16.
     int rem = int(size & 15), i;     // -Bytes remaining rem = size % 16
 
     --numofBlocks; // Last block will be treated differently.
     for(i = 0; i < numofBlocks; i++) {
-        decryptBlock(currentBlk);
-        currentBlk += 16;
+        decryptBlock(currentDataBlock);
+        currentDataBlock += 16;
     }
     // -This part of the code is for encrypt data that its size is not
     //  multiple of 16. This is not specified in the NIST standard.
     if(rem != 0) { // Not handling the case size < 16
-        decryptBlock(currentBlk + rem);
-        decryptBlock(currentBlk);
+        decryptBlock(currentDataBlock + rem);
+        decryptBlock(currentDataBlock);
         return;
     }
-    decryptBlock(currentBlk);
+    decryptBlock(currentDataBlock);
 }
 
 void AES::encryptCBC(char*const data,unsigned size) const {
     if(size == 0) return; // Exception here.
     this->key.set_OperationMode(AESkey::CBC); // -Setting operation mode.
 
-    char *previousBlk, *currentBlk = data;
+    char *previousBlk, *currentDataBlock = data;
     char IVlocation[16];
     int numofBlocks = (int)size >> 4;  //  numofBlocks = size / 16.
     int rem = (int)size & 15, i;       // -Bytes remaining rem = size % 16
@@ -197,22 +248,22 @@ void AES::encryptCBC(char*const data,unsigned size) const {
     this->key.set_IV(IVlocation);
 
     // -Encryption of the first block.
-    XORblocks(currentBlk, IVlocation, currentBlk);
-    encryptBlock(currentBlk);
+    XORblocks(currentDataBlock, IVlocation, currentDataBlock);
+    encryptBlock(currentDataBlock);
 
     // -Encryption of the rest of the blocks.
     for(i = 1; i < numofBlocks; i++) {
-        previousBlk = currentBlk;
-        currentBlk += 16;
-        XORblocks(currentBlk, previousBlk, currentBlk);
-        encryptBlock(currentBlk);
+        previousBlk = currentDataBlock;
+        currentDataBlock += 16;
+        XORblocks(currentDataBlock, previousBlk, currentDataBlock);
+        encryptBlock(currentDataBlock);
     }
     // -This part of the code is for encrypt data that its size is not
     //  multiple of 16. This is not specified in the NIST standard.
     if(rem != 0) {
-        previousBlk = currentBlk;
-        currentBlk += 16;
-        for(i=0; i<rem; i++) currentBlk[i] = currentBlk[i] ^ previousBlk[i];
+        previousBlk = currentDataBlock;
+        currentDataBlock += 16;
+        for(i=0; i<rem; i++) currentDataBlock[i] = currentDataBlock[i] ^ previousBlk[i];
         encryptBlock(previousBlk + rem);
     }
 }
@@ -221,40 +272,133 @@ void AES::encryptCBC(char*const data,unsigned size) const {
 void AES::decryptCBC(char*const data, unsigned size) const{
     if(size == 0) return; // Exception here.
 
-    char *currentBlk = data, previousBlk[16], cipherCopy[16];
+    char *currentDataBlock = data, previousBlk[16], cipherCopy[16];
     int numofBlocks = (int)size >> 4; // numofBlocks = size / 16
     int rem = (int)size & 15;         // -Rest of the bytes rem = size % 16
     int i;
 
     for(i = 0; i < 16; i++) cipherCopy[i] = this->key.getIV()[i];
-    CopyBlock(currentBlk, previousBlk); // -Copying the first ciphered block.
+    CopyBlock(currentDataBlock, previousBlk); // -Copying the first ciphered block.
 
     // -Deciphering the first block.
-    decryptBlock(currentBlk);
-    XORblocks(currentBlk, cipherCopy, currentBlk);
+    decryptBlock(currentDataBlock);
+    XORblocks(currentDataBlock, cipherCopy, currentDataBlock);
 
     // -Decryption of the rest of the blocks.
     // -Last block is going to be processed differently.
     if(numofBlocks > 0) numofBlocks--;
     for(i = 1; i < numofBlocks; i++) {
-        currentBlk += 16;
+        currentDataBlock += 16;
         // -Saving cipher block for the next round.
-        CopyBlock(currentBlk, cipherCopy);
-        decryptBlock(currentBlk);
-        XORblocks(currentBlk, previousBlk, currentBlk);
+        CopyBlock(currentDataBlock, cipherCopy);
+        decryptBlock(currentDataBlock);
+        XORblocks(currentDataBlock, previousBlk, currentDataBlock);
         // -Cipher block now becomes previous block.
         CopyBlock(cipherCopy, previousBlk);
     }
-    currentBlk += 16;
+    currentDataBlock += 16;
     if(rem == 0) { // -Data size is a multiple of 16.
-        decryptBlock(currentBlk);
-        XORblocks(currentBlk, previousBlk, currentBlk);
+        decryptBlock(currentDataBlock);
+        XORblocks(currentDataBlock, previousBlk, currentDataBlock);
     } else {      // -Data size isn't a multiple of 16.
-        decryptBlock(currentBlk + rem);
+        decryptBlock(currentDataBlock + rem);
         for(i = 0; i < rem; i++)
-            currentBlk[i+16] = currentBlk[i+16] ^ currentBlk[i];
-        decryptBlock(currentBlk);
-        XORblocks(currentBlk, previousBlk, currentBlk);
+            currentDataBlock[i+16] = currentDataBlock[i+16] ^ currentDataBlock[i];
+        decryptBlock(currentDataBlock);
+        XORblocks(currentDataBlock, previousBlk, currentDataBlock);
+    }
+}
+
+void AES::encryptPIVS(char*const data, unsigned size) const{
+    char* pi = NULL;                                                            // -Will save the binary digits of pi
+    char* currentDataBlock = data;
+    char _key_[32];                                                             // -Cryptographic key
+    std::ifstream file;
+
+    file.open("pi.bin", std::ios::binary);
+    if(file.is_open()) {
+        UnsignedInt256bits a;                                                   // -Representation of a number of 256 bits (32 bytes)
+        UnsignedInt256bits b;                                                   // -Representation of a number of 256 bits (32 bytes)
+        _16uint32_64uchar c;                                                    // -Will save the multiplication result
+        unsigned i, j, k;
+        //unsigned loadedPiSize = (size >> 1) + 32;                               // -Amount of bytes we'll upload from pi.bin file, which is size/2 +32
+        unsigned _32bytesBlocks = size >> 5;                                    // -Amount of blocks of 64 bytes, _32bytesBlocks = size / 64
+        unsigned lastBlockSize = size & 31;                                     // -Size of the last block, lastBlockSize = size % 64
+                                                                                // -Using blocks of 64 bytes since the result of the product of two 256 bits number
+                                                                                //  is a 512 bits number (size doubles).
+        const char* piIndex;                                                    // -Will go trough the digits of pi
+
+        pi = new char[size];
+        file.read(pi, size);                                                    // -Uploading pi
+        this->key.write_Key(_key_);
+        if(this->key.get_LenBytes() < 32) {
+            for(i = this->key.get_LenBytes(), j = 0; i < 32; i++, j++) _key_[i] = _key_[j];           // -Padding with the beginning of the key
+        }
+        a = UnsignedInt256bits(_key_);                                          // -Creating number from key
+        for(i = 0, piIndex = pi; i < _32bytesBlocks; i++, piIndex += 32, currentDataBlock += 32) {
+            b.reWriteLeastSignificantBytes(piIndex);                            // -Number from a 32 bytes chunk of pi
+            c = a*b;                                                            // -Product with the key
+            for(j = 0 ; j < 32; j++) currentDataBlock[j] ^= (char)c.chars[j];
+            for(k = 0 ; k < 32; k++,j++) currentDataBlock[k] ^= (char)c.chars[j]; // -Second round of X0R
+        }
+        if(lastBlockSize > 0) {
+            b.reWriteLeastSignificantBytes(piIndex, lastBlockSize);             // -Rewriting with the bytes left
+            c = a*b;                                                            // -Product with the key
+            for(j = 0 ; j < lastBlockSize; j++) currentDataBlock[j] ^= (char)c.chars[j];
+            for(k = 0 ; k < lastBlockSize; k++,j++) currentDataBlock[k] ^= (char)c.chars[j]; // -Second round of X0R
+        }
+        std::cout << "\nSource/AES.cpp::line 344\n";
+    } else {
+        std::cout << "\nSource/AES.cpp::line 346\n";
+    }
+    if(pi != NULL) delete[] pi;
+    this->encryptECB(data, size);                                               // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
+}
+
+void AES::decryptPIVS(char*const data, unsigned size) const{
+    char* pi = NULL;                                                            // -Will save the binary digits of pi
+    char* currentDataBlock = data;
+    char _key_[32];                                                             // -Cryptographic key
+    std::ifstream file;
+
+    if(pi != NULL) delete[] pi;
+    this->decryptECB(data, size);                                               // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
+
+    file.open("pi.bin", std::ios::binary);
+    if(file.is_open()) {
+        UnsignedInt256bits a;                                                   // -Representation of a number of 256 bits (32 bytes)
+        UnsignedInt256bits b;                                                   // -Representation of a number of 256 bits (32 bytes)
+        _16uint32_64uchar c;                                                    // -Will save the multiplication result
+        unsigned i, j, k;
+        //unsigned loadedPiSize = (size >> 1) + 32;                               // -Amount of bytes we'll upload from pi.bin file, which is size/2 +32
+        unsigned _32bytesBlocks = size >> 5;                                    // -Amount of blocks of 64 bytes, _32bytesBlocks = size / 64
+        unsigned lastBlockSize = size & 31;                                     // -Size of the last block, lastBlockSize = size % 64
+                                                                                // -Using blocks of 64 bytes since the result of the product of two 256 bits number
+                                                                                //  is a 512 bits number (size doubles).
+        const char* piIndex;                                                    // -Will go trough the digits of pi
+
+        pi = new char[size];
+        file.read(pi, size);                                                    // -Uploading pi
+        this->key.write_Key(_key_);
+        if(this->key.get_LenBytes() < 32) {
+            for(i = this->key.get_LenBytes(), j = 0; i < 32; i++, j++) _key_[i] = _key_[j];           // -Padding with the beginning of the key
+        }
+        a = UnsignedInt256bits(_key_);                                          // -Creating number from key
+        for(i = 0, piIndex = pi; i < _32bytesBlocks; i++, piIndex += 32, currentDataBlock += 32) {
+            b.reWriteLeastSignificantBytes(piIndex);                            // -Number from a 32 bytes chunk of pi
+            c = a*b;                                                            // -Product with the key
+            for(j = 0 ; j < 32; j++) currentDataBlock[j] ^= (char)c.chars[j];
+            for(k = 0 ; k < 32; k++,j++) currentDataBlock[k] ^= (char)c.chars[j]; // -Second round of X0R
+        }
+        if(lastBlockSize > 0) {
+            b.reWriteLeastSignificantBytes(piIndex, lastBlockSize);             // -Rewriting with the bytes left
+            c = a*b;                                                            // -Product with the key
+            for(j = 0 ; j < lastBlockSize; j++) currentDataBlock[j] ^= (char)c.chars[j];
+            for(k = 0 ; k < lastBlockSize; k++,j++) currentDataBlock[k] ^= (char)c.chars[j]; // -Second round of X0R
+        }
+        std::cout << "\nSource/AES.cpp::line 344\n";
+    } else {
+        std::cout << "\nSource/AES.cpp::line 346\n";
     }
 }
 

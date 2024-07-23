@@ -107,10 +107,19 @@ class AES {
 	// -The data size (in bytes) is  provided by the 'size' argument.
 	void encryptCBC(char*const data, unsigned size) const;
 
-	// -Decrypts the message pointed by 'data_ptr'. The message must had been
+	// -Decrypts the message pointed by 'data'. The message must had been
 	//  encrypted using the CBC mode operation.
 	// -The size of the message is provided by the 'size' argument.
 	void decryptCBC(char*const data, unsigned size) const;
+
+	// -Encrypts the message pointed by 'data' using the PI operation mode.
+	// -The data size (in bytes) is  provided by the 'size' argument.
+	void encryptPIVS(char*const data, unsigned size) const;
+
+	// -Decrypts the message pointed by 'data'. The message must had been
+	//  encrypted using the PI mode operation.
+	// -The size of the message is provided by the 'size' argument.
+	void decryptPIVS(char*const data, unsigned size) const;
 
 	inline void saveKey(const char*const fname) const {key.save(fname);}
 
