@@ -64,6 +64,16 @@ TXT& TXT::operator = (const TXT& t) {
     return *this;
 }
 
+void encryptECB(TXT& txt, const AES& e) {
+    e.encryptECB(txt.content, txt.size);
+    txt.save();
+}
+
+void decryptECB(TXT& txt, const AES& e) {
+    e.decryptECB(txt.content, txt.size);
+    txt.save();
+}
+
 void encryptCBC(TXT& txt, const AES& e) {
     e.encryptCBC(txt.content, txt.size);
     txt.save();
@@ -74,12 +84,12 @@ void decryptCBC(TXT& txt, const AES& e) {
     txt.save();
 }
 
-void encryptECB(TXT& txt, const AES& e) {
-    e.encryptECB(txt.content, txt.size);
+void encryptPIVS(TXT& txt, const AES& e) {
+    e.encryptPIVS(txt.content, txt.size);
     txt.save();
 }
 
-void decryptECB(TXT& txt, const AES& e) {
-    e.decryptECB(txt.content, txt.size);
+void decryptPIVS(TXT& txt, const AES& e) {
+    e.decryptPIVS(txt.content, txt.size);
     txt.save();
 }

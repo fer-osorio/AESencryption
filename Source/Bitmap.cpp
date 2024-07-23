@@ -159,6 +159,16 @@ void decryptCBC(Bitmap& bmp, const AES& e) {
     bmp.save(bmp.name);
 }
 
+void encryptPIVS(Bitmap& bmp, const AES& e) {
+    e.encryptPIVS(bmp.data, bmp.ih.SizeOfBitmap);
+    bmp.save(bmp.name);
+}
+
+void decryptPIVS(Bitmap& bmp, const AES& e) {
+    e.decryptPIVS(bmp.data, bmp.ih.SizeOfBitmap);
+    bmp.save(bmp.name);
+}
+
 std::ostream& operator << (std::ostream &stream, const Bitmap &bmp) {
     stream << "File Header: ";
     stream << "\n\tbm: " << bmp.fh.bm[0] << bmp.fh.bm[1];

@@ -55,6 +55,9 @@ class Bitmap {
 	friend void encryptCBC(Bitmap& bmp, const AES& e);
 	friend void decryptCBC(Bitmap& bmp, const AES& e);
 
+	friend void encryptPIVS(Bitmap& bmp, const AES& e);
+	friend void decryptPIVS(Bitmap& bmp, const AES& e);
+
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 };
 #endif
