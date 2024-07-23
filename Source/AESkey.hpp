@@ -1,5 +1,4 @@
-// -Class AESkey will hold the necessary information for the decryption of
-//  whatever we have encrypted.
+// -Class AESkey will hold the necessary information for the decryption of whatever we have encrypted.
 #include <iostream>
 
 #ifndef _INCLUDED_AESKEY_
@@ -15,7 +14,8 @@ struct AESkey {
 		CBC, // -Cipher Block Chaining.
 		CFB,
 		OFB,
-		CTR
+		CTR,
+		PIVS // -PI xor and variable Sbox
 	};
 	private:
 	Length 	 length;	// -Length in bits.
