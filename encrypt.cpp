@@ -26,8 +26,8 @@ char key128[]= {char(0x2B), char(0x7E), char(0x15), char(0x16),
                 char(0xAB), char(0xF7), char(0x15), char(0x88),
                 char(0x09), char(0xCF), char(0x4F), char(0x3C)};
 
-void set_key(AESkey::Length len);                                               // Not proved to be secure.
-void printKey(AESkey::Length len, const char* = NULL, const char* = NULL);
+void set_key(AES::Key::Length len);                                             // Not proved to be secure.
+void printKey(AES::Key::Length len, const char* = NULL, const char* = NULL);
 
 int main(int argc, char *argv[]) {
     Bitmap bmp;
@@ -36,8 +36,8 @@ int main(int argc, char *argv[]) {
         FileName fname(argv[1]);                                                // -Recognizing extension.
         FileName keyName = fname.returnThisNewExtension(FileName::key);
         FileName::Extension ext = fname.getExtension();
-        set_key(AESkey:: _192);
-        AES e(key192, AESkey::_192);
+        set_key(AES::Key:: _192);
+        AES::Cipher e(key192, AES::Key::_192);
         switch(ext) {
             case FileName::bmp:
                 std::cout << "\nEncrypting bmp file...\n\n";
@@ -73,8 +73,8 @@ int main(int argc, char *argv[]) {
     unsigned size = 0, i = 0;
     std::ofstream file;
 
-    set_key(AESkey::_128);
-    AES e(key128, AESkey::_128);
+    set_key(AES::Key::_128);
+    AES::Cipher e(key128, AES::Key::_128);
     int op;
     FileName Fname;
     FileName::Extension ext;
@@ -88,8 +88,8 @@ int main(int argc, char *argv[]) {
                      "\nOnce done, press enter (input must not have spaces and should be at most 1024"
                      "\ncharacters long. File names/paths must have less than 64 characters):\n\n";
         std::cin.getline(buffer, 1024, '\n');
-        while(buffer[i++] != 0) {} // Appending one space at the end of
-        buffer[i-1] = ' '; buffer[i] = 0; // the input string.
+        while(buffer[i++] != 0) {}                                              // Appending one space at the end of the input string.
+        buffer[i-1] = ' '; buffer[i] = 0;
 
         for(i = 0; buffer[i] != 0; ++i) {
             if((buffer[i] > 47 && buffer[i] < 58) || // -Naive way of getting a
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
             e.encryptECB(buffer, size);
             file.write(buffer, size);
             file.close();
-            printKey(AESkey::_128, "\n\nKey = ", "\n");
+            printKey(AES::Key::_128, "\n\nKey = ", "\n");
             e.saveKey("encryption.key");
             std::cout << "\nTerminating program with success status...\n";
             return EXIT_SUCCESS;
@@ -176,13 +176,13 @@ int main(int argc, char *argv[]) {
     return EXIT_SUCCESS;
 }
 
-void set_key(AESkey::Length len) {
+void set_key(AES::Key::Length len) {
     std::random_device dev; std::mt19937 seed(dev());
     std::uniform_int_distribution<std::mt19937::result_type> distribution;
     int i, j;
-    intToChar buff;
+    union { int integer; char chars[4]; } buff;                                 // -Anonymous union. Casting from 32 bits integer to four chars
     switch(len) {
-        case AESkey::_128:
+        case AES::Key::_128:
             for(i = 0; i < 4; i++) {
                 j = i << 2; // j = i*4
                 buff.integer = distribution(seed);
@@ -192,7 +192,7 @@ void set_key(AESkey::Length len) {
                 key128[j+3] = buff.chars[3];
             }
             break;
-        case AESkey::_192:
+        case AES::Key::_192:
             for(i = 0; i < 6; i++) {
                 j = i << 2; // j = i*4
                 buff.integer = distribution(seed);
@@ -202,7 +202,7 @@ void set_key(AESkey::Length len) {
                 key192[j+3] = buff.chars[3];
             }
             break;
-        case AESkey::_256:
+        case AES::Key::_256:
             for(i = 0; i < 8; i++) {
                 j = i << 2; // j = i*4
                 buff.integer = distribution(seed);
@@ -217,13 +217,13 @@ void set_key(AESkey::Length len) {
     }
 }
 
-void printKey(AESkey::Length len, const char* front, const char* back) {
+void printKey(AES::Key::Length len, const char* front, const char* back) {
     int i;
     unsigned char t;
     if(front != NULL) std::cout << front;
     std::cout << '[';
     switch(len) {
-        case AESkey::_128:
+        case AES::Key::_128:
             for(i = 0; i < 16; i++) {
                 t = (unsigned char)key128[i];
                 if(i != 0 && (i&3) == 0) std::cout << ',';
@@ -231,7 +231,7 @@ void printKey(AESkey::Length len, const char* front, const char* back) {
                 printf("%X", t);
             }
             break;
-        case AESkey::_192:
+        case AES::Key::_192:
             for(i = 0; i < 24; i++) {
                 t = (unsigned char)key192[i];
                 if(i != 0 && (i&3) == 0) std::cout << ',';
@@ -239,7 +239,7 @@ void printKey(AESkey::Length len, const char* front, const char* back) {
                 printf("%X", t);
             }
             break;
-        case AESkey::_256:
+        case AES::Key::_256:
             for(i = 0; i < 32; i++) {
                 t = (unsigned char)key256[i];
                 if(i != 0 && (i&3) == 0) std::cout << ',';
