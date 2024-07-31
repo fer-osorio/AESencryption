@@ -52,11 +52,11 @@ class Bitmap {
 	void save(const char* fname);
 	Bitmap& operator = (const Bitmap& bmp);
 
-	friend void encryptCBC(Bitmap& bmp, const AES& e);
-	friend void decryptCBC(Bitmap& bmp, const AES& e);
+	friend void encryptCBC(Bitmap& bmp, const AES::Cipher& e);
+	friend void decryptCBC(Bitmap& bmp, const AES::Cipher& e);
 
-	friend void encryptPIVS(Bitmap& bmp, const AES& e);
-	friend void decryptPIVS(Bitmap& bmp, const AES& e);
+	friend void encryptPIVS(Bitmap& bmp, const AES::Cipher& e);
+	friend void decryptPIVS(Bitmap& bmp, const AES::Cipher& e);
 
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 };

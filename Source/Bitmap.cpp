@@ -149,22 +149,22 @@ Bitmap& Bitmap::operator = (const Bitmap &bmp) {
     return *this;
 }
 
-void encryptCBC(Bitmap& bmp, const AES& e) {
+void encryptCBC(Bitmap& bmp, const AES::Cipher& e) {
     e.encryptCBC(bmp.data, bmp.ih.SizeOfBitmap);
     bmp.save(bmp.name);
 }
 
-void decryptCBC(Bitmap& bmp, const AES& e) {
+void decryptCBC(Bitmap& bmp, const AES::Cipher& e) {
     e.decryptCBC(bmp.data, bmp.ih.SizeOfBitmap);
     bmp.save(bmp.name);
 }
 
-void encryptPIVS(Bitmap& bmp, const AES& e) {
+void encryptPIVS(Bitmap& bmp, const AES::Cipher& e) {
     e.encryptPIVS(bmp.data, bmp.ih.SizeOfBitmap);
     bmp.save(bmp.name);
 }
 
-void decryptPIVS(Bitmap& bmp, const AES& e) {
+void decryptPIVS(Bitmap& bmp, const AES::Cipher& e) {
     e.decryptPIVS(bmp.data, bmp.ih.SizeOfBitmap);
     bmp.save(bmp.name);
 }

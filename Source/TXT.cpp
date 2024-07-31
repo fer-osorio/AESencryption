@@ -64,32 +64,32 @@ TXT& TXT::operator = (const TXT& t) {
     return *this;
 }
 
-void encryptECB(TXT& txt, const AES& e) {
+void encryptECB(TXT& txt, const AES::Cipher& e) {
     e.encryptECB(txt.content, txt.size);
     txt.save();
 }
 
-void decryptECB(TXT& txt, const AES& e) {
+void decryptECB(TXT& txt, const AES::Cipher& e) {
     e.decryptECB(txt.content, txt.size);
     txt.save();
 }
 
-void encryptCBC(TXT& txt, const AES& e) {
+void encryptCBC(TXT& txt, const AES::Cipher& e) {
     e.encryptCBC(txt.content, txt.size);
     txt.save();
 }
 
-void decryptCBC(TXT& txt, const AES& e) {
+void decryptCBC(TXT& txt, const AES::Cipher& e) {
     e.decryptCBC(txt.content, txt.size);
     txt.save();
 }
 
-void encryptPIVS(TXT& txt, const AES& e) {
+void encryptPIVS(TXT& txt, const AES::Cipher& e) {
     e.encryptPIVS(txt.content, txt.size);
     txt.save();
 }
 
-void decryptPIVS(TXT& txt, const AES& e) {
+void decryptPIVS(TXT& txt, const AES::Cipher& e) {
     e.decryptPIVS(txt.content, txt.size);
     txt.save();
 }

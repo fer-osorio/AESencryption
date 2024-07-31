@@ -28,14 +28,14 @@ class TXT {
     FileName::Extension fileExtension() { return name.getExtension(); }
     void printName() { std::cout << name.getNameString(); }
 
-    friend void encryptECB(TXT& txt, const AES& e);
-	friend void decryptECB(TXT& txt, const AES& e);
+    friend void encryptECB(TXT& txt, const AES::Cipher& e);
+	friend void decryptECB(TXT& txt, const AES::Cipher& e);
 
     // -The initial vector utilized in encryption is written in 'IVlocation'.
-	friend void encryptCBC(TXT& txt, const AES& e);
-	friend void decryptCBC(TXT& txt, const AES& e);
+	friend void encryptCBC(TXT& txt, const AES::Cipher& e);
+	friend void decryptCBC(TXT& txt, const AES::Cipher& e);
 
-	friend void encryptPIVS(TXT& txt, const AES& e);
-	friend void decryptPIVS(TXT& txt, const AES& e);
+	friend void encryptPIVS(TXT& txt, const AES::Cipher& e);
+	friend void decryptPIVS(TXT& txt, const AES::Cipher& e);
 };
 #endif
