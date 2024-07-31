@@ -1,28 +1,28 @@
-#include<iostream>
 #include<fstream>
 #include"AES.hpp"
 #include"OperationsGF256.hpp"
 
+using namespace AES;
+
+/****************************************** Multiplication of two numbers of 256 bits to obtain a 512 bits number ************************************************/
+
+union intToChar {
+    int integer;                                                                // Useful when casting from a 32 bits integer to an array of four chars
+    char chars[4];
+};
 union uint64_uint32 {                                                           // -Useful for a casting from a 64 bits unsigned integer to an array of two 32 bits
     unsigned long long uint64;                                                  //  integer
     unsigned uint32[2];
 };
-
 union _16uint32_64uchar {                                                        // -Representing 256 bits in an union of 8 unsigned int and 32 char
     unsigned uint32[16];
     unsigned char chars[64];
 };
-
 struct UnsignedInt256bits {
-    union {                                                                     // -Representing 256 bits in a anonymous union of 8 unsigned int and 32 char
-        unsigned uint32[8];
-        unsigned char chars[32];
-    } NumberPlaces = {0,0,0,0,0,0,0,0};
+    union { unsigned char chars[32]; unsigned uint32[8]; } NumberPlaces = {0,0,0,0,0,0,0,0}; // -256 bits in a anonymous union of 8 unsigned int and 32 char
 
     UnsignedInt256bits() {}
-    UnsignedInt256bits(const char*const data) {
-        for(int i = 0; i < 32; i++) NumberPlaces.chars[i] = (unsigned char)data[i];
-    }
+    UnsignedInt256bits(const char*const data) { for(int i = 0; i < 32; i++) NumberPlaces.chars[i] = (unsigned char)data[i]; }
 
     unsigned operator [] (int i) const {
         if(i < 0 || i >= 8) i &= 7;                                             // -i&7 is equivalent to i%8
@@ -54,33 +54,141 @@ _16uint32_64uchar operator * (const UnsignedInt256bits& a, const UnsignedInt256b
     return result;
 }
 
-AES::AES(const char* const _key, AESkey::Length len)
-: key(_key, len, AESkey::ECB), Nk(len >> 5), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
+
+/************************************************************** Handling AES cryptographic keys ******************************************************************/
+
+Key::Key(const char* const _key, Length len, OperationMode _opM, const char* const _IV): length(len), lenBytes((unsigned)len >> 3), opM(_opM) {
+    unsigned i;
+    this->key = new char[this->lenBytes];
+    if(_key != NULL) for(i = 0; i < this->lenBytes; i++) this->key[i] = _key[i];
+    if(_IV != NULL)  for(i = 0; i < 16; i++) this->IV[i] = _IV[i];
+}
+
+Key::Key(const Key& ak):length(ak.length), lenBytes(ak.lenBytes), opM(ak.opM) {
+    unsigned i;
+    this->key = new char[ak.lenBytes];
+    for(i = 0; i < ak.lenBytes; i++) this->key[i] = ak.key[i];                  // - Supposing Cipher object is well constructed, this is, ak.key != NULL
+    if(ak.opM == CBC) for(i = 0; i < 16; i++) this->IV[i] = ak.IV[i];           // -Without CBC, copying IV is pointless.
+}
+
+Key& Key::operator = (const Key& ak) {
+    if(this != &ak) {
+        unsigned i;
+        this->length   = ak.length;
+        this->lenBytes = ak.lenBytes;
+        if(this->key != NULL) delete[] this->key;
+        this->key = new char[ak.lenBytes];
+        for(i = 0; i < ak.lenBytes; i++) this->key[i] = ak.key[i];
+        if(ak.opM == CBC) for(i = 0; i < 16; i++) this->IV[i] = ak.IV[i];       // -Without CBC, copying IV is pointless.
+    }
+    return *this;
+}
+
+Key::Key(const char*const fname) : length(_128), lenBytes(16), opM(ECB) {       // -Building from .key file
+    char AESKEY[6];
+    char op_M[3];
+    short len;
+    std::ifstream file;
+    file.open(fname, std::ios::binary);
+    if(file.is_open()) {
+        file.read((char*)AESKEY, 6);                                            // -Determining if file is a .key file
+        if(AESKEY[0] == 'A' || AESKEY[1] == 'E' || AESKEY[2] == 'S' || AESKEY[3] == 'K' || AESKEY[4] == 'E' || AESKEY[5] == 'Y') {
+                file.read((char*)op_M, 3);                                      // -Determining operation mode
+                if(op_M[0]=='E' && op_M[1]=='C' && op_M[2]=='B')
+                    this->opM = ECB;
+                else if(op_M[0]=='C' && op_M[1]=='B' && op_M[2]=='C')
+                    this->opM = CBC;
+                else if(op_M[0]=='C' && op_M[1]=='F' && op_M[2]=='B')
+                    this->opM = CFB;
+                else if(op_M[0]=='O' && op_M[1]=='F' && op_M[2]=='B')
+                    this->opM = OFB;
+                else if(op_M[0]=='C' && op_M[1]=='T' && op_M[2]=='R')
+                    this->opM = CTR;
+                else throw "Could not recognize operation mode...";
+
+                file.read((char*)&len, 2);                                      // -Reading key length
+                if(len == 128 || len == 192 || len == 256)
+                    this->length = (Length)len;
+                else throw "Key length not allowed...";
+                this->lenBytes = (unsigned)len >> 3;                            // -lenBytes = len / 8;
+
+                key = new char[lenBytes];                                       // -Reading key
+                file.read(key, lenBytes);
+
+                if(this->opM == CBC) file.read((char*)IV, 16);                  // -In CBC case, reading IV.
+           } else {
+                throw "Not a valid AES key file...";
+           }
+    } else {
+        throw "Could not open the file...";
+    }
+}
+
+Key::~Key() {
+    if(this->key != NULL) delete[] this->key;
+    this->key = NULL;
+}
+
+void Key::save(const char* const fname) const {
+    const char* aeskey = "AESKEY";                                              // File type.
+    const char* op_mode;
+    switch(this->opM) {                                                         // -Operation mode.
+        case ECB:
+            op_mode = "ECB";
+            break;
+        case CBC:
+            op_mode = "CBC";
+            break;
+        case CFB:
+            op_mode = "CFB";
+            break;
+        case OFB:
+            op_mode = "OFB";
+            break;
+        case CTR:
+            op_mode = "CTR";
+            break;
+        default:
+            throw "Could not recognize operation mode...";
+    }
+    std::ofstream file;
+    file.open(fname, std::ios::binary);
+    if(file.is_open()) {
+        file.write(aeskey,  6);                                                 // -File type
+        file.write(op_mode, 3);                                                 // -Operation mode
+        file.write((char*)&length, 2);                                          // -Key length in bits
+        file.write(key, lenBytes);                                              // -Key
+        if(this->opM == CBC) file.write(this->IV, 16);                          // -If CBC, writes initial vector
+    } else {
+        throw "File could not be written.";
+    }
+}
+
+
+/************************************************** AES encryption and decryption algorithms implementation ******************************************************/
+
+Cipher::Cipher(const char* const _key, Key::Length len): key(_key, len, Key::ECB), Nk(len >> 5), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
     this->create_KeyExpansion(_key);
 }
 
-AES::AES(const AESkey& ak) :key(ak), Nk((int)ak.get_LenBytes() >> 2), Nr(Nk+6),
-    keyExpLen((Nr+1)<<4) {
+Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.get_LenBytes() >> 2), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
     char* _key = new char[ak.get_LenBytes()];
     ak.write_Key(_key);
     this->create_KeyExpansion(_key);
-
     delete[] _key;
 }
 
-AES::AES(const AES& a) : key(a.key), Nk(a.Nk), Nr(a.Nr),
-    keyExpLen(a.keyExpLen) {
+Cipher::Cipher(const Cipher& a) : key(a.key), Nk(a.Nk), Nr(a.Nr), keyExpLen(a.keyExpLen) {
     this->keyExpansion = new char[(unsigned)a.keyExpLen];
-    for(int i = 0; i < a.keyExpLen; i++)
-        this->keyExpansion[i] = a.keyExpansion[i];
+    for(int i = 0; i < a.keyExpLen; i++) this->keyExpansion[i] = a.keyExpansion[i];
 }
 
-AES::~AES() {
+Cipher::~Cipher() {
     if(keyExpansion != NULL) delete[] keyExpansion;
     keyExpansion = NULL;
 }
 
-AES& AES::operator = (const AES& a) {
+Cipher& Cipher::operator = (const Cipher& a) {
     if(this != &a) {
         this->key = a.key;
         this->Nk = a.Nk;
@@ -88,24 +196,21 @@ AES& AES::operator = (const AES& a) {
         this->keyExpLen = a.keyExpLen;
         if(this->keyExpansion != NULL) delete[] keyExpansion;
         this->keyExpansion = new char[(unsigned)a.keyExpLen];
-        for(int i = 0; i < a.keyExpLen; i++)
-            this->keyExpansion[i] = a.keyExpansion[i];
+        for(int i = 0; i < a.keyExpLen; i++) this->keyExpansion[i] = a.keyExpansion[i];
     }
     return *this;
 }
 
-void AES::create_KeyExpansion(const char* const _key) {
-    char temp[4];         // (Nr+1)*16
-	int i, keyExpansionLen = this->keyExpLen;// Key expansion length in bytes
+void Cipher::create_KeyExpansion(const char* const _key) {
+    char temp[4];                                                               // (Nr+1)*16
+	int i, keyExpansionLen = this->keyExpLen;                                   // Key expansion length in bytes
 
 	keyExpansion = new char[(unsigned)keyExpansionLen];
-	keyExpansionLen >>= 2; // keyExpansionLen in words (block of 4 bytes)
-	// ^~~ == keyExpansionLen /= 4;
+	keyExpansionLen >>= 2;                                                      // keyExpansionLen in words (block of 4 bytes). keyExpansionLen /= 4
 
-	bool debug = false; // -Show the construction of the key expansion.
+	bool debug = false;                                                         // -Show the construction of the key expansion.
 
-	// -The first Nk words of the key expansion are the key itself.
-	int NkBytes = Nk << 2; // Nk * 4
+	int NkBytes = Nk << 2;                                                      // -The first Nk words of the key expansion are the key itself. // Nk * 4
 	for(i = 0; i < NkBytes; i++) keyExpansion[i] = _key[i];
 
 	if(debug) {
@@ -119,16 +224,13 @@ void AES::create_KeyExpansion(const char* const _key) {
 	}
 
 	for(i = Nk; i < keyExpansionLen; i++) {
-		// -Guarding against modify things
-		//   that we don't want to modify.
-		CopyWord(&(keyExpansion[(i - 1) << 2]), temp);
+		CopyWord(&(keyExpansion[(i - 1) << 2]), temp);                          // -Guarding against modify things that we don't want to modify.
         if(debug) {
             std::cout << " " << i;
             i < 10 ? std::cout << "  | " : std::cout << " | ";
 		    printWord(temp);
         }
-		// -i is a multiple of Nk, witch value is 8
-		if((i % Nk) == 0) {
+		if((i % Nk) == 0) {                                                     // -i is a multiple of Nk, witch value is 8
 			RotWord(temp);
 			if(debug) {
 			    std::cout << " | ";
@@ -177,7 +279,7 @@ void AES::create_KeyExpansion(const char* const _key) {
 	debug = false;
 }
 
-void AES::printWord(const char word[4]) {
+void Cipher::printWord(const char word[4]) {
     unsigned int temp = 0;
 	std::cout << '[';
 	for(int i = 0; i < 4; i++) {
@@ -190,78 +292,69 @@ void AES::printWord(const char word[4]) {
 	std::cout << ']';
 }
 
-void AES::encryptECB(char*const data, unsigned size) const{
-    if(size == 0) return; // Exception here.
-    this->key.set_OperationMode(AESkey::ECB); // -Setting operation mode.
+void Cipher::encryptECB(char*const data, unsigned size) const{
+    if(size == 0) return;                                                       // Exception here.
+    this->key.set_OperationMode(Key::ECB);                                      // -Setting operation mode.
 
     char* currentDataBlock = data;
-    int numofBlocks = int(size >> 4);//  numofBlocks = size / 16.
-    int rem = int(size & 15), i;     // -Bytes remaining rem = size % 16
+    int numofBlocks = int(size >> 4);                                           //  numofBlocks = size / 16.
+    int rem = int(size & 15), i;                                                // -Bytes remaining rem = size % 16
 
-    --numofBlocks; // Last block will be treated differently.
+    --numofBlocks;                                                              // Last block will be treated differently.
     for(i = 0; i < numofBlocks; i++) {
         encryptBlock(currentDataBlock);
         currentDataBlock += 16;
     }
-    // -This part of the code is for encrypt data that its size is not
-    //  multiple of 16. This is not specified in the NIST standard.
-    if(rem != 0) { // Not handling the case size < 16
-        encryptBlock(currentDataBlock);
-        encryptBlock(currentDataBlock + rem);
+    if(rem != 0) {                                                              // -This part of the code is for encrypt data that its size is not multiple of 16.
+        encryptBlock(currentDataBlock);                                         //  This is not specified in the NIST standard.
+        encryptBlock(currentDataBlock + rem);                                   // -Not handling the case size < 16
         return;
     }
     encryptBlock(currentDataBlock);
 }
 
-void AES::decryptECB(char *const data, unsigned int size) const{
-    if(size == 0) return; // Exception here.
+void Cipher::decryptECB(char *const data, unsigned int size) const{
+    if(size == 0) return;                                                       // Exception here.
 
     char* currentDataBlock = data;
-    int numofBlocks = int(size >> 4);//  numofBlocks = size / 16.
-    int rem = int(size & 15), i;     // -Bytes remaining rem = size % 16
+    int numofBlocks = int(size >> 4);                                           //  numofBlocks = size / 16.
+    int rem = int(size & 15), i;                                                // -Bytes remaining rem = size % 16
 
-    --numofBlocks; // Last block will be treated differently.
+    --numofBlocks;                                                              // Last block will be treated differently.
     for(i = 0; i < numofBlocks; i++) {
         decryptBlock(currentDataBlock);
         currentDataBlock += 16;
     }
-    // -This part of the code is for encrypt data that its size is not
-    //  multiple of 16. This is not specified in the NIST standard.
-    if(rem != 0) { // Not handling the case size < 16
-        decryptBlock(currentDataBlock + rem);
-        decryptBlock(currentDataBlock);
+    if(rem != 0) {                                                              // -This part of the code is for encrypt data that its size is not multiple of 16.
+        decryptBlock(currentDataBlock + rem);                                   //  This is not specified in the NIST standard.
+        decryptBlock(currentDataBlock);                                         // -Not handling the case size < 16
         return;
     }
     decryptBlock(currentDataBlock);
 }
 
-void AES::encryptCBC(char*const data,unsigned size) const {
-    if(size == 0) return; // Exception here.
-    this->key.set_OperationMode(AESkey::CBC); // -Setting operation mode.
+void Cipher::encryptCBC(char*const data,unsigned size) const {
+    if(size == 0) return;                                                       // Exception here.
+    this->key.set_OperationMode(Key::CBC);                                      // -Setting operation mode.
 
     char *previousBlk, *currentDataBlock = data;
     char IVlocation[16];
-    int numofBlocks = (int)size >> 4;  //  numofBlocks = size / 16.
-    int rem = (int)size & 15, i;       // -Bytes remaining rem = size % 16
+    int numofBlocks = (int)size >> 4;                                           //  numofBlocks = size / 16.
+    int rem = (int)size & 15, i;                                                // -Bytes remaining rem = size % 16
 
-    setIV(IVlocation);                        // -Setting initial vector.
+    setIV(IVlocation);                                                          // -Setting initial vector.
     this->key.set_IV(IVlocation);
-
-    // -Encryption of the first block.
-    XORblocks(currentDataBlock, IVlocation, currentDataBlock);
+    XORblocks(currentDataBlock, IVlocation, currentDataBlock);                  // -Encryption of the first block.
     encryptBlock(currentDataBlock);
 
-    // -Encryption of the rest of the blocks.
-    for(i = 1; i < numofBlocks; i++) {
+    for(i = 1; i < numofBlocks; i++) {                                          // -Encryption of the rest of the blocks.
         previousBlk = currentDataBlock;
         currentDataBlock += 16;
         XORblocks(currentDataBlock, previousBlk, currentDataBlock);
         encryptBlock(currentDataBlock);
     }
-    // -This part of the code is for encrypt data that its size is not
-    //  multiple of 16. This is not specified in the NIST standard.
-    if(rem != 0) {
-        previousBlk = currentDataBlock;
+    if(rem != 0) {                                                              // -This part of the code is for encrypt data that its size is not multiple of 16.
+        previousBlk = currentDataBlock;                                         //  This is not specified in the NIST standard.
         currentDataBlock += 16;
         for(i=0; i<rem; i++) currentDataBlock[i] = currentDataBlock[i] ^ previousBlk[i];
         encryptBlock(previousBlk + rem);
@@ -269,38 +362,34 @@ void AES::encryptCBC(char*const data,unsigned size) const {
 }
 
 
-void AES::decryptCBC(char*const data, unsigned size) const{
-    if(size == 0) return; // Exception here.
+void Cipher::decryptCBC(char*const data, unsigned size) const{
+    if(size == 0) return;                                                       // Exception here.
 
     char *currentDataBlock = data, previousBlk[16], cipherCopy[16];
-    int numofBlocks = (int)size >> 4; // numofBlocks = size / 16
-    int rem = (int)size & 15;         // -Rest of the bytes rem = size % 16
+    int numofBlocks = (int)size >> 4;                                           // numofBlocks = size / 16
+    int rem = (int)size & 15;                                                   // -Rest of the bytes rem = size % 16
     int i;
 
-    for(i = 0; i < 16; i++) cipherCopy[i] = this->key.getIV()[i];
-    CopyBlock(currentDataBlock, previousBlk); // -Copying the first ciphered block.
+    //for(i = 0; i < 16; i++) cipherCopy[i] = this->key.getIV()[i];
+    this->key.write_IV(cipherCopy);
+    CopyBlock(currentDataBlock, previousBlk);                                   // -Copying the first ciphered block.
 
-    // -Deciphering the first block.
-    decryptBlock(currentDataBlock);
+    decryptBlock(currentDataBlock);                                             // -Deciphering the first block.
     XORblocks(currentDataBlock, cipherCopy, currentDataBlock);
 
-    // -Decryption of the rest of the blocks.
-    // -Last block is going to be processed differently.
-    if(numofBlocks > 0) numofBlocks--;
-    for(i = 1; i < numofBlocks; i++) {
+    if(numofBlocks > 0) numofBlocks--;                                          // -Last block is going to be processed differently.
+    for(i = 1; i < numofBlocks; i++) {                                          // -Decryption of the rest of the blocks.
         currentDataBlock += 16;
-        // -Saving cipher block for the next round.
-        CopyBlock(currentDataBlock, cipherCopy);
+        CopyBlock(currentDataBlock, cipherCopy);                                // -Saving cipher block for the next round.
         decryptBlock(currentDataBlock);
         XORblocks(currentDataBlock, previousBlk, currentDataBlock);
-        // -Cipher block now becomes previous block.
-        CopyBlock(cipherCopy, previousBlk);
+        CopyBlock(cipherCopy, previousBlk);                                     // -Cipher block now becomes previous block.
     }
     currentDataBlock += 16;
-    if(rem == 0) { // -Data size is a multiple of 16.
+    if(rem == 0) {                                                              // -Data size is a multiple of 16.
         decryptBlock(currentDataBlock);
         XORblocks(currentDataBlock, previousBlk, currentDataBlock);
-    } else {      // -Data size isn't a multiple of 16.
+    } else {                                                                    // -Data size isn't a multiple of 16.
         decryptBlock(currentDataBlock + rem);
         for(i = 0; i < rem; i++)
             currentDataBlock[i+16] = currentDataBlock[i+16] ^ currentDataBlock[i];
@@ -309,7 +398,7 @@ void AES::decryptCBC(char*const data, unsigned size) const{
     }
 }
 
-void AES::encryptPIVS(char*const data, unsigned size) const{
+void Cipher::encryptPIVS(char*const data, unsigned size) const{
     char* pi = NULL;                                                            // -Will save the binary digits of pi
     char* currentDataBlock = data;
     char _key_[32];                                                             // -Cryptographic key
@@ -332,7 +421,7 @@ void AES::encryptPIVS(char*const data, unsigned size) const{
         file.read(pi, size);                                                    // -Uploading pi
         this->key.write_Key(_key_);
         if(this->key.get_LenBytes() < 32) {
-            for(i = this->key.get_LenBytes(), j = 0; i < 32; i++, j++) _key_[i] = _key_[j];           // -Padding with the beginning of the key
+            for(i = this->key.get_LenBytes(), j = 0; i < 32; i++, j++) _key_[i] = _key_[j]; // -Padding with the beginning of the key
         }
         a = UnsignedInt256bits(_key_);                                          // -Creating number from key
         for(i = 0, piIndex = pi; i < _32bytesBlocks; i++, piIndex += 32, currentDataBlock += 32) {
@@ -347,15 +436,14 @@ void AES::encryptPIVS(char*const data, unsigned size) const{
             for(j = 0 ; j < lastBlockSize; j++) currentDataBlock[j] ^= (char)c.chars[j];
             for(k = 0 ; k < lastBlockSize; k++,j++) currentDataBlock[k] ^= (char)c.chars[j]; // -Second round of X0R
         }
-        std::cout << "\nSource/AES.cpp::line 344\n";
     } else {
-        std::cout << "\nSource/AES.cpp::line 346\n";
+        std::cout << "\nCould not open pi.bin file, proceeding with ECB mode\n";
     }
     if(pi != NULL) delete[] pi;
     this->encryptECB(data, size);                                               // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
 }
 
-void AES::decryptPIVS(char*const data, unsigned size) const{
+void Cipher::decryptPIVS(char*const data, unsigned size) const{
     char* pi = NULL;                                                            // -Will save the binary digits of pi
     char* currentDataBlock = data;
     char _key_[32];                                                             // -Cryptographic key
@@ -396,30 +484,27 @@ void AES::decryptPIVS(char*const data, unsigned size) const{
             for(j = 0 ; j < lastBlockSize; j++) currentDataBlock[j] ^= (char)c.chars[j];
             for(k = 0 ; k < lastBlockSize; k++,j++) currentDataBlock[k] ^= (char)c.chars[j]; // -Second round of X0R
         }
-        std::cout << "\nSource/AES.cpp::line 344\n";
     } else {
-        std::cout << "\nSource/AES.cpp::line 346\n";
+        std::cout << "\nCould not open pi.bin file.\n";                         // -An exception here could be a better idea
     }
 }
 
-// Naive way of setting the initial vector.
-void AES::setIV(char IV[16]) const {
+void Cipher::setIV(char IV[16]) const {                                         // -Naive way of setting the initial vector.
     intToChar ic;
     ic.integer = time(NULL);
     int i, j, k;
     for(i = 0; i < 4; i++, ic.integer++) {
-        k = i << 2; // k = i * 4
-        for(j = 0; j < 4; j++)
-            IV[k + j] = ic.chars[j];
+        k = i << 2;                                                             // -k = i * 4
+        for(j = 0; j < 4; j++) IV[k + j] = ic.chars[j];
     }
     encryptBlock(IV);
 }
 
-void AES::XORblocks(char b1[16], char b2[16], char r[16]) const {
+void Cipher::XORblocks(char b1[16], char b2[16], char r[16]) const {
     for(int i = 0; i < 16; i++) r[i] = b1[i] ^ b2[i];
 }
 
-void AES::printState(const char state[16]) {
+void Cipher::printState(const char state[16]) {
 	int i, j, temp;
 	for(i = 0; i < 4; i++) {
 		std::cout << '[';
@@ -433,81 +518,69 @@ void AES::printState(const char state[16]) {
 	}
 }
 
-void AES::CopyWord(const char source[4], char destination[4]) const {
+void Cipher::CopyWord(const char source[4], char destination[4]) const {
     for(int i = 0; i < 4; i++) destination[i] = source[i];
 }
 
-void AES::CopyBlock(const char source[16], char destination[16]) const {
+void Cipher::CopyBlock(const char source[16], char destination[16]) const {
     for(int i = 0; i < 16; i++) destination[i] = source[i];
 }
 
-void AES::XORword(const char w1[4], const char w2[4], char resDest[4])
-const{
+void Cipher::XORword(const char w1[4], const char w2[4], char resDest[4]) const{
     for(int i = 0; i < 4; i++) resDest[i] = w1[i] ^ w2[i];
 }
 
-void AES::RotWord(char word[4]) const{
+void Cipher::RotWord(char word[4]) const{
     char temp = word[0]; int i;
 	for(i = 0; i < 3; i++) word[i] = word[i + 1];
 	word[3] = temp;
 }
 
-void AES::SubWord(char word[4]) const{
+void Cipher::SubWord(char word[4]) const{
     for(int i = 0; i < 4; i++) word[i] = (char)SBox[(ui08)word[i]];
 }
 
-// -Applies a substitution table (S-box) to each char.
-void AES::SubBytes(char state[16]) const{
+void Cipher::SubBytes(char state[16]) const{                                    // -Applies a substitution table (S-box) to each char.
 	for(int i = 0; i < 16; i++) state[i] = (char)SBox[(ui08)state[i]];
 }
 
-// -Shift rows of the state array by different offset.
-void AES::ShiftRows(char state[16]) const{
+void Cipher::ShiftRows(char state[16]) const{                                   // -Shift rows of the state array by different offset.
 	int i, j; char tmp[4];
 	for(i = 1; i < 4; i++) {
-		for(j = 0; j < 4; j++)
-			tmp[j] = state[i + (j << 2)];
-		for(j = 0; j < 4; j++)
-			state[i + (j << 2)] = tmp[(j + i) & 3];
+		for(j = 0; j < 4; j++) tmp[j] = state[i + (j << 2)];
+		for(j = 0; j < 4; j++) state[i + (j << 2)] = tmp[(j + i) & 3];
 	}
 }
 
-// -Mixes the data within each column of the state array.
-void AES::MixColumns(char state[16]) const{
+void Cipher::MixColumns(char state[16]) const{                                  // -Mixes the data within each column of the state array.
     int i, I, j, k;
 	char temp[4];
 	for(i = 0; i < 4; i++) {
-	    I = i << 2; // I = i * 4;
-		for(k = 0; k < 4; k++) temp[k] = state[I + k]; // Copying row.
+	    I = i << 2;                                                             // I = i * 4;
+		for(k = 0; k < 4; k++) temp[k] = state[I + k];                          // Copying row.
 		for(j = 0; j < 4; j++) {
-		    // -First state column element times matrix first column
-			state[I + j] = (char)
-			multiply[ (int)(ui08)a[(4 - j) & 3] ][ (int)(ui08)temp[0] ];
+			state[I + j] = (char)multiply[ (int)(ui08)a[(4 - j) & 3] ][ (int)(ui08)temp[0] ]; // -First state column element times matrix first column
 			for(k = 1; k < 4; k++) {
-				state[I + j] ^= (char)
-				multiply[ (int)(ui08)a[(k - j + 4)&3] ][ (int)(ui08)temp[k] ];
+				state[I + j] ^= (char)multiply[ (int)(ui08)a[(k - j + 4)&3] ][ (int)(ui08)temp[k] ];
 			}
 		}
 	}
 }
 
-// -Combines a round key with the state.
-void AES::AddRoundKey(char state[16], int round) const{
-    round <<= 4; // -Each round uses 16 bytes and r <<= 4 == r *= 16.
+void Cipher::AddRoundKey(char state[16], int round) const{                      // -Combines a round key with the state.
+    round <<= 4;                                                                // -Each round uses 16 bytes and r <<= 4 == r *= 16.
 	for(int i = 0; i < 16; i++) state[i] ^= keyExpansion[round + i];
 }
 
-void AES::encryptBlock(char block[]) const {
+void Cipher::encryptBlock(char block[]) const {
 	int i, j;
 
-	bool debug = false; // True to show every encryption step.
+	bool debug = false;                                                         // -True to show every encryption step.
 
-	// -Debugging purposes.
-	// -Columns of the debugging table.
-	char *SOR, *ASB, *ASR, *AMC;
-	SOR = ASB = ASR = AMC = NULL;
+	char *SOR, *ASB, *ASR, *AMC;                                                // -Debugging purposes.
+	SOR = ASB = ASR = AMC = NULL;                                               // -Columns of the debugging table.
 
-	if(debug) {     // (Nr + 2) * 16
+	if(debug) {                                                                 // (Nr + 2) * 16
         SOR = new char[(unsigned)(Nr + 2) << 4];
         AMC = new char[(unsigned)(Nr - 1) << 4];
         ASB = new char[(unsigned)Nr << 4];
@@ -612,38 +685,33 @@ void AES::encryptBlock(char block[]) const {
     debug = false;
 }
 
-void AES::InvSubBytes(char state[16]) const{
+void Cipher::InvSubBytes(char state[16]) const{
     for(int i = 0; i < 16; i++) state[i] = (char)InvSBox[(ui08)state[i]];
 }
 
-void AES::InvShiftRows(char state[16]) const{
+void Cipher::InvShiftRows(char state[16]) const{
     int i, j; char temp[4];
 	for(i = 1; i < 4; i++) {
-		for(j = 0; j < 4; j++)
-			temp[j] = state[i + (j << 2)];
-		for(j = 0; j < 4; j++)
-			state[(j << 2) + i] = temp[(j - i + 4) & 3];
+		for(j = 0; j < 4; j++) temp[j] = state[i + (j << 2)];
+		for(j = 0; j < 4; j++) state[(j << 2) + i] = temp[(j - i + 4) & 3];
 	}
 }
 
-void AES::InvMixColumns(char state[16]) const{
+void Cipher::InvMixColumns(char state[16]) const{
     int  i, j, k, I;
 	char temp[4];
 	for(i = 0; i < 4; i ++) {
-	    I = i << 2; // I = i * 4
-		for(j = 0; j < 4; j++)
-			temp[j] = state[I + j];
+	    I = i << 2;                                                             // -I = i * 4
+		for(j = 0; j < 4; j++) temp[j] = state[I + j];
 		for(j = 0; j < 4; j++) {
-			state[I + j] = (char)
-			multiply[ (int)(ui08)aInv[(4 - j) & 0x03] ][ (int)(ui08)temp[0] ];
+			state[I + j] = (char)multiply[ (int)(ui08)aInv[(4 - j) & 0x03] ][ (int)(ui08)temp[0] ];
 			for(k = 1; k < 4; k++)
-				state[I + j] ^= (char)
-				multiply[(int)(ui08)aInv[(k - j + 4)&3] ][ (int)(ui08)temp[k]];
+			    state[I + j] ^= (char)multiply[ (int)(ui08)aInv[(k - j + 4)&3] ][ (int)(ui08)temp[k] ];
 		}
 	}
 }
 
-void AES::decryptBlock(char block[16]) const {
+void Cipher::decryptBlock(char block[16]) const {
     int i = Nr;
 	AddRoundKey(block, i);
 	for(i--; i > 0; i--) {
@@ -656,4 +724,3 @@ void AES::decryptBlock(char block[16]) const {
 	InvSubBytes(block);
 	AddRoundKey(block, 0);
 }
-

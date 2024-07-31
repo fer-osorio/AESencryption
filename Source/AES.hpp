@@ -1,24 +1,65 @@
-#include"AESkey.hpp"
+#include<iostream>
 
 #ifndef _INCLUDED_AES_
-#define  _INCLUDED_AES_
+#define _INCLUDED_AES_
 
-union intToChar {
-    int  integer;
-    char chars[4];
+namespace AES {
+
+struct Key {
+	enum Length {																// -Allowed AES key lengths
+		_128 = 128,
+		_192 = 192,
+		_256 = 256
+	};
+	enum OperationMode {
+		ECB,																	// -Electronic Code Book (not recommended).
+		CBC,																	// -Cipher Block Chaining.
+		CFB,
+		OFB,
+		CTR,
+		PIVS																	// -PI xor and variable Sbox
+	};
+	private:
+	Length 	 length;															// -Length in bits.
+	unsigned lenBytes;															// -Length in bytes.
+	OperationMode opM;
+	char* key = NULL;
+	char IV[16] = {0, 0, 0, 0,													// -Initial vector for the CBC operation mode.
+				   0, 0, 0, 0,													// -This default value (just zeros) is left
+				   0, 0, 0, 0,													//  for the case in which we do not use CBC.
+				   0, 0, 0, 0};
+
+	public:
+	Key(const char* const _key, Length, OperationMode, const char* const _IV = NULL);
+	Key(const Key&);
+	Key(const char*const fname);												// -Building from binary file.
+	~Key();
+
+	Key& operator = (const Key&);
+
+	inline void set_OperationMode(OperationMode _opM) {opM = _opM;}
+	inline void set_IV(const char*const _IV) {
+		for(int i = 0; i < 16; i++) this->IV[i] = _IV[i];
+	}
+	inline void write_IV(char*const destination) const {						// -Writes IV in destination
+		for(int i = 0; i < 16; i++) destination[i] = this->IV[i];				// -Warning: We are supposing we have at least 16 bytes of space in destination
+	}
+	inline void write_Key(char*const destination) const {
+		for(unsigned i = 0; i < lenBytes; i++) destination[i] = this->key[i];
+	}
+	inline unsigned get_LenBytes() const {return this->lenBytes;}
+	void save(const char* const) const;											// -Saving information in a binary file.
 };
 
-class AES {
-	mutable	AESkey key;
+class Cipher {
+	mutable	Key key;
 	int    Nk, Nr, keyExpLen;
 	char*  keyExpansion = NULL;
 
-	char a[4] 	 = {0x02, 0x03, 0x01, 0x01};    // For MixColumns.
-	char aInv[4] = {0x0E, 0x0B, 0x0D, 0x09}; // For InvMixColumns.
+	char a[4] 	 = {0x02, 0x03, 0x01, 0x01};									// For MixColumns.
+	char aInv[4] = {0x0E, 0x0B, 0x0D, 0x09};									// For InvMixColumns.
 
-	// -Notice that the value of the left most char in
-	//  polynomial form is 2^i.
-	const char Rcon[10][4] = {
+	const char Rcon[10][4] = {													// -Notice that the value of the left most char in polynomial form is 2^i.
 		{0x01, 0x00, 0x00, 0x00},
   		{0x02, 0x00, 0x00, 0x00},
   		{0x04, 0x00, 0x00, 0x00},
@@ -80,100 +121,48 @@ class AES {
          (char)0x09, (char)0x14, (char)0xDF, (char)0xF4};
 
 	public:
-	AES(const char* const _key, AESkey::Length len);
-	AES(const AESkey&);
-	AES(const AES& a);
-	~AES();
+	Cipher(const char* const _key, Key::Length len);
+	Cipher(const Key&);
+	Cipher(const Cipher& a);
+	~Cipher();
 
-	AES& operator = (const AES& a);
+	Cipher& operator = (const Cipher& a);
 
-	void create_KeyExpansion(const char* const);
-
-	// -Sets the initial vector value.
-	// -Required for the CBC operation mode.
-	void setIV(char IV[16]) const;
-
-	// -Encrypts the message pointed by 'data' using the ECB operation mode.
-	// -The data size (in bytes) is  provided by the 'size' argument.
-	// -This mode is not recommended.
-	void encryptECB(char*const data, unsigned size) const;
-
-	// -Decrypts the message pointed by 'data' using the ECB operation mode.
-	// -The data size (in bytes) is  provided by the 'size' argument.
-	// -This mode is not recommended.
-	void decryptECB(char*const data, unsigned size) const;
-
-	// -Encrypts the message pointed by 'data' using the CBC operation mode.
-	// -The data size (in bytes) is  provided by the 'size' argument.
-	void encryptCBC(char*const data, unsigned size) const;
-
-	// -Decrypts the message pointed by 'data'. The message must had been
-	//  encrypted using the CBC mode operation.
-	// -The size of the message is provided by the 'size' argument.
-	void decryptCBC(char*const data, unsigned size) const;
-
-	// -Encrypts the message pointed by 'data' using the PI operation mode.
-	// -The data size (in bytes) is  provided by the 'size' argument.
-	void encryptPIVS(char*const data, unsigned size) const;
-
-	// -Decrypts the message pointed by 'data'. The message must had been
-	//  encrypted using the PI mode operation.
-	// -The size of the message is provided by the 'size' argument.
-	void decryptPIVS(char*const data, unsigned size) const;
-
-	inline void saveKey(const char*const fname) const {key.save(fname);}
+	void create_KeyExpansion(const char* const);								// -Creates key expansion
+	void setIV(char IV[16]) const;												// -Sets the initial vector value. Required for the CBC operation mode
+	void encryptECB(char*const data, unsigned size) const;						// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
+																				//	size (in bytes) is  provided by the 'size' argument.
+	void decryptECB(char*const data, unsigned size) const;						// -Decrypts the message pointed by 'data' using the ECB operation mode. The data
+																				//	size (in bytes) is  provided by the 'size' argument.
+	void encryptCBC(char*const data, unsigned size) const;						// -Encrypts the message pointed by 'data' using the CBC operation mode. The data
+																				//	size (in bytes) is  provided by the 'size' argument.
+	void decryptCBC(char*const data, unsigned size) const;						// -Decrypts the message pointed by 'data'. The message must had been encrypted
+																				//	using the CBC mode operation.
+																				// -The size of the message is provided by the 'size' argument.
+	void encryptPIVS(char*const data, unsigned size) const;						// -Encrypts the message pointed by 'data' using the PI operation mode.
+																				// -The data size (in bytes) is  provided by the 'size' argument.
+	void decryptPIVS(char*const data, unsigned size) const;						// -Decrypts the message pointed by 'data' using the PI operation mode.
+																				// -The size of the message is provided by the 'size' argument.
+	inline void saveKey(const char*const fname) const {this->key.save(fname);}
 
 	private:
-	// -Xor operation over 16 bytes array.
-	void XORblocks(char b1[16], char b2[16], char r[16]) const;
-
-	// -Prints an array of 4 bytes.
-	void printWord(const char word[4]);
-
-	// -Prints an array of 16 bytes.
-	void printState(const char word[16]);
-
-	// -Coping an array of 4 bytes.
-	void CopyWord(const char source[4], char destination[4]) const;
-
-	// -Coping an array of 16 bytes.
-	void CopyBlock(const char source[16], char destination[16]) const;
-
-	// -XOR of arrays of 4 bytes.
-	void XORword(const char w1[4], const char w2[4], char resDest[4]) const;
-
-	// -Rotation of bytes to the left.
-	void RotWord(char word[4]) const;
-
-	// -Apply SBox to each char of the word.
-	void SubWord(char word[4]) const;
-
-	// -Applies a substitution table (S-box) to each char.
-	void SubBytes(char state[16]) const;
-
-	// -Shift rows of the state array by different offset.
-	void ShiftRows(char state[16]) const;
-
-	// -Mixes the data within each column of the state array.
-	void MixColumns(char state[16]) const;
-
-	// -Combines a round key with the state.
-	void AddRoundKey(char state[16], int round) const;
-
-	// -Applies the inverse substitution table (InvSBox) to each char.
-	void InvSubBytes(char state[16]) const;
-
-	// -Inverse function of shift rows.
-	void InvShiftRows(char state[16]) const;
-
-	// -Inverse function of MixColumns.
-	void InvMixColumns(char state[16]) const;
-
-	// -Encrypts an array of 16 bytes.
-	void encryptBlock(char block[16]) const;
-
-	// -Decrypt an array of 16 bytes.
-	void decryptBlock(char block[16]) const;
+	void XORblocks(char b1[16], char b2[16], char r[16]) const;					// -Xor operation over 16 bytes array.
+	void printWord(const char word[4]);											// -Prints an array of 4 bytes.
+	void printState(const char word[16]);										// -Prints an array of 16 bytes.
+	void CopyWord(const char source[4], char destination[4]) const;				// -Coping an array of 4 bytes.
+	void CopyBlock(const char source[16], char destination[16]) const;			// -Coping an array of 16 bytes.
+	void XORword(const char w1[4], const char w2[4], char resDest[4]) const;	// -XOR of arrays of 4 bytes.
+	void RotWord(char word[4]) const;											// -Rotation of bytes to the left.
+	void SubWord(char word[4]) const;											// -Apply SBox to each char of the word.
+	void SubBytes(char state[16]) const;										// -Applies a substitution table (S-box) to each char.
+	void ShiftRows(char state[16]) const;										// -Shift rows of the state array by different offset.
+	void MixColumns(char state[16]) const;										// -Mixes the data within each column of the state array.
+	void AddRoundKey(char state[16], int round) const;							// -Combines a round key with the state.
+	void InvSubBytes(char state[16]) const;										// -Applies the inverse substitution table (InvSBox) to each char.
+	void InvShiftRows(char state[16]) const;									// -Inverse function of shift rows.
+	void InvMixColumns(char state[16]) const;									// -Inverse function of MixColumns.
+	void encryptBlock(char block[16]) const;									// -Encrypts an array of 16 bytes.
+	void decryptBlock(char block[16]) const;									// -Decrypts an array of 16 bytes.
 };
-
+};
 #endif
