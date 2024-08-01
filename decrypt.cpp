@@ -1,40 +1,39 @@
 #include<iostream>
 #include<fstream>
-#include"Source/Bitmap.hpp"
-#include"Source/TXT.hpp"
+#include"Source/File.hpp"
 
 int main(int argc, char *argv[]) {
-    Bitmap bmp;
-    TXT    txt;
+    File::Bitmap bmp;
+    File::TXT txt;
     if(argc > 2) {
         AES::Key aeskey(argv[1]);
         AES::Cipher e(aeskey);
-        FileName fname(argv[2]); // -Recognizing extension.
-        FileName::Extension ext = fname.getExtension();
+        File::FileName fname(argv[2]); // -Recognizing extension.
+        File::FileName::Extension ext = fname.getExtension();
         switch(ext) {
-            case FileName::bmp:
+            case File::FileName::bmp:
                 std::cout << "\nDecrypting text file...\n" << std::endl;
                 try {
-                    bmp = Bitmap(argv[2]);
+                    bmp = File::Bitmap(argv[2]);
                 } catch(const char* err) {
                     std::cout << err;
                 }
                 decryptPIVS(bmp, e);
                 break;
-            case FileName::txt:
+            case File::FileName::txt:
                 std::cout << "\nDecrypting text file...\n" << std::endl;
                 try {
-                    txt = TXT(argv[2]);
+                    txt = File::TXT(argv[2]);
                 } catch(const char* err) {
                     std::cout << err;
                 }
                 decryptPIVS(txt, e);
                 break;
-            case FileName::key:
+            case File::FileName::key:
                 break;
-            case FileName::NoExtension:
+            case File::FileName::NoExtension:
                 break;
-            case FileName::Unrecognised:
+            case File::FileName::Unrecognised:
                 break;
         }
         return EXIT_SUCCESS;
@@ -49,8 +48,8 @@ int main(int argc, char *argv[]) {
 
     AES::Key aeskey(kname);
     AES::Cipher e(aeskey);
-    FileName Fname;
-    FileName::Extension ext;
+    File::FileName Fname;
+    File::FileName::Extension ext;
     sz = 0;
 
     std::cout << "\nWrite the names/paths of the files you desire to decrypt separated with spaces."
@@ -74,31 +73,31 @@ int main(int argc, char *argv[]) {
         }
         if(buffer[i] == ' ' || buffer[i] == '\t') {
             fname[sz] = 0; sz = 0;
-            Fname = FileName(fname);
+            Fname = File::FileName(fname);
             ext = Fname.getExtension();
             switch(ext) {
-                case FileName::bmp:
+                case File::FileName::bmp:
                     std::cout << "\nDecrypting " << fname << "...\n\n";
                     try {
-                        bmp = Bitmap(fname);
+                        bmp = File::Bitmap(fname);
                     } catch(const char* errMsg) {
                         std::cout << errMsg;
                     }
                     decryptCBC(bmp, e);
                     break;
-                case FileName::txt:
+                case File::FileName::txt:
                     std::cout << "\nDecrypting " << fname << "...\n\n";
                     try {
-                        txt = TXT(fname);
+                        txt = File::TXT(fname);
                     } catch(const char* errMsg) {
                         std::cout << errMsg;
                     }
                     decryptCBC(txt, e);
                     break;
-                case FileName::key:
+                case File::FileName::key:
                     break;
-                case FileName::NoExtension:
-                case FileName::Unrecognised:
+                case File::FileName::NoExtension:
+                case File::FileName::Unrecognised:
                     std::cout << "Could not handle file. Terminating "
                         "the program with failure status...\n";
                     return EXIT_FAILURE;
@@ -108,4 +107,3 @@ int main(int argc, char *argv[]) {
     std::cout << "Terminating program with success status...\n";
     return EXIT_SUCCESS;
 }
-

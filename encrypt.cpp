@@ -1,8 +1,7 @@
 #include<iostream>
 #include<random>
 #include<fstream>
-#include"Source/TXT.hpp"
-#include"Source/Bitmap.hpp"
+#include"Source/File.hpp"
 
 // Initializing keys with the ones showed in the NIST standard.
 char key256[] = {(char)0x60, (char)0x3D, (char)0xEB, (char)0x10,
@@ -30,40 +29,40 @@ void set_key(AES::Key::Length len);                                             
 void printKey(AES::Key::Length len, const char* = NULL, const char* = NULL);
 
 int main(int argc, char *argv[]) {
-    Bitmap bmp;
-    TXT    txt;
+    File::Bitmap bmp;
+    File::TXT txt;
     if(argc > 1) {                                                              // Encrypting File.
-        FileName fname(argv[1]);                                                // -Recognizing extension.
-        FileName keyName = fname.returnThisNewExtension(FileName::key);
-        FileName::Extension ext = fname.getExtension();
+        File::FileName fname(argv[1]);                                                // -Recognizing extension.
+        File::FileName keyName = fname.returnThisNewExtension(File::FileName::key);
+        File::FileName::Extension ext = fname.getExtension();
         set_key(AES::Key:: _192);
         AES::Cipher e(key192, AES::Key::_192);
         switch(ext) {
-            case FileName::bmp:
+            case File::FileName::bmp:
                 std::cout << "\nEncrypting bmp file...\n\n";
                 try {
-                    bmp = Bitmap(argv[1]);
+                    bmp = File::Bitmap(argv[1]);
                 } catch(const char* errMsg) {
                     std::cout << errMsg;
                 }
                 encryptPIVS(bmp, e);
                 e.saveKey(keyName.getNameString());
                 break;
-            case FileName::txt:
+            case File::FileName::txt:
                 std::cout << "\nEncrypting text file...\n\n";
                 try {
-                    txt = TXT(argv[1]);
+                    txt = File::TXT(argv[1]);
                 } catch(const char* errMsg) {
                     std::cout << errMsg;
                 }
                 encryptPIVS(txt, e);
                 e.saveKey(keyName.getNameString());
                 break;
-            case FileName::key:
+            case File::FileName::key:
                 break;
-            case FileName::NoExtension:
+            case File::FileName::NoExtension:
                 break;
-            case FileName::Unrecognised:
+            case File::FileName::Unrecognised:
                 break;
         }
         return EXIT_SUCCESS;
@@ -76,8 +75,8 @@ int main(int argc, char *argv[]) {
     set_key(AES::Key::_128);
     AES::Cipher e(key128, AES::Key::_128);
     int op;
-    FileName Fname;
-    FileName::Extension ext;
+    File::FileName Fname;
+    File::FileName::Extension ext;
     std::cout << "\nPress:\n"
              "(1) to encrypt files.\n"
              "(2) to encrypt text retrieved from console.\n"
@@ -106,31 +105,31 @@ int main(int argc, char *argv[]) {
             if(buffer[i] == ' ' || buffer[i] == '\t') {
                 fname[size] = 0;
                 size = 0;
-                Fname = FileName(fname);
+                Fname = File::FileName(fname);
                 ext = Fname.getExtension();
                 switch(ext) {
-                    case FileName::bmp:
+                    case File::FileName::bmp:
                         std::cout << "\nEncrypting " << fname << "...\n\n";
                         try {
-                            bmp = Bitmap(fname);
+                            bmp = File::Bitmap(fname);
                         } catch(const char* errMsg) {
                             std::cout << errMsg;
                         }
                         encryptCBC(bmp, e);
                         break;
-                    case FileName::txt:
+                    case File::FileName::txt:
                         std::cout << "\nEncrypting " << fname << "...\n\n";
                         try {
-                            txt = TXT(fname);
+                            txt = File::TXT(fname);
                         } catch(const char* errMsg) {
                             std::cout << errMsg;
                         }
                         encryptCBC(txt, e);
                         break;
-                    case FileName::key:
+                    case File::FileName::key:
                         break;
-                    case FileName::NoExtension:
-                    case FileName::Unrecognised:
+                    case File::FileName::NoExtension:
+                    case File::FileName::Unrecognised:
                         std::cout << "Could not handle file. Terminating "
                             "the program with failure status...\n";
                         return EXIT_FAILURE;
