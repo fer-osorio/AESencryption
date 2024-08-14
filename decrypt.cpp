@@ -7,18 +7,19 @@ int main(int argc, char *argv[]) {
     File::TXT txt;
     if(argc > 2) {
         AES::Key aeskey(argv[1]);
+        std::cout << "\nIn file decrypt.cpp, function main. aeskey.getOperationMode() = " << aeskey.getOperationMode() << '\n';
         AES::Cipher e(aeskey);
-        File::FileName fname(argv[2]); // -Recognizing extension.
+        File::FileName fname(argv[2]);                                          // -Recognizing extension.
         File::FileName::Extension ext = fname.getExtension();
         switch(ext) {
             case File::FileName::bmp:
-                std::cout << "\nDecrypting text file...\n" << std::endl;
+                std::cout << "\nDecrypting bmp file...\n" << std::endl;
                 try {
                     bmp = File::Bitmap(argv[2]);
                 } catch(const char* err) {
                     std::cout << err;
                 }
-                decryptPIVS(bmp, e);
+                decrypt(bmp, e);
                 break;
             case File::FileName::txt:
                 std::cout << "\nDecrypting text file...\n" << std::endl;
@@ -27,7 +28,7 @@ int main(int argc, char *argv[]) {
                 } catch(const char* err) {
                     std::cout << err;
                 }
-                decryptPIVS(txt, e);
+                decrypt(txt, e);
                 break;
             case File::FileName::key:
                 break;
@@ -39,10 +40,10 @@ int main(int argc, char *argv[]) {
         return EXIT_SUCCESS;
     }
     std::ifstream file;
-    char  fname[64], kname[64], buffer[1025];
+    char  fname[65], kname[65], buffer[1025];
     unsigned sz = 0, i = 0;
 
-    std::cout << "Write the name of the .key file where the encryption key is saved:\n";
+    std::cout << "Write the name of the .key file where the encryption key is saved (Maximum size in characters is 64):\n";
     while(sz < 64 && (kname[sz++] = getchar()) != '\n') {}
     kname[--sz] = 0;
 
@@ -83,7 +84,7 @@ int main(int argc, char *argv[]) {
                     } catch(const char* errMsg) {
                         std::cout << errMsg;
                     }
-                    decryptCBC(bmp, e);
+                    decrypt(bmp, e);
                     break;
                 case File::FileName::txt:
                     std::cout << "\nDecrypting " << fname << "...\n\n";
@@ -92,7 +93,7 @@ int main(int argc, char *argv[]) {
                     } catch(const char* errMsg) {
                         std::cout << errMsg;
                     }
-                    decryptCBC(txt, e);
+                    decrypt(txt, e);
                     break;
                 case File::FileName::key:
                     break;
