@@ -57,65 +57,69 @@ _16uint32_64uchar operator * (const UnsignedInt256bits& a, const UnsignedInt256b
 
 /************************************************************** Handling AES cryptographic keys ******************************************************************/
 
-Key::Key(const char* const _key, Length len, OperationMode _opM, const char* const _IV): length(len), lenBytes((unsigned)len >> 3), opM(_opM) {
+Key::Key(const char* const _key, Length len, OperationMode _operation_mode, const char* const _IV):
+    operation_mode(_operation_mode), length(len), lengthBytes((unsigned)len >> 3) {
     unsigned i;
-    this->key = new char[this->lenBytes];
-    if(_key != NULL) for(i = 0; i < this->lenBytes; i++) this->key[i] = _key[i];
+    this->key = new char[this->lengthBytes];
+    if(_key != NULL) for(i = 0; i < this->lengthBytes; i++) this->key[i] = _key[i];
     if(_IV != NULL)  for(i = 0; i < 16; i++) this->IV[i] = _IV[i];
 }
 
-Key::Key(const Key& ak):length(ak.length), lenBytes(ak.lenBytes), opM(ak.opM) {
+Key::Key(const Key& ak):operation_mode(ak.operation_mode), length(ak.length), lengthBytes(ak.lengthBytes) {
     unsigned i;
-    this->key = new char[ak.lenBytes];
-    for(i = 0; i < ak.lenBytes; i++) this->key[i] = ak.key[i];                  // - Supposing Cipher object is well constructed, this is, ak.key != NULL
-    if(ak.opM == CBC) for(i = 0; i < 16; i++) this->IV[i] = ak.IV[i];           // -Without CBC, copying IV is pointless.
+    this->key = new char[ak.lengthBytes];
+    for(i = 0; i < ak.lengthBytes; i++) this->key[i] = ak.key[i];               // -Supposing Cipher object is well constructed, this is, ak.key != NULL
+    if(ak.operation_mode == CBC) for(i=0; i < 16; i++) this->IV[i]=ak.IV[i];    // -Without CBC, copying IV is pointless.
 }
 
 Key& Key::operator = (const Key& ak) {
     if(this != &ak) {
         unsigned i;
         this->length   = ak.length;
-        this->lenBytes = ak.lenBytes;
+        this->lengthBytes = ak.lengthBytes;
         if(this->key != NULL) delete[] this->key;
-        this->key = new char[ak.lenBytes];
-        for(i = 0; i < ak.lenBytes; i++) this->key[i] = ak.key[i];
-        if(ak.opM == CBC) for(i = 0; i < 16; i++) this->IV[i] = ak.IV[i];       // -Without CBC, copying IV is pointless.
+        this->key = new char[ak.lengthBytes];
+        for(i = 0; i < ak.lengthBytes; i++) this->key[i] = ak.key[i];
+        if(ak.operation_mode == CBC)                                            // -Without CBC, copying IV is pointless.
+            for(i = 0; i < 16; i++) this->IV[i] = ak.IV[i];
     }
     return *this;
 }
 
-Key::Key(const char*const fname) : length(_128), lenBytes(16), opM(ECB) {       // -Building from .key file
+Key::Key(const char*const fname): operation_mode(ECB), length(_128), lengthBytes(16) { // -Building from .key file
     char AESKEY[6];
-    char op_M[3];
+    char opMode[3];
     short len;
     std::ifstream file;
     file.open(fname, std::ios::binary);
     if(file.is_open()) {
         file.read((char*)AESKEY, 6);                                            // -Determining if file is a .key file
         if(AESKEY[0] == 'A' || AESKEY[1] == 'E' || AESKEY[2] == 'S' || AESKEY[3] == 'K' || AESKEY[4] == 'E' || AESKEY[5] == 'Y') {
-                file.read((char*)op_M, 3);                                      // -Determining operation mode
-                if(op_M[0]=='E' && op_M[1]=='C' && op_M[2]=='B')
-                    this->opM = ECB;
-                else if(op_M[0]=='C' && op_M[1]=='B' && op_M[2]=='C')
-                    this->opM = CBC;
-                else if(op_M[0]=='C' && op_M[1]=='F' && op_M[2]=='B')
-                    this->opM = CFB;
-                else if(op_M[0]=='O' && op_M[1]=='F' && op_M[2]=='B')
-                    this->opM = OFB;
-                else if(op_M[0]=='C' && op_M[1]=='T' && op_M[2]=='R')
-                    this->opM = CTR;
+                file.read((char*)opMode, 3);                                    // -Determining operation mode
+                if(opMode[0]=='E' && opMode[1]=='C' && opMode[2]=='B')
+                    this->operation_mode = ECB;
+                else if(opMode[0]=='C' && opMode[1]=='B' && opMode[2]=='C')
+                    this->operation_mode = CBC;
+                else if(opMode[0]=='C' && opMode[1]=='F' && opMode[2]=='B')
+                    this->operation_mode = CFB;
+                else if(opMode[0]=='O' && opMode[1]=='F' && opMode[2]=='B')
+                    this->operation_mode = OFB;
+                else if(opMode[0]=='C' && opMode[1]=='T' && opMode[2]=='R')
+                    this->operation_mode = CTR;
+                else if(opMode[0]=='P' && opMode[1]=='V' && opMode[2]=='S')
+                    this->operation_mode = PVS;
                 else throw "Could not recognize operation mode...";
 
                 file.read((char*)&len, 2);                                      // -Reading key length
                 if(len == 128 || len == 192 || len == 256)
                     this->length = (Length)len;
                 else throw "Key length not allowed...";
-                this->lenBytes = (unsigned)len >> 3;                            // -lenBytes = len / 8;
+                this->lengthBytes = (unsigned)len >> 3;                         // -lengthBytes = len / 8;
 
-                key = new char[lenBytes];                                       // -Reading key
-                file.read(key, lenBytes);
+                this->key = new char[this->lengthBytes];                        // -Reading key
+                file.read(this->key, this->lengthBytes);
 
-                if(this->opM == CBC) file.read((char*)IV, 16);                  // -In CBC case, reading IV.
+                if(this->operation_mode == CBC) file.read((char*)this->IV, 16); // -In CBC case, reading IV.
            } else {
                 throw "Not a valid AES key file...";
            }
@@ -132,7 +136,7 @@ Key::~Key() {
 void Key::save(const char* const fname) const {
     const char* aeskey = "AESKEY";                                              // File type.
     const char* op_mode;
-    switch(this->opM) {                                                         // -Operation mode.
+    switch(this->operation_mode) {                                              // -Operation mode.
         case ECB:
             op_mode = "ECB";
             break;
@@ -148,6 +152,9 @@ void Key::save(const char* const fname) const {
         case CTR:
             op_mode = "CTR";
             break;
+        case PVS:
+            op_mode = "PVS";
+            break;
         default:
             throw "Could not recognize operation mode...";
     }
@@ -156,9 +163,12 @@ void Key::save(const char* const fname) const {
     if(file.is_open()) {
         file.write(aeskey,  6);                                                 // -File type
         file.write(op_mode, 3);                                                 // -Operation mode
-        file.write((char*)&length, 2);                                          // -Key length in bits
-        file.write(key, lenBytes);                                              // -Key
-        if(this->opM == CBC) file.write(this->IV, 16);                          // -If CBC, writes initial vector
+        std::cout << "File Source/AES.cpp, function void Key::save(const char* const fname) const. Operation mode = ";
+        for(int i = 0; i < 3; i++) std::cout << op_mode[i];
+        std::cout << '\n';
+        file.write((char*)&this->length, 2);                                    // -Key length in bits
+        file.write(this->key, this->lengthBytes);                               // -Key
+        if(this->operation_mode == CBC) file.write(this->IV, 16);               // -If CBC, writes initial vector
     } else {
         throw "File could not be written.";
     }
@@ -171,8 +181,8 @@ Cipher::Cipher(const char* const _key, Key::Length len): key(_key, len, Key::ECB
     this->create_KeyExpansion(_key);
 }
 
-Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.get_LenBytes() >> 2), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
-    char* _key = new char[ak.get_LenBytes()];
+Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.getLengthBytes() >> 2), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
+    char* _key = new char[ak.getLengthBytes()];
     ak.write_Key(_key);
     this->create_KeyExpansion(_key);
     delete[] _key;
@@ -398,7 +408,7 @@ void Cipher::decryptCBC(char*const data, unsigned size) const{
     }
 }
 
-void Cipher::encryptPIVS(char*const data, unsigned size) const{
+void Cipher::encryptPVS(char*const data, unsigned size) const{
     char* pi = NULL;                                                            // -Will save the binary digits of pi
     char* currentDataBlock = data;
     char _key_[32];                                                             // -Cryptographic key
@@ -409,19 +419,20 @@ void Cipher::encryptPIVS(char*const data, unsigned size) const{
         UnsignedInt256bits a;                                                   // -Representation of a number of 256 bits (32 bytes)
         UnsignedInt256bits b;                                                   // -Representation of a number of 256 bits (32 bytes)
         _16uint32_64uchar c;                                                    // -Will save the multiplication result
-        unsigned i, j, k;
-        //unsigned loadedPiSize = (size >> 1) + 32;                               // -Amount of bytes we'll upload from pi.bin file, which is size/2 +32
-        unsigned _32bytesBlocks = size >> 5;                                    // -Amount of blocks of 64 bytes, _32bytesBlocks = size / 64
+        //unsigned unwrittenSBoxSize = 256;                                       // -We'll rewrite Sbox, this is the size of the entries not substituted yet
+        unsigned i, j, k; //l, r;                                                 // -Auxiliary variables
+        unsigned _32bytesBlocks = size >> 5;                                    // -Amount of blocks of 64 bytes, _32bytesBlocks = size / 32
         unsigned lastBlockSize = size & 31;                                     // -Size of the last block, lastBlockSize = size % 64
                                                                                 // -Using blocks of 64 bytes since the result of the product of two 256 bits number
                                                                                 //  is a 512 bits number (size doubles).
+        //unsigned char permutationBuffer[256];                                   // -Will be used in the creation of new Sbox
         const char* piIndex;                                                    // -Will go trough the digits of pi
 
         pi = new char[size];
         file.read(pi, size);                                                    // -Uploading pi
         this->key.write_Key(_key_);
-        if(this->key.get_LenBytes() < 32) {
-            for(i = this->key.get_LenBytes(), j = 0; i < 32; i++, j++) _key_[i] = _key_[j]; // -Padding with the beginning of the key
+        if(this->key.getLengthBytes() < 32) {
+            for(i = this->key.getLengthBytes(), j = 0; i < 32; i++, j++) _key_[i] = _key_[j]; // -Padding with the beginning of the key
         }
         a = UnsignedInt256bits(_key_);                                          // -Creating number from key
         for(i = 0, piIndex = pi; i < _32bytesBlocks; i++, piIndex += 32, currentDataBlock += 32) {
@@ -436,40 +447,67 @@ void Cipher::encryptPIVS(char*const data, unsigned size) const{
             for(j = 0 ; j < lastBlockSize; j++) currentDataBlock[j] ^= (char)c.chars[j];
             for(k = 0 ; k < lastBlockSize; k++,j++) currentDataBlock[k] ^= (char)c.chars[j]; // -Second round of X0R
         }
+        /*for(i = 0; i < 256; i++ ) permutationBuffer[i] = (unsigned char)i;
+        for(i = size-129, j = 0, k = size-1; i < k; i+=32) {                    // -Building Sbox
+            b.reWriteLeastSignificantBytes(&pi[i]);                             // -Rewriting with the bytes left
+            c = a*b;                                                            // -Product with the key
+            for(l = 0; l < 64; l++, j++, unwrittenSBoxSize--) {
+                r = c.chars[l] % unwrittenSBoxSize;                             // -Using the number in c as a random number
+                this->SBox[j] = permutationBuffer[r];
+                permutationBuffer[r] = permutationBuffer[unwrittenSBoxSize - 1];
+            }
+        }
+        for(i = 0; i < 256; i++ ) this->InvSBox[this->SBox[i]] = i;*/             // -Building Sbox inverse
     } else {
         std::cout << "\nCould not open pi.bin file, proceeding with ECB mode\n";
     }
     if(pi != NULL) delete[] pi;
     this->encryptECB(data, size);                                               // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
+    this->key.set_OperationMode(Key::PVS);                                      // -Setting operation mode after using ECB encryption function.
 }
 
-void Cipher::decryptPIVS(char*const data, unsigned size) const{
+void Cipher::decryptPVS(char*const data, unsigned size) const{
     char* pi = NULL;                                                            // -Will save the binary digits of pi
     char* currentDataBlock = data;
     char _key_[32];                                                             // -Cryptographic key
     std::ifstream file;
 
-    if(pi != NULL) delete[] pi;
-    this->decryptECB(data, size);                                               // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
+    this->decryptECB(data, size);                                           // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
 
     file.open("pi.bin", std::ios::binary);
     if(file.is_open()) {
         UnsignedInt256bits a;                                                   // -Representation of a number of 256 bits (32 bytes)
         UnsignedInt256bits b;                                                   // -Representation of a number of 256 bits (32 bytes)
         _16uint32_64uchar c;                                                    // -Will save the multiplication result
-        unsigned i, j, k;
-        //unsigned loadedPiSize = (size >> 1) + 32;                               // -Amount of bytes we'll upload from pi.bin file, which is size/2 +32
+        //unsigned unwrittenSBoxSize = 256;                                       // -We'll rewrite Sbox, this is the size of the entries not substituted yet
+        unsigned i, j, k;// l, r;
+        //unsigned loadedPiSize = (size >> 1) + 32;                             // -Amount of bytes we'll upload from pi.bin file, which is size/2 +32
         unsigned _32bytesBlocks = size >> 5;                                    // -Amount of blocks of 64 bytes, _32bytesBlocks = size / 64
         unsigned lastBlockSize = size & 31;                                     // -Size of the last block, lastBlockSize = size % 64
                                                                                 // -Using blocks of 64 bytes since the result of the product of two 256 bits number
                                                                                 //  is a 512 bits number (size doubles).
         const char* piIndex;                                                    // -Will go trough the digits of pi
+        //unsigned char permutationBuffer[256];                                   // -Will be used in the creation of new Sbox
 
         pi = new char[size];
         file.read(pi, size);                                                    // -Uploading pi
+        /*for(i = 0; i < 256; i++ ) permutationBuffer[i] = (unsigned char)i;
+        for(i = size-129, j = 0, k = size-1; i < k; i+=32) {                    // -Building Sbox
+            b.reWriteLeastSignificantBytes(&pi[i]);                             // -Rewriting with the bytes left
+            c = a*b;                                                            // -Product with the key
+            for(l = 0; l < 64; l++, j++, unwrittenSBoxSize--) {
+                r = c.chars[l] % unwrittenSBoxSize;                             // -Using the number in c as a random number
+                this->SBox[j] = permutationBuffer[r];
+                permutationBuffer[r] = permutationBuffer[unwrittenSBoxSize - 1];
+            }
+        }
+        for(i = 0; i < 256; i++ ) this->InvSBox[this->SBox[i]] = i;*/             // -Building Sbox inverse
+
+        //this->decryptECB(data, size);                                           // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
+
         this->key.write_Key(_key_);
-        if(this->key.get_LenBytes() < 32) {
-            for(i = this->key.get_LenBytes(), j = 0; i < 32; i++, j++) _key_[i] = _key_[j];           // -Padding with the beginning of the key
+        if(this->key.getLengthBytes() < 32) {
+            for(i = this->key.getLengthBytes(), j = 0; i < 32; i++, j++) _key_[i] = _key_[j]; // -Padding with the beginning of the key
         }
         a = UnsignedInt256bits(_key_);                                          // -Creating number from key
         for(i = 0, piIndex = pi; i < _32bytesBlocks; i++, piIndex += 32, currentDataBlock += 32) {
@@ -485,7 +523,30 @@ void Cipher::decryptPIVS(char*const data, unsigned size) const{
             for(k = 0 ; k < lastBlockSize; k++,j++) currentDataBlock[k] ^= (char)c.chars[j]; // -Second round of X0R
         }
     } else {
-        std::cout << "\nCould not open pi.bin file.\n";                         // -An exception here could be a better idea
+        std::cout << "\nCould not open pi.bin file, using ECB decryption mode\n"; // -An exception here could be a better idea
+    }
+    if(pi != NULL) delete[] pi;
+}
+
+void Cipher::decrypt(char*const data, unsigned size) const{
+    Key::OperationMode opMode = this->key.getOperationMode();
+    std::cout << "\nIn file Source/AES.cpp, function void Cipher::decrypt(char*const data, unsigned size) const. Operation mode = " << opMode << '\n';
+    switch(opMode) {
+        case Key::ECB:
+            this->decryptECB(data, size);
+            break;
+        case Key::CBC:
+            this->decryptCBC(data, size);
+            break;
+        case Key::CFB:
+            break;
+        case Key::OFB:
+            break;
+        case Key::CTR:
+            break;
+        case Key::PVS:
+            this->decryptPVS(data, size);
+            break;
     }
 }
 

@@ -17,12 +17,12 @@ struct Key {
 		CFB,
 		OFB,
 		CTR,
-		PIVS																	// -PI xor and variable Sbox
+		PVS																		// -PI xor and variable Sbox
 	};
 	private:
+	OperationMode operation_mode;
 	Length 	 length;															// -Length in bits.
-	unsigned lenBytes;															// -Length in bytes.
-	OperationMode opM;
+	unsigned lengthBytes;														// -Length in bytes.
 	char* key = NULL;
 	char IV[16] = {0, 0, 0, 0,													// -Initial vector for the CBC operation mode.
 				   0, 0, 0, 0,													// -This default value (just zeros) is left
@@ -37,17 +37,18 @@ struct Key {
 
 	Key& operator = (const Key&);
 
-	inline void set_OperationMode(OperationMode _opM) {opM = _opM;}
-	inline void set_IV(const char*const _IV) {
+	void set_OperationMode(OperationMode _operation_mode) {this->operation_mode = _operation_mode;}
+	OperationMode getOperationMode() {return this->operation_mode; }
+	void set_IV(const char*const _IV) {
 		for(int i = 0; i < 16; i++) this->IV[i] = _IV[i];
 	}
-	inline void write_IV(char*const destination) const {						// -Writes IV in destination
+	void write_IV(char*const destination) const {								// -Writes IV in destination
 		for(int i = 0; i < 16; i++) destination[i] = this->IV[i];				// -Warning: We are supposing we have at least 16 bytes of space in destination
 	}
-	inline void write_Key(char*const destination) const {
-		for(unsigned i = 0; i < lenBytes; i++) destination[i] = this->key[i];
+	void write_Key(char*const destination) const {
+		for(unsigned i = 0; i < this->lengthBytes; i++) destination[i] = this->key[i];
 	}
-	inline unsigned get_LenBytes() const {return this->lenBytes;}
+	unsigned getLengthBytes() const {return this->lengthBytes;}
 	void save(const char* const) const;											// -Saving information in a binary file.
 };
 
@@ -72,7 +73,7 @@ class Cipher {
   		{0x36, 0x00, 0x00, 0x00}
   	};
 
-	const unsigned char SBox[256] = {
+	unsigned char SBox[256] = {
 		0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
 		0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
 		0xB7, 0xFD, 0x93, 0x26, 0x36, 0x3F, 0xF7, 0xCC, 0x34, 0xA5, 0xE5, 0xF1, 0x71, 0xD8, 0x31, 0x15,
@@ -91,7 +92,7 @@ class Cipher {
 		0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
 	};
 
-	const unsigned char InvSBox[256] = {
+	unsigned char InvSBox[256] = {
 		0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB,
 		0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87, 0x34, 0x8E, 0x43, 0x44, 0xC4, 0xDE, 0xE9, 0xCB,
 		0x54, 0x7B, 0x94, 0x32, 0xA6, 0xC2, 0x23, 0x3D, 0xEE, 0x4C, 0x95, 0x0B, 0x42, 0xFA, 0xC3, 0x4E,
@@ -130,20 +131,26 @@ class Cipher {
 
 	void create_KeyExpansion(const char* const);								// -Creates key expansion
 	void setIV(char IV[16]) const;												// -Sets the initial vector value. Required for the CBC operation mode
+
 	void encryptECB(char*const data, unsigned size) const;						// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
 																				//	size (in bytes) is  provided by the 'size' argument.
 	void decryptECB(char*const data, unsigned size) const;						// -Decrypts the message pointed by 'data' using the ECB operation mode. The data
 																				//	size (in bytes) is  provided by the 'size' argument.
+
 	void encryptCBC(char*const data, unsigned size) const;						// -Encrypts the message pointed by 'data' using the CBC operation mode. The data
 																				//	size (in bytes) is  provided by the 'size' argument.
 	void decryptCBC(char*const data, unsigned size) const;						// -Decrypts the message pointed by 'data'. The message must had been encrypted
 																				//	using the CBC mode operation.
 																				// -The size of the message is provided by the 'size' argument.
-	void encryptPIVS(char*const data, unsigned size) const;						// -Encrypts the message pointed by 'data' using the PI operation mode.
+	void encryptPVS(char*const data, unsigned size) const;						// -Encrypts the message pointed by 'data' using the PI operation mode.
 																				// -The data size (in bytes) is  provided by the 'size' argument.
-	void decryptPIVS(char*const data, unsigned size) const;						// -Decrypts the message pointed by 'data' using the PI operation mode.
+	void decryptPVS(char*const data, unsigned size)const;						// -Decrypts the message pointed by 'data' using the PI operation mode.
 																				// -The size of the message is provided by the 'size' argument.
-	inline void saveKey(const char*const fname) const {this->key.save(fname);}
+
+	void decrypt(char*const data, unsigned size) const;
+
+	void saveKey(const char*const fname) const {this->key.save(fname);}
+	Key::OperationMode getOperationMode() const{ return this->key.getOperationMode(); }
 
 	private:
 	void XORblocks(char b1[16], char b2[16], char r[16]) const;					// -Xor operation over 16 bytes array.
