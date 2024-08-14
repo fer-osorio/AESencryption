@@ -83,6 +83,18 @@ FileName FileName::returnThisNewExtension(Extension newExt) {
     return r;
 }
 
+void FileName::writeNameString(char *const destiantion) { 					    // -Assuming destination has enough space for the String
+	if(this->nameString == NULL) return;
+	for(unsigned i = 0; i < this->nameSize; i++) {
+		destiantion[i] = this->nameString[i];
+		if(this->nameString[i] == 0) {										    // -In case of encounter the end of the string before reaching name size
+			this->nameSize = i;
+			return;
+		}
+	}
+	destiantion[this->nameSize] = 0;
+}
+
 FileName::Extension FileName::isSupportedExtension(const char* str) {
     if(str == NULL || str[0] == 0) return FileName::NoExtension;
     Extension temp[4] = {bmp, txt, key};
@@ -119,7 +131,9 @@ TXT::TXT(const char* fname): name(fname) { // -Building from file.
 
 TXT::TXT(FileName& fname): name(fname) {
     std::ifstream file;
-    file.open(fname.getNameString());
+    char*const nameStr = new char[this->name.getSize()];
+    this->name.writeNameString(nameStr);
+    file.open(nameStr);
     if(file.is_open()) {
         file.seekg(0, std::ios::end);
         std::streampos fileSize = file.tellg();
@@ -129,8 +143,10 @@ TXT::TXT(FileName& fname): name(fname) {
         file.read(this->content, fileSize);
         file.close();
     } else {
-        throw "\nCould not open file...\n";
+        if(nameStr != NULL) delete[] nameStr;
+        throw "\nIn Source/File.cpp, function TXT::TXT(FileName& fname): name(fname). Could not open file...\n";
     }
+    if(nameStr != NULL) delete[] nameStr;
 }
 
 TXT::TXT(const TXT& t): name(t.name), size(t.size) {
@@ -138,16 +154,23 @@ TXT::TXT(const TXT& t): name(t.name), size(t.size) {
     for(unsigned i = 0; i < t.size; i++) this->content[i] = t.content[i];
 }
 
-void TXT::save(const char* fname) {
+void TXT::save(const char* fname) {                                             // -The user can provide a name for the file
     std::ofstream file;
-    if(fname == NULL) fname = this->name.getNameString();
-    file.open(fname);
+    char* nameStr = NULL;
+    if(fname != NULL) file.open(fname);
+    else {                                                                      // -If no name provided, the string inside attribute name will be used
+        nameStr = new char[this->name.getSize()];
+        this->name.writeNameString(nameStr);
+        file.open(nameStr);
+    }
     if(file.is_open()) {
         file.write(this->content, this->size);
         file.close();
     } else {
+        if(nameStr != NULL) delete[] nameStr;
         throw "File could not be written.";
     }
+    if(nameStr != NULL) delete[] nameStr;
 }
 
 TXT& TXT::operator = (const TXT& t) {

@@ -34,7 +34,9 @@ struct FileName {
 		this->nameString = NULL;
 		nameSize = 0;
 	}
-	const char* getNameString() { return nameString;}
+	void print(const char*const atBeginning = NULL, const char*const atEnd = NULL) { std::cout << atBeginning << this->nameString << atEnd; }
+	void println() { std::cout << this->nameString << '\n'; }
+	void writeNameString(char*const destiantion);
 	unsigned 	getSize() 		{ return nameSize;	}
 	Extension 	getExtension() 	{ return extension; }
 
@@ -61,7 +63,7 @@ class TXT {																		// -Handling .txt files
 	TXT& operator = (const TXT&);
 	void save(const char* fname = NULL);
 	FileName::Extension fileExtension() { return name.getExtension(); }
-	void printName() { std::cout << name.getNameString(); }
+	void printName(const char*const atBeginning = NULL, const char*const atEnd = NULL) { this->name.print(atBeginning, atEnd); }
 
 	friend void encryptECB(TXT& txt, const AES::Cipher& e) {
 		e.encryptECB(txt.content, txt.size);
@@ -81,13 +83,18 @@ class TXT {																		// -Handling .txt files
     	txt.save();
 	}
 
-	friend void encryptPIVS(TXT& txt, const AES::Cipher& e) {
-		e.encryptPIVS(txt.content, txt.size);
+	friend void encryptPVS(TXT& txt, AES::Cipher& e) {
+		e.encryptPVS(txt.content, txt.size);
     	txt.save();
 	}
-	friend void decryptPIVS(TXT& txt, const AES::Cipher& e) {
-		e.decryptPIVS(txt.content, txt.size);
+	friend void decryptPVS(TXT& txt, const AES::Cipher& e) {
+		e.decryptPVS(txt.content, txt.size);
     	txt.save();
+	}
+
+	friend void decrypt(TXT& txt, const AES::Cipher& e) {
+		e.decrypt(txt.content, txt.size);
+		txt.save();
 	}
 };
 
@@ -138,6 +145,15 @@ class Bitmap {																	// -Handling bitmap format images.
 	void save(const char* fname);												// -Saves in memory
 	Bitmap& operator = (const Bitmap& bmp);
 
+	friend void encryptECB(Bitmap& bmp, const AES::Cipher& e) {
+		e.encryptECB(bmp.data, bmp.ih.SizeOfBitmap);
+    	bmp.save(bmp.name);
+	}
+	friend void decryptECB(Bitmap& bmp, const AES::Cipher& e) {
+		e.decryptECB(bmp.data, bmp.ih.SizeOfBitmap);
+    	bmp.save(bmp.name);
+	}
+
 	friend void encryptCBC(Bitmap& bmp, const AES::Cipher& e) {
 		e.encryptCBC(bmp.data, bmp.ih.SizeOfBitmap);
     	bmp.save(bmp.name);
@@ -147,12 +163,18 @@ class Bitmap {																	// -Handling bitmap format images.
     	bmp.save(bmp.name);
 	}
 
-	friend void encryptPIVS(Bitmap& bmp, const AES::Cipher& e) {
-		e.encryptPIVS(bmp.data, bmp.ih.SizeOfBitmap);
+	friend void encryptPVS(Bitmap& bmp, AES::Cipher& e) {
+		e.encryptPVS(bmp.data, bmp.ih.SizeOfBitmap);
+		std::cout << "In file Source/File.hpp, function friend void encryptPVS(Bitmap& bmp, AES::Cipher& e). Operation mode = " << e.getOperationMode() << '\n';
     	bmp.save(bmp.name);
 	}
-	friend void decryptPIVS(Bitmap& bmp, const AES::Cipher& e) {
-		e.decryptPIVS(bmp.data, bmp.ih.SizeOfBitmap);
+	friend void decryptPVS(Bitmap& bmp, const AES::Cipher& e) {
+		e.decryptPVS(bmp.data, bmp.ih.SizeOfBitmap);
+    	bmp.save(bmp.name);
+	}
+
+	friend void decrypt(Bitmap& bmp, const AES::Cipher& e) {
+		e.decrypt(bmp.data, bmp.ih.SizeOfBitmap);
     	bmp.save(bmp.name);
 	}
 
