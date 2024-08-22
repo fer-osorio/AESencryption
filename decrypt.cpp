@@ -7,7 +7,6 @@ int main(int argc, char *argv[]) {
     File::TXT txt;
     if(argc > 2) {
         AES::Key aeskey(argv[1]);
-        std::cout << "\nIn file decrypt.cpp, function main. aeskey.getOperationMode() = " << aeskey.getOperationMode() << '\n';
         AES::Cipher e(aeskey);
         File::FileName fname(argv[2]);                                          // -Recognizing extension.
         File::FileName::Extension ext = fname.getExtension();
@@ -20,6 +19,7 @@ int main(int argc, char *argv[]) {
                     std::cout << err;
                 }
                 decrypt(bmp, e);
+                std::cout << e << '\n';
                 break;
             case File::FileName::txt:
                 std::cout << "\nDecrypting text file...\n" << std::endl;

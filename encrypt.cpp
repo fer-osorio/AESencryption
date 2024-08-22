@@ -51,6 +51,7 @@ int main(int argc, char *argv[]) {
                 }
                 encryptPVS(bmp, e);
                 e.saveKey(keyNameStr);
+                std::cout << e << '\n';
                 break;
             case File::FileName::txt:
                 std::cout << "\nEncrypting text file...\n\n";
