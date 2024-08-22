@@ -150,10 +150,10 @@ class Cipher {
 																				// -The size of the message is provided by the 'size' argument.
 	void encryptPVS(char*const data, unsigned size);							// -Encrypts the message pointed by 'data' using the PI operation mode.
 																				// -The data size (in bytes) is  provided by the 'size' argument.
-	void decryptPVS(char*const data, unsigned size)const;						// -Decrypts the message pointed by 'data' using the PI operation mode.
+	void decryptPVS(char*const data, unsigned size);							// -Decrypts the message pointed by 'data' using the PI operation mode.
 																				// -The size of the message is provided by the 'size' argument.
 
-	void decrypt(char*const data, unsigned size) const;
+	void decrypt(char*const data, unsigned size);
 
 	void saveKey(const char*const fname) const {this->key.save(fname);}
 	Key::OperationMode getOperationMode() const{ return this->key.getOperationMode(); }
