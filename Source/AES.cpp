@@ -2,7 +2,6 @@
 #include"AES.hpp"
 #include"OperationsGF256.hpp"
 
-using namespace AES;
 
 /****************************************** Multiplication of two numbers of 256 bits to obtain a 512 bits number ************************************************/
 
@@ -55,6 +54,69 @@ _16uint32_64uchar operator * (const UnsignedInt256bits& a, const UnsignedInt256b
 }
 
 
+using namespace AES;
+
+/*********************************************************************** Helper functions ************************************************************************/
+
+static void operationModeToString(Key::OperationMode opm, char*const destination) {  // -Assuming destination is a pointer to an array of at least four elements.
+    switch(opm) {
+        case Key::ECB:
+            destination[0] = 'E';
+            destination[1] = 'C';
+            destination[2] = 'B';
+            destination[3] =  0 ;
+            break;
+        case Key::CBC:
+            destination[0] = 'C';
+            destination[1] = 'B';
+            destination[2] = 'C';
+            destination[3] =  0 ;
+            break;
+        case Key::CFB:
+            destination[0] = 'C';
+            destination[1] = 'F';
+            destination[2] = 'B';
+            destination[3] =  0 ;
+            break;
+        case Key::OFB:
+            destination[0] = 'O';
+            destination[1] = 'F';
+            destination[2] = 'B';
+            destination[3] =  0 ;
+            break;
+        case Key::CTR:
+            destination[0] = 'C';
+            destination[1] = 'T';
+            destination[2] = 'R';
+            destination[3] =  0 ;
+            break;
+        case Key::PVS:
+            destination[0] = 'P';
+            destination[1] = 'V';
+            destination[2] = 'S';
+            destination[3] =  0 ;
+            break;
+        default:
+            std::cout << "Could not identify operation mode \n\n";
+    }
+}
+
+static int bytesToHexString(const char*const origin, char*const destination, const int len) { // -From an array of bytes creates a string witch is the
+    if(len <= 0) return -1;                                                     //  representation in hexadecimal of that byte array
+    char buff;                                                                  // -The resulting string is written on the "destination" pointer. We assume this
+    int  i, j;
+    for(i = 0, j = 0; i < len; i++) {                                           //  pointer points to an array with length at least 2*len+1
+        buff = (char)((unsigned char)origin[i] >> 4);                           // -Taking the four most significant bits
+        if(buff<10) destination[j++] = buff + 48;                               // -To hexadecimal digit
+        else        destination[j++] = buff + 55;                               //  ...
+        buff = origin[i] & 15;                                                  // -Taking the four least significant byte
+        if(buff<10) destination[j++] = buff + 48;                               // -To hexadecimal digit
+        else        destination[j++] = buff + 55;                               //  ...
+    }
+    destination[j] = 0;                                                         // -End of string
+    return 0;
+}
+
 /************************************************************** Handling AES cryptographic keys ******************************************************************/
 
 Key::Key(const char* const _key, Length len, OperationMode _operation_mode, const char* const _IV):
@@ -84,6 +146,23 @@ Key& Key::operator = (const Key& ak) {
             for(i = 0; i < 16; i++) this->IV[i] = ak.IV[i];
     }
     return *this;
+}
+
+std::ostream& AES::operator << (std::ostream& ost, Key k) {
+    char keyStr[65];
+    char opModeStr[4];
+    char IVstring[33];
+
+    operationModeToString(k.operation_mode, opModeStr);
+    bytesToHexString(k.key, keyStr, (int)k.lengthBytes);
+    bytesToHexString(k.IV, IVstring, 16);
+
+    ost << "\tKey length: " << k.length << " bits, " << k.lengthBytes << " bytes, Nk = " << (k.lengthBytes >> 2) << " words" << '\n';
+    ost << "\tKey: " << keyStr << '\n';
+    ost << "\tOperation mode: " << opModeStr << '\n';
+    ost << "\tIV (in case of CBC): "<< IVstring << '\n';
+
+    return ost;
 }
 
 Key::Key(const char*const fname): operation_mode(ECB), length(_128), lengthBytes(16) { // -Building from .key file
@@ -163,9 +242,6 @@ void Key::save(const char* const fname) const {
     if(file.is_open()) {
         file.write(aeskey,  6);                                                 // -File type
         file.write(op_mode, 3);                                                 // -Operation mode
-        std::cout << "File Source/AES.cpp, function void Key::save(const char* const fname) const. Operation mode = ";
-        for(int i = 0; i < 3; i++) std::cout << op_mode[i];
-        std::cout << '\n';
         file.write((char*)&this->length, 2);                                    // -Key length in bits
         file.write(this->key, this->lengthBytes);                               // -Key
         if(this->operation_mode == CBC) file.write(this->IV, 16);               // -If CBC, writes initial vector
@@ -209,6 +285,35 @@ Cipher& Cipher::operator = (const Cipher& a) {
         for(int i = 0; i < a.keyExpLen; i++) this->keyExpansion[i] = a.keyExpansion[i];
     }
     return *this;
+}
+
+std::ostream& AES::operator << (std::ostream& ost, const Cipher& c) {
+    char keyExpansionString[880];
+    auto keyExpansionTable = [&keyExpansionString, &c](){
+        int rowsAmount = c.keyExpLen >> 5;
+        int i, j, k, l;
+        for(i = 0, j = 0, k = 0; i < rowsAmount; i++, j+=32, k+=64) {
+            keyExpansionString[k++] = '\n';
+            keyExpansionString[k++] = '\t';
+            keyExpansionString[k++] = '\t';
+            bytesToHexString(&c.keyExpansion[j], &keyExpansionString[k], 32);
+        }
+        if((l = c.keyExpLen & 63) > 0) {
+            keyExpansionString[k++] = '\n';
+            keyExpansionString[k++] = '\t';
+            keyExpansionString[k++] = '\t';
+            bytesToHexString(&c.keyExpansion[j], &keyExpansionString[k], l);
+            keyExpansionString[k+(l<<1)] = 0;
+        }
+        else keyExpansionString[k] = 0;
+    };
+    keyExpansionTable();
+    ost << "AES::Cipher object information:\n";
+    ost << c.key;
+    ost << "\tNr: " << c.Nr << " rounds" << '\n';
+    ost << "\tKey Expansion length: " << c.keyExpLen << " bytes" << '\n';
+    ost << "\tKey Expansion: " << keyExpansionString << '\n';
+    return ost;
 }
 
 void Cipher::create_KeyExpansion(const char* const _key) {
@@ -302,7 +407,7 @@ void Cipher::printWord(const char word[4]) {
 	std::cout << ']';
 }
 
-void Cipher::encryptECB(char*const data, unsigned size) const{
+void Cipher::encryptECB(char*const data, unsigned size) {
     if(size == 0) return;                                                       // Exception here.
     this->key.set_OperationMode(Key::ECB);                                      // -Setting operation mode.
 
@@ -343,7 +448,7 @@ void Cipher::decryptECB(char *const data, unsigned int size) const{
     decryptBlock(currentDataBlock);
 }
 
-void Cipher::encryptCBC(char*const data,unsigned size) const {
+void Cipher::encryptCBC(char*const data,unsigned size) {
     if(size == 0) return;                                                       // Exception here.
     this->key.set_OperationMode(Key::CBC);                                      // -Setting operation mode.
 
@@ -380,7 +485,6 @@ void Cipher::decryptCBC(char*const data, unsigned size) const{
     int rem = (int)size & 15;                                                   // -Rest of the bytes rem = size % 16
     int i;
 
-    //for(i = 0; i < 16; i++) cipherCopy[i] = this->key.getIV()[i];
     this->key.write_IV(cipherCopy);
     CopyBlock(currentDataBlock, previousBlk);                                   // -Copying the first ciphered block.
 
@@ -408,7 +512,7 @@ void Cipher::decryptCBC(char*const data, unsigned size) const{
     }
 }
 
-void Cipher::encryptPVS(char*const data, unsigned size) const{
+void Cipher::encryptPVS(char*const data, unsigned size) {
     char* pi = NULL;                                                            // -Will save the binary digits of pi
     char* currentDataBlock = data;
     char _key_[32];                                                             // -Cryptographic key
@@ -530,7 +634,6 @@ void Cipher::decryptPVS(char*const data, unsigned size) const{
 
 void Cipher::decrypt(char*const data, unsigned size) const{
     Key::OperationMode opMode = this->key.getOperationMode();
-    std::cout << "\nIn file Source/AES.cpp, function void Cipher::decrypt(char*const data, unsigned size) const. Operation mode = " << opMode << '\n';
     switch(opMode) {
         case Key::ECB:
             this->decryptECB(data, size);

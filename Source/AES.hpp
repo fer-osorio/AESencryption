@@ -5,6 +5,8 @@
 
 namespace AES {
 
+struct Key;
+std::ostream& operator << (std::ostream& ost, Key k);
 struct Key {
 	enum Length {																// -Allowed AES key lengths
 		_128 = 128,
@@ -36,9 +38,10 @@ struct Key {
 	~Key();
 
 	Key& operator = (const Key&);
+	friend std::ostream& operator << (std::ostream& ost, Key k);
 
 	void set_OperationMode(OperationMode _operation_mode) {this->operation_mode = _operation_mode;}
-	OperationMode getOperationMode() {return this->operation_mode; }
+	OperationMode getOperationMode() const{ return this->operation_mode; }
 	void set_IV(const char*const _IV) {
 		for(int i = 0; i < 16; i++) this->IV[i] = _IV[i];
 	}
@@ -52,8 +55,10 @@ struct Key {
 	void save(const char* const) const;											// -Saving information in a binary file.
 };
 
+class Cipher;																	// -Declaring class name "Cipher". The intention is to use it in the next function
+std::ostream& operator << (std::ostream& st, const Cipher& c);					// -Declaration here so this function is inside the namespace function.
 class Cipher {
-	mutable	Key key;
+	Key key;
 	int    Nk, Nr, keyExpLen;
 	char*  keyExpansion = NULL;
 
@@ -128,21 +133,22 @@ class Cipher {
 	~Cipher();
 
 	Cipher& operator = (const Cipher& a);
+	friend std::ostream& operator << (std::ostream& st, const Cipher& c);
 
 	void create_KeyExpansion(const char* const);								// -Creates key expansion
 	void setIV(char IV[16]) const;												// -Sets the initial vector value. Required for the CBC operation mode
 
-	void encryptECB(char*const data, unsigned size) const;						// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
+	void encryptECB(char*const data, unsigned size);							// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
 																				//	size (in bytes) is  provided by the 'size' argument.
-	void decryptECB(char*const data, unsigned size) const;						// -Decrypts the message pointed by 'data' using the ECB operation mode. The data
+	void decryptECB(char*const data, unsigned size)const;						// -Decrypts the message pointed by 'data' using the ECB operation mode. The data
 																				//	size (in bytes) is  provided by the 'size' argument.
 
-	void encryptCBC(char*const data, unsigned size) const;						// -Encrypts the message pointed by 'data' using the CBC operation mode. The data
+	void encryptCBC(char*const data, unsigned size);							// -Encrypts the message pointed by 'data' using the CBC operation mode. The data
 																				//	size (in bytes) is  provided by the 'size' argument.
-	void decryptCBC(char*const data, unsigned size) const;						// -Decrypts the message pointed by 'data'. The message must had been encrypted
+	void decryptCBC(char*const data, unsigned size)const;						// -Decrypts the message pointed by 'data'. The message must had been encrypted
 																				//	using the CBC mode operation.
 																				// -The size of the message is provided by the 'size' argument.
-	void encryptPVS(char*const data, unsigned size) const;						// -Encrypts the message pointed by 'data' using the PI operation mode.
+	void encryptPVS(char*const data, unsigned size);							// -Encrypts the message pointed by 'data' using the PI operation mode.
 																				// -The data size (in bytes) is  provided by the 'size' argument.
 	void decryptPVS(char*const data, unsigned size)const;						// -Decrypts the message pointed by 'data' using the PI operation mode.
 																				// -The size of the message is provided by the 'size' argument.
