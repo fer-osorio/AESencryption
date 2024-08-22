@@ -87,12 +87,12 @@ class TXT {																		// -Handling .txt files
 		e.encryptPVS(txt.content, txt.size);
     	txt.save();
 	}
-	friend void decryptPVS(TXT& txt, const AES::Cipher& e) {
+	friend void decryptPVS(TXT& txt, AES::Cipher& e) {
 		e.decryptPVS(txt.content, txt.size);
     	txt.save();
 	}
 
-	friend void decrypt(TXT& txt, const AES::Cipher& e) {
+	friend void decrypt(TXT& txt, AES::Cipher& e) {
 		e.decrypt(txt.content, txt.size);
 		txt.save();
 	}
@@ -167,12 +167,12 @@ class Bitmap {																	// -Handling bitmap format images.
 		e.encryptPVS(bmp.data, bmp.ih.SizeOfBitmap);
     	bmp.save(bmp.name);
 	}
-	friend void decryptPVS(Bitmap& bmp, const AES::Cipher& e) {
+	friend void decryptPVS(Bitmap& bmp, AES::Cipher& e) {
 		e.decryptPVS(bmp.data, bmp.ih.SizeOfBitmap);
     	bmp.save(bmp.name);
 	}
 
-	friend void decrypt(Bitmap& bmp, const AES::Cipher& e) {
+	friend void decrypt(Bitmap& bmp, AES::Cipher& e) {
 		e.decrypt(bmp.data, bmp.ih.SizeOfBitmap);
     	bmp.save(bmp.name);
 	}
