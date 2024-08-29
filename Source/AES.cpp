@@ -452,6 +452,7 @@ void Cipher::printWord(const char word[4]) {
 void Cipher::encryptECB(char*const data, unsigned size) {
     if(size == 0) return;                                                       // Exception here.
     this->key.set_OperationMode(Key::ECB);                                      // -Setting operation mode.
+    if(this->usingDefaultSbox == false) this->setSboxToDefauld();
 
     char* currentDataBlock = data;
     int numofBlocks = int(size >> 4);                                           //  numofBlocks = size / 16.
@@ -493,6 +494,7 @@ void Cipher::decryptECB(char *const data, unsigned int size) const{
 void Cipher::encryptCBC(char*const data,unsigned size) {
     if(size == 0) return;                                                       // Exception here.
     this->key.set_OperationMode(Key::CBC);                                      // -Setting operation mode.
+    if(this->usingDefaultSbox == false) this->setSboxToDefauld();
 
     char *previousBlk, *currentDataBlock = data;
     char IVlocation[16];
