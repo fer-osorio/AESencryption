@@ -9,3 +9,6 @@
 -   Friend functions are used for the encryption and decryption of files because, through this method, one single ``AES::Cipher`` object can encrypt multiple files.
 -   Update the constructor ``Key::Key(const char*const fname)`` (construct a Key object from file) and the function ``void Key::save(const char* const fname) const``
     (saves the Key object into a binary file) for each new operation mode.
+    
+## To do.
+-   Check if the Sbox using for decryption is the default one (the one specified int the NIST Standard) or is a modified one.
