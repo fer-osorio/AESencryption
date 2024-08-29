@@ -116,6 +116,9 @@ class Cipher {
 		0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D
 	};
 
+	bool usingDefaultSbox = true;												// -Tell us if the object is using the default Sbox (Specified in the NIST standard)
+	void setSboxToDefauld();													// -If the Sbox is modified, returns it to the default value.
+
 	char defaultKey[32] =
 		{(char)0x60, (char)0x3D, (char)0xEB, (char)0x10,
          (char)0x15, (char)0xCA, (char)0x71, (char)0xBE,

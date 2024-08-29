@@ -2,10 +2,9 @@
 #include"AES.hpp"
 #include"OperationsGF256.hpp"
 
-
 /************************************* Default values for substitution boxes. This are the values showed in the standard ******************************************/
 
-static const unsigned char SBox[256] = {
+static const unsigned char defaultSBox[256] = {
 	0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
 	0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
 	0xB7, 0xFD, 0x93, 0x26, 0x36, 0x3F, 0xF7, 0xCC, 0x34, 0xA5, 0xE5, 0xF1, 0x71, 0xD8, 0x31, 0x15,
@@ -93,7 +92,6 @@ _16uint32_64uchar operator * (const UnsignedInt256bits& a, const UnsignedInt256b
     }
     return result;
 }
-
 
 using namespace AES;
 
@@ -294,6 +292,15 @@ void Key::save(const char* const fname) const {
 
 /************************************************** AES encryption and decryption algorithms implementation ******************************************************/
 
+void Cipher::setSboxToDefauld() {                                               // -Returns Sbox to the values specified in the standar
+    if(this->usingDefaultSbox) return;                                          // -If the object is using the default Sbox, then nothing should be do.
+    for(int i = 0; i < 256; i++) {
+        this->SBox[i]    = defaultSBox[i];
+        this->InvSBox[i] = defaultInvSBox[i];
+    }
+    this->usingDefaultSbox = true;                                              // -Making explicit the use of this Sbox
+}
+
 Cipher::Cipher(const char* const _key, Key::Length len): key(_key, len, Key::ECB), Nk(len >> 5), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
     this->create_KeyExpansion(_key);
 }
@@ -330,25 +337,22 @@ Cipher& Cipher::operator = (const Cipher& a) {
 
 std::ostream& AES::operator << (std::ostream& ost, const Cipher& c) {
     char keyExpansionString[880];
-    auto keyExpansionTable = [&keyExpansionString, &c](){
-        int rowsAmount = c.keyExpLen >> 5;
-        int i, j, k, l;
-        for(i = 0, j = 0, k = 0; i < rowsAmount; i++, j+=32, k+=64) {
-            keyExpansionString[k++] = '\n';
-            keyExpansionString[k++] = '\t';
-            keyExpansionString[k++] = '\t';
-            bytesToHexString(&c.keyExpansion[j], &keyExpansionString[k], 32);
-        }
-        if((l = c.keyExpLen & 63) > 0) {
-            keyExpansionString[k++] = '\n';
-            keyExpansionString[k++] = '\t';
-            keyExpansionString[k++] = '\t';
-            bytesToHexString(&c.keyExpansion[j], &keyExpansionString[k], l);
-            keyExpansionString[k+(l<<1)] = 0;
-        }
-        else keyExpansionString[k] = 0;
-    };
-    keyExpansionTable();
+    int rowsAmount = c.keyExpLen >> 5;
+    int i, j, k, l;
+    for(i = 0, j = 0, k = 0; i < rowsAmount; i++, j+=32, k+=64) {
+        keyExpansionString[k++] = '\n';
+        keyExpansionString[k++] = '\t';
+        keyExpansionString[k++] = '\t';
+        bytesToHexString(&c.keyExpansion[j], &keyExpansionString[k], 32);
+    }
+    if((l = c.keyExpLen & 63) > 0) {
+        keyExpansionString[k++] = '\n';
+        keyExpansionString[k++] = '\t';
+        keyExpansionString[k++] = '\t';
+        bytesToHexString(&c.keyExpansion[j], &keyExpansionString[k], l);
+        keyExpansionString[k+(l<<1)] = 0;
+    }
+    else keyExpansionString[k] = 0;
     ost << "AES::Cipher object information:\n";
     ost << c.key;
     ost << "\tNr: " << c.Nr << " rounds" << '\n';
@@ -360,15 +364,12 @@ std::ostream& AES::operator << (std::ostream& ost, const Cipher& c) {
 void Cipher::create_KeyExpansion(const char* const _key) {
     char temp[4];                                                               // (Nr+1)*16
 	int i, keyExpansionLen = this->keyExpLen;                                   // Key expansion length in bytes
-
 	keyExpansion = new char[(unsigned)keyExpansionLen];
 	keyExpansionLen >>= 2;                                                      // keyExpansionLen in words (block of 4 bytes). keyExpansionLen /= 4
-
-	bool debug = false;                                                         // -Show the construction of the key expansion.
-
 	int NkBytes = Nk << 2;                                                      // -The first Nk words of the key expansion are the key itself. // Nk * 4
 	for(i = 0; i < NkBytes; i++) keyExpansion[i] = _key[i];
 
+    bool debug = false;                                                         // -Show the construction of the key expansion.
 	if(debug) {
 	    std::cout <<
 	    "-------------------------------------------------- Key Expansion --------------------------------------------------\n"
@@ -522,7 +523,7 @@ void Cipher::decryptCBC(char*const data, unsigned size) const{
     if(size == 0) return;                                                       // Exception here.
 
     char *currentDataBlock = data, previousBlk[16], cipherCopy[16];
-    int numofBlocks = (int)size >> 4;                                           // numofBlocks = size / 16
+    int numofBlocks = (int)size >> 4;                                           // -numofBlocks = size / 16
     int rem = (int)size & 15;                                                   // -Rest of the bytes rem = size % 16
     int i;
 
@@ -553,124 +554,89 @@ void Cipher::decryptCBC(char*const data, unsigned size) const{
     }
 }
 
-void Cipher::encryptPVS(char*const data, unsigned size) {
-    char* pi = NULL;                                                            // -Will save the binary digits of pi
-    char* currentDataBlock = data;
-    char _key_[32];                                                             // -Cryptographic key
-    std::ifstream file;
+struct PIroundKey {
+    private: char* roundkey = NULL;
+    private: unsigned size  = 0;
+    private: PIroundKey& operator = (PIroundKey&);
+    public: ~PIroundKey() { if(this->roundkey != NULL) delete[] roundkey; }
+    public: char operator [] (const unsigned i) const{ return roundkey[i]; }
+    public: bool notNULLroundKey() { return this->roundkey != NULL; }
+    public: void setPIroundKey(unsigned dataSize, const Key& K) {
+        if(this->roundkey != NULL) return;
+        std::ifstream file;
+        file.open("pi.bin", std::ios::binary);
+        if(file.is_open()) {
+            char* pi = NULL;                                                    // -Will save the binary digits of pi
+            char _key_[32];                                                     // -Cryptographic key
+            UnsignedInt256bits a;                                               // -Representation of a number of 256 bits (32 bytes)
+            UnsignedInt256bits b;                                               // -Representation of a number of 256 bits (32 bytes)
+            _16uint32_64uchar  c;                                               // -Will save the multiplication result
+            unsigned i, j;                                                      // -Auxiliary variables
+            unsigned PIsize = (dataSize & 1) == 0 ? dataSize >> 1 : (dataSize + 1) >> 1; // -Using blocks of 32 bytes since the result of the product of two
+            unsigned _32bytesBlocks = PIsize >> 5;                              // -Amount of blocks of 32 bytes, _32bytesBlocks = dataSize / 32
+            unsigned lastBlockSize  = PIsize & 31;                              // -Size of the last block, lastBlockSize = dataSize % 32
+                                                                                //  256 bits number is a 512 bits number (dataSize doubles).
+            const char* piIndex;                                                // -Will go trough the digits of pi
 
-    file.open("pi.bin", std::ios::binary);
-    if(file.is_open()) {
-        UnsignedInt256bits a;                                                   // -Representation of a number of 256 bits (32 bytes)
-        UnsignedInt256bits b;                                                   // -Representation of a number of 256 bits (32 bytes)
-        _16uint32_64uchar c;                                                    // -Will save the multiplication result
-        unsigned unwrittenSBoxSize = 256;                                       // -We'll rewrite Sbox, this is the size of the entries not substituted yet
-        unsigned i, j, k, l, r;                                                 // -Auxiliary variables
-        unsigned _32bytesBlocks = size >> 5;                                    // -Amount of blocks of 64 bytes, _32bytesBlocks = size / 32
-        unsigned lastBlockSize = size & 31;                                     // -Size of the last block, lastBlockSize = size % 64
-                                                                                // -Using blocks of 64 bytes since the result of the product of two 256 bits number
-                                                                                //  is a 512 bits number (size doubles).
-        unsigned char permutationBuffer[256];                                   // -Will be used in the creation of new Sbox
-        const char* piIndex;                                                    // -Will go trough the digits of pi
-
-        pi = new char[size];
-        file.read(pi, size);                                                    // -Uploading pi
-        this->key.write_Key(_key_);
-        if(this->key.getLengthBytes() < 32) {
-            for(i = this->key.getLengthBytes(), j = 0; i < 32; i++, j++) _key_[i] = _key_[j]; // -Padding with the beginning of the key
-        }
-        a = UnsignedInt256bits(_key_);                                          // -Creating number from key
-        for(i = 0, piIndex = pi; i < _32bytesBlocks; i++, piIndex += 32, currentDataBlock += 32) {
-            b.reWriteLeastSignificantBytes(piIndex);                            // -Number from a 32 bytes chunk of pi
-            c = a*b;                                                            // -Product with the key
-            for(j = 0 ; j < 32; j++) currentDataBlock[j] ^= (char)c.chars[j];
-            for(k = 0 ; k < 32; k++,j++) currentDataBlock[k] ^= (char)c.chars[j]; // -Second round of X0R
-        }
-        if(lastBlockSize > 0) {
-            b.reWriteLeastSignificantBytes(piIndex, lastBlockSize);             // -Rewriting with the bytes left
-            c = a*b;                                                            // -Product with the key
-            for(j = 0 ; j < lastBlockSize; j++) currentDataBlock[j] ^= (char)c.chars[j];
-            for(k = 0 ; k < lastBlockSize; k++,j++) currentDataBlock[k] ^= (char)c.chars[j]; // -Second round of X0R
-        }
-        for(i = 0; i < 256; i++ ) permutationBuffer[i] = (unsigned char)i;
-        for(i = size-129, j = 0, k = size-1; i < k; i+=32) {                    // -Building Sbox
-            b.reWriteLeastSignificantBytes(&pi[i]);                             // -Rewriting with the bytes left
-            c = a*b;                                                            // -Product with the key
-            for(l = 0; l < 64; l++, j++, unwrittenSBoxSize--) {
-                r = c.chars[l] % unwrittenSBoxSize;                             // -Using the number in c as a random number
-                this->SBox[j] = permutationBuffer[r];
-                permutationBuffer[r] = permutationBuffer[unwrittenSBoxSize - 1];
+            this->roundkey = new char[dataSize];
+            pi = new char[PIsize];
+            file.read(pi, PIsize);                                              // -Uploading pi
+            K.write_Key(_key_);
+            if(K.getLengthBytes() < 32) for(i = K.getLengthBytes(), j = 0; i < 32; i++, j++) _key_[i] = _key_[j];   // -Padding with the beginning of the key
+            a = UnsignedInt256bits(_key_);                                      // -Creating number from key
+            for(i = 0, piIndex = pi; i < _32bytesBlocks; i++, piIndex += 32) {
+                b.reWriteLeastSignificantBytes(piIndex);                        // -Number from a 32 bytes chunk of pi
+                c = a*b;                                                        // -Product with the key
+                for(j = 0 ; j < 64; j++) this->roundkey[this->size++] = (char)c.chars[j];
             }
+            if(lastBlockSize > 0) {
+                b.reWriteLeastSignificantBytes(piIndex, lastBlockSize);         // -Rewriting with the bytes left
+                c = a*b;                                                        // -Product with the key
+                for(j = 0 ; j < lastBlockSize; j++) this->roundkey[this->size++] = (char)c.chars[j];
+            }
+            if(pi != NULL) delete[] pi;
+        }
+    }
+};
+static PIroundKey piRoundKey;
+
+void Cipher::encryptPVS(char*const data, unsigned size) {
+    piRoundKey.setPIroundKey(size, this->key);
+    if(piRoundKey.notNULLroundKey()) {
+        unsigned char permutationBuffer[256];                                   // -Will be used in the creation of new Sbox
+        unsigned i, j, k;
+        unsigned unwrittenSBoxSize = 256;                                       // -We'll rewrite Sbox, this is the size of the entries not substituted yet
+        for(i = 0; i < size; i++) data[i] ^= piRoundKey[i];
+        for(i = 0; i < 256; i++ ) permutationBuffer[i] = (unsigned char)i;
+        for(i = size-1, j = 0; unwrittenSBoxSize > 0; i--, j++, unwrittenSBoxSize--) {
+            k = (unsigned char)piRoundKey[i] % unwrittenSBoxSize;
+            this->SBox[j] = permutationBuffer[k];
+            permutationBuffer[k] = permutationBuffer[unwrittenSBoxSize - 1];
         }
         for(i = 0; i < 256; i++ ) this->InvSBox[this->SBox[i]] = i;             // -Building Sbox inverse
-    } else {
-        std::cout << "\nCould not open pi.bin file, proceeding with ECB mode\n";
+        this->encryptECB(data, size);                                           // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
+        this->key.set_OperationMode(Key::PVS);                                  // -Setting operation mode after using ECB encryption function.
     }
-    if(pi != NULL) delete[] pi;
-    this->encryptECB(data, size);                                               // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
-    this->key.set_OperationMode(Key::PVS);                                      // -Setting operation mode after using ECB encryption function.
+    else this->encryptECB(data, size);
 }
 
 void Cipher::decryptPVS(char*const data, unsigned size) {
-    char* pi = NULL;                                                            // -Will save the binary digits of pi
-    char* currentDataBlock = data;
-    char _key_[32];                                                             // -Cryptographic key
-    std::ifstream file;
-
-    file.open("pi.bin", std::ios::binary);
-    if(file.is_open()) {
-        UnsignedInt256bits a;                                                   // -Representation of a number of 256 bits (32 bytes)
-        UnsignedInt256bits b;                                                   // -Representation of a number of 256 bits (32 bytes)
-        _16uint32_64uchar c;                                                    // -Will save the multiplication result
-        unsigned unwrittenSBoxSize = 256;                                       // -We'll rewrite Sbox, this is the size of the entries not substituted yet
-        unsigned i, j, k, l, r;
-        unsigned _32bytesBlocks = size >> 5;                                    // -Amount of blocks of 64 bytes, _32bytesBlocks = size / 64
-        unsigned lastBlockSize = size & 31;                                     // -Size of the last block, lastBlockSize = size % 64
-                                                                                // -Using blocks of 64 bytes since the result of the product of two 256 bits number
-                                                                                //  is a 512 bits number (size doubles).
-        const char* piIndex;                                                    // -Will go trough the digits of pi
+    piRoundKey.setPIroundKey(size, this->key);
+    if(piRoundKey.notNULLroundKey()) {
         unsigned char permutationBuffer[256];                                   // -Will be used in the creation of new Sbox
-
-        pi = new char[size];
-        file.read(pi, size);                                                    // -Uploading pi
-
-        this->key.write_Key(_key_);
-        if(this->key.getLengthBytes() < 32) {
-            for(i = this->key.getLengthBytes(), j = 0; i < 32; i++, j++) _key_[i] = _key_[j]; // -Padding with the beginning of the key
-        }
-        a = UnsignedInt256bits(_key_);                                          // -Creating number from key
-
+        unsigned i, j, k;
+        unsigned unwrittenSBoxSize = 256;                                       // -We'll rewrite Sbox, this is the size of the entries not substituted yet
         for(i = 0; i < 256; i++ ) permutationBuffer[i] = (unsigned char)i;
-        for(i = size-129, j = 0, k = size-1; i < k; i+=32) {                    // -Building Sbox
-            b.reWriteLeastSignificantBytes(&pi[i]);                             // -Rewriting with the bytes left
-            c = a*b;                                                            // -Product with the key
-            for(l = 0; l < 64; l++, j++, unwrittenSBoxSize--) {
-                r = c.chars[l] % unwrittenSBoxSize;                             // -Using the number in c as a random number
-                this->SBox[j] = permutationBuffer[r];
-                permutationBuffer[r] = permutationBuffer[unwrittenSBoxSize - 1];
-            }
+        for(i = size-1, j = 0; unwrittenSBoxSize > 0; i--, j++, unwrittenSBoxSize--) {
+            k = (unsigned char)piRoundKey[i] % unwrittenSBoxSize;
+            this->SBox[j] = permutationBuffer[k];
+            permutationBuffer[k] = permutationBuffer[unwrittenSBoxSize - 1];
         }
         for(i = 0; i < 256; i++ ) this->InvSBox[this->SBox[i]] = i;             // -Building Sbox inverse
-
-        this->decryptECB(data, size);                                           // -With the Sbox set we can decrypt
-
-        for(i = 0, piIndex = pi; i < _32bytesBlocks; i++, piIndex += 32, currentDataBlock += 32) {
-            b.reWriteLeastSignificantBytes(piIndex);                            // -Number from a 32 bytes chunk of pi
-            c = a*b;                                                            // -Product with the key
-            for(j = 0 ; j < 32; j++) currentDataBlock[j] ^= (char)c.chars[j];
-            for(k = 0 ; k < 32; k++,j++) currentDataBlock[k] ^= (char)c.chars[j]; // -Second round of X0R
-        }
-        if(lastBlockSize > 0) {
-            b.reWriteLeastSignificantBytes(piIndex, lastBlockSize);             // -Rewriting with the bytes left
-            c = a*b;                                                            // -Product with the key
-            for(j = 0 ; j < lastBlockSize; j++) currentDataBlock[j] ^= (char)c.chars[j];
-            for(k = 0 ; k < lastBlockSize; k++,j++) currentDataBlock[k] ^= (char)c.chars[j]; // -Second round of X0R
-        }
-    } else {
-        std::cout << "\nCould not open pi.bin file, using ECB decryption mode\n"; // -An exception here could be a better idea
         this->decryptECB(data, size);                                           // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
+        for(i = 0; i < size; i++) data[i] ^= piRoundKey[i];
     }
-    if(pi != NULL) delete[] pi;
+    else this->decryptECB(data, size);
 }
 
 void Cipher::decrypt(char*const data, unsigned size) {
