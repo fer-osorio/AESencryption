@@ -292,11 +292,11 @@ void Key::save(const char* const fname) const {
 
 /************************************************** AES encryption and decryption algorithms implementation ******************************************************/
 
-void Cipher::setSboxToDefauld() {                                               // -Returns Sbox to the values specified in the standar
+void Cipher::setSboxToDefauld() const{                                          // -Returns Sbox to the values specified in the standar
     if(this->usingDefaultSbox) return;                                          // -If the object is using the default Sbox, then nothing should be do.
     for(int i = 0; i < 256; i++) {
-        this->SBox[i]    = defaultSBox[i];
-        this->InvSBox[i] = defaultInvSBox[i];
+        this->SBox[i]    = defaultSBox[i];                                      // -Mutable attributes, so 'const' qualifier does not affect affect these two lines
+        this->InvSBox[i] = defaultInvSBox[i];                                   // ...
     }
     this->usingDefaultSbox = true;                                              // -Making explicit the use of this Sbox
 }
@@ -473,6 +473,7 @@ void Cipher::encryptECB(char*const data, unsigned size) {
 
 void Cipher::decryptECB(char *const data, unsigned int size) const{
     if(size == 0) return;                                                       // Exception here.
+    if(this->usingDefaultSbox == false) this->setSboxToDefauld();
 
     char* currentDataBlock = data;
     int numofBlocks = int(size >> 4);                                           //  numofBlocks = size / 16.
@@ -523,6 +524,7 @@ void Cipher::encryptCBC(char*const data,unsigned size) {
 
 void Cipher::decryptCBC(char*const data, unsigned size) const{
     if(size == 0) return;                                                       // Exception here.
+    if(this->usingDefaultSbox == false) this->setSboxToDefauld();
 
     char *currentDataBlock = data, previousBlk[16], cipherCopy[16];
     int numofBlocks = (int)size >> 4;                                           // -numofBlocks = size / 16
