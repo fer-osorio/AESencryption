@@ -560,6 +560,7 @@ struct PIroundKey {
     private: PIroundKey& operator = (PIroundKey&);
     public: ~PIroundKey() { if(this->roundkey != NULL) delete[] roundkey; }
     public: char operator [] (const unsigned i) const{ return roundkey[i]; }
+    public: unsigned getSize() { return this->size; }
     public: bool notNULLroundKey() { return this->roundkey != NULL; }
     public: void setPIroundKey(unsigned dataSize, const Key& K) {
         if(this->roundkey != NULL) return;
@@ -600,20 +601,28 @@ struct PIroundKey {
 };
 static PIroundKey piRoundKey;
 
-void Cipher::encryptPVS(char*const data, unsigned size) {
-    piRoundKey.setPIroundKey(size, this->key);
-    if(piRoundKey.notNULLroundKey()) {
-        unsigned char permutationBuffer[256];                                   // -Will be used in the creation of new Sbox
-        unsigned i, j, k;
-        unsigned unwrittenSBoxSize = 256;                                       // -We'll rewrite Sbox, this is the size of the entries not substituted yet
-        for(i = 0; i < size; i++) data[i] ^= piRoundKey[i];
-        for(i = 0; i < 256; i++ ) permutationBuffer[i] = (unsigned char)i;
+void Cipher::setSbox() {
+    unsigned i, j, k;
+    unsigned size = piRoundKey.getSize();
+    unsigned unwrittenSBoxSize = 256;                                           // -We'll rewrite Sbox, this is the size of the entries not substituted yet
+    unsigned char permutationBuffer[256];                                       // -Will be used in the creation of new Sbox
+    if(size < 256) return;
+    for(i = 0; i < 256; i++ ) permutationBuffer[i] = (unsigned char)i;
         for(i = size-1, j = 0; unwrittenSBoxSize > 0; i--, j++, unwrittenSBoxSize--) {
             k = (unsigned char)piRoundKey[i] % unwrittenSBoxSize;
             this->SBox[j] = permutationBuffer[k];
             permutationBuffer[k] = permutationBuffer[unwrittenSBoxSize - 1];
         }
-        for(i = 0; i < 256; i++ ) this->InvSBox[this->SBox[i]] = i;             // -Building Sbox inverse
+    for(i = 0; i < 256; i++ ) this->InvSBox[this->SBox[i]] = i;                 // -Building Sbox inverse
+    this->usingDefaultSbox = false;
+}
+
+void Cipher::encryptPVS(char*const data, unsigned size) {
+    piRoundKey.setPIroundKey(size, this->key);
+    if(piRoundKey.notNULLroundKey()) {
+        unsigned i;
+        for(i = 0; i < size; i++) data[i] ^= piRoundKey[i];
+        this->setSbox();
         this->encryptECB(data, size);                                           // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
         this->key.set_OperationMode(Key::PVS);                                  // -Setting operation mode after using ECB encryption function.
     }
@@ -623,16 +632,8 @@ void Cipher::encryptPVS(char*const data, unsigned size) {
 void Cipher::decryptPVS(char*const data, unsigned size) {
     piRoundKey.setPIroundKey(size, this->key);
     if(piRoundKey.notNULLroundKey()) {
-        unsigned char permutationBuffer[256];                                   // -Will be used in the creation of new Sbox
-        unsigned i, j, k;
-        unsigned unwrittenSBoxSize = 256;                                       // -We'll rewrite Sbox, this is the size of the entries not substituted yet
-        for(i = 0; i < 256; i++ ) permutationBuffer[i] = (unsigned char)i;
-        for(i = size-1, j = 0; unwrittenSBoxSize > 0; i--, j++, unwrittenSBoxSize--) {
-            k = (unsigned char)piRoundKey[i] % unwrittenSBoxSize;
-            this->SBox[j] = permutationBuffer[k];
-            permutationBuffer[k] = permutationBuffer[unwrittenSBoxSize - 1];
-        }
-        for(i = 0; i < 256; i++ ) this->InvSBox[this->SBox[i]] = i;             // -Building Sbox inverse
+        unsigned i;
+        this->setSbox();
         this->decryptECB(data, size);                                           // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
         for(i = 0; i < size; i++) data[i] ^= piRoundKey[i];
     }

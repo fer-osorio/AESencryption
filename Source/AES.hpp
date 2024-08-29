@@ -118,6 +118,8 @@ class Cipher {
 
 	bool usingDefaultSbox = true;												// -Tell us if the object is using the default Sbox (Specified in the NIST standard)
 	void setSboxToDefauld();													// -If the Sbox is modified, returns it to the default value.
+	void setSbox();																// -Sets Sbox using random numbers from the array PIroundKey. It supposes the
+																				//	array has at least 256 elements
 
 	char defaultKey[32] =
 		{(char)0x60, (char)0x3D, (char)0xEB, (char)0x10,
