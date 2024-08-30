@@ -22,14 +22,15 @@ struct Key {
 		PVS																		// -PI xor and variable Sbox
 	};
 	private:
-	OperationMode operation_mode;
+	mutable  OperationMode operation_mode;
 	Length 	 length;															// -Length in bits.
 	unsigned lengthBytes;														// -Length in bytes.
 	char* key = NULL;
-	char IV[16] = {0, 0, 0, 0,													// -Initial vector for the CBC operation mode.
-				   0, 0, 0, 0,													// -This default value (just zeros) is left
-				   0, 0, 0, 0,													//  for the case in which we do not use CBC.
-				   0, 0, 0, 0};
+	mutable char  IV[16] = {0, 0, 0, 0,											// -Initial vector for the CBC operation mode
+				    		0, 0, 0, 0,											// -This default value (just zeros) is left
+				    		0, 0, 0, 0,											//  for the case in which we do not use CBC
+				    		0, 0, 0, 0};
+	mutable bool notSetUpIV = true;												// -Tells if the initial vector is already initialized or not
 
 	public:
 	Key(const char* const _key, Length, OperationMode, const char* const _IV = NULL);
@@ -40,16 +41,18 @@ struct Key {
 	Key& operator = (const Key&);
 	friend std::ostream& operator << (std::ostream& ost, Key k);
 
-	void set_OperationMode(OperationMode _operation_mode) {this->operation_mode = _operation_mode;}
+	void set_OperationMode(OperationMode _operation_mode) const{ this->operation_mode = _operation_mode; }
 	OperationMode getOperationMode() const{ return this->operation_mode; }
-	void set_IV(const char*const _IV) {
-		for(int i = 0; i < 16; i++) this->IV[i] = _IV[i];
+	void set_IV(const char*const _IV) const{									// -Initializing initial vector with the values pointed by _IV pointer. Warning:
+		if(this->notSetUpIV) for(int i = 0; i < 16; i++) this->IV[i] = _IV[i];	//	We're supposing _IV points to an array of at least 16 elements
+		this->notSetUpIV = false;
 	}
+	bool IVisNotSetUp() const { return this->notSetUpIV; }
 	void write_IV(char*const destination) const {								// -Writes IV in destination
 		for(int i = 0; i < 16; i++) destination[i] = this->IV[i];				// -Warning: We are supposing we have at least 16 bytes of space in destination
 	}
-	void write_Key(char*const destination) const {
-		for(unsigned i = 0; i < this->lengthBytes; i++) destination[i] = this->key[i];
+	void write_Key(char*const destination) const {								// -Writes key in destination. Warning: We're supposing we have enough space in
+		for(unsigned i = 0; i < this->lengthBytes; i++) destination[i] = this->key[i];	//	destination array.
 	}
 	unsigned getLengthBytes() const {return this->lengthBytes;}
 	void save(const char* const) const;											// -Saving information in a binary file.
@@ -118,7 +121,7 @@ class Cipher {
 
 	mutable bool usingDefaultSbox = true;										// -Tell us if the object is using the default Sbox (Specified in the NIST standard)
 	void setSboxToDefauld() const;												// -If the Sbox is modified, returns it to the default value.
-	void setSbox();																// -Sets Sbox using random numbers from the array PIroundKey. It supposes the
+	void setSbox() const;														// -Sets Sbox using random numbers from the array PIroundKey. It supposes the
 																				//	array has at least 256 elements
 
 	char defaultKey[32] =
@@ -143,22 +146,22 @@ class Cipher {
 	void create_KeyExpansion(const char* const);								// -Creates key expansion
 	void setIV(char IV[16]) const;												// -Sets the initial vector value. Required for the CBC operation mode
 
-	void encryptECB(char*const data, unsigned size);							// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
+	void encryptECB(char*const data, unsigned size)const;						// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
 																				//	size (in bytes) is  provided by the 'size' argument.
 	void decryptECB(char*const data, unsigned size)const;						// -Decrypts the message pointed by 'data' using the ECB operation mode. The data
 																				//	size (in bytes) is  provided by the 'size' argument.
 
-	void encryptCBC(char*const data, unsigned size);							// -Encrypts the message pointed by 'data' using the CBC operation mode. The data
+	void encryptCBC(char*const data, unsigned size)const;						// -Encrypts the message pointed by 'data' using the CBC operation mode. The data
 																				//	size (in bytes) is  provided by the 'size' argument.
 	void decryptCBC(char*const data, unsigned size)const;						// -Decrypts the message pointed by 'data'. The message must had been encrypted
 																				//	using the CBC mode operation.
 																				// -The size of the message is provided by the 'size' argument.
-	void encryptPVS(char*const data, unsigned size);							// -Encrypts the message pointed by 'data' using the PI operation mode.
+	void encryptPVS(char*const data, unsigned size)const;						// -Encrypts the message pointed by 'data' using the PI operation mode.
 																				// -The data size (in bytes) is  provided by the 'size' argument.
-	void decryptPVS(char*const data, unsigned size);							// -Decrypts the message pointed by 'data' using the PI operation mode.
+	void decryptPVS(char*const data, unsigned size)const;						// -Decrypts the message pointed by 'data' using the PI operation mode.
 																				// -The size of the message is provided by the 'size' argument.
 
-	void decrypt(char*const data, unsigned size);
+	void decrypt(char*const data, unsigned size)const;
 
 	void saveKey(const char*const fname) const {this->key.save(fname);}
 	Key::OperationMode getOperationMode() const{ return this->key.getOperationMode(); }

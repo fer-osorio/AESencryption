@@ -158,8 +158,8 @@ static int bytesToHexString(const char*const origin, char*const destination, con
 
 /************************************************************** Handling AES cryptographic keys ******************************************************************/
 
-Key::Key(const char* const _key, Length len, OperationMode _operation_mode, const char* const _IV):
-    operation_mode(_operation_mode), length(len), lengthBytes((unsigned)len >> 3) {
+Key::Key(const char* const _key, Length len, OperationMode _operation_mode, const char* const _IV): operation_mode(_operation_mode), length(len),
+lengthBytes((unsigned)len >> 3) {
     unsigned i;
     this->key = new char[this->lengthBytes];
     if(_key != NULL) for(i = 0; i < this->lengthBytes; i++) this->key[i] = _key[i];
@@ -171,37 +171,6 @@ Key::Key(const Key& ak):operation_mode(ak.operation_mode), length(ak.length), le
     this->key = new char[ak.lengthBytes];
     for(i = 0; i < ak.lengthBytes; i++) this->key[i] = ak.key[i];               // -Supposing Cipher object is well constructed, this is, ak.key != NULL
     if(ak.operation_mode == CBC) for(i=0; i < 16; i++) this->IV[i]=ak.IV[i];    // -Without CBC, copying IV is pointless.
-}
-
-Key& Key::operator = (const Key& ak) {
-    if(this != &ak) {
-        unsigned i;
-        this->length   = ak.length;
-        this->lengthBytes = ak.lengthBytes;
-        if(this->key != NULL) delete[] this->key;
-        this->key = new char[ak.lengthBytes];
-        for(i = 0; i < ak.lengthBytes; i++) this->key[i] = ak.key[i];
-        if(ak.operation_mode == CBC)                                            // -Without CBC, copying IV is pointless.
-            for(i = 0; i < 16; i++) this->IV[i] = ak.IV[i];
-    }
-    return *this;
-}
-
-std::ostream& AES::operator << (std::ostream& ost, Key k) {
-    char keyStr[65];
-    char opModeStr[4];
-    char IVstring[33];
-
-    operationModeToString(k.operation_mode, opModeStr);
-    bytesToHexString(k.key, keyStr, (int)k.lengthBytes);
-    bytesToHexString(k.IV, IVstring, 16);
-
-    ost << "\tKey length: " << k.length << " bits, " << k.lengthBytes << " bytes, Nk = " << (k.lengthBytes >> 2) << " words" << '\n';
-    ost << "\tKey: " << keyStr << '\n';
-    ost << "\tOperation mode: " << opModeStr << '\n';
-    ost << "\tIV (in case of CBC): "<< IVstring << '\n';
-
-    return ost;
 }
 
 Key::Key(const char*const fname): operation_mode(ECB), length(_128), lengthBytes(16) { // -Building from .key file
@@ -249,6 +218,37 @@ Key::Key(const char*const fname): operation_mode(ECB), length(_128), lengthBytes
 Key::~Key() {
     if(this->key != NULL) delete[] this->key;
     this->key = NULL;
+}
+
+Key& Key::operator = (const Key& ak) {
+    if(this != &ak) {
+        unsigned i;
+        this->length   = ak.length;
+        this->lengthBytes = ak.lengthBytes;
+        if(this->key != NULL) delete[] this->key;
+        this->key = new char[ak.lengthBytes];
+        for(i = 0; i < ak.lengthBytes; i++) this->key[i] = ak.key[i];
+        if(ak.operation_mode == CBC)                                            // -Without CBC, copying IV is pointless.
+            for(i = 0; i < 16; i++) this->IV[i] = ak.IV[i];
+    }
+    return *this;
+}
+
+std::ostream& AES::operator << (std::ostream& ost, Key k) {
+    char keyStr[65];
+    char opModeStr[4];
+    char IVstring[33];
+
+    operationModeToString(k.operation_mode, opModeStr);
+    bytesToHexString(k.key, keyStr, (int)k.lengthBytes);
+    bytesToHexString(k.IV, IVstring, 16);
+
+    ost << "\tKey length: " << k.length << " bits, " << k.lengthBytes << " bytes, Nk = " << (k.lengthBytes >> 2) << " words" << '\n';
+    ost << "\tKey: " << keyStr << '\n';
+    ost << "\tOperation mode: " << opModeStr << '\n';
+    ost << "\tIV (in case of CBC): "<< IVstring << '\n';
+
+    return ost;
 }
 
 void Key::save(const char* const fname) const {
@@ -449,7 +449,7 @@ void Cipher::printWord(const char word[4]) {
 	std::cout << ']';
 }
 
-void Cipher::encryptECB(char*const data, unsigned size) {
+void Cipher::encryptECB(char*const data, unsigned size) const{
     if(size == 0) return;                                                       // Exception here.
     this->key.set_OperationMode(Key::ECB);                                      // -Setting operation mode.
     if(this->usingDefaultSbox == false) this->setSboxToDefauld();
@@ -492,7 +492,7 @@ void Cipher::decryptECB(char *const data, unsigned int size) const{
     decryptBlock(currentDataBlock);
 }
 
-void Cipher::encryptCBC(char*const data,unsigned size) {
+void Cipher::encryptCBC(char*const data, unsigned size) const{
     if(size == 0) return;                                                       // Exception here.
     this->key.set_OperationMode(Key::CBC);                                      // -Setting operation mode.
     if(this->usingDefaultSbox == false) this->setSboxToDefauld();
@@ -502,7 +502,7 @@ void Cipher::encryptCBC(char*const data,unsigned size) {
     int numofBlocks = (int)size >> 4;                                           //  numofBlocks = size / 16.
     int rem = (int)size & 15, i;                                                // -Bytes remaining rem = size % 16
 
-    setIV(IVlocation);                                                          // -Setting initial vector.
+    if(this->key.IVisNotSetUp()) setIV(IVlocation);                             // -Setting initial vector.
     this->key.set_IV(IVlocation);
     XORblocks(currentDataBlock, IVlocation, currentDataBlock);                  // -Encryption of the first block.
     encryptBlock(currentDataBlock);
@@ -605,7 +605,7 @@ struct PIroundKey {
 };
 static PIroundKey piRoundKey;
 
-void Cipher::setSbox() {
+void Cipher::setSbox() const{
     unsigned i, j, k;
     unsigned size = piRoundKey.getSize();
     unsigned unwrittenSBoxSize = 256;                                           // -We'll rewrite Sbox, this is the size of the entries not substituted yet
@@ -621,7 +621,7 @@ void Cipher::setSbox() {
     this->usingDefaultSbox = false;
 }
 
-void Cipher::encryptPVS(char*const data, unsigned size) {
+void Cipher::encryptPVS(char*const data, unsigned size) const{
     piRoundKey.setPIroundKey(size, this->key);
     if(piRoundKey.notNULLroundKey()) {
         unsigned i;
@@ -633,7 +633,7 @@ void Cipher::encryptPVS(char*const data, unsigned size) {
     else this->encryptECB(data, size);
 }
 
-void Cipher::decryptPVS(char*const data, unsigned size) {
+void Cipher::decryptPVS(char*const data, unsigned size) const{
     piRoundKey.setPIroundKey(size, this->key);
     if(piRoundKey.notNULLroundKey()) {
         unsigned i;
@@ -644,7 +644,7 @@ void Cipher::decryptPVS(char*const data, unsigned size) {
     else this->decryptECB(data, size);
 }
 
-void Cipher::decrypt(char*const data, unsigned size) {
+void Cipher::decrypt(char*const data, unsigned size) const{
     Key::OperationMode opMode = this->key.getOperationMode();
     switch(opMode) {
         case Key::ECB:
