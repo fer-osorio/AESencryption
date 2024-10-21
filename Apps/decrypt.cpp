@@ -1,6 +1,6 @@
 #include<iostream>
 #include<fstream>
-#include"Source/File.hpp"
+#include"../Source/File.hpp"
 
 int main(int argc, char *argv[]) {
     File::Bitmap bmp;
