@@ -25,8 +25,8 @@ install:
 
 # Builder uses this target to run encryption application.
 run_encryption:
-	AESencryption.exe
+	./AESencryption.exe
 
 # Builder uses this target to run decryption application.
 run_decryption:
-	AESdecryption.exe
+	./AESdecryption.exe
