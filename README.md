@@ -62,16 +62,16 @@ file) used in encryption as first argument and the name of the encrypted file (.
 
 Before executing `./encrypt Test01.bmp`.
 
-![Before encryption](/EncryptionExample/BeforeEncryption.png)
+![Before encryption](/Examples/BeforeEncryption.png)
 
 The last action encrypts the image and writes the binary file `Test01.key`, this file contains the cryptographic key and (since
 CBC mode was used) the initial vector. This image shows the moment before executing `./decrypt Test01.key Test01.bmp`.
 
-![Before decryption](/EncryptionExample/BeforeDecryption.png)
+![Before decryption](/Examples/BeforeDecryption.png)
 
 Finally, the last command gives us the original image.
 
-![After decryption](/EncryptionExample/AfterDecryption.png)
+![After decryption](/Examples/AfterDecryption.png)
 
 # Important notes:
 * Right now the unique operation modes that are implemented are ECB (Electronic Code Book) and CBC (Cipher Block Chaining).
