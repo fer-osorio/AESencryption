@@ -7,11 +7,11 @@ STANDARD = -std=c++2a
 SOURCE   = ../../Source/*.cpp
 HEADERS  = ../../Source/*.hpp
 
-AESencryption.exe: Makefile ../encrypt.cpp $(SOURCE) $(HEADERS)
-	$(CXX) -o $@ $(WARNINGS) $(DEBUG) $(OPTIMIZE) $(STANDARD) ../encrypt.cpp $(SOURCE)
+AESencryption.exe: Makefile ../encryption.cpp $(SOURCE) $(HEADERS)
+	$(CXX) -o $@ $(WARNINGS) $(DEBUG) $(OPTIMIZE) $(STANDARD) ../encryption.cpp $(SOURCE)
 
-AESdecryption.exe: Makefile ../decrypt.cpp $(SOURCE) $(HEADERS)
-	$(CXX) -o $@ $(WARNINGS) $(DEBUG) $(OPTIMIZE) $(STANDARD) ../decrypt.cpp $(SOURCE)
+AESdecryption.exe: Makefile ../decryption.cpp $(SOURCE) $(HEADERS)
+	$(CXX) -o $@ $(WARNINGS) $(DEBUG) $(OPTIMIZE) $(STANDARD) ../decryption.cpp $(SOURCE)
 
 clean:
 	rm -f AESencryption.exe AESdecryption.exe
