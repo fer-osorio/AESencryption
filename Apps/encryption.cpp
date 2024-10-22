@@ -34,34 +34,34 @@ int main(int argc, char *argv[]) {
     File::Bitmap bmp;
     File::TXT txt;
     if(argc > 1) {                                                              // -Encrypting File.
-        File::FileName fname(argv[1]);                                          // -Recognizing extension.
-        keyName = fname.returnThisNewExtension(File::FileName::key);
+        AES::Key aeskey(argv[1]);                                               // -Passing name of key file
+        File::FileName fname(argv[2]);                                          // -Recognizing extension.
+        /*keyName = fname.returnThisNewExtension(File::FileName::key);
         keyNameStr = new char[keyName.getSize()];
-        keyName.writeNameString(keyNameStr);
+        keyName.writeNameString(keyNameStr);*/
         File::FileName::Extension ext = fname.getExtension();
-        set_key(AES::Key:: _192);
-        AES::Cipher e(key192, AES::Key::_192);
+        AES::Cipher e(aeskey);                                                  // -Passing name of key file
         switch(ext) {
             case File::FileName::bmp:
                 std::cout << "\nEncrypting bmp file...\n\n";
                 try {
-                    bmp = File::Bitmap(argv[1]);
+                    bmp = File::Bitmap(argv[2]);
                 } catch(const char* errMsg) {
                     std::cout << errMsg;
                 }
                 encryptPVS(bmp, e);
-                e.saveKey(keyNameStr);
+                e.saveKey(argv[1]);
                 std::cout << e << '\n';
                 break;
             case File::FileName::txt:
                 std::cout << "\nEncrypting text file...\n\n";
                 try {
-                    txt = File::TXT(argv[1]);
+                    txt = File::TXT(argv[2]);
                 } catch(const char* errMsg) {
                     std::cout << errMsg;
                 }
                 encryptPVS(txt, e);
-                e.saveKey(keyNameStr);
+                e.saveKey(argv[1]);
                 break;
             case File::FileName::key:
                 break;
@@ -79,8 +79,8 @@ int main(int argc, char *argv[]) {
     unsigned size = 0, i = 0;
     std::ofstream file;
 
-    set_key(AES::Key::_128);
-    AES::Cipher e(key128, AES::Key::_128);
+    set_key(AES::Key::_192);
+    AES::Cipher e(key192, AES::Key::_192);
     int op;
     File::FileName Fname;
     File::FileName::Extension ext;
@@ -88,6 +88,7 @@ int main(int argc, char *argv[]) {
     std::cout << "\nPress:\n"
              "(1) to encrypt files.\n"
              "(2) to encrypt text retrieved from console.\n"
+             "(3) to save encryption key.\n"
              "Anything else to terminate the program.\n\n";
 
     std::cin >> op; getchar();
@@ -192,6 +193,9 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
     }
+    if(op == 3) {
+        e.saveKey("AESencryption.key");
+    }
     if(input != NULL) delete[] input;
     if(aux != NULL)   delete[] aux;
     std::cout << "Terminating program with success status...\n";
@@ -274,3 +278,4 @@ void printKey(AES::Key::Length len, const char* front, const char* back) {
     std::cout << ']';
     if(back != NULL) std::cout << back;
 }
+
