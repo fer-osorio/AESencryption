@@ -65,34 +65,39 @@ class TXT {																		// -Handling .txt files
 	FileName::Extension fileExtension() { return name.getExtension(); }
 	void printName(const char*const atBeginning = NULL, const char*const atEnd = NULL) { this->name.print(atBeginning, atEnd); }
 
-	friend void encryptECB(TXT& txt, AES::Cipher& e) {
-		e.encryptECB(txt.content, txt.size);
-    	txt.save();
+	friend void encryptECB(TXT& txt, AES::Cipher& e) {							// -The reason of the existence of this friend functions is to be capable of
+		e.encryptECB(txt.content, txt.size);									//	encrypt and decrypt many files with the same Cipher object.
+    	txt.save();																//	...
 	}
-	friend void decryptECB(TXT& txt, const AES::Cipher& e) {
-		e.decryptECB(txt.content, txt.size);
-    	txt.save();
-	}
-
-	friend void encryptCBC(TXT& txt, AES::Cipher& e) {
-		e.encryptCBC(txt.content, txt.size);
-    	txt.save();
-	}
-	friend void decryptCBC(TXT& txt, const AES::Cipher& e) {
-		e.decryptCBC(txt.content, txt.size);
-    	txt.save();
+	friend void decryptECB(TXT& txt, const AES::Cipher& e) {					//	...
+		e.decryptECB(txt.content, txt.size);									//	...
+    	txt.save();																//	...
 	}
 
-	friend void encryptPVS(TXT& txt, AES::Cipher& e) {
-		e.encryptPVS(txt.content, txt.size);
-    	txt.save();
+	friend void encryptCBC(TXT& txt, AES::Cipher& e) {							//	...
+		e.encryptCBC(txt.content, txt.size);									//	...
+    	txt.save();																//	...
 	}
-	friend void decryptPVS(TXT& txt, AES::Cipher& e) {
-		e.decryptPVS(txt.content, txt.size);
-    	txt.save();
+	friend void decryptCBC(TXT& txt, const AES::Cipher& e) {					//	...
+		e.decryptCBC(txt.content, txt.size);									//	...
+    	txt.save();																//	...
 	}
 
-	friend void decrypt(TXT& txt, AES::Cipher& e) {
+	friend void encryptPVS(TXT& txt, AES::Cipher& e) {							//	...
+		e.encryptPVS(txt.content, txt.size);									//	...
+    	txt.save();																//	...
+	}
+	friend void decryptPVS(TXT& txt, AES::Cipher& e) {							//	...
+		e.decryptPVS(txt.content, txt.size);									//	...
+    	txt.save();																//	...
+	}
+
+	friend void encrypt(TXT& txt, AES::Cipher& e) {								// -Encrypts using the operation mode defined in Key object
+		e.encrypt(txt.content, txt.size);
+		txt.save();
+	}
+
+	friend void decrypt(TXT& txt, AES::Cipher& e) {								// -Decrypts using the operation mode defined in Key object
 		e.decrypt(txt.content, txt.size);
 		txt.save();
 	}
@@ -145,34 +150,39 @@ class Bitmap {																	// -Handling bitmap format images.
 	void save(const char* fname);												// -Saves in memory
 	Bitmap& operator = (const Bitmap& bmp);
 
-	friend void encryptECB(Bitmap& bmp, AES::Cipher& e) {
-		e.encryptECB(bmp.data, bmp.ih.SizeOfBitmap);
-    	bmp.save(bmp.name);
+	friend void encryptECB(Bitmap& bmp, AES::Cipher& e) {						// -The reason of the existence of this friend functions is to be capable of
+		e.encryptECB(bmp.data, bmp.ih.SizeOfBitmap);							//	encrypt and decrypt many files with the same Cipher object.
+    	bmp.save(bmp.name);														//	...
 	}
-	friend void decryptECB(Bitmap& bmp, const AES::Cipher& e) {
-		e.decryptECB(bmp.data, bmp.ih.SizeOfBitmap);
+	friend void decryptECB(Bitmap& bmp, const AES::Cipher& e) {					//	...
+		e.decryptECB(bmp.data, bmp.ih.SizeOfBitmap);							//	...
+    	bmp.save(bmp.name);														//	...
+	}
+
+	friend void encryptCBC(Bitmap& bmp, AES::Cipher& e) {						//	...
+		e.encryptCBC(bmp.data, bmp.ih.SizeOfBitmap);							//	...
+    	bmp.save(bmp.name);														//	...
+	}
+	friend void decryptCBC(Bitmap& bmp, const AES::Cipher& e) {					//	...
+		e.decryptCBC(bmp.data, bmp.ih.SizeOfBitmap);							//	...
+    	bmp.save(bmp.name);														//	...
+	}
+
+	friend void encryptPVS(Bitmap& bmp, AES::Cipher& e) {						//	...
+		e.encryptPVS(bmp.data, bmp.ih.SizeOfBitmap);							//	...
+    	bmp.save(bmp.name);														//	...
+	}
+	friend void decryptPVS(Bitmap& bmp, AES::Cipher& e) {						//	...
+		e.decryptPVS(bmp.data, bmp.ih.SizeOfBitmap);							//	...
+    	bmp.save(bmp.name);														//	...
+	}
+
+	friend void encrypt(Bitmap& bmp, AES::Cipher& e) {							// -Encrypts using the operation mode defined in Key object
+		e.encrypt(bmp.data, bmp.ih.SizeOfBitmap);
     	bmp.save(bmp.name);
 	}
 
-	friend void encryptCBC(Bitmap& bmp, AES::Cipher& e) {
-		e.encryptCBC(bmp.data, bmp.ih.SizeOfBitmap);
-    	bmp.save(bmp.name);
-	}
-	friend void decryptCBC(Bitmap& bmp, const AES::Cipher& e) {
-		e.decryptCBC(bmp.data, bmp.ih.SizeOfBitmap);
-    	bmp.save(bmp.name);
-	}
-
-	friend void encryptPVS(Bitmap& bmp, AES::Cipher& e) {
-		e.encryptPVS(bmp.data, bmp.ih.SizeOfBitmap);
-    	bmp.save(bmp.name);
-	}
-	friend void decryptPVS(Bitmap& bmp, AES::Cipher& e) {
-		e.decryptPVS(bmp.data, bmp.ih.SizeOfBitmap);
-    	bmp.save(bmp.name);
-	}
-
-	friend void decrypt(Bitmap& bmp, AES::Cipher& e) {
+	friend void decrypt(Bitmap& bmp, AES::Cipher& e) {							// -Decrypts using the operation mode defined in Key object
 		e.decrypt(bmp.data, bmp.ih.SizeOfBitmap);
     	bmp.save(bmp.name);
 	}
