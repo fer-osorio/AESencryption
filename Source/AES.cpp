@@ -309,8 +309,9 @@ void Cipher::setSboxToDefauld() const{                                          
     this->usingDefaultSbox = true;                                              // -Making explicit the use of this Sbox
 }
 
-Cipher::Cipher(const char* const _key, Key::Length len): key(_key, len, Key::ECB), Nk(len >> 5), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
-    this->create_KeyExpansion(_key);
+Cipher::Cipher() {
+    this->keyExpansion = new char[this->keyExpLen];
+    for(int i = 0; i < this->keyExpLen; i++) this->keyExpansion[i] = 0;         // -Since the key constitutes of just zeros, key expansion is also just zeros
 }
 
 Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.getLengthBytes() >> 2), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
@@ -333,11 +334,13 @@ Cipher::~Cipher() {
 Cipher& Cipher::operator = (const Cipher& a) {
     if(this != &a) {
         this->key = a.key;
-        this->Nk = a.Nk;
-        this->Nr = a.Nr;
-        this->keyExpLen = a.keyExpLen;
-        if(this->keyExpansion != NULL) delete[] keyExpansion;
-        this->keyExpansion = new char[(unsigned)a.keyExpLen];
+        if(this->keyExpLen != a.keyExpLen) {
+            this->Nk = a.Nk;
+            this->Nr = a.Nr;
+            this->keyExpLen = a.keyExpLen;
+            if(this->keyExpansion != NULL) delete[] keyExpansion;
+            this->keyExpansion = new char[(unsigned)a.keyExpLen];
+        }
         for(int i = 0; i < a.keyExpLen; i++) this->keyExpansion[i] = a.keyExpansion[i];
     }
     return *this;

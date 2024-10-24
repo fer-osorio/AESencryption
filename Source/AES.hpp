@@ -8,11 +8,7 @@ namespace AES {
 struct Key;
 std::ostream& operator << (std::ostream& ost, Key k);
 struct Key {
-	enum Length {																// -Allowed AES key lengths
-		_128 = 128,
-		_192 = 192,
-		_256 = 256
-	};
+	enum Length {_128 = 128,_192 = 192,_256 = 256};								// -Allowed AES key lengths
 	enum OperationMode {
 		ECB,																	// -Electronic Code Book (not recommended).
 		CBC,																	// -Cipher Block Chaining.
@@ -62,9 +58,9 @@ struct Key {
 class Cipher;																	// -Declaring class name "Cipher". The intention is to use it in the next function
 std::ostream& operator << (std::ostream& st, const Cipher& c);					// -Declaration here so this function is inside the namespace function.
 class Cipher {
-	Key key;
-	int    Nk, Nr, keyExpLen;
-	char*  keyExpansion = NULL;
+	Key		key = Key();														// -The default values for a cipher object are the values for a key of 256 bits
+	int		Nk = 8, Nr = 14, keyExpLen = 240;
+	char*	keyExpansion = NULL;
 
 	char a[4] 	 = {0x02, 0x03, 0x01, 0x01};									// For MixColumns.
 	char aInv[4] = {0x0E, 0x0B, 0x0D, 0x09};									// For InvMixColumns.
@@ -125,7 +121,7 @@ class Cipher {
 	void setSbox() const;														// -Sets Sbox using random numbers from the array PIroundKey. It supposes the
 																				//	array has at least 256 elements
 
-	char defaultKey[32] =
+	/*char defaultKey[32] =
 		{(char)0x60, (char)0x3D, (char)0xEB, (char)0x10,
          (char)0x15, (char)0xCA, (char)0x71, (char)0xBE,
          (char)0x2B, (char)0x73, (char)0xAE, (char)0xF0,
@@ -133,10 +129,10 @@ class Cipher {
          (char)0x1F, (char)0x35, (char)0x2C, (char)0x07,
          (char)0x3B, (char)0x61, (char)0x08, (char)0xD7,
          (char)0x2D, (char)0x98, (char)0x10, (char)0xA3,
-         (char)0x09, (char)0x14, (char)0xDF, (char)0xF4};
+         (char)0x09, (char)0x14, (char)0xDF, (char)0xF4};*/
 
 	public:
-	Cipher(const char* const _key, Key::Length len);
+	Cipher();																	// -The default constructor will set the key expansion as zero in every element.
 	Cipher(const Key&);
 	Cipher(const Cipher& a);
 	~Cipher();
