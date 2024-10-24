@@ -25,7 +25,11 @@ char key128[]= {char(0x2B), char(0x7E), char(0x15), char(0x16),
                 char(0xAB), char(0xF7), char(0x15), char(0x88),
                 char(0x09), char(0xCF), char(0x4F), char(0x3C)};
 
-void set_key(AES::Key::Length len);                                             // -Not proved to be secure.
+static AES::Key mainKey;
+static AES::Key::Length KeySizes[3] = {AES::Key::Length::_128, AES::Key::Length::_192, AES::Key::Length::_192};
+static AES::Key::OperationMode AvailableOpMode[3] = {AES::Key::OperationMode::ECB, AES::Key::OperationMode::CBC, AES::Key::OperationMode::PVS};
+
+void set_mainKey(AES::Key::Length len, AES::Key::OperationMode op_mode);        // -Not proved to be secure.
 void printKey(AES::Key::Length len, const char* = NULL, const char* = NULL);
 
 int main(int argc, char *argv[]) {
@@ -33,14 +37,16 @@ int main(int argc, char *argv[]) {
     File::FileName keyName;
     File::Bitmap bmp;
     File::TXT txt;
-    if(argc > 1) {                                                              // -Encrypting File.
-        AES::Key aeskey(argv[1]);                                               // -Passing name of key file
+    if(argc == 3) {                                                             // -Encrypting File.
+        try {
+            mainKey = AES::Key(argv[1]);                                        // -Passing name of key file
+        } catch(const char* exp) {
+            std::cout << "Could not create AES::Key object.\n" << exp;
+            return EXIT_FAILURE;
+        }
         File::FileName fname(argv[2]);                                          // -Recognizing extension.
-        /*keyName = fname.returnThisNewExtension(File::FileName::key);
-        keyNameStr = new char[keyName.getSize()];
-        keyName.writeNameString(keyNameStr);*/
         File::FileName::Extension ext = fname.getExtension();
-        AES::Cipher e(aeskey);                                                  // -Passing name of key file
+        AES::Cipher e(mainKey);                                                 // -Passing name of key file
         switch(ext) {
             case File::FileName::bmp:
                 std::cout << "\nEncrypting bmp file...\n\n";
@@ -74,127 +80,212 @@ int main(int argc, char *argv[]) {
         return EXIT_SUCCESS;
     }
 
-    char buffer[1025], fname[64];
+    char buffer[1025], fileName[NAME_MAX_LEN];
     char* input = NULL, *aux = NULL;
     unsigned size = 0, i = 0;
+    int option = 0;
     std::ofstream file;
 
-    set_key(AES::Key::_192);
-    AES::Cipher e(key192, AES::Key::_192);
-    int op;
+    std::cout << "\nPress:\n"
+        "(1) to encrypt files.\n"
+        "(2) to encrypt text retrieved from console.\n"
+        "(3) to generate and save encryption key.\n";
+    std::cin >> option;
+    getchar();                                                                  // -Will take the "\n" left behind at the moment of press enter
+
+    while(option < 1 || option > 3) {
+        std::cout << "\nInvalid input. Try again.\n";
+        std::cout << "\nPress:\n"
+             "(1) to encrypt files.\n"
+             "(2) to encrypt text retrieved from console.\n"
+             "(3) to generate and save encryption key.\n";
+        std::cin >> option;
+        getchar();                                                              // -Will take the "\n" left behind at the moment of press enter
+    }
+
+    AES::Cipher e;
+    int keyRetreavingOp, keySizeOp, OperationModeOp;
     File::FileName Fname;
     File::FileName::Extension ext;
 
-    std::cout << "\nPress:\n"
-             "(1) to encrypt files.\n"
-             "(2) to encrypt text retrieved from console.\n"
-             "(3) to save encryption key.\n"
-             "Anything else to terminate the program.\n\n";
-
-    std::cin >> op; getchar();
-
-    if(op == 1) {
-        std::cout << "\nWrite the names/paths of the files you desire to encrypt separated with spaces."
-                     "\nOnce done, press enter (input must not have spaces and should be at most 1024"
-                     "\ncharacters long. File names/paths must have less than 64 characters):\n\n";
-        std::cin.getline(buffer, 1024, '\n');
-        while(buffer[i++] != 0) {}                                              // Appending one space at the end of the input string.
-        buffer[i-1] = ' '; buffer[i] = 0;
-
-        for(i = 0; buffer[i] != 0; ++i) {
-            if((buffer[i] > 47 && buffer[i] < 58) ||                            // -Naive way of getting a valid name.
-               (buffer[i] > 64 && buffer[i] < 91) ||
-               (buffer[i] > 96 && buffer[i] < 123)||
-                buffer[i] == '.' ||
-                buffer[i] == '_' ||
-                buffer[i] == '-' ||
-                buffer[i] == '/' ||
-                buffer[i] == '~' ||
-                buffer[i] == '\\') {
-                    fname[size++] = buffer[i];
-            }
-            if(buffer[i] == ' ' || buffer[i] == '\t') {
-                fname[size] = 0;
-                size = 0;
-                Fname = File::FileName(fname);
-                ext = Fname.getExtension();
-                switch(ext) {
-                    case File::FileName::bmp:
-                        std::cout << "\nEncrypting " << fname << "...\n\n";
-                        try {
-                            bmp = File::Bitmap(fname);
-                        } catch(const char* errMsg) {
-                            if(keyNameStr != NULL) delete[] keyNameStr;
-                            std::cout << errMsg;
-                        }
-                        encryptCBC(bmp, e);
-                        break;
-                    case File::FileName::txt:
-                        std::cout << "\nEncrypting " << fname << "...\n\n";
-                        try {
-                            txt = File::TXT(fname);
-                        } catch(const char* errMsg) {
-                            if(keyNameStr != NULL) delete[] keyNameStr;
-                            std::cout << errMsg;
-                        }
-                        encryptCBC(txt, e);
-                        break;
-                    case File::FileName::key:
-                        break;
-                    case File::FileName::NoExtension:
-                    case File::FileName::Unrecognised:
-                        std::cout << "Could not handle file. Terminating "
-                            "the program with failure status...\n";
-                        if(keyNameStr != NULL) delete[] keyNameStr;
-                        return EXIT_FAILURE;
+    if(option != 3) {
+        std::cout << "Would you like to:\n"
+            "(1) Retrieve encryption key from file.\n"
+            "(2) Let this program generate the encryption key.\n";
+        std::cin >> keyRetreavingOp;
+        getchar();                                                              // -Will take the "\n" left behind at the moment of press enter
+        while(keyRetreavingOp < 1 || keyRetreavingOp > 2) {
+            std::cout << "\nInvalid input. Try again.\n";
+            std::cout << "Would you like to:\n"
+                "(1) Retrieve encryption key from file.\n"
+                "(2) Let this program generate the encryption key.\n";
+            std::cin >> keyRetreavingOp;
+            getchar();                                                          // -Will take the "\n" left behind at the moment of press enter
+        }
+        if(keyRetreavingOp == 1) {
+            bool notValid = true;
+            while(notValid) {
+                std::cout << "Write the name/path of the key we will use for encryption. The maximum amount of characters allowed is " << NAME_MAX_LEN << ":\n";
+                std::cin.getline(fileName, NAME_MAX_LEN - 1, '\n');
+                notValid = false;
+                try { mainKey = AES::Key(fileName); }
+                catch(const char* exp) {
+                    std::cerr << exp << " Try again.\n";
+                    notValid = true;
                 }
             }
+        } else {
+            std::cout << "Select key size. The size is written in bits:\n"
+                "(1) 128,    (2) 192,    (3) 256\n";
+            std::cin >> keySizeOp;
+            getchar();                                                          // -Will take the "\n" left behind at the moment of press enter
+            while(keySizeOp < 1 || keySizeOp > 2) {
+                std::cout << "\nInvalid input. Try again.\n";
+                std::cout << "Select key size. The size is written in bits:\n"
+                    "(1) 128,    (2) 192,    (3) 256\n";
+                std::cin >> keySizeOp;
+                getchar();                                                      // -Will take the "\n" left behind at the moment of press enter
+            }
+            std::cout << "Select operation mode:\n"
+                "(1) ECB,    (2) CBC,    (3) PVS\n";
+            std::cin >> OperationModeOp;
+            getchar();                                                          // -Will take the "\n" left behind at the moment of press enter
+            while(OperationModeOp < 1 || OperationModeOp > 2) {
+                std::cout << "\nInvalid input. Try again.\n";
+                std::cout << "Select operation mode:\n"
+                    "(1) ECB,    (2) CBC,    (3) PVS\n";
+                std::cin >> OperationModeOp;
+                getchar();                                                      // -Will take the "\n" left behind at the moment of press enter
+            }
+            set_mainKey(KeySizes[keySizeOp - 1], AvailableOpMode[OperationModeOp-1]);
         }
-        keyName = Fname.returnThisNewExtension(File::FileName::key);
-        keyNameStr = new char[keyName.getSize()];
-        keyName.writeNameString(keyNameStr);
-        e.saveKey(keyNameStr);
-        std::cout << "Terminating program with success status...\n";
-        if(keyNameStr != NULL) delete[] keyNameStr;
-        return EXIT_SUCCESS;
-    }
-    if(op == 2) {
-        input = new char[1025];
-        size = 0;
-        std::cout << "\nWrite the string you want to encrypt. To process the string sent the value 'EOF', which you can do by:\n\n"
-                     "- Pressing twice the keys CTRL+Z for Windows.\n"
-                     "- Pressing twice the keys CTRL+D for Unix and Linux.\n\n";
-        while(std::cin.get(input[size++])) {                                    // -Input from CLI.
-            if(i == 1024) {
-                aux = new char[size];
-                std::memcpy(aux, input, size);
-                delete[] input;
-                input = new char[size + 1025];
-                std::memcpy(input, aux, size);
-                delete[] aux;
-                i = 0;
-            } else { i++; }
-        }
-        while(size < 16) input[size++] = ' ';
-        input[size] = 0;
-        file.open("encryption.txt");
-        if(file.is_open()) {
-            e.encryptECB(input, size);
-            file.write(input, size);
-            file.close();
-            printKey(AES::Key::_128, "\n\nKey = ", "\n");
-            e.saveKey("encryption.key");
-            std::cout << "\nTerminating program with success status...\n";
+        e = AES::Cipher(mainKey);
+        if(option == 1) {
+            std::cout << "\nWrite the names/paths of the files you desire to encrypt separated with spaces."
+                         "\nOnce done, press enter (input must not have spaces and should be at most 1024"
+                         "\ncharacters long. File names/paths must have less than 64 characters):\n\n";
+            std::cin.getline(buffer, 1024, '\n');
+            while(buffer[i++] != 0) {}                                              // Appending one space at the end of the input string.
+            buffer[i-1] = ' '; buffer[i] = 0;
+
+            for(i = 0; buffer[i] != 0; ++i) {
+                if((buffer[i] > 47 && buffer[i] < 58) ||                            // -Naive way of getting a valid name.
+                   (buffer[i] > 64 && buffer[i] < 91) ||
+                   (buffer[i] > 96 && buffer[i] < 123)||
+                    buffer[i] == '.' ||
+                    buffer[i] == '_' ||
+                    buffer[i] == '-' ||
+                    buffer[i] == '/' ||
+                    buffer[i] == '~' ||
+                    buffer[i] == '\\') {
+                        fileName[size++] = buffer[i];
+                }
+                if(buffer[i] == ' ' || buffer[i] == '\t') {
+                    fileName[size] = 0;
+                    size = 0;
+                    Fname = File::FileName(fileName);
+                    ext = Fname.getExtension();
+                    switch(ext) {
+                        case File::FileName::bmp:
+                            std::cout << "\nEncrypting " << fileName << "...\n\n";
+                            try {
+                                bmp = File::Bitmap(fileName);
+                            } catch(const char* errMsg) {
+                                if(keyNameStr != NULL) delete[] keyNameStr;
+                                std::cout << errMsg;
+                            }
+                            encryptCBC(bmp, e);
+                            break;
+                        case File::FileName::txt:
+                            std::cout << "\nEncrypting " << fileName << "...\n\n";
+                            try {
+                                txt = File::TXT(fileName);
+                            } catch(const char* errMsg) {
+                                if(keyNameStr != NULL) delete[] keyNameStr;
+                                std::cout << errMsg;
+                            }
+                            encryptCBC(txt, e);
+                            break;
+                        case File::FileName::key:
+                            break;
+                        case File::FileName::NoExtension:
+                        case File::FileName::Unrecognised:
+                            std::cout << "Could not handle file. Terminating "
+                                "the program with failure status...\n";
+                            if(keyNameStr != NULL) delete[] keyNameStr;
+                            return EXIT_FAILURE;
+                    }
+                }
+            }
+            keyName = Fname.returnThisNewExtension(File::FileName::key);
+            keyNameStr = new char[keyName.getSize()];
+            keyName.writeNameString(keyNameStr);
+            e.saveKey(keyNameStr);
+            std::cout << "Terminating program with success status...\n";
             if(keyNameStr != NULL) delete[] keyNameStr;
             return EXIT_SUCCESS;
         } else {
-            std::cout << "Could not create output file, terminating the program with failure status...\n";
-            if(keyNameStr != NULL) delete[] keyNameStr;
-            return EXIT_FAILURE;
+            input = new char[1025];
+            size = 0;
+            std::cout << "\nWrite the string you want to encrypt. To process the string sent the value 'EOF', which you can do by:\n\n"
+                         "- Pressing twice the keys CTRL+Z for Windows.\n"
+                         "- Pressing twice the keys CTRL+D for Unix and Linux.\n\n";
+            while(std::cin.get(input[size++])) {                                    // -Input from CLI.
+                if(i == 1024) {
+                    aux = new char[size];
+                    std::memcpy(aux, input, size);
+                    delete[] input;
+                    input = new char[size + 1025];
+                    std::memcpy(input, aux, size);
+                    delete[] aux;
+                    i = 0;
+                } else { i++; }
+            }
+            while(size < 16) input[size++] = ' ';
+            input[size] = 0;
+            file.open("encryption.txt");
+            if(file.is_open()) {
+                e.encryptECB(input, size);
+                file.write(input, size);
+                file.close();
+                printKey(AES::Key::_128, "\n\nKey = ", "\n");
+                e.saveKey("encryption.key");
+                std::cout << "\nTerminating program with success status...\n";
+                if(keyNameStr != NULL) delete[] keyNameStr;
+                return EXIT_SUCCESS;
+            } else {
+                std::cout << "Could not create output file, terminating the program with failure status...\n";
+                if(keyNameStr != NULL) delete[] keyNameStr;
+                return EXIT_FAILURE;
+            }
         }
-    }
-    if(op == 3) {
-        e.saveKey("AESencryption.key");
+    } else {
+        std::cout << "Select key size. The size is written in bits:\n"
+            "(1) 128,    (2) 192,    (3) 256\n";
+        std::cin >> keySizeOp;
+        getchar();                                                          // -Will take the "\n" left behind at the moment of press enter
+        while(keySizeOp < 1 || keySizeOp > 2) {
+            std::cout << "\nInvalid input. Try again.\n";
+            std::cout << "Select key size. The size is written in bits:\n"
+                "(1) 128,    (2) 192,    (3) 256\n";
+            std::cin >> keySizeOp;
+            getchar();                                                      // -Will take the "\n" left behind at the moment of press enter
+        }
+        std::cout << "Select operation mode:\n"
+            "(1) ECB,    (2) CBC,    (3) PVS\n";
+        std::cin >> OperationModeOp;
+        getchar();                                                              // -Will take the "\n" left behind at the moment of press enter
+        while(OperationModeOp < 1 || OperationModeOp > 2) {
+            std::cout << "\nInvalid input. Try again.\n";
+            std::cout << "Select operation mode:\n"
+                "(1) ECB,    (2) CBC,    (3) PVS\n";
+            std::cin >> OperationModeOp;
+            getchar();                                                          // -Will take the "\n" left behind at the moment of press enter
+        }
+        set_mainKey(KeySizes[keySizeOp - 1], AvailableOpMode[OperationModeOp-1]);
+        std::cout << "Write the name you want to assign to the key file. The maximum amount of characters allowed is " << NAME_MAX_LEN << ":\n";
+        std::cin.getline(fileName, NAME_MAX_LEN - 1, '\n');
+        mainKey.save(fileName);
     }
     if(input != NULL) delete[] input;
     if(aux != NULL)   delete[] aux;
@@ -203,7 +294,7 @@ int main(int argc, char *argv[]) {
     return EXIT_SUCCESS;
 }
 
-void set_key(AES::Key::Length len) {
+void set_mainKey(AES::Key::Length len, AES::Key::OperationMode op_mode) {
     std::random_device dev; std::mt19937 seed(dev());
     std::uniform_int_distribution<std::mt19937::result_type> distribution;
     int i, j;
@@ -218,6 +309,7 @@ void set_key(AES::Key::Length len) {
                 key128[j+2] = buff.chars[2];
                 key128[j+3] = buff.chars[3];
             }
+            mainKey = AES::Key(key128, len, op_mode);
             break;
         case AES::Key::_192:
             for(i = 0; i < 6; i++) {
@@ -228,6 +320,7 @@ void set_key(AES::Key::Length len) {
                 key192[j+2] = buff.chars[2];
                 key192[j+3] = buff.chars[3];
             }
+            mainKey = AES::Key(key192, len, op_mode);
             break;
         case AES::Key::_256:
             for(i = 0; i < 8; i++) {
@@ -238,9 +331,8 @@ void set_key(AES::Key::Length len) {
                 key256[j+2] = buff.chars[2];
                 key256[j+3] = buff.chars[3];
             }
+            mainKey = AES::Key(key256, len, op_mode);
             break;
-        default:
-            throw "Key length not allowed.";
     }
 }
 
