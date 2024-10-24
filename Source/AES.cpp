@@ -655,6 +655,27 @@ void Cipher::decryptPVS(char*const data, unsigned size) const{
     else this->decryptECB(data, size);
 }
 
+void Cipher::encrypt(char*const data, unsigned size) const{
+    Key::OperationMode opMode = this->key.getOperationMode();
+    switch(opMode) {
+        case Key::ECB:
+            this->encryptECB(data, size);
+            break;
+        case Key::CBC:
+            this->encryptCBC(data, size);
+            break;
+        case Key::CFB:
+            break;
+        case Key::OFB:
+            break;
+        case Key::CTR:
+            break;
+        case Key::PVS:
+            this->encryptPVS(data, size);
+            break;
+    }
+}
+
 void Cipher::decrypt(char*const data, unsigned size) const{
     Key::OperationMode opMode = this->key.getOperationMode();
     switch(opMode) {
