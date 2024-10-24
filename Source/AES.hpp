@@ -22,10 +22,10 @@ struct Key {
 		PVS																		// -PI xor and variable Sbox
 	};
 	private:
-	mutable  OperationMode operation_mode;
-	Length 	 length;															// -Length in bits.
+	char*	 key = NULL;
+	Length 	 lengthBits;															// -Length in bits.
 	unsigned lengthBytes;														// -Length in bytes.
-	char* key = NULL;
+	mutable  OperationMode operation_mode;
 	mutable char  IV[16] = {0, 0, 0, 0,											// -Initial vector for the CBC operation mode
 				    		0, 0, 0, 0,											// -This default value (just zeros) is left
 				    		0, 0, 0, 0,											//  for the case in which we do not use CBC
@@ -33,9 +33,10 @@ struct Key {
 	mutable bool notSetUpIV = true;												// -Tells if the initial vector is already initialized or not
 
 	public:
+	Key();																		// -Assigns lengthBits of 256 bits and zero value for each byte of array char* key
 	Key(const char* const _key, Length, OperationMode, const char* const _IV = NULL);
-	Key(const Key&);
 	Key(const char*const fname);												// -Building from binary file.
+	Key(const Key&);
 	~Key();
 
 	Key& operator = (const Key&);

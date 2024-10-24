@@ -1,10 +1,11 @@
 #include<fstream>
+#include<cstdint>
 #include"AES.hpp"
 #include"OperationsGF256.hpp"
 
 /************************************* Default values for substitution boxes. This are the values showed in the standard ******************************************/
 
-static const unsigned char defaultSBox[256] = {
+static const uint8_t defaultSBox[256] = {
 	0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
 	0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
 	0xB7, 0xFD, 0x93, 0x26, 0x36, 0x3F, 0xF7, 0xCC, 0x34, 0xA5, 0xE5, 0xF1, 0x71, 0xD8, 0x31, 0x15,
@@ -23,7 +24,7 @@ static const unsigned char defaultSBox[256] = {
 	0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
 };
 
-static const unsigned char defaultInvSBox[256] = {
+static const uint8_t defaultInvSBox[256] = {
 	0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB,
 	0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87, 0x34, 0x8E, 0x43, 0x44, 0xC4, 0xDE, 0xE9, 0xCB,
 	0x54, 0x7B, 0x94, 0x32, 0xA6, 0xC2, 0x23, 0x3D, 0xEE, 0x4C, 0x95, 0x0B, 0x42, 0xFA, 0xC3, 0x4E,
@@ -50,18 +51,18 @@ union intToChar {
     char chars[4];
 };
 union uint64_uint32 {                                                           // -Useful for a casting from a 64 bits unsigned integer to an array of two 32 bits
-    unsigned long long uint64;                                                  //  integer
+    uint64_t uint64;                                                            //  integer
     unsigned uint32[2];
 };
 union _16uint32_64uchar {                                                        // -Representing 256 bits in an union of 8 unsigned int and 32 char
     unsigned uint32[16];
-    unsigned char chars[64];
+    uint8_t chars[64];
 };
 struct UnsignedInt256bits {
-    union { unsigned char chars[32]; unsigned uint32[8]; } NumberPlaces = {0,0,0,0,0,0,0,0}; // -256 bits in a anonymous union of 8 unsigned int and 32 char
+    union { uint8_t chars[32]; unsigned uint32[8]; } NumberPlaces = {0,0,0,0,0,0,0,0}; // -256 bits in a anonymous union of 8 unsigned int and 32 char
 
     UnsignedInt256bits() {}
-    UnsignedInt256bits(const char*const data) { for(int i = 0; i < 32; i++) NumberPlaces.chars[i] = (unsigned char)data[i]; }
+    UnsignedInt256bits(const char*const data) { for(int i = 0; i < 32; i++) NumberPlaces.chars[i] = (uint8_t)data[i]; }
 
     unsigned operator [] (int i) const {
         if(i < 0 || i >= 8) i &= 7;                                             // -i&7 is equivalent to i%8
@@ -71,7 +72,7 @@ struct UnsignedInt256bits {
         unsigned i;                                                             // -Writing the array from left to right, those bytes would be the left ones.
         if(arraySize > 32) arraySize &= 31;                                     // -arraySize % 32
         for(i = 0; i < arraySize; i++)
-            this->NumberPlaces.chars[i] = (unsigned char)array[i];              // -The rest of the bytes (i >= arraySize) are left untouched
+            this->NumberPlaces.chars[i] = (uint8_t)array[i];                    // -The rest of the bytes (i >= arraySize) are left untouched
     }
 };
 
@@ -83,7 +84,7 @@ _16uint32_64uchar operator * (const UnsignedInt256bits& a, const UnsignedInt256b
 
     for(i = 0; i < 8 ; i++) {                                                   // -Implementing pencil and paper algorithm
         for(j = 0; j < 8; j++) {
-            buff.uint64 = (unsigned long long)a[i] * b[j] + result.uint32[i+j] + carriage;
+            buff.uint64 = (uint64_t)a[i] * b[j] + result.uint32[i+j] + carriage;
             result.uint32[i+j] = buff.uint32[0];                                // -Equivalent to obtaining the modulus 2^32
             carriage = buff.uint32[1];                                          // -Equivalent to obtaining the quotient 2^32
         }
@@ -144,8 +145,8 @@ static int bytesToHexString(const char*const origin, char*const destination, con
     if(len <= 0) return -1;                                                     //  representation in hexadecimal of that byte array
     char buff;                                                                  // -The resulting string is written on the "destination" pointer. We assume this
     int  i, j;
-    for(i = 0, j = 0; i < len; i++) {                                           //  pointer points to an array with length at least 2*len+1
-        buff = (char)((unsigned char)origin[i] >> 4);                           // -Taking the four most significant bits
+    for(i = 0, j = 0; i < len; i++) {                                           //  pointer points to an array with lengthBits at least 2*len+1
+        buff = (char)((uint8_t)origin[i] >> 4);                                 // -Taking the four most significant bits
         if(buff<10) destination[j++] = buff + 48;                               // -To hexadecimal digit
         else        destination[j++] = buff + 55;                               //  ...
         buff = origin[i] & 15;                                                  // -Taking the four least significant byte
@@ -158,22 +159,26 @@ static int bytesToHexString(const char*const origin, char*const destination, con
 
 /************************************************************** Handling AES cryptographic keys ******************************************************************/
 
-Key::Key(const char* const _key, Length len, OperationMode _operation_mode, const char* const _IV): operation_mode(_operation_mode), length(len),
-lengthBytes((unsigned)len >> 3) {
+Key::Key(): lengthBits(Length::_256), lengthBytes((unsigned)lengthBits >> 3), operation_mode(OperationMode::CBC) {
+    this->key = new char[this->lengthBytes];
+    for(unsigned i = 0; i < this->lengthBytes; i++) this->key[i] = 0;
+}
+
+Key::Key(const char* const _key, Length len, OperationMode op_mode, const char* const _IV):lengthBits(len),lengthBytes((unsigned)len >> 3),operation_mode(op_mode){
     unsigned i;
     this->key = new char[this->lengthBytes];
     if(_key != NULL) for(i = 0; i < this->lengthBytes; i++) this->key[i] = _key[i];
     if(_IV != NULL)  for(i = 0; i < 16; i++) this->IV[i] = _IV[i];
 }
 
-Key::Key(const Key& ak):operation_mode(ak.operation_mode), length(ak.length), lengthBytes(ak.lengthBytes) {
+Key::Key(const Key& ak):lengthBits(ak.lengthBits), lengthBytes(ak.lengthBytes), operation_mode(ak.operation_mode) {
     unsigned i;
     this->key = new char[ak.lengthBytes];
     for(i = 0; i < ak.lengthBytes; i++) this->key[i] = ak.key[i];               // -Supposing Cipher object is well constructed, this is, ak.key != NULL
     if(ak.operation_mode == CBC) for(i=0; i < 16; i++) this->IV[i]=ak.IV[i];    // -Without CBC, copying IV is pointless.
 }
 
-Key::Key(const char*const fname): operation_mode(ECB), length(_128), lengthBytes(16) { // -Building from .key file
+Key::Key(const char*const fname):lengthBits(_128), lengthBytes(16), operation_mode(ECB) { // -Building from .key file
     char AESKEY[6];
     char opMode[3];
     short len;
@@ -197,10 +202,10 @@ Key::Key(const char*const fname): operation_mode(ECB), length(_128), lengthBytes
                     this->operation_mode = PVS;
                 else throw "Could not recognize operation mode...";
 
-                file.read((char*)&len, 2);                                      // -Reading key length
+                file.read((char*)&len, 2);                                      // -Reading key lengthBits
                 if(len == 128 || len == 192 || len == 256)
-                    this->length = (Length)len;
-                else throw "Key length not allowed...";
+                    this->lengthBits = (Length)len;
+                else throw "Key lengthBits not allowed...";
                 this->lengthBytes = (unsigned)len >> 3;                         // -lengthBytes = len / 8;
 
                 this->key = new char[this->lengthBytes];                        // -Reading key
@@ -220,16 +225,19 @@ Key::~Key() {
     this->key = NULL;
 }
 
-Key& Key::operator = (const Key& ak) {
-    if(this != &ak) {
+Key& Key::operator = (const Key& k) {
+    if(this != &k) {                                                            // -Guarding against self assignment
         unsigned i;
-        this->length   = ak.length;
-        this->lengthBytes = ak.lengthBytes;
-        if(this->key != NULL) delete[] this->key;
-        this->key = new char[ak.lengthBytes];
-        for(i = 0; i < ak.lengthBytes; i++) this->key[i] = ak.key[i];
-        if(ak.operation_mode == CBC)                                            // -Without CBC, copying IV is pointless.
-            for(i = 0; i < 16; i++) this->IV[i] = ak.IV[i];
+        if(this->lengthBits != k.lengthBits) {                                  // -Modifying length and array containing key only if necessary
+            this->lengthBits = k.lengthBits;
+            this->lengthBytes = k.lengthBytes;
+            if(this->key != NULL) delete[] this->key;
+            this->key = new char[k.lengthBytes];
+        }
+        for(i = 0; i < k.lengthBytes; i++) this->key[i] = k.key[i];
+        this->operation_mode = k.operation_mode;
+        if(k.operation_mode == CBC)                                             // -Without CBC, copying IV is pointless.
+            for(i = 0; i < 16; i++) this->IV[i] = k.IV[i];
     }
     return *this;
 }
@@ -243,7 +251,7 @@ std::ostream& AES::operator << (std::ostream& ost, Key k) {
     bytesToHexString(k.key, keyStr, (int)k.lengthBytes);
     bytesToHexString(k.IV, IVstring, 16);
 
-    ost << "\tKey length: " << k.length << " bits, " << k.lengthBytes << " bytes, Nk = " << (k.lengthBytes >> 2) << " words" << '\n';
+    ost << "\tKey lengthBits: " << k.lengthBits << " bits, " << k.lengthBytes << " bytes, Nk = " << (k.lengthBytes >> 2) << " words" << '\n';
     ost << "\tKey: " << keyStr << '\n';
     ost << "\tOperation mode: " << opModeStr << '\n';
     ost << "\tIV (in case of CBC): "<< IVstring << '\n';
@@ -281,7 +289,7 @@ void Key::save(const char* const fname) const {
     if(file.is_open()) {
         file.write(aeskey,  6);                                                 // -File type
         file.write(op_mode, 3);                                                 // -Operation mode
-        file.write((char*)&this->length, 2);                                    // -Key length in bits
+        file.write((char*)&this->lengthBits, 2);                                    // -Key lengthBits in bits
         file.write(this->key, this->lengthBytes);                               // -Key
         if(this->operation_mode == CBC) file.write(this->IV, 16);               // -If CBC, writes initial vector
     } else {
@@ -356,14 +364,14 @@ std::ostream& AES::operator << (std::ostream& ost, const Cipher& c) {
     ost << "AES::Cipher object information:\n";
     ost << c.key;
     ost << "\tNr: " << c.Nr << " rounds" << '\n';
-    ost << "\tKey Expansion length: " << c.keyExpLen << " bytes" << '\n';
+    ost << "\tKey Expansion lengthBits: " << c.keyExpLen << " bytes" << '\n';
     ost << "\tKey Expansion: " << keyExpansionString << '\n';
     return ost;
 }
 
 void Cipher::create_KeyExpansion(const char* const _key) {
     char temp[4];                                                               // (Nr+1)*16
-	int i, keyExpansionLen = this->keyExpLen;                                   // Key expansion length in bytes
+	int i, keyExpansionLen = this->keyExpLen;                                   // Key expansion lengthBits in bytes
 	keyExpansion = new char[(unsigned)keyExpansionLen];
 	keyExpansionLen >>= 2;                                                      // keyExpansionLen in words (block of 4 bytes). keyExpansionLen /= 4
 	int NkBytes = Nk << 2;                                                      // -The first Nk words of the key expansion are the key itself. // Nk * 4
@@ -609,11 +617,11 @@ void Cipher::setSbox() const{
     unsigned i, j, k;
     unsigned size = piRoundKey.getSize();
     unsigned unwrittenSBoxSize = 256;                                           // -We'll rewrite Sbox, this is the size of the entries not substituted yet
-    unsigned char permutationBuffer[256];                                       // -Will be used in the creation of new Sbox
+    uint8_t permutationBuffer[256];                                       // -Will be used in the creation of new Sbox
     if(size < 256) return;
-    for(i = 0; i < 256; i++ ) permutationBuffer[i] = (unsigned char)i;
+    for(i = 0; i < 256; i++ ) permutationBuffer[i] = (uint8_t)i;
         for(i = size-1, j = 0; unwrittenSBoxSize > 0; i--, j++, unwrittenSBoxSize--) {
-            k = (unsigned char)piRoundKey[i] % unwrittenSBoxSize;
+            k = (uint8_t)piRoundKey[i] % unwrittenSBoxSize;
             this->SBox[j] = permutationBuffer[k];
             permutationBuffer[k] = permutationBuffer[unwrittenSBoxSize - 1];
         }
@@ -685,7 +693,7 @@ void Cipher::printState(const char state[16]) {
 	for(i = 0; i < 4; i++) {
 		std::cout << '[';
 		for(j = 0; j < 4; j++) {
-		    temp = (unsigned char)0xFF & (unsigned char)state[(j << 2) + i];
+		    temp = (uint8_t)0xFF & (uint8_t)state[(j << 2) + i];
 			if(temp < 16) std::cout << '0';
 			printf("%X", temp);
 			if(j != 3) std::cout << ", ";
