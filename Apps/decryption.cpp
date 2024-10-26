@@ -2,6 +2,12 @@
 #include<fstream>
 #include"../Source/File.hpp"
 
+#define BUFFER_SIZE 1025
+
+static void getFileNameStringFromConsole(const char* message, char* const destination);
+
+static AES::Key mainKey;
+
 int main(int argc, char *argv[]) {
     File::Bitmap bmp;
     File::TXT txt;
@@ -40,71 +46,84 @@ int main(int argc, char *argv[]) {
         return EXIT_SUCCESS;
     }
     std::ifstream file;
-    char  fname[65], kname[65], buffer[1025];
-    unsigned sz = 0, i = 0;
+    char  fileName[NAME_MAX_LEN], buffer[BUFFER_SIZE];
+    unsigned i = 0, stringSize = 0;
+    File::FileName::Extension ext;                                              // -Recognizing extension of the file
+    File::FileName Fname;                                                       // -Used mainly for the recognition of extensions
 
-    std::cout << "Write the name of the .key file where the encryption key is saved (Maximum size in characters is 64):\n";
-    while(sz < 64 && (kname[sz++] = getchar()) != '\n') {}
-    kname[--sz] = 0;
-
-    AES::Key aeskey(kname);
-    AES::Cipher e(aeskey);
-    File::FileName Fname;
-    File::FileName::Extension ext;
-    sz = 0;
-
-    std::cout << "\nWrite the names/paths of the files you desire to decrypt separated with spaces."
-                 "\nOnce done, press enter (input must not have spaces and should be at most 1024"
-                 "\ncharacters long. File names/paths must have less than 64 characters):\n\n";
-    std::cin.getline(buffer, 1024, '\n');
-    while(buffer[i++] != 0) {} // Appending one space at the end of
-    buffer[i-1] = ' '; buffer[i] = 0; // the input string.
-
-    for(i = 0; buffer[i] != 0; ++i) {
-        if((buffer[i] > 47 && buffer[i] < 58) ||                                // -Naive way of getting a valid name
-           (buffer[i] > 64 && buffer[i] < 91) ||
-           (buffer[i] > 96 && buffer[i] < 123)||
-            buffer[i] == '.' ||
-            buffer[i] == '_' ||
-            buffer[i] == '-' ||
-            buffer[i] == '/' ||
-            buffer[i] == '~' ||
-            buffer[i] == '\\') {
-                fname[sz++] = buffer[i];
+    bool notValidAESkeyFile = true;
+    while(notValidAESkeyFile) {
+        getFileNameStringFromConsole("Write the name/path of the key we will use for decryption.", fileName);
+        notValidAESkeyFile = false;
+        try { mainKey = AES::Key(fileName); }
+        catch(const char* exp) {
+            notValidAESkeyFile = true;
+            std::cerr << exp << " Try again.\n";
+            getFileNameStringFromConsole("Write the name/path of the key we will use for decryption.", fileName);
         }
-        if(buffer[i] == ' ' || buffer[i] == '\t') {
-            fname[sz] = 0; sz = 0;
-            Fname = File::FileName(fname);
+    }
+
+    AES::Cipher e(mainKey);
+    int inputSize = BUFFER_SIZE - 1;
+    std::cout <<
+    "Write the names/paths of the files you desire to decrypt separated with spaces. Once done, press enter (input must not have spaces and should be\n"
+    "at most " << inputSize << " characters long. File names/paths must have at most "<< NAME_MAX_LEN << " characters):\n\n";
+    std::cin.getline(buffer, inputSize, '\n');
+    for(i = 0;;) {                                                              // -For ends with the break statement on its end (this is equivalent to a do-while)
+        while(buffer[i] == ' ' || buffer[i] == '\t') { i++; }                   // -Consuming spaces and tabs till we find any other character
+        if((buffer[i] > 47 && buffer[i] < 58) ||                                // -Naive way of getting a valid name using ASCII code. First decimal digits
+           (buffer[i] > 64 && buffer[i] < 91) ||                                // -Then Upper case letters
+           (buffer[i] > 96 && buffer[i] < 123)||                                // -Followed by lower case letters
+            buffer[i] == '.' ||                                                 // -And finally special symbols
+            buffer[i] == '_' ||                                                 // ...
+            buffer[i] == '-' ||                                                 // ...
+            buffer[i] == '/' ||                                                 // ...
+            buffer[i] == '~' ||                                                 // ...
+            buffer[i] == '\\') {                                                // ...
+                fileName[stringSize++] = buffer[i++];                           // -While the character is valid and while we do not encounter a space or a tab,
+        }                                                                       //  we will suppose is a name/path a file
+        if(buffer[i] == ' ' || buffer[i] == '\t' || buffer[i] == 0) {           // -We encounter a space, tab or 0; starting the encryption process
+            fileName[stringSize] = 0;
+            stringSize = 0;
+            Fname = File::FileName(fileName);
             ext = Fname.getExtension();
             switch(ext) {
                 case File::FileName::bmp:
-                    std::cout << "\nDecrypting " << fname << "...\n\n";
+                    std::cout << "\nDecrypting " << fileName << "...\n\n";
                     try {
-                        bmp = File::Bitmap(fname);
+                        bmp = File::Bitmap(fileName);
                     } catch(const char* errMsg) {
                         std::cout << errMsg;
                     }
+                    std::cout << bmp << "\n\n";
                     decrypt(bmp, e);
+                    std::cout << e << '\n';
                     break;
                 case File::FileName::txt:
-                    std::cout << "\nDecrypting " << fname << "...\n\n";
+                    std::cout << "\nDecrypting " << fileName << "...\n\n";
                     try {
-                        txt = File::TXT(fname);
+                        txt = File::TXT(fileName);
                     } catch(const char* errMsg) {
                         std::cout << errMsg;
                     }
                     decrypt(txt, e);
+                    std::cout << e << '\n';
                     break;
                 case File::FileName::key:
                     break;
                 case File::FileName::NoExtension:
                 case File::FileName::Unrecognised:
-                    std::cout << "Could not handle file. Terminating "
-                        "the program with failure status...\n";
+                    std::cout << "Could not handle input string. Terminating with failure status...\n";
                     return EXIT_FAILURE;
             }
         }
+        if(buffer[i] == 0) break;                                               // -Terminating 'for'
     }
     std::cout << "Terminating program with success status...\n";
     return EXIT_SUCCESS;
+}
+
+void getFileNameStringFromConsole(const char* message, char* const destination) {
+    std::cout << message << " The maximum amount of characters allowed is " << NAME_MAX_LEN << ":\n";
+    std::cin.getline(destination, NAME_MAX_LEN - 1, '\n');
 }
