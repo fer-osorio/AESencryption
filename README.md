@@ -1,11 +1,14 @@
-# AES
+#  AES
 
-AES implementation in C++.
+AES (Advance Encryption Standard) implementation in C++, applied to the encryption of BMP images and text files.
 
-An implementation of AES is developed to encrypt an array of bytes (char's) with a know length; then, it is used for the 
-encryption of BMP images.
+Contact me for questions and commnets at aosorios1502@alumno.ipn.mx and alexis.fernando.osorio.sarabio@gmail.com.
 
-#   Compilation
+#  Overview
+
+Implementation of Advance Encryption Standar published by [NIST](https://www.nist.gov/) through a class called AES. Specification of this standard can be found [here](https://www.nist.gov/publications/advanced-encryption-standard-aes-0). Then, AES class, together with other structrures, is used to encrypt Text files and BMP images.
+
+#  Compilation
 
 Executing the command `make` in the command line will give you the two executable files `encrypt.exe` and `decrypt.exe`.
 To obtain just `encrypt.exe`, type `make encrypt.exe`. Same with `decrypt.exe` file.
