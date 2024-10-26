@@ -149,6 +149,7 @@ class Bitmap {																	// -Handling bitmap format images.
 
 	void save(const char* fname);												// -Saves in memory
 	Bitmap& operator = (const Bitmap& bmp);
+	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 
 	friend void encryptECB(Bitmap& bmp, AES::Cipher& e) {						// -The reason of the existence of this friend functions is to be capable of
 		e.encryptECB(bmp.data, bmp.ih.SizeOfBitmap);							//	encrypt and decrypt many files with the same Cipher object.
@@ -186,8 +187,6 @@ class Bitmap {																	// -Handling bitmap format images.
 		e.decrypt(bmp.data, bmp.ih.SizeOfBitmap);
     	bmp.save(bmp.name);
 	}
-
-	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 };
 };
 #endif

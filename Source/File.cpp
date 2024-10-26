@@ -214,19 +214,18 @@ Bitmap::Bitmap(const char* fname) {
             file.read((char*)&ih.ColorsImportant, 4);
             data = new char[ih.SizeOfBitmap];
 
-            // Bitmap data
-            file.read((char*)data, ih.SizeOfBitmap);
+            file.read((char*)data, ih.SizeOfBitmap);                            // -Initializing bitmap data
 
-            // Pixel matrix
-            img = new RGB*[ih.Height];
+            img = new RGB*[ih.Height];                                          // -Building pixel matrix
             for(i = ih.Height - 1, j = 0; i >= 0; i--, j++) {
                 img[j] = (RGB*)&data[3 * i * ih.Width];
             }
-            // Name
-            while(fname[sz++] != 0) {} // -Getting name size.
+            while(fname[sz++] != 0) {}                                          // -Getting name size.
             name = new char[sz];
-            for(i = 0; i < sz; i++) name[i] = fname[i];
+            for(i = 0; i < sz; i++) name[i] = fname[i];                         // -Copying name
+            file.close();
         } else {
+            file.close();
             throw "Not a valid bitmap file.";
         }
     } else {
@@ -235,27 +234,23 @@ Bitmap::Bitmap(const char* fname) {
 }
 
 Bitmap::Bitmap(const Bitmap& bmp) {
-    // Initializing file header.
-    this->fh.bm[0] = bmp.fh.bm[0];
-    this->fh.bm[1] = bmp.fh.bm[1];
-    this->fh.size = bmp.fh.size;
-    this->fh.reserved1 = bmp.fh.reserved1;
-    this->fh.reserved2 = bmp.fh.reserved2;
-    this->fh.offset = bmp.fh.offset;
+    this->fh.bm[0] = bmp.fh.bm[0];                                              // -Initializing file header.
+    this->fh.bm[1] = bmp.fh.bm[1];                                              // ...
+    this->fh.size = bmp.fh.size;                                                // ...
+    this->fh.reserved1 = bmp.fh.reserved1;                                      // ...
+    this->fh.reserved2 = bmp.fh.reserved2;                                      // ...
+    this->fh.offset = bmp.fh.offset;                                            // ...
 
-    // -Initializing image header.
-    // -Using the default member
-    //  to member copy.
-    this->ih = bmp.ih;
+    this->ih = bmp.ih;                                                          // -Initializing image header. Using the default member to member copy.
 
-    ui32 i; // -Initializing data.
+    ui32 i;                                                                     // -Initializing data.
     this->data = new char[bmp.ih.SizeOfBitmap];
     for(i = 0; i < bmp.ih.SizeOfBitmap; i++) this->data[i] = bmp.data[i];
 
     this->img = new RGB*[bmp.ih.Height];
     for(i = 0; (int)i < bmp.ih.Height; i++) this->img[i] = bmp.img[i];
 
-    ui32 sz = 0; // Initializing name
+    ui32 sz = 0;                                                                // Initializing name
     while(bmp.name[sz++] != 0) {} // -Getting name size.
     name = new char[sz];
     for(i = 0; i < sz; i++) name[i] = bmp.name[i];
@@ -272,26 +267,24 @@ void Bitmap::save(const char *fname) {
     file.open(fname, std::ios::binary);
     if(file.is_open()) {
         if(fh.bm[0] == 'B' && fh.bm[1] == 'M') {
-            // -File Header.
-            file.write((char*)fh.bm, 2);
-            file.write((char*)&fh.size, 4);
-            file.write((char*)&fh.reserved1, 2);
-            file.write((char*)&fh.reserved2, 2);
-            file.write((char*)&fh.offset, 4);
+            file.write((char*)fh.bm, 2);                                        // -File Header.
+            file.write((char*)&fh.size, 4);                                     // ...
+            file.write((char*)&fh.reserved1, 2);                                // ...
+            file.write((char*)&fh.reserved2, 2);                                // ...
+            file.write((char*)&fh.offset, 4);                                   // ...
 
-            // -Image Header.
-            file.write((char*)&ih.size, 4);
-            file.write((char*)&ih.Width, 4);
-            file.write((char*)&ih.Height, 4);
-            file.write((char*)&ih.Planes, 2);
-            file.write((char*)&ih.BitsPerPixel, 2);
-            file.write((char*)&ih.Compression, 4);
-            file.write((char*)&ih.SizeOfBitmap, 4);
-            file.write((char*)&ih.HorzResolution, 4);
-            file.write((char*)&ih.VertResolution, 4);
-            file.write((char*)&ih.ColorsUsed, 4);
-            file.write((char*)&ih.ColorsImportant, 4);
-            file.write((char*)data, ih.SizeOfBitmap);
+            file.write((char*)&ih.size, 4);                                     // -Image Header.
+            file.write((char*)&ih.Width, 4);                                    // ...
+            file.write((char*)&ih.Height, 4);                                   // ...
+            file.write((char*)&ih.Planes, 2);                                   // ...
+            file.write((char*)&ih.BitsPerPixel, 2);                             // ...
+            file.write((char*)&ih.Compression, 4);                              // ...
+            file.write((char*)&ih.SizeOfBitmap, 4);                             // ...
+            file.write((char*)&ih.HorzResolution, 4);                           // ...
+            file.write((char*)&ih.VertResolution, 4);                           // ...
+            file.write((char*)&ih.ColorsUsed, 4);                               // ...
+            file.write((char*)&ih.ColorsImportant, 4);                          // ...
+            file.write((char*)data, ih.SizeOfBitmap);                           // ...
             file.close();
         } else {
             file.close();
@@ -303,34 +296,30 @@ void Bitmap::save(const char *fname) {
 }
 
 Bitmap& Bitmap::operator = (const Bitmap &bmp) {
-    if(this != &bmp) { // Guarding against bmp = bmp
-        // Copying file header.
-        this->fh.bm[0] = bmp.fh.bm[0];
-        this->fh.bm[1] = bmp.fh.bm[1];
-        this->fh.size = bmp.fh.size;
-        this->fh.reserved1 = bmp.fh.reserved1;
-        this->fh.reserved2 = bmp.fh.reserved2;
-        this->fh.offset = bmp.fh.offset;
+    if(this != &bmp) {                                                          // -Guarding against self assignment
+        this->fh.bm[0] = bmp.fh.bm[0];                                          // -Copying file header.
+        this->fh.bm[1] = bmp.fh.bm[1];                                          // ...
+        this->fh.size = bmp.fh.size;                                            // ...
+        this->fh.reserved1 = bmp.fh.reserved1;                                  // ...
+        this->fh.reserved2 = bmp.fh.reserved2;                                  // ...
+        this->fh.offset = bmp.fh.offset;                                        // ...
 
-        // -Copying image header.
-        // -Using the default member
-        //  to member copy.
-        this->ih = bmp.ih;
+        this->ih = bmp.ih;                                                      // -Copying image header. Using the default member to member copy.
 
-        ui32 i; // -Copying data.
+        ui32 i;                                                                 // -Copying data.
         if(this->data != NULL) delete[] this->data;
         this->data = new char[bmp.ih.SizeOfBitmap];
         for(i = 0; i < bmp.ih.SizeOfBitmap; i++) this->data[i] = bmp.data[i];
 
-        if(this->img != NULL) delete[] this->img;
+        if(this->img != NULL) delete[] this->img;                               // -Copying pixel matrix
         this->img = new RGB*[bmp.ih.Height];
         for(i = 0; (int)i < bmp.ih.Height; i++) this->img[i] = bmp.img[i];
 
-        ui32 sz = 0; // Copying name
-        while(bmp.name[sz++] != 0) {} // -Getting name size.
+        ui32 sz = 0;
+        while(bmp.name[sz++] != 0) {}                                           // -Getting name size.
         if(this->name != NULL) delete[] this->name;
         this->name = new char[sz];
-        for(i = 0; i < sz; i++) this->name[i] = bmp.name[i];
+        for(i = 0; i < sz; i++) this->name[i] = bmp.name[i];                    // -Copying name
     }
     return *this;
 }
