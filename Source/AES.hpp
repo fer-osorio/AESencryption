@@ -2,6 +2,8 @@
 
 #ifndef _INCLUDED_AES_
 #define _INCLUDED_AES_
+#define AES_INIT_VECT_SZ 16
+#define AES_BLK_SZ 16
 
 namespace AES {
 
@@ -19,13 +21,13 @@ struct Key {
 	};
 	private:
 	char*	 key = NULL;
-	Length 	 lengthBits;															// -Length in bits.
+	Length 	 lengthBits;														// -Length in bits.
 	unsigned lengthBytes;														// -Length in bytes.
 	mutable  OperationMode operation_mode;
-	mutable char  IV[16] = {0, 0, 0, 0,											// -Initial vector for the CBC operation mode
-				    		0, 0, 0, 0,											// -This default value (just zeros) is left
-				    		0, 0, 0, 0,											//  for the case in which we do not use CBC
-				    		0, 0, 0, 0};
+	mutable char  IV[AES_INIT_VECT_SZ]={0, 0, 0, 0,								// -Initial vector for the CBC operation mode
+										0, 0, 0, 0,								// -This default value (just zeros) is left
+				    					0, 0, 0, 0,								//  for the case in which we do not use CBC
+				    					0, 0, 0, 0};
 	mutable bool notSetUpIV = true;												// -Tells if the initial vector is already initialized or not
 
 	public:
@@ -35,18 +37,19 @@ struct Key {
 	Key(const Key&);
 	~Key();
 
-	Key& operator = (const Key&);
+	Key& operator =  (const Key&);
+	bool operator == (const Key&) const;
 	friend std::ostream& operator << (std::ostream& ost, Key k);
 
 	void set_OperationMode(OperationMode _operation_mode) const{ this->operation_mode = _operation_mode; }
 	OperationMode getOperationMode() const{ return this->operation_mode; }
 	void set_IV(const char*const _IV) const{									// -Initializing initial vector with the values pointed by _IV pointer. Warning:
-		if(this->notSetUpIV) for(int i = 0; i < 16; i++) this->IV[i] = _IV[i];	//	We're supposing _IV points to an array of at least 16 elements
+		for(int i = 0; i < AES_INIT_VECT_SZ; i++) this->IV[i] = _IV[i];		//	We're supposing _IV points to an array of at least 16 elements
 		this->notSetUpIV = false;
 	}
 	bool IVisNotSetUp() const { return this->notSetUpIV; }
 	void write_IV(char*const destination) const {								// -Writes IV in destination
-		for(int i = 0; i < 16; i++) destination[i] = this->IV[i];				// -Warning: We are supposing we have at least 16 bytes of space in destination
+		for(int i = 0; i < AES_INIT_VECT_SZ; i++) destination[i] = this->IV[i];// -Warning: We are supposing we have at least 16 bytes of space in destination
 	}
 	void write_Key(char*const destination) const {								// -Writes key in destination. Warning: We're supposing we have enough space in
 		for(unsigned i = 0; i < this->lengthBytes; i++) destination[i] = this->key[i];	//	destination array.
@@ -121,16 +124,6 @@ class Cipher {
 	void setSbox() const;														// -Sets Sbox using random numbers from the array PIroundKey. It supposes the
 																				//	array has at least 256 elements
 
-	/*char defaultKey[32] =
-		{(char)0x60, (char)0x3D, (char)0xEB, (char)0x10,
-         (char)0x15, (char)0xCA, (char)0x71, (char)0xBE,
-         (char)0x2B, (char)0x73, (char)0xAE, (char)0xF0,
-         (char)0x85, (char)0x7D, (char)0x77, (char)0x81,
-         (char)0x1F, (char)0x35, (char)0x2C, (char)0x07,
-         (char)0x3B, (char)0x61, (char)0x08, (char)0xD7,
-         (char)0x2D, (char)0x98, (char)0x10, (char)0xA3,
-         (char)0x09, (char)0x14, (char)0xDF, (char)0xF4};*/
-
 	public:
 	Cipher();																	// -The default constructor will set the key expansion as zero in every element.
 	Cipher(const Key&);
@@ -141,7 +134,7 @@ class Cipher {
 	friend std::ostream& operator << (std::ostream& st, const Cipher& c);
 
 	void create_KeyExpansion(const char* const);								// -Creates key expansion
-	void setIV(char IV[16]) const;												// -Sets the initial vector value. Required for the CBC operation mode
+	void setIV(char IV[AES_INIT_VECT_SZ]) const;								// -Sets the initial vector value. Required for the CBC operation mode
 
 	void encryptECB(char*const data, unsigned size)const;						// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
 																				//	size (in bytes) is  provided by the 'size' argument.
@@ -165,23 +158,23 @@ class Cipher {
 	Key::OperationMode getOperationMode() const{ return this->key.getOperationMode(); }
 
 	private:
-	void XORblocks(char b1[16], char b2[16], char r[16]) const;					// -Xor operation over 16 bytes array.
+	void XORblocks(char b1[AES_BLK_SZ], char b2[AES_BLK_SZ], char r[AES_BLK_SZ]) const;	// -Xor operation over 16 bytes array.
 	void printWord(const char word[4]);											// -Prints an array of 4 bytes.
-	void printState(const char word[16]);										// -Prints an array of 16 bytes.
+	void printState(const char state[AES_BLK_SZ]);								// -Prints an array of 16 bytes.
 	void CopyWord(const char source[4], char destination[4]) const;				// -Coping an array of 4 bytes.
-	void CopyBlock(const char source[16], char destination[16]) const;			// -Coping an array of 16 bytes.
+	void CopyBlock(const char source[AES_BLK_SZ], char destination[AES_BLK_SZ]) const;// -Coping an array of 16 bytes.
 	void XORword(const char w1[4], const char w2[4], char resDest[4]) const;	// -XOR of arrays of 4 bytes.
 	void RotWord(char word[4]) const;											// -Rotation of bytes to the left.
 	void SubWord(char word[4]) const;											// -Apply SBox to each char of the word.
-	void SubBytes(char state[16]) const;										// -Applies a substitution table (S-box) to each char.
-	void ShiftRows(char state[16]) const;										// -Shift rows of the state array by different offset.
-	void MixColumns(char state[16]) const;										// -Mixes the data within each column of the state array.
-	void AddRoundKey(char state[16], int round) const;							// -Combines a round key with the state.
-	void InvSubBytes(char state[16]) const;										// -Applies the inverse substitution table (InvSBox) to each char.
-	void InvShiftRows(char state[16]) const;									// -Inverse function of shift rows.
-	void InvMixColumns(char state[16]) const;									// -Inverse function of MixColumns.
-	void encryptBlock(char block[16]) const;									// -Encrypts an array of 16 bytes.
-	void decryptBlock(char block[16]) const;									// -Decrypts an array of 16 bytes.
+	void SubBytes(char state[AES_BLK_SZ]) const;								// -Applies a substitution table (S-box) to each char.
+	void ShiftRows(char state[AES_BLK_SZ]) const;								// -Shift rows of the state array by different offset.
+	void MixColumns(char state[AES_BLK_SZ]) const;								// -Mixes the data within each column of the state array.
+	void AddRoundKey(char state[AES_BLK_SZ], int round) const;					// -Combines a round key with the state.
+	void InvSubBytes(char state[AES_BLK_SZ]) const;								// -Applies the inverse substitution table (InvSBox) to each char.
+	void InvShiftRows(char state[AES_BLK_SZ]) const;							// -Inverse function of shift rows.
+	void InvMixColumns(char state[AES_BLK_SZ]) const;							// -Inverse function of MixColumns.
+	void encryptBlock(char block[AES_BLK_SZ]) const;							// -Encrypts an array of 16 bytes.
+	void decryptBlock(char block[AES_BLK_SZ]) const;							// -Decrypts an array of 16 bytes.
 };
 };
 #endif
