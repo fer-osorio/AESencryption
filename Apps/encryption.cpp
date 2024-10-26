@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     unsigned stringSize = 0, i = 0;
     char* consoleInput = NULL;
     char* aux = NULL;                                                           // -Auxiliary
-    char  buffer[BUFFER_SIZE], fileName[NAME_MAX_LEN], keyNameStr[NAME_MAX_LEN];
+    char  buffer[BUFFER_SIZE], fileName[NAME_MAX_LEN+1], keyNameStr[NAME_MAX_LEN+1];
     int option, keyRetreavingOp, keySizeOp, OperationModeOp;                    // -Op stands for option
     File::FileName keyName;
     File::FileName Fname;                                                       // -Used mainly for the recognition of extensions
@@ -124,13 +124,13 @@ int main(int argc, char *argv[]) {
             getchar();                                                          // -Will take the "\n" left behind at the moment of press enter
         }
         if(keyRetreavingOp == 1) {
-            bool notValid = true;
-            while(notValid) {
+            bool notValidAESkeyFile = true;
+            while(notValidAESkeyFile) {
                 getFileNameStringFromConsole("Write the name/path of the key we will use for encryption.", fileName);
-                notValid = false;
+                notValidAESkeyFile = false;
                 try { mainKey = AES::Key(fileName); }
                 catch(const char* exp) {
-                    notValid = true;
+                    notValidAESkeyFile = true;
                     std::cerr << exp << " Try again.\n";
                     getFileNameStringFromConsole("Write the name/path of the key we will use for encryption.", fileName);
                 }
@@ -162,27 +162,29 @@ int main(int argc, char *argv[]) {
         }
         e = AES::Cipher(mainKey);
         if(option == 1) {
+            int inputSize = BUFFER_SIZE - 1;
             std::cout <<
-            "\nWrite the names/paths of the files you desire to encrypt separated with spaces. Once done, press enter (input must not have spaces and should be\n"
-            " at most " << BUFFER_SIZE << " characters long. File names/paths must have at most "<< NAME_MAX_LEN << " characters):\n\n";
-            std::cin.getline(buffer, BUFFER_SIZE, '\n');
-            while(buffer[i++] != 0) {}                                          // Appending one space at the end of the input string.
-            buffer[i-1] = ' '; buffer[i] = 0;
-
-            for(i = 0; buffer[i] != 0; ++i) {
-                if((buffer[i] > 47 && buffer[i] < 58) ||                        // -Naive way of getting a valid name.
-                   (buffer[i] > 64 && buffer[i] < 91) ||
-                   (buffer[i] > 96 && buffer[i] < 123)||
-                    buffer[i] == '.' ||
-                    buffer[i] == '_' ||
-                    buffer[i] == '-' ||
-                    buffer[i] == '/' ||
-                    buffer[i] == '~' ||
-                    buffer[i] == '\\') {
-                        fileName[stringSize++] = buffer[i];                     // -While the character is valid and while we do not encounter a space or a tab,
+            "Write the names/paths of the files you desire to encrypt separated with spaces. Once done, press enter (input must not have spaces and should be\n"
+            "at most " << inputSize << " characters long. File names/paths must have at most "<< NAME_MAX_LEN << " characters):\n\n";
+            std::cin.getline(buffer, inputSize, '\n');
+            /*while(buffer[i++] != 0) {}                                        // Appending one space at the end of the input string.
+            buffer[i-1] = ' '; buffer[i] = 0;*/
+            for(i = 0;;) {                                                      // -For ends with the break statement on its end (this is equivalent to a do-while)
+                while(buffer[i] == ' ' || buffer[i] == '\t') { i++; }           // -Consuming spaces and tabs till we find any other character
+                if((buffer[i] > 47 && buffer[i] < 58) ||                        // -Naive way of getting a valid name using ASCII code. First decimal digits
+                   (buffer[i] > 64 && buffer[i] < 91) ||                        // -Then Upper case letters
+                   (buffer[i] > 96 && buffer[i] < 123)||                        // -Followed by lower case letters
+                    buffer[i] == '.' ||                                         // -And finally special symbols
+                    buffer[i] == '_' ||                                         // ...
+                    buffer[i] == '-' ||                                         // ...
+                    buffer[i] == '/' ||                                         // ...
+                    buffer[i] == '~' ||                                         // ...
+                    buffer[i] == '\\') {                                        // ...
+                        fileName[stringSize++] = buffer[i++];                   // -While the character is valid and while we do not encounter a space or a tab,
                 }                                                               //  we will suppose is a name/path a file
-                if(buffer[i] == ' ' || buffer[i] == '\t') {                     // -We encounter a space/tab, starting the encryption process
+                if(buffer[i] == ' ' || buffer[i] == '\t' || buffer[i] == 0) {   // -We encounter a space, tab or 0; starting the encryption process
                     fileName[stringSize] = 0;
+                    //std::cout << "fileName = " << fileName << ", size = " << stringSize << '\n'; // -Debugging purposes
                     stringSize = 0;
                     Fname = File::FileName(fileName);
                     ext = Fname.getExtension();
@@ -194,6 +196,7 @@ int main(int argc, char *argv[]) {
                             } catch(const char* errMsg) {
                                 std::cout << errMsg;
                             }
+                            std::cout << bmp << "\n\n";
                             encrypt(bmp, e);
                             std::cout << e << '\n';
                             break;
@@ -211,10 +214,11 @@ int main(int argc, char *argv[]) {
                             break;
                         case File::FileName::NoExtension:
                         case File::FileName::Unrecognised:
-                            std::cout << "Could not handle file. Terminating with failure status...\n";
+                            std::cout << "Could not handle input string. Terminating with failure status...\n";
                             return EXIT_FAILURE;
                     }
                 }
+                if(buffer[i] == 0) break;                                       // -Terminating 'for'
             }
             getFileNameStringFromConsole("Assign a name to the key file.", keyNameStr);
             e.saveKey(keyNameStr);
@@ -257,13 +261,13 @@ int main(int argc, char *argv[]) {
         std::cout << "Select key size. The size is written in bits:\n"
             "(1) 128,    (2) 192,    (3) 256\n";
         std::cin >> keySizeOp;
-        getchar();                                                          // -Will take the "\n" left behind at the moment of press enter
+        getchar();                                                              // -Will take the "\n" left behind at the moment of press enter
         while(keySizeOp < 1 || keySizeOp > 2) {
             std::cout << "\nInvalid input. Try again.\n";
             std::cout << "Select key size. The size is written in bits:\n"
                 "(1) 128,    (2) 192,    (3) 256\n";
             std::cin >> keySizeOp;
-            getchar();                                                      // -Will take the "\n" left behind at the moment of press enter
+            getchar();                                                          // -Will take the "\n" left behind at the moment of press enter
         }
         std::cout << "Select operation mode:\n"
             "(1) ECB,    (2) CBC,    (3) PVS\n";
