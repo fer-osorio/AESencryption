@@ -19,7 +19,9 @@ And all key length specified in the standard (that is: 128, 192 and 256 bits) ar
 - Text files (.txt)
 - Bitmap images (.bmp)
 
-**Important note**: AES name space does not implement any method to obtain secure cryptographic keys.
+**Important notes**:
+* AES name space does not implement any method to obtain secure cryptographic keys.
+* Padding problem for the ECB and CBC mode is solved with a method not specified in the NIST standard.
 
 #   Usage
 
