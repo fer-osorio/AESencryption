@@ -63,7 +63,7 @@ To this end, ``encrypt`` and ``decrypt`` functions are overloaded so they can ac
 friend void encrypt(Bitmap& bmp, AES::Cipher& e)
 ```
 
-encrypts ``bmp`` Bitmap file using the Cipher object ``e``. Notice this last function is a friend of class ``Bitmap``, this has two intentions: First, to be capable to encrypt the bmp file data while mantaining its attributes private, and second, to have the posibility of encrypt several files with one single Cipher file.
+encrypts ``bmp`` Bitmap file using the Cipher object ``e``. Notice this last function is a friend of class ``Bitmap``, this has two intentions: First, to be capable to encrypt the bmp file data while maintaining its attributes private, and second, to have the possibility of encrypt several files with one single Cipher file.
 
 Similarly, function
 ```
