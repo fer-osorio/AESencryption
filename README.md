@@ -10,11 +10,14 @@ Implementation of symmetric block cipher AES (published by [NIST](https://www.ni
 
 At the moment of writing this README, the supported operation modes are:
 
-- ECB
-- CBC
-- PVS (Experimental, not specified in the standard)
+- ECB [Electronic Code Book]
+- CBC [Cipher Block Chaining]
+- PVS [Pi and Variable Sbox] (Experimental, not specified in the standard)
 
-And all key length specified in the standard (that is: 128, 192 and 256 bits) are supported.
+And all key length specified in the standard (that is: 128, 192 and 256 bits) are supported. Also, the supported files are
+
+- Text files (.txt)
+- Bitmap images (.bmp)
 
 **Important note**: AES name space does not implement any method to obtain secure cryptographic keys.
 
@@ -34,7 +37,7 @@ This structure is necessary to create a Cipher object because the unique constru
 
 **Important note**: The default constructor for Cipher, ``Chipher()``, sets each byte of key and key expansion as zero, so is mandatory to not use this constructor for an actual encryption application.
 
-## Encryption
+## Encryption and decryption
 
 Once we have a Cipher object, for encryption it is only necessary to invoke the member function 
 
@@ -42,9 +45,41 @@ Once we have a Cipher object, for encryption it is only necessary to invoke the 
 void encrypt(char*const data, unsigned size)const
 ```
 
-***Important note***: The function above will encrypt the bytes pointed by **data** without creating a copy of the original data.
+Same for encryption
 
-### Encrypting files.
+```
+void decrypt(char*const data, unsigned size)const
+```
+
+Encryption and decryption process will succeed if and only if the Cipher objects used in each end have the same key.
+
+***Important note***: Each of the two functions above will act on the bytes pointed by **data** without creating a copy of the original content.
+
+### Encrypting and decrypting files.
+
+To this end, ``encrypt`` and ``decrypt`` functions are overloaded so they can accept a file structure and a Cipher object as arguments. In higher detail,
+
+```
+friend void encrypt(Bitmap& bmp, AES::Cipher& e)
+```
+
+encrypts ``bmp`` Bitmap file using the Cipher object ``e``. Notice this last function is a friend of class ``Bitmap``, this has two intentions: First, to be capable to encrypt the bmp file data while mantaining its attributes private, and second, to have the posibility of encrypt several files with one single Cipher file.
+
+Similarly, function
+```
+friend void decrypt(Bitmap& bmp, AES::Cipher& e)
+```
+decrypts ``bmp`` Bitmap file using Cipher object ``e``.
+
+The same is true for the rest of the files supported.
+
+```
+friend void encrypt(TXT& txt, AES::Cipher& e)
+```
+
+```
+friend void decrypt(TXT& txt, AES::Cipher& e)
+```
 
 #  Executable Files
 
