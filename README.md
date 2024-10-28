@@ -2,11 +2,11 @@
 
 AES (Advance Encryption Standard) implementation in C++, applied to the encryption of BMP images and text files.
 
-Questions and commnets are welcome at aosorios1502@alumno.ipn.mx and alexis.fernando.osorio.sarabio@gmail.com.
+Mail me at aosorios1502@alumno.ipn.mx and alexis.fernando.osorio.sarabio@gmail.com for questions and comments.
 
 #  Overview
 
-Implementation of symmetric block cipher AES (published by [NIST](https://www.nist.gov/)) in a namespace called AES. Specification of this standard can be found [here](https://www.nist.gov/publications/advanced-encryption-standard-aes-0). Then, AES class, together with other structrures, is used to encrypt Text files and BMP images.
+Implementation of symmetric block cipher AES (published by [NIST](https://www.nist.gov/)) in a name space called AES. Specification of this standard can be found [here](https://www.nist.gov/publications/advanced-encryption-standard-aes-0). Then, AES class, together with other structures, is used to encrypt Text files and BMP images.
 
 At the moment of writing this README, the supported operation modes are:
 
@@ -16,31 +16,33 @@ At the moment of writing this README, the supported operation modes are:
 
 And all key length specified in the standard (that is: 128, 192 and 256 bits) are supported.
 
-**Important note**: AES namespace does not implement any methot to obtain secure criptographic keys.
+**Important note**: AES name space does not implement any method to obtain secure cryptographic keys.
 
 #   Usage
 
 ##  Creating a Cipher object
-Before encrypting anithing, we need to stablish a criptographic key lenght, a criptographic key and a operation mode. All this objects are specified inside a structure called **Key** inside the same namespace **AES**. A **Key** object can be created by
+Before encrypting anything, we need to establish a cryptographic key length, a cryptographic key and a operation mode. All this objects are specified inside a structure called **Key** inside the same name space **AES**. A **Key** object can be created by
 
-1. Using ``Key(const char* const _key, Length, OperationMode, const char* const _IV = NULL);``. This establish all attributes manualy. The ``_IV`` argument stands for "Initial Vector"; is intended for CBC mode.
+1. Using ``Key(const char* const _key, Length, OperationMode, const char* const _IV = NULL);``. This establish all attributes manually. The ``_IV`` argument stands for "Initial Vector"; is intended for CBC mode.
 2. Using ``Key(const char*const fname)``. This builds the key from a binary file.
 
-This structure is necesary to create a Cipher object because the unique constructor it has (apart from defaul constructor and copy constructor) is ``Cipher(const Key&)``. The intention of this is to have a well constructed criptographic key before use it to encrypt.
+This structure is necessary to create a Cipher object because the unique constructor it has (apart from default constructor and copy constructor) is ``Cipher(const Key&)``. The intention of this is to have a well constructed cryptographic key before use it to encrypt.
 
 ***In summary, to create a Cipher object:***
 1. Create a **Key** object, either manually or from a file.
 2. Use the constructor ``Cipher(const Key&)``.
 
+**Important note**: The default constructor for Cipher, ``Chipher()``, sets each byte of key and key expansion as zero, so is mandatory to not use this constructor for an actual encryption application.
+
 ## Encryption
 
-Once we have a Cipher object, for encryption it is only necessary to invoque the member function 
+Once we have a Cipher object, for encryption it is only necessary to invoke the member function 
 
 ```
 void encrypt(char*const data, unsigned size)const
 ```
 
-***Important note:*** The function avobe will encrypt the bytes pointed by **data** without creating a copy of the original data.
+***Important note***: The function above will encrypt the bytes pointed by **data** without creating a copy of the original data.
 
 ### Encrypting files.
 
