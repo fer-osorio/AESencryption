@@ -1,6 +1,6 @@
 #  Compilation
 
-Use ``make`` comands to build the executables.
+Use ``make`` commands to build the executables.
 
 1. ``make AESencryption.exe`` to build executable for encryption.
 2. ``make AESencryption.exe`` to build executable for decryption.
@@ -19,7 +19,7 @@ The last action encrypts the image using ``AESencryption.key``.
 
 ![Before decryption](../../Images/BeforeDecryption.png)
 
-Finally, we execute ``./AESencryption.exe AESencryption.key Test01.bmp``, retreaving the origial image.
+Finally, we execute ``./AESencryption.exe AESencryption.key Test01.bmp``, retrieving the original image.
 
 ![After decryption](../../Images/AfterDecryption.png)
 
