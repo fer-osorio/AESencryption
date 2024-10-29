@@ -11,15 +11,11 @@ We can pass arguments to the executables to encrypt/decrypt a single file. Set a
 
 **Example:**
 
-Before executing ``./AESencryption.exe AESencryption.key Test01.bmp``.
+1. Encryption; executing ``./AESencryption.exe AESencryption.key Pic01.bmp``.
 
-![Before encryption](../../Images/BeforeEncryption.png)
+![Encryption](../../Images/AESencryption.gif)
 
-The last action encrypts the image using ``AESencryption.key``.
+2. Decryption; executing ``./AESdecryption.exe AESencryption.key Text01.txt``.
 
-![Before decryption](../../Images/BeforeDecryption.png)
-
-Finally, we execute ``./AESencryption.exe AESencryption.key Test01.bmp``, retrieving the original image.
-
-![After decryption](../../Images/AfterDecryption.png)
+![Decryption](../../Images/AESdecryption.gif)
 
