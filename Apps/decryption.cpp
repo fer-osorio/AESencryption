@@ -35,6 +35,7 @@ int main(int argc, char *argv[]) {
                     std::cout << err;
                 }
                 decrypt(txt, e);
+                std::cout << e << '\n';
                 break;
             case File::FileName::key:
                 break;
