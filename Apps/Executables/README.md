@@ -15,7 +15,7 @@ We can pass arguments to the executables to encrypt/decrypt a single file. Set a
 
 ![Encryption](../../Images/AESencryption.gif)
 
-2. Decryption; executing ``./AESdecryption.exe AESencryption.key Text01.txt``.
+2. Decryption; executing ``./AESdecryption.exe AESencryption.key Text00.txt``.
 
 ![Decryption](../../Images/AESdecryption.gif)
 
