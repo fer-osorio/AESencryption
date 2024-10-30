@@ -193,12 +193,12 @@ Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), oper
                     this->operation_mode = OFB;
                 else if(opMode[0]=='C' && opMode[1]=='T' && opMode[2]=='R')
                     this->operation_mode = CTR;
-                else throw "Could not recognize operation mode...";
+                else throw "Could not recognize operation mode...\n";
 
                 file.read((char*)&len, 2);                                      // -Reading key lengthBits
                 if(len == 128 || len == 192 || len == 256)
                     this->lengthBits = (Length)len;
-                else throw "Key lengthBits not allowed...";
+                else throw "Key lengthBits not allowed...\n";
                 this->lengthBytes = (unsigned)len >> 3;                         // -lengthBytes = len / 8;
 
                 this->key = new char[this->lengthBytes];                        // -Reading key
@@ -206,10 +206,10 @@ Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), oper
 
                 if(this->operation_mode == CBC) file.read((char*)this->IV, AES_BLK_SZ); // -In CBC case, reading IV.
            } else {
-                throw "Not a valid AES key file...";
+                throw "Not a valid AES key file...\n";
            }
     } else {
-        throw "Could not open the file...";
+        throw "Could not open the file...\n";
     }
 }
 
@@ -283,7 +283,7 @@ void Key::save(const char* const fname) const {
             op_mode = "CTR";
             break;
         default:
-            throw "Could not recognize operation mode...";
+            throw "Could not recognize operation mode...\n";
     }
     std::ofstream file;
     file.open(fname, std::ios::binary);
@@ -294,7 +294,7 @@ void Key::save(const char* const fname) const {
         file.write(this->key, this->lengthBytes);                               // -Key
         if(this->operation_mode == CBC) file.write(this->IV, AES_BLK_SZ); // -If CBC, writes initial vector
     } else {
-        throw "File could not be written.";
+        throw "File could not be written.\n";
     }
 }
 
