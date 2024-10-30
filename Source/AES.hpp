@@ -2,7 +2,6 @@
 
 #ifndef _INCLUDED_AES_
 #define _INCLUDED_AES_
-#define AES_INIT_VECT_SZ 16
 #define AES_BLK_SZ 16
 
 namespace AES {
@@ -24,10 +23,10 @@ struct Key {
 	Length 	 lengthBits;														// -Length in bits.
 	unsigned lengthBytes;														// -Length in bytes.
 	mutable  OperationMode operation_mode;
-	mutable char  IV[AES_INIT_VECT_SZ]={0, 0, 0, 0,								// -Initial vector for the CBC operation mode
-										0, 0, 0, 0,								// -This default value (just zeros) is left
-				    					0, 0, 0, 0,								//  for the case in which we do not use CBC
-				    					0, 0, 0, 0};
+	mutable char  IV[AES_BLK_SZ] = {0, 0, 0, 0,									// -Initial vector for the CBC operation mode
+									0, 0, 0, 0,									// -This default value (just zeros) is left
+				    				0, 0, 0, 0,									//  for the case in which we do not use CBC
+				    				0, 0, 0, 0};
 	mutable bool notSetUpIV = true;												// -Tells if the initial vector is already initialized or not
 
 	public:
@@ -44,12 +43,12 @@ struct Key {
 	void set_OperationMode(OperationMode _operation_mode) const{ this->operation_mode = _operation_mode; }
 	OperationMode getOperationMode() const{ return this->operation_mode; }
 	void set_IV(const char*const _IV) const{									// -Initializing initial vector with the values pointed by _IV pointer. Warning:
-		for(int i = 0; i < AES_INIT_VECT_SZ; i++) this->IV[i] = _IV[i];		//	We're supposing _IV points to an array of at least 16 elements
+		for(int i = 0; i < AES_BLK_SZ; i++) this->IV[i] = _IV[i];				//	We're supposing _IV points to an array of at least 16 elements
 		this->notSetUpIV = false;
 	}
 	bool IVisNotSetUp() const { return this->notSetUpIV; }
 	void write_IV(char*const destination) const {								// -Writes IV in destination
-		for(int i = 0; i < AES_INIT_VECT_SZ; i++) destination[i] = this->IV[i];// -Warning: We are supposing we have at least 16 bytes of space in destination
+		for(int i = 0; i < AES_BLK_SZ; i++) destination[i] = this->IV[i];// -Warning: We are supposing we have at least 16 bytes of space in destination
 	}
 	void write_Key(char*const destination) const {								// -Writes key in destination. Warning: We're supposing we have enough space in
 		for(unsigned i = 0; i < this->lengthBytes; i++) destination[i] = this->key[i];	//	destination array.
@@ -134,7 +133,7 @@ class Cipher {
 	friend std::ostream& operator << (std::ostream& st, const Cipher& c);
 
 	void create_KeyExpansion(const char* const);								// -Creates key expansion
-	void setIV(char IV[AES_INIT_VECT_SZ]) const;								// -Sets the initial vector value. Required for the CBC operation mode
+	void setIV(char IV[AES_BLK_SZ]) const;										// -Sets the initial vector value. Required for the CBC operation mode
 
 	void encryptECB(char*const data, unsigned size)const;						// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
 																				//	size (in bytes) is  provided by the 'size' argument.

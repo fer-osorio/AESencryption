@@ -169,14 +169,14 @@ Key::Key(const char* const _key, Length len, OperationMode op_mode, const char* 
     unsigned i;
     this->key = new char[this->lengthBytes];
     if(_key != NULL) for(i = 0; i < this->lengthBytes; i++) this->key[i] = _key[i];
-    if(_IV != NULL)  for(i = 0; i < AES_INIT_VECT_SZ; i++)  this->IV[i] = _IV[i];
+    if(_IV != NULL)  for(i = 0; i < AES_BLK_SZ; i++)  this->IV[i] = _IV[i];
 }
 
 Key::Key(const Key& ak):lengthBits(ak.lengthBits), lengthBytes(ak.lengthBytes), operation_mode(ak.operation_mode) {
     unsigned i;
     this->key = new char[ak.lengthBytes];
     for(i = 0; i < ak.lengthBytes; i++) this->key[i] = ak.key[i];               // -Supposing Cipher object is well constructed, this is, ak.key != NULL
-    if(ak.operation_mode == CBC) for(i=0; i < AES_INIT_VECT_SZ; i++) this->IV[i]=ak.IV[i];// -Without CBC, copying IV is pointless.
+    if(ak.operation_mode == CBC) for(i=0; i < AES_BLK_SZ; i++) this->IV[i]=ak.IV[i];// -Without CBC, copying IV is pointless.
 }
 
 Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), operation_mode(ECB) { // -Building from .key file
@@ -212,7 +212,7 @@ Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), oper
                 this->key = new char[this->lengthBytes];                        // -Reading key
                 file.read(this->key, this->lengthBytes);
 
-                if(this->operation_mode == CBC) file.read((char*)this->IV, AES_INIT_VECT_SZ); // -In CBC case, reading IV.
+                if(this->operation_mode == CBC) file.read((char*)this->IV, AES_BLK_SZ); // -In CBC case, reading IV.
            } else {
                 throw "Not a valid AES key file...";
            }
@@ -238,7 +238,7 @@ Key& Key::operator = (const Key& k) {
         for(i = 0; i < k.lengthBytes; i++) this->key[i] = k.key[i];
         this->operation_mode = k.operation_mode;
         if(k.operation_mode == CBC)                                             // -Without CBC, copying IV is pointless.
-            for(i = 0; i < AES_INIT_VECT_SZ; i++) this->IV[i] = k.IV[i];
+            for(i = 0; i < AES_BLK_SZ; i++) this->IV[i] = k.IV[i];
     }
     return *this;
 }
@@ -249,7 +249,7 @@ bool Key::operator == (const Key& k) const{
     for(i = 0; (unsigned)i < this->lengthBytes; i++) if(this->key[i] != k.key[i]) return false;
     if(this->operation_mode == k.operation_mode) {
         if(this->operation_mode == OperationMode::CBC)
-            for(i = 0; i < AES_INIT_VECT_SZ; i++) if(this->IV[i] != k.IV[i]) return false;
+            for(i = 0; i < AES_BLK_SZ; i++) if(this->IV[i] != k.IV[i]) return false;
     } else return false;
     return true;
 }
@@ -261,7 +261,7 @@ std::ostream& AES::operator << (std::ostream& ost, Key k) {
 
     operationModeToString(k.operation_mode, opModeStr);
     bytesToHexString(k.key, keyStr, (int)k.lengthBytes);
-    bytesToHexString(k.IV, IVstring, AES_INIT_VECT_SZ);
+    bytesToHexString(k.IV, IVstring, AES_BLK_SZ);
 
     ost << "\tKey lengthBits: " << k.lengthBits << " bits, " << k.lengthBytes << " bytes, Nk = " << (k.lengthBytes >> 2) << " words" << '\n';
     ost << "\tKey: " << keyStr << '\n';
@@ -303,7 +303,7 @@ void Key::save(const char* const fname) const {
         file.write(op_mode, 3);                                                 // -Operation mode
         file.write((char*)&this->lengthBits, 2);                                // -Key lengthBits in bits
         file.write(this->key, this->lengthBytes);                               // -Key
-        if(this->operation_mode == CBC) file.write(this->IV, AES_INIT_VECT_SZ); // -If CBC, writes initial vector
+        if(this->operation_mode == CBC) file.write(this->IV, AES_BLK_SZ); // -If CBC, writes initial vector
     } else {
         throw "File could not be written.";
     }
@@ -521,7 +521,7 @@ void Cipher::encryptCBC(char*const data, unsigned size) const{
     if(this->usingDefaultSbox == false) this->setSboxToDefauld();
 
     char *previousBlk, *currentDataBlock = data;
-    char IVlocation[AES_INIT_VECT_SZ];
+    char IVlocation[AES_BLK_SZ];
     int numofBlocks = (int)size >> 4;                                           //  numofBlocks = size / 16.
     int rem = (int)size & 15, i;                                                // -Bytes remaining rem = size % 16
 
@@ -716,7 +716,7 @@ void Cipher::decrypt(char*const data, unsigned size) const{
     }
 }
 
-void Cipher::setIV(char IV[AES_INIT_VECT_SZ]) const {                           // -Naive way of setting the initial vector.
+void Cipher::setIV(char IV[AES_BLK_SZ]) const {                                 // -Naive way of setting the initial vector.
     intToChar ic;
     ic.integer = time(NULL);
     int i, j, k;
