@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
             getFileNameStringFromConsole("Write the name for the .txt file that will contain the encryption.\n", fileName);
             file.open(fileName);
             if(file.is_open()) {
-                e.encryptECB(consoleInput, stringSize);
+                e.encrypt(consoleInput, stringSize);
                 file.write(consoleInput, stringSize);
                 file.close();
                 getFileNameStringFromConsole("Write the name for the encryption key file.\n", keyNameStr);
