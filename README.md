@@ -12,7 +12,6 @@ At the moment of writing this README, the supported operation modes are:
 
 - ECB [Electronic Code Book]
 - CBC [Cipher Block Chaining]
-- PVS [Pi and Variable Sbox] (Experimental, not specified in the standard)
 
 And all key length specified in the standard (that is: 128, 192 and 256 bits) are supported. Also, the supported files are
 
