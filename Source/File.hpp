@@ -1,4 +1,4 @@
-// Files that can be encrypted using this implementation of AES
+// -Set of structures representing files. The intention is to handle files for its encryption
 #include "AES.hpp"
 
 #ifndef _INCLUDED_FILE_
@@ -65,29 +65,11 @@ class TXT {																		// -Handling .txt files
 	FileName::Extension fileExtension() { return name.getExtension(); }
 	void printName(const char*const atBeginning = NULL, const char*const atEnd = NULL) { this->name.print(atBeginning, atEnd); }
 
-	friend void encryptECB(TXT& txt, AES::Cipher& e) {							// -The reason of the existence of this friend functions is to be capable of
-		e.encryptECB(txt.content, txt.size);									//	encrypt and decrypt many files with the same Cipher object.
-    	txt.save();																//	...
-	}
-	friend void decryptECB(TXT& txt, const AES::Cipher& e) {					//	...
-		e.decryptECB(txt.content, txt.size);									//	...
-    	txt.save();																//	...
-	}
-
-	friend void encryptCBC(TXT& txt, AES::Cipher& e) {							//	...
-		e.encryptCBC(txt.content, txt.size);									//	...
-    	txt.save();																//	...
-	}
-	friend void decryptCBC(TXT& txt, const AES::Cipher& e) {					//	...
-		e.decryptCBC(txt.content, txt.size);									//	...
-    	txt.save();																//	...
-	}
-
 	friend void encrypt(TXT& txt, AES::Cipher& e) {								// -Encrypts using the operation mode defined in Key object
 		e.encrypt(txt.content, txt.size);
-		txt.save();
-	}
-
+		txt.save();																// -The reason of the existence of these friend functions is to be capable of
+	}																			//	encrypt and decrypt many files with the same Cipher object while maintaining
+																				//	attributes of txt object private
 	friend void decrypt(TXT& txt, AES::Cipher& e) {								// -Decrypts using the operation mode defined in Key object
 		e.decrypt(txt.content, txt.size);
 		txt.save();
@@ -95,7 +77,7 @@ class TXT {																		// -Handling .txt files
 };
 
 class Bitmap;																	// -The intention is to use the name Bitmap in the next function
-std::ostream& operator << (std::ostream& st, const Bitmap& bmp);				// -What we want is to make this function visible inside the namespace scope
+std::ostream& operator << (std::ostream& st, const Bitmap& bmp);				// -What we want is to make this function visible inside the name space scope
 class Bitmap {																	// -Handling bitmap format images.
 	typedef unsigned char  ui08;
 	typedef unsigned short ui16;
@@ -142,29 +124,11 @@ class Bitmap {																	// -Handling bitmap format images.
 	Bitmap& operator = (const Bitmap& bmp);
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 
-	friend void encryptECB(Bitmap& bmp, AES::Cipher& e) {						// -The reason of the existence of this friend functions is to be capable of
-		e.encryptECB(bmp.data, bmp.ih.SizeOfBitmap);							//	encrypt and decrypt many files with the same Cipher object.
-    	bmp.save(bmp.name);														//	...
-	}
-	friend void decryptECB(Bitmap& bmp, const AES::Cipher& e) {					//	...
-		e.decryptECB(bmp.data, bmp.ih.SizeOfBitmap);							//	...
-    	bmp.save(bmp.name);														//	...
-	}
-
-	friend void encryptCBC(Bitmap& bmp, AES::Cipher& e) {						//	...
-		e.encryptCBC(bmp.data, bmp.ih.SizeOfBitmap);							//	...
-    	bmp.save(bmp.name);														//	...
-	}
-	friend void decryptCBC(Bitmap& bmp, const AES::Cipher& e) {					//	...
-		e.decryptCBC(bmp.data, bmp.ih.SizeOfBitmap);							//	...
-    	bmp.save(bmp.name);														//	...
-	}
-
 	friend void encrypt(Bitmap& bmp, AES::Cipher& e) {							// -Encrypts using the operation mode defined in Key object
 		e.encrypt(bmp.data, bmp.ih.SizeOfBitmap);
-    	bmp.save(bmp.name);
-	}
-
+    	bmp.save(bmp.name);														// -The reason of the existence of these friend functions is to be capable of
+	}																			//	encrypt and decrypt many files with the same Cipher object while maintaining
+																				//	attributes of bmp object private
 	friend void decrypt(Bitmap& bmp, AES::Cipher& e) {							// -Decrypts using the operation mode defined in Key object
 		e.decrypt(bmp.data, bmp.ih.SizeOfBitmap);
     	bmp.save(bmp.name);
