@@ -29,7 +29,7 @@ char key128[]= {char(0x2B), char(0x7E), char(0x15), char(0x16),
 
 static AES::Key mainKey;
 static AES::Key::Length KeySizes[3] = {AES::Key::Length::_128, AES::Key::Length::_192, AES::Key::Length::_192};
-static AES::Key::OperationMode AvailableOpMode[3] = {AES::Key::OperationMode::ECB, AES::Key::OperationMode::CBC, AES::Key::OperationMode::PVS};
+static AES::Key::OperationMode AvailableOpMode[3] = {AES::Key::OperationMode::ECB, AES::Key::OperationMode::CBC};
 
 static void set_mainKey(AES::Key::Length len, AES::Key::OperationMode op_mode); // -Not proved to be secure.
 
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
                 } catch(const char* errMsg) {
                     std::cout << errMsg;
                 }
-                encryptPVS(bmp, e);
+                encrypt(bmp, e);
                 e.saveKey(argv[1]);                                             // -We cant ensure the operation mode in key file is the same as the operation mode
                 std::cout << e << '\n';                                         //  used for encryption, so we need to update the key file.
                 break;
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
                 } catch(const char* errMsg) {
                     std::cout << errMsg;
                 }
-                encryptPVS(txt, e);
+                encrypt(txt, e);
                 e.saveKey(argv[1]);                                             // -We cant ensure the operation mode in key file is the same as the operation mode
                 std::cout << e << '\n';                                         //  used for encryption, so we need to update the key file.
                 break;
@@ -148,13 +148,13 @@ int main(int argc, char *argv[]) {
                 getchar();                                                      // -Will take the "\n" left behind at the moment of press enter
             }
             std::cout << "Select operation mode:\n"
-                "(1) ECB,    (2) CBC,    (3) PVS\n";
+                "(1) ECB,    (2) CBC\n";
             std::cin >> OperationModeOp;
             getchar();                                                          // -Will take the "\n" left behind at the moment of press enter
             while(OperationModeOp < 1 || OperationModeOp > 3) {
                 std::cout << "\nInvalid input. Try again.\n";
                 std::cout << "Select operation mode:\n"
-                    "(1) ECB,    (2) CBC,    (3) PVS\n";
+                    "(1) ECB,    (2) CBC\n";
                 std::cin >> OperationModeOp;
                 getchar();                                                      // -Will take the "\n" left behind at the moment of press enter
             }
@@ -270,13 +270,13 @@ int main(int argc, char *argv[]) {
             getchar();                                                          // -Will take the "\n" left behind at the moment of press enter
         }
         std::cout << "Select operation mode:\n"
-            "(1) ECB,    (2) CBC,    (3) PVS\n";
+            "(1) ECB,    (2) CBC\n";
         std::cin >> OperationModeOp;
         getchar();                                                              // -Will take the "\n" left behind at the moment of press enter
         while(OperationModeOp < 1 || OperationModeOp > 2) {
             std::cout << "\nInvalid input. Try again.\n";
             std::cout << "Select operation mode:\n"
-                "(1) ECB,    (2) CBC,    (3) PVS\n";
+                "(1) ECB,    (2) CBC\n";
             std::cin >> OperationModeOp;
             getchar();                                                          // -Will take the "\n" left behind at the moment of press enter
         }

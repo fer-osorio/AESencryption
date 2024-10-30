@@ -6,7 +6,7 @@
 
 /************************************* Default values for substitution boxes. This are the values showed in the standard ******************************************/
 
-static const uint8_t defaultSBox[256] = {
+static const uint8_t SBox[256] = {
 	0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
 	0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
 	0xB7, 0xFD, 0x93, 0x26, 0x36, 0x3F, 0xF7, 0xCC, 0x34, 0xA5, 0xE5, 0xF1, 0x71, 0xD8, 0x31, 0x15,
@@ -25,7 +25,7 @@ static const uint8_t defaultSBox[256] = {
 	0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
 };
 
-static const uint8_t defaultInvSBox[256] = {
+static const uint8_t invSBox[256] = {
 	0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB,
 	0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87, 0x34, 0x8E, 0x43, 0x44, 0xC4, 0xDE, 0xE9, 0xCB,
 	0x54, 0x7B, 0x94, 0x32, 0xA6, 0xC2, 0x23, 0x3D, 0xEE, 0x4C, 0x95, 0x0B, 0x42, 0xFA, 0xC3, 0x4E,
@@ -131,12 +131,6 @@ static void operationModeToString(Key::OperationMode opm, char*const destination
             destination[2] = 'R';
             destination[3] =  0 ;
             break;
-        case Key::PVS:
-            destination[0] = 'P';
-            destination[1] = 'V';
-            destination[2] = 'S';
-            destination[3] =  0 ;
-            break;
         default:
             std::cout << "Could not identify operation mode \n\n";
     }
@@ -199,8 +193,6 @@ Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), oper
                     this->operation_mode = OFB;
                 else if(opMode[0]=='C' && opMode[1]=='T' && opMode[2]=='R')
                     this->operation_mode = CTR;
-                else if(opMode[0]=='P' && opMode[1]=='V' && opMode[2]=='S')
-                    this->operation_mode = PVS;
                 else throw "Could not recognize operation mode...";
 
                 file.read((char*)&len, 2);                                      // -Reading key lengthBits
@@ -290,9 +282,6 @@ void Key::save(const char* const fname) const {
         case CTR:
             op_mode = "CTR";
             break;
-        case PVS:
-            op_mode = "PVS";
-            break;
         default:
             throw "Could not recognize operation mode...";
     }
@@ -311,15 +300,6 @@ void Key::save(const char* const fname) const {
 
 
 /************************************************** AES encryption and decryption algorithms implementation ******************************************************/
-
-void Cipher::setSboxToDefauld() const{                                          // -Returns Sbox to the values specified in the standar
-    if(this->usingDefaultSbox) return;                                          // -If the object is using the default Sbox, then nothing should be do.
-    for(int i = 0; i < 256; i++) {
-        this->SBox[i]    = defaultSBox[i];                                      // -Mutable attributes, so 'const' qualifier does not affect affect these two lines
-        this->InvSBox[i] = defaultInvSBox[i];                                   // ...
-    }
-    this->usingDefaultSbox = true;                                              // -Making explicit the use of this Sbox
-}
 
 Cipher::Cipher() {
     this->keyExpansion = new char[this->keyExpLen];
@@ -475,7 +455,6 @@ void Cipher::printWord(const char word[4]) {
 void Cipher::encryptECB(char*const data, unsigned size) const{
     if(size == 0) return;                                                       // Exception here.
     this->key.set_OperationMode(Key::ECB);                                      // -Setting operation mode.
-    if(this->usingDefaultSbox == false) this->setSboxToDefauld();
 
     char* currentDataBlock = data;
     int numofBlocks = int(size >> 4);                                           //  numofBlocks = size / 16.
@@ -496,7 +475,6 @@ void Cipher::encryptECB(char*const data, unsigned size) const{
 
 void Cipher::decryptECB(char *const data, unsigned int size) const{
     if(size == 0) return;                                                       // Exception here.
-    if(this->usingDefaultSbox == false) this->setSboxToDefauld();
 
     char* currentDataBlock = data;
     int numofBlocks = int(size >> 4);                                           //  numofBlocks = size / 16.
@@ -518,7 +496,6 @@ void Cipher::decryptECB(char *const data, unsigned int size) const{
 void Cipher::encryptCBC(char*const data, unsigned size) const{
     if(size == 0) return;                                                       // Exception here.
     this->key.set_OperationMode(Key::CBC);                                      // -Setting operation mode.
-    if(this->usingDefaultSbox == false) this->setSboxToDefauld();
 
     char *previousBlk, *currentDataBlock = data;
     char IVlocation[AES_BLK_SZ];
@@ -547,7 +524,6 @@ void Cipher::encryptCBC(char*const data, unsigned size) const{
 
 void Cipher::decryptCBC(char*const data, unsigned size) const{
     if(size == 0) return;                                                       // Exception here.
-    if(this->usingDefaultSbox == false) this->setSboxToDefauld();
 
     char *currentDataBlock = data, previousBlk[AES_BLK_SZ], cipherCopy[AES_BLK_SZ];
     int numofBlocks = (int)size >> 4;                                           // -numofBlocks = size / 16
@@ -581,99 +557,6 @@ void Cipher::decryptCBC(char*const data, unsigned size) const{
     }
 }
 
-struct PIroundKey {                                                             // -This will act as a AES round key but having a size bigger or equal than the
-    private: char* roundkey  = NULL;                                            //  data array. To obtain it, the process will be similar to multiply the key with
-    private: unsigned size   = 0;                                               //  the number pi
-    private: Key previousKey = Key();
-    public: ~PIroundKey() { if(this->roundkey != NULL) delete[] this->roundkey; }
-    private: PIroundKey& operator =  (PIroundKey&);
-    public:  char        operator [] (const unsigned i) const{ return roundkey[i]; }
-    public:  unsigned getSize() const{ return this->size; }
-    public:  bool notNULLroundKey() const{ return this->roundkey != NULL; }
-    public:  void setPIroundKey(const Key& K) {
-        if(previousKey == K && this->roundkey !=NULL) return;                                            // -This 'if' excludes unnecessary calculations
-        if(this->roundkey != NULL) delete[] this->roundkey;
-        this->previousKey = K;
-        std::ifstream file;
-        file.open("pi.bin", std::ios::binary);
-        if(file.is_open()) {
-            char _key_[32];                                                     // -Cryptographic key
-            UnsignedInt256bits a;                                               // -Representation of a number of 256 bits (32 bytes)
-            UnsignedInt256bits b;                                               // -Representation of a number of 256 bits (32 bytes)
-            _16uint32_64uchar  c;                                               // -Will save the multiplication result
-            unsigned i, j;                                                      // -Auxiliary variables
-            unsigned PIsize = 3*2048*1024;                                      // -Using blocks of 32 bytes since the result of the product of two
-            unsigned _32bytesBlocks = PIsize >> 5;                              // -Amount of blocks of 32 bytes, _32bytesBlocks = dataSize / 32
-            unsigned lastBlockSize  = PIsize & 31;                              // -Size of the last block, lastBlockSize = dataSize % 32
-                                                                                //  256 bits number is a 512 bits number (dataSize doubles).
-            const char* piIndex;                                                // -Will go trough the digits of pi
-            this->roundkey = new char[PIsize << 1];                             // -PIsize << 1 = PIsize*2
-            char* const pi = new char[PIsize];
-            file.read(pi, PIsize);                                              // -Uploading pi
-            file.close();
-            K.write_Key(_key_);
-            if(K.getLengthBytes() < 32) for(i = K.getLengthBytes(), j = 0; i < 32; i++, j++) _key_[i] = _key_[j];   // -Padding with the beginning of the key
-            a = UnsignedInt256bits(_key_);                                      // -Creating number from key
-
-            for(i = 0, piIndex = pi; i < _32bytesBlocks; i++, piIndex += 32) {
-                b.reWriteLeastSignificantBytes(piIndex);                        // -Number from a 32 bytes chunk of pi
-                c = a*b;                                                        // -Product with the key
-                for(j = 0 ; j < 64; j++) this->roundkey[this->size++] = (char)c.chars[j];
-            }
-            if(lastBlockSize > 0) {
-                b.reWriteLeastSignificantBytes(piIndex, lastBlockSize);         // -Rewriting with the bytes left
-                c = a*b;                                                        // -Product with the key
-                for(j = 0 ; j < lastBlockSize; j++) this->roundkey[this->size++] = (char)c.chars[j];
-            }
-            if(pi != NULL) delete[] pi;
-        }
-        std::cout << "\nPI round key size established as " << this->size << std::endl;
-    }
-};
-static PIroundKey piRoundKey;
-
-void Cipher::setSbox() const{
-    unsigned i, j, k;
-    unsigned size = piRoundKey.getSize();
-    unsigned unwrittenSBoxSize = 256;                                           // -We'll rewrite Sbox, this is the size of the entries not substituted yet
-    uint8_t permutationBuffer[256];                                             // -Will be used in the creation of new Sbox
-    if(size < 256) return;
-    for(i = 0; i < 256; i++ ) permutationBuffer[i] = (uint8_t)i;
-        for(i = size-1, j = 0; unwrittenSBoxSize > 0; i--, j++, unwrittenSBoxSize--) {
-            k = (uint8_t)piRoundKey[i] % unwrittenSBoxSize;
-            this->SBox[j] = permutationBuffer[k];
-            permutationBuffer[k] = permutationBuffer[unwrittenSBoxSize - 1];
-        }
-    for(i = 0; i < 256; i++ ) this->InvSBox[this->SBox[i]] = i;                 // -Building Sbox inverse
-    this->usingDefaultSbox = false;
-}
-
-void Cipher::encryptPVS(char*const data, unsigned size) const{
-    piRoundKey.setPIroundKey(this->key);
-    if(piRoundKey.notNULLroundKey()) {
-        unsigned i, j, piSize = piRoundKey.getSize();
-        for(i = 0, j = 0; i < size; i++, j++) {
-            if(j == piSize) j = 0;
-            data[i] ^= piRoundKey[j];
-        }
-        this->setSbox();
-        this->encryptECB(data, size);                                           // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
-        this->key.set_OperationMode(Key::PVS);                                  // -Setting operation mode after using ECB encryption function.
-    }
-    else this->encryptECB(data, size);
-}
-
-void Cipher::decryptPVS(char*const data, unsigned size) const{
-    piRoundKey.setPIroundKey(this->key);
-    if(piRoundKey.notNULLroundKey()) {
-        unsigned i;
-        this->setSbox();
-        this->decryptECB(data, size);                                           // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
-        for(i = 0; i < size; i++) data[i] ^= piRoundKey[i];
-    }
-    else this->decryptECB(data, size);
-}
-
 void Cipher::encrypt(char*const data, unsigned size) const{
     Key::OperationMode opMode = this->key.getOperationMode();
     switch(opMode) {
@@ -688,9 +571,6 @@ void Cipher::encrypt(char*const data, unsigned size) const{
         case Key::OFB:
             break;
         case Key::CTR:
-            break;
-        case Key::PVS:
-            this->encryptPVS(data, size);
             break;
     }
 }
@@ -709,9 +589,6 @@ void Cipher::decrypt(char*const data, unsigned size) const{
         case Key::OFB:
             break;
         case Key::CTR:
-            break;
-        case Key::PVS:
-            this->decryptPVS(data, size);
             break;
     }
 }
@@ -913,7 +790,7 @@ void Cipher::encryptBlock(char block[]) const {
 }
 
 void Cipher::InvSubBytes(char state[AES_BLK_SZ]) const{
-    for(int i = 0; i < AES_BLK_SZ; i++) state[i] = (char)InvSBox[(ui08)state[i]];
+    for(int i = 0; i < AES_BLK_SZ; i++) state[i] = (char)invSBox[(ui08)state[i]];
 }
 
 void Cipher::InvShiftRows(char state[AES_BLK_SZ]) const{
