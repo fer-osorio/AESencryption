@@ -8,6 +8,8 @@ namespace AES {
 
 struct Key;
 std::ostream& operator << (std::ostream& ost, Key k);
+class Cipher;																	// -Declaring class name "Cipher". The intention is to use it in the next function
+std::ostream& operator << (std::ostream& st, const Cipher& c);					// -Declaration here so this function is inside the name space function.
 struct Key {
 	enum Length {_128 = 128,_192 = 192,_256 = 256};								// -Allowed AES key lengths
 	enum OperationMode {
@@ -21,16 +23,15 @@ struct Key {
 	char*	 key = NULL;
 	Length 	 lengthBits;														// -Length in bits.
 	unsigned lengthBytes;														// -Length in bytes.
-	mutable  OperationMode operation_mode;
-	mutable  bool notSetUpIV = true;											// -Tells if the initial vector is already initialized or not
-	mutable  char IV[AES_BLK_SZ] = {0, 0, 0, 0,									// -Initial vector for the CBC operation mode
+	OperationMode operation_mode;
+	bool notSetUpIV = true;														// -Tells if the initial vector is already initialized or not
+	mutable char IV[AES_BLK_SZ] =  {0, 0, 0, 0,									// -Initial vector for the CBC operation mode
 									0, 0, 0, 0,									// -This default value (just zeros) is left
 				    				0, 0, 0, 0,									//  for the case in which we do not use CBC
 				    				0, 0, 0, 0};
-
 	public:
 	Key();																		// -Assigns lengthBits of 256 bits and zero value for each byte of array char* key
-	Key(const char* const _key, Length, OperationMode, const char* const _IV = NULL);
+	Key(const char* const _key, Length, OperationMode);
 	Key(const char*const fname);												// -Building from binary file.
 	Key(const Key&);
 	~Key();
@@ -39,25 +40,23 @@ struct Key {
 	bool operator == (const Key&) const;
 	friend std::ostream& operator << (std::ostream& ost, Key k);
 
-	void set_OperationMode(OperationMode _operation_mode) const{ this->operation_mode = _operation_mode; }
 	OperationMode getOperationMode() const{ return this->operation_mode; }
-	void set_IV(const char*const _IV) const{									// -Initializing initial vector with the values pointed by _IV pointer. Warning:
-		for(int i = 0; i < AES_BLK_SZ; i++) this->IV[i] = _IV[i];				//	We're supposing _IV points to an array of at least 16 elements
-		this->notSetUpIV = false;
-	}
+	unsigned getLengthBytes() const {return this->lengthBytes;}
+	void save(const char* const) const;											// -Saving information in a binary file.
+
+	private:
+	friend Cipher;
+
+	void set_IV(const char source[AES_BLK_SZ]) const;							// -Sets initial vector by copying the array passed as argument
 	bool IVisNotSetUp() const { return this->notSetUpIV; }
 	void write_IV(char*const destination) const {								// -Writes IV in destination
-		for(int i = 0; i < AES_BLK_SZ; i++) destination[i] = this->IV[i];// -Warning: We are supposing we have at least 16 bytes of space in destination
+		for(int i = 0; i < AES_BLK_SZ; i++) destination[i] = this->IV[i];		// -Warning: We are supposing we have at least 16 bytes of space in destination
 	}
 	void write_Key(char*const destination) const {								// -Writes key in destination. Warning: We're supposing we have enough space in
 		for(unsigned i = 0; i < this->lengthBytes; i++) destination[i] = this->key[i];	//	destination array.
 	}
-	unsigned getLengthBytes() const {return this->lengthBytes;}
-	void save(const char* const) const;											// -Saving information in a binary file.
 };
 
-class Cipher;																	// -Declaring class name "Cipher". The intention is to use it in the next function
-std::ostream& operator << (std::ostream& st, const Cipher& c);					// -Declaration here so this function is inside the namespace function.
 class Cipher {
 	Key		key = Key();														// -The default values for a cipher object are the values for a key of 256 bits
 	int		Nk = 8, Nr = 14, keyExpLen = 240;
@@ -88,27 +87,26 @@ class Cipher {
 	Cipher& operator = (const Cipher& a);
 	friend std::ostream& operator << (std::ostream& st, const Cipher& c);
 
+	void encrypt(char*const data, unsigned size)const;							// -Encrypts using operation mode stored in Key object
+	void decrypt(char*const data, unsigned size)const;							// -Decrypts using operation mode stored in Key object
+
+	void saveKey(const char*const fname)  const{this->key.save(fname);}
+	Key::OperationMode getOperationMode() const{ return this->key.getOperationMode(); }
+
+	private:
 	void create_KeyExpansion(const char* const);								// -Creates key expansion
-	void setIV(char IV[AES_BLK_SZ]) const;										// -Sets the initial vector value. Required for the CBC operation mode
 
 	void encryptECB(char*const data, unsigned size)const;						// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
 																				//	size (in bytes) is  provided by the 'size' argument.
 	void decryptECB(char*const data, unsigned size)const;						// -Decrypts the message pointed by 'data' using the ECB operation mode. The data
 																				//	size (in bytes) is  provided by the 'size' argument.
+	void setAndWrite_IV(char destination[AES_BLK_SZ]) const;					// -Creates initial vector and writes it on destination array
 
 	void encryptCBC(char*const data, unsigned size)const;						// -Encrypts the message pointed by 'data' using the CBC operation mode. The data
 																				//	size (in bytes) is  provided by the 'size' argument.
 	void decryptCBC(char*const data, unsigned size)const;						// -Decrypts the message pointed by 'data'. The message must had been encrypted
 																				//	using the CBC mode operation.
 																				// -The size of the message is provided by the 'size' argument.
-
-	void encrypt(char*const data, unsigned size)const;							// -Encrypts using operation mode stored in Key object
-	void decrypt(char*const data, unsigned size)const;							// -Decrypts using operation mode stored in Key object
-
-	void saveKey(const char*const fname) const {this->key.save(fname);}
-	Key::OperationMode getOperationMode() const{ return this->key.getOperationMode(); }
-
-	private:
 	void XORblocks(char b1[AES_BLK_SZ], char b2[AES_BLK_SZ], char r[AES_BLK_SZ]) const;	// -Xor operation over 16 bytes array.
 	void printWord(const char word[4]);											// -Prints an array of 4 bytes.
 	void printState(const char state[AES_BLK_SZ]);								// -Prints an array of 16 bytes.

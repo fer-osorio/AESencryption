@@ -48,7 +48,7 @@ static const uint8_t invSBox[256] = {
 /****************************************** Multiplication of two numbers of 256 bits to obtain a 512 bits number ************************************************/
 
 union intToChar {
-    int integer;                                                                // Useful when casting from a 32 bits integer to an array of four chars
+    int  int_;                                                                  // Useful when casting from a 32 bits integer to an array of four chars
     char chars[4];
 };
 union uint64_uint32 {                                                           // -Useful for a casting from a 64 bits unsigned integer to an array of two 32 bits
@@ -57,7 +57,7 @@ union uint64_uint32 {                                                           
 };
 union _16uint32_64uchar {                                                       // -Representing 256 bits in an union of 8 unsigned int and 32 char
     unsigned uint32[16];
-    uint8_t chars[64];
+    uint8_t  chars[64];
 };
 struct UnsignedInt256bits {
     union { uint8_t chars[32]; unsigned uint32[8]; } NumberPlaces = {0,0,0,0,0,0,0,0}; // -256 bits in a anonymous union of 8 unsigned int and 32 char
@@ -159,11 +159,10 @@ Key::Key(): lengthBits(Length::_256), lengthBytes(32), operation_mode(OperationM
     for(unsigned i = 0; i < this->lengthBytes; i++) this->key[i] = 0;
 }
 
-Key::Key(const char* const _key, Length len, OperationMode op_mode, const char* const _IV):lengthBits(len),lengthBytes((unsigned)len >> 3),operation_mode(op_mode){
+Key::Key(const char* const _key, Length len, OperationMode op_m):lengthBits(len),lengthBytes((unsigned)len >> 3),operation_mode(op_m){
     unsigned i;
     this->key = new char[this->lengthBytes];
     if(_key != NULL) for(i = 0; i < this->lengthBytes; i++) this->key[i] = _key[i];
-    if(_IV != NULL)  for(i = 0; i < AES_BLK_SZ; i++)  this->IV[i] = _IV[i];
 }
 
 Key::Key(const Key& ak):lengthBits(ak.lengthBits), lengthBytes(ak.lengthBytes), operation_mode(ak.operation_mode) {
@@ -255,12 +254,16 @@ std::ostream& AES::operator << (std::ostream& ost, Key k) {
     bytesToHexString(k.key, keyStr, (int)k.lengthBytes);
     bytesToHexString(k.IV, IVstring, AES_BLK_SZ);
 
-    ost << "\tKey lengthBits: " << k.lengthBits << " bits, " << k.lengthBytes << " bytes, Nk = " << (k.lengthBytes >> 2) << " words" << '\n';
+    ost << "\tKey size: " << k.lengthBits << " bits, " << k.lengthBytes << " bytes, Nk = " << (k.lengthBytes >> 2) << " words" << '\n';
     ost << "\tKey: " << keyStr << '\n';
     ost << "\tOperation mode: " << opModeStr << '\n';
     ost << "\tIV (in case of CBC): "<< IVstring << '\n';
 
     return ost;
+}
+
+void Key::set_IV(const char source[AES_BLK_SZ]) const{
+    for(int i = 0; i < AES_BLK_SZ; i++) this->IV[i] = source[i];
 }
 
 void Key::save(const char* const fname) const {
@@ -359,7 +362,7 @@ std::ostream& AES::operator << (std::ostream& ost, const Cipher& c) {
     ost << "AES::Cipher object information:\n";
     ost << c.key;
     ost << "\tNr: " << c.Nr << " rounds" << '\n';
-    ost << "\tKey Expansion lengthBits: " << c.keyExpLen << " bytes" << '\n';
+    ost << "\tKey Expansion size: " << c.keyExpLen << " bytes" << '\n';
     ost << "\tKey Expansion: " << keyExpansionString << '\n';
     return ost;
 }
@@ -454,7 +457,6 @@ void Cipher::printWord(const char word[4]) {
 
 void Cipher::encryptECB(char*const data, unsigned size) const{
     if(size == 0) return;                                                       // Exception here.
-    this->key.set_OperationMode(Key::ECB);                                      // -Setting operation mode.
 
     char* currentDataBlock = data;
     int numofBlocks = int(size >> 4);                                           //  numofBlocks = size / 16.
@@ -493,18 +495,28 @@ void Cipher::decryptECB(char *const data, unsigned int size) const{
     decryptBlock(currentDataBlock);
 }
 
+void Cipher::setAndWrite_IV(char destination[AES_BLK_SZ]) const{                // -Simple method for setting the initial vector. The main idea is, when CBC is
+    intToChar ic; ic.int_ = time(NULL);                                         //  used, encryptBlock function encrypts a block of four consecutive 32 bits int's
+    int icIntWordSize = sizeof(ic.int_);                                        // -At this moment, this is suppose to be equal to 4
+    int j, k;
+    for(k = 0; k < AES_BLK_SZ; ic.int_++)
+        for(j = 0; j < icIntWordSize && k < AES_BLK_SZ; j++) destination[k++] = ic.chars[j];
+    this->encryptBlock(destination);
+}
+
 void Cipher::encryptCBC(char*const data, unsigned size) const{
     if(size == 0) return;                                                       // Exception here.
-    this->key.set_OperationMode(Key::CBC);                                      // -Setting operation mode.
 
     char *previousBlk, *currentDataBlock = data;
-    char IVlocation[AES_BLK_SZ];
+    char IVsource[AES_BLK_SZ];
     int numofBlocks = (int)size >> 4;                                           //  numofBlocks = size / 16.
     int rem = (int)size & 15, i;                                                // -Bytes remaining rem = size % 16
 
-    if(this->key.IVisNotSetUp()) setIV(IVlocation);                             // -Setting initial vector.
-    this->key.set_IV(IVlocation);
-    XORblocks(currentDataBlock, IVlocation, currentDataBlock);                  // -Encryption of the first block.
+    if(this->key.IVisNotSetUp()) {                                              // -Setting initial vector.
+        this->setAndWrite_IV(IVsource);
+        this->key.set_IV(IVsource);
+    }
+    XORblocks(currentDataBlock, IVsource, currentDataBlock);                  // -Encryption of the first block.
     encryptBlock(currentDataBlock);
 
     for(i = 1; i < numofBlocks; i++) {                                          // -Encryption of the rest of the blocks.
@@ -591,17 +603,6 @@ void Cipher::decrypt(char*const data, unsigned size) const{
         case Key::CTR:
             break;
     }
-}
-
-void Cipher::setIV(char IV[AES_BLK_SZ]) const {                                 // -Naive way of setting the initial vector.
-    intToChar ic;
-    ic.integer = time(NULL);
-    int i, j, k;
-    for(i = 0; i < 4; i++, ic.integer++) {
-        k = i << 2;                                                             // -k = i * 4
-        for(j = 0; j < 4; j++) IV[k + j] = ic.chars[j];
-    }
-    encryptBlock(IV);
 }
 
 void Cipher::XORblocks(char b1[AES_BLK_SZ], char b2[AES_BLK_SZ], char r[AES_BLK_SZ]) const {
