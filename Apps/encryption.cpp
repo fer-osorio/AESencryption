@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
                 } catch(const char* errMsg) {
                     std::cout << errMsg;
                 }
-                encryptPVS(bmp, e);
+                encrypt(bmp, e);
                 e.saveKey(argv[1]);                                             // -We cant ensure the operation mode in key file is the same as the operation mode
                 std::cout << e << '\n';                                         //  used for encryption, so we need to update the key file.
                 break;
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
                 } catch(const char* errMsg) {
                     std::cout << errMsg;
                 }
-                encryptPVS(txt, e);
+                encrypt(txt, e);
                 e.saveKey(argv[1]);                                             // -We cant ensure the operation mode in key file is the same as the operation mode
                 std::cout << e << '\n';                                         //  used for encryption, so we need to update the key file.
                 break;
