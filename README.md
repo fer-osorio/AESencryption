@@ -34,9 +34,9 @@ objects are specified inside a structure called **Key** inside the same name spa
 2. Using ``Key(const char*const fname)``. This builds the key from a binary file.
 
 ### The binary file for Key structure.
-As you can notice in file [AES.hpp](Source/AES.hpp), ``Key`` structure posses the function ``void save(const char* const fname)
-const; ``, this function saves the relevant information carried by the ``Key`` object that invoked it. The structure of the resulting
-binary file is:
+As you can notice in [AES.hpp](Source/AES.hpp), ``Key`` structure posses the function ``void save(const char* const fname)const; ``, 
+this function saves the relevant information carried by the ``Key`` object that invoked it. The structure of the resultingbinary
+file is:
 
 1. The first 6 bytes correspondes to the characters 'A''E''S''K''E''Y'.
 2. The following 3 (bytes 7, 8, 9) characters corresponds to the operation mode.
@@ -57,13 +57,14 @@ mandatory to not use this constructor for nothing more than type declaration.
 
 ## Encryption and decryption
 
-Once we have a Cipher object, for encryption it is only necessary to invoke the member function 
+Once we have a Cipher object, for encryption of an array named ``data`` with ``size`` bytes it is only necessary to invoke the
+member function 
 
 ```
 void encrypt(char*const data, unsigned size)const
 ```
 
-Same for encryption
+Same for decryption
 
 ```
 void decrypt(char*const data, unsigned size)const
@@ -76,8 +77,8 @@ original content.
 
 ### Encrypting and decrypting files.
 
-To this end, ``encrypt`` and ``decrypt`` functions are overloaded so they can accept a file structure and a Cipher object as
-arguments. In higher detail,
+To this end, ``File`` name space has ``encrypt`` and ``decrypt`` functions; they can accept a file structure and a Cipher object
+as arguments. In higher detail,
 
 ```
 friend void encrypt(Bitmap& bmp, AES::Cipher& e)
