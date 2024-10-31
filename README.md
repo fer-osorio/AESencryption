@@ -34,7 +34,7 @@ objects are specified inside a structure called **Key** inside the same name spa
 2. Using ``Key(const char*const fname)``. This builds the key from a binary file.
 
 ### The binary file for Key structure.
-As you can notice in [AES.hpp](Source/AES.hpp), ``Key`` structure posses the function ``void save(const char* const fname)const; ``, 
+As you can notice in [AES.hpp](Source/AES.hpp), ``Key`` structure posses ``void save(const char* const fname)const; `` function, 
 this function saves the relevant information carried by the ``Key`` object that invoked it. The structure of the resultingbinary
 file is:
 
