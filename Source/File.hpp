@@ -22,7 +22,7 @@ struct FileName {
 	unsigned nameSize	= 0;
 	char* 	 nameString = NULL;													// -File name.
 
-	Extension isSupportedExtension(const char*);								// -Compares its input with the strings in supportedExtension array
+	Extension isSupportedExtension(const char*) const;								// -Compares its input with the strings in supportedExtension array
 
 	public:
 	FileName() {}
@@ -34,13 +34,12 @@ struct FileName {
 		this->nameString = NULL;
 		nameSize = 0;
 	}
-	void print(const char*const atBeginning = NULL, const char*const atEnd = NULL) { std::cout << atBeginning << this->nameString << atEnd; }
-	void println() { std::cout << this->nameString << '\n'; }
-	void writeNameString(char*const destiantion);
-	unsigned 	getSize() 		{ return nameSize;	}
-	Extension 	getExtension() 	{ return extension; }
-
-	FileName returnThisNewExtension(Extension newExt); 							// -Keeps same name, changes the extension. No range checking needed, constructor
+	void print(const char*const atBeginning = NULL, const char*const atEnd = NULL) const{ std::cout << atBeginning << this->nameString << atEnd; }
+	void println() const{ std::cout << this->nameString << '\n'; }
+	void writeNameString(char*const destiantion) const;
+	unsigned 	getSize() 	   const{ return nameSize;	}
+	Extension 	getExtension() const{ return extension; }
+	FileName returnThisNewExtension(Extension newExt) const; 							// -Keeps same name, changes the extension. No range checking needed, constructor
 																				//  ensures enough space.
 };
 
@@ -61,9 +60,9 @@ class TXT {																		// -Handling .txt files
 	}
 
 	TXT& operator = (const TXT&);
-	void save(const char* fname = NULL);
-	FileName::Extension fileExtension() { return name.getExtension(); }
-	void printName(const char*const atBeginning = NULL, const char*const atEnd = NULL) { this->name.print(atBeginning, atEnd); }
+	void save(const char* fname = NULL) const;
+	FileName::Extension fileExtension() const{ return name.getExtension(); }
+	void printName(const char*const atBeginning = NULL, const char*const atEnd = NULL) const{ this->name.print(atBeginning, atEnd); }
 
 	friend void encrypt(TXT& txt, AES::Cipher& e) {								// -Encrypts using the operation mode defined in Key object
 		e.encrypt(txt.content, txt.size);
@@ -120,7 +119,7 @@ class Bitmap {																	// -Handling bitmap format images.
 	Bitmap(const Bitmap& bmp);
 	~Bitmap();
 
-	void save(const char* fname);												// -Saves in memory
+	void save(const char* fname) const;												// -Saves in memory
 	Bitmap& operator = (const Bitmap& bmp);
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 

@@ -44,7 +44,7 @@ FileName& FileName::operator = (const FileName& nm) {
 	return *this;
 }
 
-FileName FileName::returnThisNewExtension(Extension newExt) {
+FileName FileName::returnThisNewExtension(Extension newExt) const{
     FileName r = FileName(this->nameString, 4);
     int i = (int)r.nameSize;
     switch(newExt) {
@@ -83,19 +83,15 @@ FileName FileName::returnThisNewExtension(Extension newExt) {
     return r;
 }
 
-void FileName::writeNameString(char *const destiantion) { 					    // -Assuming destination has enough space for the String
+void FileName::writeNameString(char *const destiantion) const{ 					// -Assuming destination has enough space for the String
 	if(this->nameString == NULL) return;
 	for(unsigned i = 0; i < this->nameSize; i++) {
 		destiantion[i] = this->nameString[i];
-		if(this->nameString[i] == 0) {										    // -In case of encounter the end of the string before reaching name size
-			this->nameSize = i;
-			return;
-		}
 	}
 	destiantion[this->nameSize] = 0;
 }
 
-FileName::Extension FileName::isSupportedExtension(const char* str) {
+FileName::Extension FileName::isSupportedExtension(const char* str) const{
     if(str == NULL || str[0] == 0) return FileName::NoExtension;
     Extension temp[4] = {bmp, txt, key};
     int i, j = 0;
@@ -154,7 +150,7 @@ TXT::TXT(const TXT& t): name(t.name), size(t.size) {
     for(unsigned i = 0; i < t.size; i++) this->content[i] = t.content[i];
 }
 
-void TXT::save(const char* fname) {                                             // -The user can provide a name for the file
+void TXT::save(const char* fname)  const{                                       // -The user can provide a name for the file
     std::ofstream file;
     char* nameStr = NULL;
     if(fname != NULL) file.open(fname);
@@ -262,7 +258,7 @@ Bitmap::~Bitmap() {
     if(name != NULL) { delete[] name; name = NULL; }
 }
 
-void Bitmap::save(const char *fname) {
+void Bitmap::save(const char *fname) const{
     std::ofstream file;
     file.open(fname, std::ios::binary);
     if(file.is_open()) {
