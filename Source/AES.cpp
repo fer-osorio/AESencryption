@@ -343,20 +343,20 @@ Cipher& Cipher::operator = (const Cipher& a) {
 
 std::ostream& AES::operator << (std::ostream& ost, const Cipher& c) {
     char keyExpansionString[880];
-    int rowsAmount = c.keyExpLen >> 5;
+    int rowsAmount = c.keyExpLen >> 5;                                          // -rowsAmount = c.keyExpLen / 32
     int i, j, k, l;
-    for(i = 0, j = 0, k = 0; i < rowsAmount; i++, j+=32, k+=64) {
+    for(i = 0, j = 0, k = 0; i < rowsAmount; i++, j+=32, k+=64) {               // -Rows with 32 columns
         keyExpansionString[k++] = '\n';
         keyExpansionString[k++] = '\t';
         keyExpansionString[k++] = '\t';
-        bytesToHexString(&c.keyExpansion[j], &keyExpansionString[k], 32);
-    }
-    if((l = c.keyExpLen & 63) > 0) {
+        bytesToHexString(&c.keyExpansion[j], &keyExpansionString[k], 32);       // -Writing 32 bites pointed by &c.keyExpansion[j] in hexadecimal over 65 chars
+    }                                                                           //  over &keyExpansionString[k]
+    if((l = c.keyExpLen & 31) > 0) {                                            // -l = c.keyExpLen % 31
         keyExpansionString[k++] = '\n';
         keyExpansionString[k++] = '\t';
         keyExpansionString[k++] = '\t';
         bytesToHexString(&c.keyExpansion[j], &keyExpansionString[k], l);
-        keyExpansionString[k+(l<<1)] = 0;
+        keyExpansionString[k+(l<<1)] = 0;                                       // -k+(l<<1) = k + l*2
     }
     else keyExpansionString[k] = 0;
     ost << "AES::Cipher object information:\n";
