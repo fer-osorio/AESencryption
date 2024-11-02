@@ -5,6 +5,25 @@ using namespace File;
 
 /*************************************************************** Handling the name of the files *******************************************************************/
 
+/*
+Valid file name or path grammar
+
+c will denote characters, either lower case or upper case
+d for digits 0, 1,..., 9
+FN stands for File Name
+Sd string of digits
+
+Sd	->	dSd		|	d															// -Concatenation of digits
+FN	->	c·FN	|	c															// -Always start with a character, a single character can be a File Name
+FN	->	FN·Sd	|	FN·Sd·FN													// -String of digits can not stand at the beginning, but are allowed elsewhere
+FN	->	.cFN 	|	.Sd·FN	|	FN.FN	|	.c									// -Can not finish with a point nor have two consecutive points
+FN	->	c:FN	|	FN\FN	|	FN\\FN											// -Representing absolute paths
+"FN"->	"FN·[(SPACE + FN + SPACE)⁺]·FN"	|	FN									// -If double quotes are presented at the beginning of the string, the grammar
+																				//	accepts spaces in the middle of the string until the next double quote is found
+Note: SPACE can be represented by single spaces, tabs, or a concatenation
+of both.
+*/
+
 FileName::FileName(const char* _fileName, unsigned rightPadding) {
     unsigned i;
     int pointIndex = -1;
