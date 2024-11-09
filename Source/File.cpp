@@ -8,109 +8,33 @@ using namespace File;
 /*
 Valid file name or path grammar
 
-c will denote characters, either lower case or upper case
-d for digits 0, 1,..., 9
-FN stands for File Name
-Sd string of digits
+'l' will denote letters in English alphabet, either lower case or upper case.
+	For convenience, we will admit '_' and '-' as letters
+'d' for digits 0, 1,..., 9
+Sld	string of letters and digits that always starts with a letter
+FN  File Name
+PT  Path
+Sled string of letters, digits and spaces. It never starts or ends with a space
+FNWE File Name With Spaces
 
-Sd	->	dSd		|	d															// -Concatenation of digits
-FN	->	c·FN	|	c															// -Always start with a character, a single character can be a File Name
-FN	->	FN·Sd	|	FN·Sd·FN													// -String of digits can not stand at the beginning, but are allowed elsewhere
-FN	->	.cFN 	|	.Sd·FN	|	FN.FN	|	.c									// -Can not finish with a point nor have two consecutive points
-FN	->	c:FN	|	FN\FN	|	FN\\FN											// -Representing absolute paths
-"FN"->	"FN·[(SPACE + FN + SPACE)⁺]·FN"	|	FN									// -If double quotes are presented at the beginning of the string, the grammar
-																				//	accepts spaces in the middle of the string until the next double quote is found
-Note: SPACE can be represented by single spaces, tabs, or a concatenation
-of both.
+Sld	->	l·Sld	| l·d·Sld	|	l	|	l·d										// -Concatenation of letters and digits that always start with a letter
+Sled->	l·SPACES·Sled	| l·d·SPACES·Sled	|	l	|	l·d						// -Concatenation of letters and digits that always start with a letter
+
+FN	->	Sld·FN	|	l															// -File Name can not start with a digit; a single letter can be a File Name
+FN	->	.Sld·FN |	FN.Sld·FN	|	.Sld										// -Can not finish with a point nor have two consecutive points
+
+FN  ->  "FNWE"                                                                  // -If double quotes are presented at the beginning of the string, the grammar
+FNWE->	Sled·FN	|	l															//	accepts spaces in the middle of the string until the next double quote is found
+FNWE->	.Sled·FN|	FN.Sled·FN	|	.Sled
+
+FN  ->  FN/·Sld·FN   |   ../FN	|	/·Sld·FN									// -Considering file paths (Absolute Paths and Relative Paths) as file names
+
+Note: SPACES can be represented by single spaces, or a concatenation of spaces
 */
 
-FileName::FileName(const char* _fileName, unsigned rightPadding) {
-    unsigned i;
-    int pointIndex = -1;
+const char* FileName::supportedExtensions[3] = { "bmp", "txt", "key" };
 
-    if(_fileName == NULL) return;                                               // Guarding against null string
-
-	while(_fileName[this->nameSize] != 0 && this->nameSize <= NAME_MAX_LEN) {   // Upper bound for the name length
-	    if(_fileName[this->nameSize] == '.') pointIndex = (int)this->nameSize;  // Determines index of last point
-	    this->nameSize++;
-	}
-	if(rightPadding > 128) rightPadding = 128;                                  // Upper bound for right padding
-	this->nameString = new char[this->nameSize + rightPadding + 1];
-	for(i = 0; i < this->nameSize; i++) this->nameString[i] = _fileName[i];     // Copying file name into nameString
-
-	this->nameString[i] = 0;
-
-	if(pointIndex >= 0 && pointIndex <= NAME_MAX_LEN - 3)
-	    extension = isSupportedExtension(&_fileName[pointIndex + 1]);
-	else extension = NoExtension;
-}
-
-FileName::FileName(const FileName& nm): extension(nm.extension), nameSize(nm.nameSize) {
-	this->nameString = new char[nm.nameSize];
-	for(unsigned i = 0; i < nm.nameSize; i++)
-		this->nameString[i] = nm.nameString[i];
-}
-
-FileName& FileName::operator = (const FileName& nm) {
-	if(this != &nm) {
-		this->extension = nm.extension;
-		this->nameSize = nm.nameSize;
-		if(this->nameString != NULL) delete[] this->nameString;
-		this->nameString = new char[nm.nameSize];
-		for(unsigned i = 0; i <= nm.nameSize; i++)                              // -The <= condition is necessary to copy the '0' that ends the string. Remember,
-			this->nameString[i] = nm.nameString[i];                             //  this is a formatted string.
-	}
-	return *this;
-}
-
-FileName FileName::returnThisNewExtension(Extension newExt) const{
-    FileName r = FileName(this->nameString, 4);
-    int i = (int)r.nameSize;
-    switch(newExt) {
-        case Unrecognised:                                                      // -Nothing to do. Returning a copy of *this.
-            break;
-        case NoExtension:                                                       // -Nothing to do. Returning a copy of *this.
-            break;
-        case bmp:                                                               // Adding extension.
-            r.nameString[i] = '.';
-            r.nameString[++i] = 'b';
-            r.nameString[++i] = 'm';
-            r.nameString[++i] = 'p';
-            r.nameString[++i] = 0;
-            r.nameSize += 4;
-            r.extension = bmp;
-            break;
-        case txt:
-            r.nameString[i] = '.';
-            r.nameString[++i] = 't';
-            r.nameString[++i] = 'x';
-            r.nameString[++i] = 't';
-            r.nameString[++i] = 0;
-            r.nameSize += 4;
-            r.extension = txt;
-            break;
-        case key:
-            r.nameString[i] = '.';
-            r.nameString[++i] = 'k';
-            r.nameString[++i] = 'e';
-            r.nameString[++i] = 'y';
-            r.nameString[++i] = 0;
-            r.nameSize += 4;
-            r.extension = key;
-            break;
-    }
-    return r;
-}
-
-void FileName::writeNameString(char *const destiantion) const{ 					// -Assuming destination has enough space for the String
-	if(this->nameString == NULL) return;
-	for(unsigned i = 0; i < this->nameSize; i++) {
-		destiantion[i] = this->nameString[i];
-	}
-	destiantion[this->nameSize] = 0;
-}
-
-FileName::Extension FileName::isSupportedExtension(const char* str) const{
+FileName::Extension FileName::isSupportedExtension(const char str[]) const{
     if(str == NULL || str[0] == 0) return FileName::NoExtension;
     Extension temp[4] = {bmp, txt, key};
     int i, j = 0;
@@ -120,6 +44,213 @@ FileName::Extension FileName::isSupportedExtension(const char* str) const{
         }
     }
     return Unrecognised;
+}
+
+FileName::CharType FileName::characterType(const char c){                       // -Just checks if the character may be used in a File Name
+    if((c > 64 && c < 91) || (c > 96 && c < 123)) return letter;                // -Letters
+    if(c > 47 && c < 58) return digit;                                          // -Decimal digits
+    if(c == '.') return dot;                                                    // -And finally special symbols
+    if(c == '_') return underscore;                                             //  ...
+    if(c == '-') return hyphen;                                                 //  ...
+    if(c == '/') return slash;                                                  //  ...
+    if(c == ' ') return space;                                                  //  ...
+    if(c == '\'')return singleQuote;                                            //  ...
+    if(c == '"') return doubleQuote;                                            //  ...
+    if(c == 0)   return zero;
+
+    return notAllowed;                                                          // -Anything else is a not allowed symbol
+}
+
+static bool isLetter(const char c) {
+    return (c > 64 && c < 91) ||                                                // -Upper case letters
+           (c > 96 && c < 123)||                                                // -Lower case letters
+            c == '_' || c == '-';                                               // -Seeking simplicity, '-' and '_' will be consider as letters
+}
+
+static bool isDigit(const char c) {
+    return (c > 47 && c < 58);
+}
+
+static bool isLetterOrDigit(const char c) {
+    return (c > 47 && c < 58) ||                                                // -Decimal digits
+           (c > 64 && c < 91) ||                                                // -Upper case letters
+           (c > 96 && c < 123)||                                                // -Lower case letters
+            c == '_' || c == '-';                                               // -Seeking simplicity, '-' and '_' will be consider as letters
+}
+
+bool FileName::Sld(const char str[]) const{
+    if(!isLetter(str[this->currentStringIndex])) {                              // -This ensures we have a letter at the beginning of the string
+        if(isDigit(str[this->currentStringIndex]))
+            throw "Syntax Error: File name can not start with a digit...\n";
+        throw "Syntax Error: Expected an character from English alphabet...\n";
+    }
+    int i = 0;
+    if(this->allowSpaces){                                                      // -If file name starts with single/double quote or the constructor sets as so
+        for(i = ++this->currentStringIndex; isLetterOrDigit(str[i]) || str[i] == ' '; i++) {} // -Running trough letters, digits and spaces
+    } else
+        for(i = ++this->currentStringIndex; isLetterOrDigit(str[i]); i++) {}    // -Running trough letters and digits
+
+    this->currentStringIndex = i;
+
+    if(str[this->currentStringIndex] == 0) {
+        if(this->beginsSingleQuote) throw "Syntax Error: String started with single quote, then it should finish with double quotes\n";
+        if(this->beginsDoubleQuote) throw "Syntax Error: String started with double quote, then it should finish with double quotes\n";
+        return true;
+    }
+    if(this->beginsSingleQuote && str[this->currentStringIndex] == '\'') { // -Starting with single quote, finishing with single quote
+        if(str[this->currentStringIndex-1] == ' ') throw "Syntax Error: File Name/Path can not finish with spaces...\n";
+        return true;
+    }
+    if(this->beginsDoubleQuote && str[this->currentStringIndex] == '"' ) { // -Starting with double quote, finishing with double quote
+        if(str[this->currentStringIndex-1] == ' ') throw "Syntax Error: File Name/Path can not finish with spaces...\n";
+        return true;
+    }
+    if(str[this->currentStringIndex] == ' ') return true;                       // -At this point, a space is a proper ending for the input string
+    return false;
+}
+
+void FileName::FN(const char str[]) const{
+    CharType ct = FileName::characterType(str[this->currentStringIndex]);
+    switch(ct) {
+        case letter:                                                            // -We can interpret this lines of codes as: A file name con start with a letter,
+        case underscore:                                                        //  a underscore or a hyphen
+        case hyphen:                                                            //  ...
+        case slash:                                                             // -Allowing slash for file paths
+            try { if(this->Sld(str)) return; }                                  // -This lines can be interpreted as: Read (always starting with a letter) letters,
+            catch(const char[]) { throw; }                                      //  digits and (if allowed) spaces; when a proper ending character is found
+            break;                                                              //  (0, '\'', '"',' ') then return, otherwise continue reading
+        case dot:                                                               // -Cases for dot
+            if(str[++this->currentStringIndex] == '.') {                        // -The string "../" is allowed as a sub-string so we can use relative paths
+                if(str[++this->currentStringIndex] == '/') {                    //  ...
+                    try { this->FN(str); }                                      //  ...
+                    catch(const char[]) { throw; }                              //  ...
+                } else throw "Syntax Error: Expected '/' character...\n";
+            } else {
+                try { if(this->Sld(str)) return; }                              // -This lines can be interpreted as: Read (always starting with a letter) letters,
+                catch(const char[]) { throw; }                                  //  digits and (if allowed) spaces; when a proper ending character is found
+            }
+        break;
+        case digit:
+            throw "Syntax Error: File name can not start with a digit...\n";
+        case space:
+            throw "Syntax Error: Not expecting a space here...\n";
+        case singleQuote:
+            throw "Syntax Error: Not expecting a single quote here...\n";
+        case doubleQuote:
+            throw "Syntax Error: Not expecting a double quote here...\n";
+        case notAllowed:
+            throw "Syntax Error: Unexpected character/symbol...\n";
+        case zero:
+            throw "Syntax Error: Unexpected end of string...\n";
+    }
+    try { this->FN(str); }
+    catch(const char[]) { throw; }
+}
+
+FileName::FileName(const char* fileName_, bool acceptSpaces): allowSpaces(acceptSpaces) {
+    int i = 0, j = 0, markBeginning = 0, markEnd = 0;                           // -Markers for the beginning and end of input string
+    int pointIndex = -1;
+
+    if(fileName_ == NULL)
+        throw   "In Source/File.cpp,function FileName::FileName(const char* fileName_, unsigned rightPadding).\n"
+                "Could not build 'FileName' object from null fileName_ input.\n";
+    if(fileName_[0] == 0)
+        throw   "In Source/File.cpp,function FileName::FileName(const char* fileName_, unsigned rightPadding).\n"
+                "Could not build 'FileName' object from trivial string (fileName_[0] == 0).\n";
+
+    while(fileName_[i] == ' ' || fileName_[i] == '\t') i++;                     // -Ignoring the spaces and tabs that could be at the beginning of the input
+
+    if(fileName_[i] == '\'' || fileName_[i] == '"') {                           // -We can interpret this as: Spaces are allowed; read till the next double/single
+        if(fileName_[i] == '\'')this->beginsSingleQuote = true;                 //  quote
+        else                    this->beginsDoubleQuote = true;
+        this->allowSpaces = true;
+        i++;
+    }
+    this->currentStringIndex = markBeginning = i;                               // -Marking the beginning of the file name inside the string
+
+    try{
+        this->FN(fileName_);
+    } catch(const char exp[]) {
+        std::cout << exp;
+        throw "In file Source/File.cpp, function FileName::FileName(const char* fileName_, unsigned rightPadding)\n";
+    }
+    markEnd = this->currentStringIndex;
+    this->size = unsigned(markEnd - markBeginning);
+    this->string = new char[this->size + 1];
+
+	for(i = markBeginning, j = 0; i < markEnd; i++, j++) this->string[j] = fileName_[i];
+	this->string[j] = 0;
+	while(j >= 0 && this->string[j] != '.') j--;
+	pointIndex = j;
+
+	if(pointIndex >= 0 && pointIndex <= NAME_MAX_LEN - 3)
+	    extension = isSupportedExtension(&fileName_[pointIndex + 1]);
+	else extension = NoExtension;
+}
+
+FileName::FileName(const FileName& nm): extension(nm.extension), size(nm.size) {
+	this->string = new char[nm.size];
+	for(unsigned i = 0; i < nm.size; i++)
+		this->string[i] = nm.string[i];
+}
+
+FileName& FileName::operator = (const FileName& nm) {
+	if(this != &nm) {
+		this->extension = nm.extension;
+		this->size = nm.size;
+		if(this->string != NULL) delete[] this->string;
+		this->string = new char[nm.size];
+		for(unsigned i = 0; i <= nm.size; i++)                                  // -The <= condition is necessary to copy the '0' that ends the string. Remember,
+			this->string[i] = nm.string[i];                                     //  this is a formatted string.
+	}
+	return *this;
+}
+
+/*FileName FileName::returnThisNewExtension(Extension newExt) const{
+    //FileName r = FileName(this->string, 4);
+    int i = (int)r.size;
+    switch(newExt) {
+        case Unrecognised:                                                      // -Nothing to do. Returning a copy of *this.
+            break;
+        case NoExtension:                                                       // -Nothing to do. Returning a copy of *this.
+            break;
+        case bmp:                                                               // Adding extension.
+            r.string[i] = '.';
+            r.string[++i] = 'b';
+            r.string[++i] = 'm';
+            r.string[++i] = 'p';
+            r.string[++i] = 0;
+            r.size += 4;
+            r.extension = bmp;
+            break;
+        case txt:
+            r.string[i] = '.';
+            r.string[++i] = 't';
+            r.string[++i] = 'x';
+            r.string[++i] = 't';
+            r.string[++i] = 0;
+            r.size += 4;
+            r.extension = txt;
+            break;
+        case key:
+            r.string[i] = '.';
+            r.string[++i] = 'k';
+            r.string[++i] = 'e';
+            r.string[++i] = 'y';
+            r.string[++i] = 0;
+            r.size += 4;
+            r.extension = key;
+            break;
+    }
+    return r;
+}*/
+
+void FileName::writestring(char *const destiantion) const{ 					// -Assuming destination has enough space for the String
+	if(this->string == NULL) return;
+	for(unsigned i = 0; i < this->size; i++) {
+		destiantion[i] = this->string[i];
+	}
+	destiantion[this->size] = 0;
 }
 
 
@@ -147,7 +278,7 @@ TXT::TXT(const char* fname): name(fname) { // -Building from file.
 TXT::TXT(FileName& fname): name(fname) {
     std::ifstream file;
     char*const nameStr = new char[this->name.getSize()];
-    this->name.writeNameString(nameStr);
+    this->name.writestring(nameStr);
     file.open(nameStr);
     if(file.is_open()) {
         file.seekg(0, std::ios::end);
@@ -175,7 +306,7 @@ void TXT::save(const char* fname)  const{                                       
     if(fname != NULL) file.open(fname);
     else {                                                                      // -If no name provided, the string inside attribute name will be used
         nameStr = new char[this->name.getSize()];
-        this->name.writeNameString(nameStr);
+        this->name.writestring(nameStr);
         file.open(nameStr);
     }
     if(file.is_open()) {

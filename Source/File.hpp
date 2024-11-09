@@ -3,9 +3,36 @@
 
 #ifndef _INCLUDED_FILE_
 #define _INCLUDED_FILE_
-#define NAME_MAX_LEN 256
+#define NAME_MAX_LEN 4096
 
 namespace File {
+
+/*
+Valid file name or path grammar
+
+'l' will denote letters in English alphabet, either lower case or upper case.
+	For convenience, we will admit '_' and '-' as letters
+'d' for digits 0, 1,..., 9
+Sld	string of letters and digits that always starts with a letter
+FN  File Name
+PT  Path
+Sled string of letters, digits and spaces. It never starts or ends with a space
+FNWE File Name With Spaces
+
+Sld	->	l·Sld	| l·d·Sld	|	l	|	l·d										// -Concatenation of letters and digits that always start with a letter
+Sled->	l·SPACES·Sled	| l·d·SPACES·Sled	|	l	|	l·d						// -Concatenation of letters and digits that always start with a letter
+
+FN	->	Sld·FN	|	l															// -File Name can not start with a digit; a single letter can be a File Name
+FN	->	.Sld·FN |	FN.Sld·FN	|	.Sld										// -Can not finish with a point nor have two consecutive points
+
+FN  ->  "FNWE"                                                                  // -If double quotes are presented at the beginning of the string, the grammar
+FNWE->	Sled·FN	|	l															//	accepts spaces in the middle of the string until the next double quote is found
+FNWE->	.Sled·FN|	FN.Sled·FN	|	.Sled
+
+FN  ->  FN/·Sld·FN   |   ../FN	|	/·Sld·FN									// -Considering file paths (Absolute Paths and Relative Paths) as file names
+
+Note: SPACES can be represented by single spaces, or a concatenation of spaces
+*/
 
 struct FileName {
 	enum Extension {
@@ -17,29 +44,39 @@ struct FileName {
 	};
 
 	private:
-	const char* supportedExtensions[3] = { "bmp", "txt", "key" };				// -Operations with the extension.
-	Extension extension = NoExtension;
-	unsigned nameSize	= 0;
-	char* 	 nameString = NULL;													// -File name.
+	static const char*	supportedExtensions[3];									// -Operations with the extension.
+	enum CharType {letter, digit, dot, underscore, hyphen, slash, space, singleQuote ,doubleQuote, notAllowed, zero};
 
-	Extension isSupportedExtension(const char*) const;								// -Compares its input with the strings in supportedExtension array
+	Extension	extension 			= NoExtension;
+	unsigned	size				= 0;
+	char* 		string 				= NULL;										// -File name.
+	mutable int	currentStringIndex	= 0;										// -We will use this to analyze and validate the 'string' atribute
+	bool		beginsDoubleQuote 	= false;									// -Starting with quotes will allow spaces in the middle of Sld strings, but will
+	bool		beginsSingleQuote 	= false;									//	require to finish the string with the corresponding quote
+	bool        allowSpaces         = false;									// -This will allow spaces in the middle of Sld strings
+
+	Extension isSupportedExtension(const char[]) const;							// -Compares its input with the strings in supportedExtension array
+	static CharType characterType(const char c);								// -True for the character that may appear in the file name, false in other case
+
+	bool Sld(const char str[])const;											// -The returned bool flags the founding of zero byte or the characters '\'' or '"'
+	void FN(const char str[]) const;
 
 	public:
 	FileName() {}
-	FileName(const char* _fileName, unsigned rightPadding = 0);
+	FileName(const char* _fileName, bool acceptSpaces = false);
 	FileName(const FileName& nm);
 	FileName& operator = (const FileName& nm);
 	~FileName() {
-		if(this->nameString != NULL) delete[] this->nameString;
-		this->nameString = NULL;
-		nameSize = 0;
+		if(this->string != NULL) delete[] this->string;
+		this->string = NULL;
+		size = 0;
 	}
-	void print(const char*const atBeginning = NULL, const char*const atEnd = NULL) const{ std::cout << atBeginning << this->nameString << atEnd; }
-	void println() const{ std::cout << this->nameString << '\n'; }
-	void writeNameString(char*const destiantion) const;
-	unsigned 	getSize() 	   const{ return nameSize;	}
+	void print(const char*const atBeginning = NULL, const char*const atEnd = NULL) const{ std::cout << atBeginning << this->string << atEnd; }
+	void println() const{ std::cout << this->string << '\n'; }
+	void writestring(char*const destiantion) const;
+	unsigned 	getSize() 	   const{ return size;	}
 	Extension 	getExtension() const{ return extension; }
-	FileName returnThisNewExtension(Extension newExt) const; 							// -Keeps same name, changes the extension. No range checking needed, constructor
+	FileName returnThisNewExtension(Extension newExt) const; 					// -Keeps same name, changes the extension. No range checking needed, constructor
 																				//  ensures enough space.
 };
 
