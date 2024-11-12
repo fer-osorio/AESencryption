@@ -1,5 +1,6 @@
 #include"File.hpp"
-#include <fstream>
+#include<fstream>
+#include<cstring>
 
 using namespace File;
 
@@ -32,15 +33,13 @@ FN  ->  FN/·Sld·FN   |   ../FN	|	/·Sld·FN									// -Considering file paths
 Note: SPACES can be represented by single spaces, or a concatenation of spaces
 */
 
-const char* FileName::supportedExtensions[3] = { "bmp", "txt", "key" };
-
 FileName::Extension FileName::isSupportedExtension(const char str[]) const{
     if(str == NULL || str[0] == 0) return FileName::NoExtension;
-    Extension temp[4] = {bmp, txt, key};
+    Extension temp[3] = {bmp, txt, aeskey};
     int i, j = 0;
-    for(i = 0; i < 3 && supportedExtensions[i][j] != 0; i++) {
-        for(j = 0; str[j] == supportedExtensions[i][j]; j++) {
-            if(supportedExtensions[i][j] == 0) return temp[i];
+    for(i = 0; i < this->extensionStringAmount && extensionString[i][j] != 0; i++) {
+        for(j = 0; str[j] == extensionString[i][j]; j++) {
+            if(extensionString[i][j] == 0) return temp[i];
         }
     }
     return Unrecognised;
@@ -206,44 +205,16 @@ FileName& FileName::operator = (const FileName& nm) {
 	return *this;
 }
 
-/*FileName FileName::returnThisNewExtension(Extension newExt) const{
-    //FileName r = FileName(this->string, 4);
-    int i = (int)r.size;
-    switch(newExt) {
-        case Unrecognised:                                                      // -Nothing to do. Returning a copy of *this.
-            break;
-        case NoExtension:                                                       // -Nothing to do. Returning a copy of *this.
-            break;
-        case bmp:                                                               // Adding extension.
-            r.string[i] = '.';
-            r.string[++i] = 'b';
-            r.string[++i] = 'm';
-            r.string[++i] = 'p';
-            r.string[++i] = 0;
-            r.size += 4;
-            r.extension = bmp;
-            break;
-        case txt:
-            r.string[i] = '.';
-            r.string[++i] = 't';
-            r.string[++i] = 'x';
-            r.string[++i] = 't';
-            r.string[++i] = 0;
-            r.size += 4;
-            r.extension = txt;
-            break;
-        case key:
-            r.string[i] = '.';
-            r.string[++i] = 'k';
-            r.string[++i] = 'e';
-            r.string[++i] = 'y';
-            r.string[++i] = 0;
-            r.size += 4;
-            r.extension = key;
-            break;
-    }
+FileName FileName::returnThisNewExtension(Extension newExt) const{
+    if(newExt == NoExtension || newExt == Unrecognised) return *this;           // -In this cases we return a copy of original extension
+    FileName r;
+    r.size = this->size + strlen(this->extensionString[newExt]);
+    r.string = new char[r.size];                                                // -Making room for new extension
+    strcpy(r.string, this->string);                                             // -Copying original file name
+    strcpy(&r.string[this->size], this->extensionString[newExt]);               // -Adding new extension
+    r.extension = newExt;
     return r;
-}*/
+}
 
 void FileName::writestring(char *const destiantion) const{ 					// -Assuming destination has enough space for the String
 	if(this->string == NULL) return;

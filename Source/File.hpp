@@ -35,16 +35,10 @@ Note: SPACES can be represented by single spaces, or a concatenation of spaces
 */
 
 struct FileName {
-	enum Extension {
-		NoExtension,															// -The name of the file has no extension.
-		Unrecognised,															// -Extension can't be handled.
-		bmp,																	// -Image with bmp format.
-		txt,																	// -Text file.
-		key																		// -Key generated for encryption method.
-	};
-
+	public: enum Extension { bmp, txt, aeskey, NoExtension, Unrecognised };
+	private:const char* extensionString[3] = { "bmp", "txt", "aeskey"};
+	private:const unsigned extensionStringAmount = sizeof(extensionString) / sizeof(extensionString)[0];
 	private:
-	static const char*	supportedExtensions[3];									// -Operations with the extension.
 	enum CharType {letter, digit, dot, underscore, hyphen, slash, space, singleQuote ,doubleQuote, notAllowed, zero};
 
 	Extension	extension 			= NoExtension;
@@ -59,7 +53,7 @@ struct FileName {
 	static CharType characterType(const char c);								// -True for the character that may appear in the file name, false in other case
 
 	bool Sld(const char str[])const;											// -The returned bool flags the founding of zero byte or the characters '\'' or '"'
-	void FN(const char str[]) const;
+	void FN (const char str[])const;
 
 	public:
 	FileName() {}
@@ -74,8 +68,8 @@ struct FileName {
 	void print(const char*const atBeginning = NULL, const char*const atEnd = NULL) const{ std::cout << atBeginning << this->string << atEnd; }
 	void println() const{ std::cout << this->string << '\n'; }
 	void writestring(char*const destiantion) const;
-	unsigned 	getSize() 	   const{ return size;	}
-	Extension 	getExtension() const{ return extension; }
+	unsigned  getSize()		const{ return size;	}
+	Extension getExtension()const{ return extension; }
 	FileName returnThisNewExtension(Extension newExt) const; 					// -Keeps same name, changes the extension. No range checking needed, constructor
 																				//  ensures enough space.
 };
