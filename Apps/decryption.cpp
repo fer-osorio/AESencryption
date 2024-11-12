@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
                 decrypt(txt, e);
                 std::cout << e << '\n';
                 break;
-            case File::FileName::key:
+            case File::FileName::aeskey:
                 break;
             case File::FileName::NoExtension:
                 break;
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
                     decrypt(txt, e);
                     std::cout << e << '\n';
                     break;
-                case File::FileName::key:
+                case File::FileName::aeskey:
                     break;
                 case File::FileName::NoExtension:
                 case File::FileName::Unrecognised:

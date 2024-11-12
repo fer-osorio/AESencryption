@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
                 e.saveKey(argv[1]);                                             // -We cant ensure the operation mode in key file is the same as the operation mode
                 std::cout << e << '\n';                                         //  used for encryption, so we need to update the key file.
                 break;
-            case File::FileName::key:
+            case File::FileName::aeskey:
                 break;
             case File::FileName::NoExtension:
                 break;
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
                             encrypt(txt, e);
                             std::cout << e << '\n';
                             break;
-                        case File::FileName::key:
+                        case File::FileName::aeskey:
                             break;
                         case File::FileName::NoExtension:
                         case File::FileName::Unrecognised:
