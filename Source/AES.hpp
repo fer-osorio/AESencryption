@@ -24,7 +24,7 @@ struct Key {
 	Length 	 lengthBits;							// -Length in bits.
 	unsigned lengthBytes;							// -Length in bytes.
 	OperationMode operation_mode;
-	bool notSetUpIV = true;							// -Tells if the initial vector is already initialized or not
+	mutable bool notSetUpIV = true;							// -Tells if the initial vector is already initialized or not
 	mutable char IV[AES_BLK_SZ] =  {0, 0, 0, 0,				// -Initial vector for the CBC operation mode
 					0, 0, 0, 0,				// -This default value (just zeros) is left
 					0, 0, 0, 0,				//  for the case in which we do not use CBC

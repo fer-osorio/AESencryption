@@ -195,15 +195,17 @@ Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), oper
                 else throw "Could not recognize operation mode...\n";
 
                 file.read((char*)&len, 2);                                      // -Reading key lengthBits
-                if(len == 128 || len == 192 || len == 256)
-                    this->lengthBits = (Length)len;
+                if(len == 128 || len == 192 || len == 256) this->lengthBits = (Length)len;
                 else throw "Key lengthBits not allowed...\n";
                 this->lengthBytes = (unsigned)len >> 3;                         // -lengthBytes = len / 8;
 
                 this->key = new char[this->lengthBytes];                        // -Reading key
                 file.read(this->key, this->lengthBytes);
 
-                if(this->operation_mode == CBC) file.read((char*)this->IV, AES_BLK_SZ); // -In CBC case, reading IV.
+                if(this->operation_mode == CBC) {
+                    file.read((char*)this->IV, AES_BLK_SZ);                     // -In CBC case, reading IV.
+                    this->notSetUpIV = false;
+                }
            } else {
                 throw "Not a valid AES key file...\n";
            }
@@ -264,6 +266,7 @@ std::ostream& AES::operator << (std::ostream& ost, Key k) {
 
 void Key::set_IV(const char source[AES_BLK_SZ]) const{
     for(int i = 0; i < AES_BLK_SZ; i++) this->IV[i] = source[i];
+    this->notSetUpIV = false;
 }
 
 void Key::save(const char* const fname) const {
@@ -313,6 +316,12 @@ Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.getLengthBytes() >> 2), Nr(Nk
     char* _key = new char[ak.getLengthBytes()];
     ak.write_Key(_key);
     this->create_KeyExpansion(_key);
+    if(this->key.getOperationMode() == Key::CBC)
+        if(this->key.IVisNotSetUp()) {                                          // -In case of CBC, setting initial vector.
+            char IVsource[AES_BLK_SZ];
+            this->setAndWrite_IV(IVsource);
+            this->key.set_IV(IVsource);
+        }
     delete[] _key;
 }
 
@@ -512,10 +521,6 @@ void Cipher::encryptCBC(char*const data, unsigned size) const{
     int numofBlocks = (int)size >> 4;                                           //  numofBlocks = size / 16.
     int rem = (int)size & 15, i;                                                // -Bytes remaining rem = size % 16
 
-    if(this->key.IVisNotSetUp()) {                                              // -Setting initial vector.
-        this->setAndWrite_IV(IVsource);
-        this->key.set_IV(IVsource);
-    }
     XORblocks(currentDataBlock, IVsource, currentDataBlock);                  // -Encryption of the first block.
     encryptBlock(currentDataBlock);
 
