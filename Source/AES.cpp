@@ -204,7 +204,7 @@ Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), oper
 
                 if(this->operation_mode == CBC) {
                     file.read((char*)this->IV, AES_BLK_SZ);                     // -In CBC case, reading IV.
-                    this->notSetUpIV = false;
+                    this->notInitializedIV = false;
                 }
            } else {
                 throw "Not a valid AES key file...\n";
@@ -265,8 +265,8 @@ std::ostream& AES::operator << (std::ostream& ost, Key k) {
 }
 
 void Key::set_IV(const char source[AES_BLK_SZ]) const{
-    for(int i = 0; i < AES_BLK_SZ; i++) this->IV[i] = source[i];
-    this->notSetUpIV = false;
+    if(this->notInitializedIV) for(int i = 0; i < AES_BLK_SZ; i++) this->IV[i] = source[i];
+    this->notInitializedIV = false;
 }
 
 void Key::save(const char* const fname) const {
@@ -317,7 +317,7 @@ Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.getLengthBytes() >> 2), Nr(Nk
     ak.write_Key(_key);
     this->create_KeyExpansion(_key);
     if(this->key.getOperationMode() == Key::CBC)
-        if(this->key.IVisNotSetUp()) {                                          // -In case of CBC, setting initial vector.
+        if(this->key.IVisNotInitialized()) {                                          // -In case of CBC, setting initial vector.
             char IVsource[AES_BLK_SZ];
             this->setAndWrite_IV(IVsource);
             this->key.set_IV(IVsource);
