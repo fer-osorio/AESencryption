@@ -51,49 +51,6 @@ union intToChar {
     int  int_;                                                                  // Useful when casting from a 32 bits integer to an array of four chars
     char chars[4];
 };
-union uint64_uint32 {                                                           // -Useful for a casting from a 64 bits unsigned integer to an array of two 32 bits
-    uint64_t uint64;                                                            //  integer
-    unsigned uint32[2];
-};
-union _16uint32_64uchar {                                                       // -Representing 256 bits in an union of 8 unsigned int and 32 char
-    unsigned uint32[16];
-    uint8_t  chars[64];
-};
-struct UnsignedInt256bits {
-    union { uint8_t chars[32]; unsigned uint32[8]; } NumberPlaces = {0,0,0,0,0,0,0,0}; // -256 bits in a anonymous union of 8 unsigned int and 32 char
-
-    UnsignedInt256bits() {}
-    UnsignedInt256bits(const char*const data) { for(int i = 0; i < 32; i++) NumberPlaces.chars[i] = (uint8_t)data[i]; }
-
-    unsigned operator [] (int i) const {
-        if(i < 0 || i >= 8) i &= 7;                                             // -i&7 is equivalent to i%8
-        return this->NumberPlaces.uint32[i];
-    }
-    void reWriteLeastSignificantBytes(const char*const array, unsigned arraySize = 32) {    // -Rewrites the least significant bytes of the NumberPlaces union.
-        unsigned i;                                                             // -Writing the array from left to right, those bytes would be the left ones.
-        if(arraySize > 32) arraySize &= 31;                                     // -arraySize % 32
-        for(i = 0; i < arraySize; i++)
-            this->NumberPlaces.chars[i] = (uint8_t)array[i];                    // -The rest of the bytes (i >= arraySize) are left untouched
-    }
-};
-
-_16uint32_64uchar operator * (const UnsignedInt256bits& a, const UnsignedInt256bits& b) { // -Multiplying two integers of 256 bits each one
-    int i, j;
-    unsigned carriage = 0;
-    uint64_uint32 buff = {0};
-    _16uint32_64uchar result = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};               // -The result will need 512 bits (for arbitrary arguments)
-
-    for(i = 0; i < 8 ; i++) {                                                   // -Implementing pencil and paper algorithm
-        for(j = 0; j < 8; j++) {
-            buff.uint64 = (uint64_t)a[i] * b[j] + result.uint32[i+j] + carriage;
-            result.uint32[i+j] = buff.uint32[0];                                // -Equivalent to obtaining the modulus 2^32
-            carriage = buff.uint32[1];                                          // -Equivalent to obtaining the quotient 2^32
-        }
-        result.uint32[i+j] = carriage;
-        carriage = 0;
-    }
-    return result;
-}
 
 using namespace AES;
 
@@ -264,7 +221,7 @@ std::ostream& AES::operator << (std::ostream& ost, Key k) {
     return ost;
 }
 
-void Key::set_IV(const char source[AES_BLK_SZ]) const{
+void Key::set_IV(const char source[AES_BLK_SZ]) {
     if(this->notInitializedIV) for(int i = 0; i < AES_BLK_SZ; i++) this->IV[i] = source[i];
     this->notInitializedIV = false;
 }

@@ -24,11 +24,11 @@ struct Key {
 	Length 	 lengthBits;							// -Length in bits.
 	unsigned lengthBytes;							// -Length in bytes.
 	OperationMode operation_mode;
-	mutable bool notInitializedIV = true;							// -Tells if the initial vector is already initialized or not
-	mutable char IV[AES_BLK_SZ] =  {0, 0, 0, 0,				// -Initial vector for the CBC operation mode
-					0, 0, 0, 0,				// -This default value (just zeros) is left
-					0, 0, 0, 0,				//  for the case in which we do not use CBC
-				    	0, 0, 0, 0};
+	bool notInitializedIV = true;						// -Tells if the initial vector is already initialized or not
+	char IV[AES_BLK_SZ] =  {0, 0, 0, 0,					// -Initial vector for the CBC operation mode
+				0, 0, 0, 0,					// -This default value (just zeros) is left
+				0, 0, 0, 0,					//  for the case in which we do not use CBC
+			    	0, 0, 0, 0};
 	public:
 	Key();									// -Assigns lengthBits of 256 bits and zero value for each byte of array char* key
 	Key(const char* const _key, Length, OperationMode);
@@ -42,12 +42,13 @@ struct Key {
 
 	OperationMode getOperationMode() const{ return this->operation_mode; }
 	unsigned getLengthBytes() const {return this->lengthBytes;}
+	bool KeyIsNULL() {return this->key == NULL;}
 	void save(const char* const) const;					// -Saving information in a binary file.
 
 	private:
 	friend Cipher;
 
-	void set_IV(const char source[AES_BLK_SZ]) const;			// -Sets initial vector by copying the array passed as argument
+	void set_IV(const char source[AES_BLK_SZ]);				// -Sets initial vector by copying the array passed as argument
 	bool IVisNotInitialized() const { return this->notInitializedIV; }
 	void write_IV(char*const destination) const {				// -Writes IV in destination
 		for(int i = 0; i < AES_BLK_SZ; i++) destination[i] = this->IV[i]; // -Warning: We are supposing we have at least 16 bytes of space in destination
