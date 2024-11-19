@@ -9,7 +9,7 @@ Use ``make`` commands to build the executables.
 ### Passing arguments to the executables.
 We can pass arguments to the executables to encrypt/decrypt a single file. Set as first argument the name/path of the encryption
 key we want to use followed by the files (currently supported) that are meant to be encrypted as the following arguments, this
-will encrypt/decrypt the files using the key regferenced in the first arguemt.
+will encrypt/decrypt the files using the key referenced in the first argument.
 
 **Example:**
 
