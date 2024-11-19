@@ -1,6 +1,6 @@
 #include<fstream>
-#include<cstdint>
 #include<cstring>
+#include<exception>
 #include"AES.hpp"
 #include"OperationsGF256.hpp"
 
@@ -58,38 +58,16 @@ using namespace AES;
 
 static void operationModeToString(Key::OperationMode opm, char*const destination) {  // -Assuming destination is a pointer to an array of at least four elements.
     switch(opm) {
-        case Key::ECB:
-            destination[0] = 'E';
-            destination[1] = 'C';
-            destination[2] = 'B';
-            destination[3] =  0 ;
+        case Key::ECB: strcpy(destination, "ECB");
             break;
-        case Key::CBC:
-            destination[0] = 'C';
-            destination[1] = 'B';
-            destination[2] = 'C';
-            destination[3] =  0 ;
+        case Key::CBC: strcpy(destination, "CBC");
             break;
-        case Key::CFB:
-            destination[0] = 'C';
-            destination[1] = 'F';
-            destination[2] = 'B';
-            destination[3] =  0 ;
+        case Key::CFB: strcpy(destination, "CFB");
             break;
-        case Key::OFB:
-            destination[0] = 'O';
-            destination[1] = 'F';
-            destination[2] = 'B';
-            destination[3] =  0 ;
+        case Key::OFB: strcpy(destination, "OFB");
             break;
-        case Key::CTR:
-            destination[0] = 'C';
-            destination[1] = 'T';
-            destination[2] = 'R';
-            destination[3] =  0 ;
+        case Key::CTR: strcpy(destination, "CTR");
             break;
-        default:
-            std::cout << "Could not identify operation mode \n\n";
     }
 }
 
@@ -131,7 +109,7 @@ Key::Key(const Key& ak):lengthBits(ak.lengthBits), lengthBytes(ak.lengthBytes), 
 
 Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), operation_mode(ECB) { // -Building from .key file
     char AESKEY[6];
-    char opMode[3];
+    char opMode[4];
     short len;
     std::ifstream file;
     file.open(fname, std::ios::binary);
@@ -139,6 +117,7 @@ Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), oper
         file.read((char*)AESKEY, 6);                                            // -Determining if file is a .key file
         if(AESKEY[0] == 'A' || AESKEY[1] == 'E' || AESKEY[2] == 'S' || AESKEY[3] == 'K' || AESKEY[4] == 'E' || AESKEY[5] == 'Y') {
                 file.read((char*)opMode, 3);                                    // -Determining operation mode
+                opMode[3] = 0;
                 if(opMode[0]=='E' && opMode[1]=='C' && opMode[2]=='B')
                     this->operation_mode = ECB;
                 else if(opMode[0]=='C' && opMode[1]=='B' && opMode[2]=='C')
@@ -149,11 +128,17 @@ Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), oper
                     this->operation_mode = OFB;
                 else if(opMode[0]=='C' && opMode[1]=='T' && opMode[2]=='R')
                     this->operation_mode = CTR;
-                else throw "Could not recognize operation mode...\n";
+                else {
+                    std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname):" << opMode << ", not a recognized operation mode.\n";
+                    throw std::runtime_error("Not a recognized operation mode");
+                }
 
                 file.read((char*)&len, 2);                                      // -Reading key lengthBits
                 if(len == 128 || len == 192 || len == 256) this->lengthBits = (Length)len;
-                else throw "Key lengthBits not allowed...\n";
+                else {
+                    std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname):" << len << " is not a valid length in bits for key.\n";
+                    throw std::runtime_error("Key length not allowed.");
+                }
                 this->lengthBytes = (unsigned)len >> 3;                         // -lengthBytes = len / 8;
 
                 this->key = new char[this->lengthBytes];                        // -Reading key
@@ -164,10 +149,12 @@ Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), oper
                     this->notInitializedIV = false;
                 }
            } else {
-                throw "Not a valid AES key file...\n";
+                std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname): String " << fname << " does not represent a valid AES key file.\n";
+                throw std::runtime_error("Not a valid AES key file.");
            }
     } else {
-        throw "Could not open the file...\n";
+        std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname): Failed to open " << fname << " file.\n";
+        throw std::runtime_error("Could not open file.");
     }
 }
 
@@ -246,7 +233,8 @@ void Key::save(const char* const fname) const {
             op_mode = "CTR";
             break;
         default:
-            throw "Could not recognize operation mode...\n";
+            op_mode = "ECB";
+            break;
     }
     std::ofstream file;
     file.open(fname, std::ios::binary);
@@ -257,7 +245,8 @@ void Key::save(const char* const fname) const {
         file.write(this->key, this->lengthBytes);                               // -Key
         if(this->operation_mode == CBC) file.write(this->IV, AES_BLK_SZ); // -If CBC, writes initial vector
     } else {
-        throw "File could not be written.\n";
+        std::cerr << "In file Source/AES.cpp, function void Key::save(const char* const fname): Failed to write " << fname << " file.\n";
+        throw std::runtime_error("File could not be written.");
     }
 }
 
@@ -422,7 +411,8 @@ void Cipher::printWord(const char word[4]) {
 }
 
 void Cipher::encryptECB(char*const data, unsigned size) const{
-    if(size == 0) return;                                                       // Exception here.
+    if(size == 0)    return;
+    if(data == NULL) return;
 
     char* currentDataBlock = data;
     int numofBlocks = int(size >> 4);                                           //  numofBlocks = size / 16.
@@ -442,7 +432,8 @@ void Cipher::encryptECB(char*const data, unsigned size) const{
 }
 
 void Cipher::decryptECB(char *const data, unsigned int size) const{
-    if(size == 0) return;                                                       // Exception here.
+    if(size == 0)    return;
+    if(data == NULL) return;
 
     char* currentDataBlock = data;
     int numofBlocks = int(size >> 4);                                           //  numofBlocks = size / 16.
@@ -471,14 +462,16 @@ void Cipher::setAndWrite_IV(char destination[AES_BLK_SZ]) const{                
 }
 
 void Cipher::encryptCBC(char*const data, unsigned size) const{
-    if(size == 0) return;                                                       // Exception here.
+    if(size == 0)    return;
+    if(data == NULL) return;
 
     char *previousBlk, *currentDataBlock = data;
     char IVsource[AES_BLK_SZ];
     int numofBlocks = (int)size >> 4;                                           //  numofBlocks = size / 16.
     int rem = (int)size & 15, i;                                                // -Bytes remaining rem = size % 16
 
-    XORblocks(currentDataBlock, IVsource, currentDataBlock);                  // -Encryption of the first block.
+    this->key.write_IV(IVsource);
+    XORblocks(currentDataBlock, IVsource, currentDataBlock);                    // -Encryption of the first block.
     encryptBlock(currentDataBlock);
 
     for(i = 1; i < numofBlocks; i++) {                                          // -Encryption of the rest of the blocks.
@@ -497,7 +490,8 @@ void Cipher::encryptCBC(char*const data, unsigned size) const{
 
 
 void Cipher::decryptCBC(char*const data, unsigned size) const{
-    if(size == 0) return;                                                       // Exception here.
+    if(size == 0)    return;
+    if(data == NULL) return;
 
     char *currentDataBlock = data, previousBlk[AES_BLK_SZ], cipherCopy[AES_BLK_SZ];
     int numofBlocks = (int)size >> 4;                                           // -numofBlocks = size / 16
@@ -532,6 +526,8 @@ void Cipher::decryptCBC(char*const data, unsigned size) const{
 }
 
 void Cipher::encrypt(char*const data, unsigned size) const{
+    if(size == 0)    return;
+    if(data == NULL) return;
     Key::OperationMode opMode = this->key.getOperationMode();
     switch(opMode) {
         case Key::ECB:
@@ -550,6 +546,8 @@ void Cipher::encrypt(char*const data, unsigned size) const{
 }
 
 void Cipher::decrypt(char*const data, unsigned size) const{
+    if(size == 0)    return;
+    if(data == NULL) return;
     Key::OperationMode opMode = this->key.getOperationMode();
     switch(opMode) {
         case Key::ECB:

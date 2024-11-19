@@ -1,6 +1,17 @@
 #include"File.hpp"
 #include<fstream>
 #include<cstring>
+#include<exception>
+
+static void throwMessage_cerr(const char callerFunction[], const char message[]) {
+    if(callerFunction == NULL) return;
+    std::cerr << "In file Source/File.cpp, function " << callerFunction << ": " << message << '\n';
+}
+
+static void rethrowMessageFor_cerr(const char callerFunction[], const char message[] = "") {
+    if(callerFunction == NULL) return;
+    std::cerr << "Called from: File Source/File.cpp, function " << callerFunction << " ..."<< message << '\n';
+}
 
 using namespace File;
 
@@ -36,7 +47,7 @@ Note: SPACES can be represented by single spaces, or a concatenation of spaces
 FileName::Extension FileName::isSupportedExtension(const char str[]) const{
     if(str == NULL || str[0] == 0) return FileName::NoExtension;
     Extension temp[3] = {bmp, txt, aeskey};
-    int i, j = 0;
+    unsigned i, j = 0;
     for(i = 0; i < this->extensionStringAmount && extensionString[i][j] != 0; i++) {
         for(j = 0; str[j] == extensionString[i][j]; j++) {
             if(extensionString[i][j] == 0) return temp[i];
@@ -78,10 +89,14 @@ static bool isLetterOrDigit(const char c) {
 }
 
 bool FileName::Sld(const char str[]) const{
+    const char thisFuncName[] = "bool FileName::Sld(const char str[])";         // -Useful at the moment of describing exceptions
     if(!isLetter(str[this->currentStringIndex])) {                              // -This ensures we have a letter at the beginning of the string
-        if(isDigit(str[this->currentStringIndex]))
-            throw "Syntax Error: File name can not start with a digit...\n";
-        throw "Syntax Error: Expected an character from English alphabet...\n";
+        if(isDigit(str[this->currentStringIndex])) {
+            throwMessage_cerr(thisFuncName, "Syntax Error: File name can not start with a digit.");
+            throw std::runtime_error("File Name Syntax Error: Name can not start with a digit.");
+        }
+        throwMessage_cerr(thisFuncName, "Syntax Error: Expected a character from English alphabet.");
+        throw std::runtime_error("File Name Syntax Error: Expected a character from English alphabet.");
     }
     int i = 0;
     if(this->allowSpaces){                                                      // -If file name starts with single/double quote or the constructor sets as so
@@ -92,16 +107,28 @@ bool FileName::Sld(const char str[]) const{
     this->currentStringIndex = i;
 
     if(str[this->currentStringIndex] == 0) {
-        if(this->beginsSingleQuote) throw "Syntax Error: String started with single quote, then it should finish with double quotes\n";
-        if(this->beginsDoubleQuote) throw "Syntax Error: String started with double quote, then it should finish with double quotes\n";
+        if(this->beginsSingleQuote) {
+            throwMessage_cerr(thisFuncName, "Syntax Error: String started with single quote, then it should finish with single quotes.");
+            throw std::runtime_error("File Name Syntax Error: Started with single quote, then it should finish with single quotes.");
+        }
+        if(this->beginsDoubleQuote) {
+        throwMessage_cerr(thisFuncName, "Syntax Error: String started with double quote, then it should finish with double quotes.");
+        throw std::runtime_error("File Name Syntax Error: Started with double quote, then it should finish with double quotes.");
+        }
         return true;
     }
     if(this->beginsSingleQuote && str[this->currentStringIndex] == '\'') { // -Starting with single quote, finishing with single quote
-        if(str[this->currentStringIndex-1] == ' ') throw "Syntax Error: File Name/Path can not finish with spaces...\n";
+        if(str[this->currentStringIndex-1] == ' ') {
+            throwMessage_cerr(thisFuncName,"Syntax Error: File Name/Path can not finish with spaces.");
+            throw std::runtime_error("File Name Syntax Error: Name/Path can not finish with spaces.");
+        }
         return true;
     }
     if(this->beginsDoubleQuote && str[this->currentStringIndex] == '"' ) { // -Starting with double quote, finishing with double quote
-        if(str[this->currentStringIndex-1] == ' ') throw "Syntax Error: File Name/Path can not finish with spaces...\n";
+        if(str[this->currentStringIndex-1] == ' ') {
+            throwMessage_cerr(thisFuncName,"Syntax Error: File Name/Path can not finish with spaces.");
+            throw std::runtime_error("File Name Syntax Error: Name/Path can not finish with spaces.");
+        }
         return true;
     }
     if(str[this->currentStringIndex] == ' ') return true;                       // -At this point, a space is a proper ending for the input string
@@ -109,6 +136,7 @@ bool FileName::Sld(const char str[]) const{
 }
 
 void FileName::FN(const char str[]) const{
+    const char thisFuncName[] = "void FileName::FN(const char str[])";
     CharType ct = FileName::characterType(str[this->currentStringIndex]);
     switch(ct) {
         case letter:                                                            // -We can interpret this lines of codes as: A file name con start with a letter,
@@ -116,46 +144,70 @@ void FileName::FN(const char str[]) const{
         case hyphen:                                                            //  ...
         case slash:                                                             // -Allowing slash for file paths
             try { if(this->Sld(str)) return; }                                  // -This lines can be interpreted as: Read (always starting with a letter) letters,
-            catch(const char[]) { throw; }                                      //  digits and (if allowed) spaces; when a proper ending character is found
-            break;                                                              //  (0, '\'', '"',' ') then return, otherwise continue reading
+            catch(std::runtime_error&) {                                         //  digits and (if allowed) spaces; when a proper ending character is found
+                rethrowMessageFor_cerr(thisFuncName);                           //  (0, '\'', '"',' ') then return, otherwise continue reading
+                throw;
+            }
+            break;
         case dot:                                                               // -Cases for dot
             if(str[++this->currentStringIndex] == '.') {                        // -The string "../" is allowed as a sub-string so we can use relative paths
                 if(str[++this->currentStringIndex] == '/') {                    //  ...
-                    try { this->FN(str); }                                      //  ...
-                    catch(const char[]) { throw; }                              //  ...
-                } else throw "Syntax Error: Expected '/' character...\n";
+                    try { this->FN(str); }
+                    catch(std::runtime_error&) {
+                        rethrowMessageFor_cerr(thisFuncName);
+                        throw;
+                    }
+                } else {
+                    throwMessage_cerr(thisFuncName, "Syntax Error: Expected '/' character.");
+                    throw std::runtime_error("File Name Syntax Error: Expected '/' character.");
+                }
             } else {
                 try { if(this->Sld(str)) return; }                              // -This lines can be interpreted as: Read (always starting with a letter) letters,
-                catch(const char[]) { throw; }                                  //  digits and (if allowed) spaces; when a proper ending character is found
+                catch(std::runtime_error&) {                                     //  digits and (if allowed) spaces; when a proper ending character is found
+                    rethrowMessageFor_cerr(thisFuncName);
+                    throw;
+                }
             }
         break;
         case digit:
-            throw "Syntax Error: File name can not start with a digit...\n";
+            throwMessage_cerr(thisFuncName, "Syntax Error: File name can not start with a digit.");
+            throw std::runtime_error("File Name Syntax Error: File name can not start with a digit.");
         case space:
-            throw "Syntax Error: Not expecting a space here...\n";
+            throwMessage_cerr(thisFuncName, "Syntax Error: Not Expecting a space here.");
+            throw std::runtime_error("File Name Syntax Error: Not expecting a space here.");
         case singleQuote:
-            throw "Syntax Error: Not expecting a single quote here...\n";
+            throwMessage_cerr(thisFuncName, "Syntax Error: Not Expecting a single quote here.");
+            throw std::runtime_error("File Name Syntax Error: Not expecting a single quote here.");
         case doubleQuote:
-            throw "Syntax Error: Not expecting a double quote here...\n";
+            throwMessage_cerr(thisFuncName, "Syntax Error: Not expecting a double quote here.");
+            throw std::runtime_error("File Name Syntax Error: Not expecting a double quote here.");
         case notAllowed:
-            throw "Syntax Error: Unexpected character/symbol...\n";
+            throwMessage_cerr(thisFuncName, "Syntax Error: Unexpected character/symbol.");
+            throw std::runtime_error("File Name Syntax Error: Unexpected character/symbol.");
         case zero:
-            throw "Syntax Error: Unexpected end of string...\n";
+            throwMessage_cerr(thisFuncName, "Syntax Error: Unexpected end of string.");
+            throw std::runtime_error("File Name Syntax Error: Unexpected end of string.");
     }
     try { this->FN(str); }
-    catch(const char[]) { throw; }
+    catch(std::runtime_error&) {
+        rethrowMessageFor_cerr(thisFuncName);
+        throw;
+    }
 }
 
 FileName::FileName(const char* fileName_, bool acceptSpaces): allowSpaces(acceptSpaces) {
+    const char thisFuncName[] = "FileName::FileName(const char* fileName_, bool acceptSpaces)";
     int i = 0, j = 0, markBeginning = 0, markEnd = 0;                           // -Markers for the beginning and end of input string
     int pointIndex = -1;
 
-    if(fileName_ == NULL)
-        throw   "In Source/File.cpp,function FileName::FileName(const char* fileName_, unsigned rightPadding).\n"
-                "Could not build 'FileName' object from null fileName_ input.\n";
-    if(fileName_[0] == 0)
-        throw   "In Source/File.cpp,function FileName::FileName(const char* fileName_, unsigned rightPadding).\n"
-                "Could not build 'FileName' object from trivial string (fileName_[0] == 0).\n";
+    if(fileName_ == NULL) {
+        throwMessage_cerr(thisFuncName, "Could not build 'FileName' object from null const char* input.");
+        throw std::invalid_argument("Could not build 'FileName' object from null const char* input");
+    }
+    if(fileName_[0] == 0) {
+        throwMessage_cerr(thisFuncName, "Could not build 'FileName' object from trivial string \"\"");
+        throw  std::invalid_argument("Could not build 'FileName' object from trivial string \"\"");
+    }
 
     while(fileName_[i] == ' ' || fileName_[i] == '\t') i++;                     // -Ignoring the spaces and tabs that could be at the beginning of the input
 
@@ -167,23 +219,22 @@ FileName::FileName(const char* fileName_, bool acceptSpaces): allowSpaces(accept
     }
     this->currentStringIndex = markBeginning = i;                               // -Marking the beginning of the file name inside the string
 
-    try{
+    try{                                                                        // -Validating passed string as a valid file name
         this->FN(fileName_);
-    } catch(const char exp[]) {
-        std::cout << exp;
-        throw "In file Source/File.cpp, function FileName::FileName(const char* fileName_, unsigned rightPadding)\n";
+    } catch(std::runtime_error&) {
+        rethrowMessageFor_cerr(thisFuncName);
+        throw ;
     }
     markEnd = this->currentStringIndex;
     this->size = unsigned(markEnd - markBeginning);
     this->string = new char[this->size + 1];
 
-	for(i = markBeginning, j = 0; i < markEnd; i++, j++) this->string[j] = fileName_[i];
+	for(i = markBeginning, j = 0; i < markEnd; i++, j++) this->string[j] = fileName_[i]; // -Copying the part of the string that represents the files name
 	this->string[j] = 0;
 	while(j >= 0 && this->string[j] != '.') j--;
 	pointIndex = j;
 
-	if(pointIndex >= 0 && pointIndex <= NAME_MAX_LEN - 3)
-	    extension = isSupportedExtension(&fileName_[pointIndex + 1]);
+	if(pointIndex >= 0 && pointIndex <= NAME_MAX_LEN - 3) extension = isSupportedExtension(&fileName_[pointIndex + 1]); // -Identifying extension
 	else extension = NoExtension;
 }
 
@@ -239,10 +290,8 @@ TXT::TXT(const char* fname): name(fname) { // -Building from file.
         file.read(this->content, fileSize);
         file.close();
     } else {
-        char errmsg[] = "\nIn TXT.cpp file, TXT::TXT(const char* fname): "
-                        "Could not open file ";
-        std::cout << errmsg << fname << '\n';
-        throw errmsg;
+        throwMessage_cerr("TXT::TXT(const char* fname)", "Could not open file.");
+        throw std::runtime_error("Could not open file.");
     }
 }
 
@@ -260,8 +309,8 @@ TXT::TXT(FileName& fname): name(fname) {
         file.read(this->content, fileSize);
         file.close();
     } else {
-        if(nameStr != NULL) delete[] nameStr;
-        throw "\nIn Source/File.cpp, function TXT::TXT(FileName& fname): name(fname). Could not open file...\n";
+        throwMessage_cerr("TXT::TXT(FileName& fname)", "Could not open file.");
+        throw std::runtime_error("Could not open file.");
     }
     if(nameStr != NULL) delete[] nameStr;
 }
@@ -285,7 +334,8 @@ void TXT::save(const char* fname)  const{                                       
         file.close();
     } else {
         if(nameStr != NULL) delete[] nameStr;
-        throw "File could not be written.";
+        throwMessage_cerr("void TXT::save(const char* fname)", "File could not be written.");
+        throw std::runtime_error("File could not be written.");
     }
     if(nameStr != NULL) delete[] nameStr;
 }
@@ -308,6 +358,7 @@ Bitmap::Bitmap(const char* fname) {
     std::ifstream file;
     file.open(fname, std::ios::binary);
     int i, j, sz = 0;
+    const char thisFuncName[] = "Bitmap::Bitmap(const char* fname)";
     if(file.is_open()) {
         file.read((char*)fh.bm, 2);
         if(fh.bm[0] == 'B' && fh.bm[1] == 'M') {
@@ -343,10 +394,12 @@ Bitmap::Bitmap(const char* fname) {
             file.close();
         } else {
             file.close();
-            throw "Not a valid bitmap file.";
+            throwMessage_cerr(thisFuncName, "Not a valid bitmap file.");
+            throw std::runtime_error("Not a valid bitmap file.");
         }
     } else {
-        throw "File could not be opened/created.";
+        throwMessage_cerr(thisFuncName, "File could not be opened.");
+        throw std::runtime_error("File could not be opened.");
     }
 }
 
@@ -382,6 +435,7 @@ Bitmap::~Bitmap() {
 void Bitmap::save(const char *fname) const{
     std::ofstream file;
     file.open(fname, std::ios::binary);
+    const char thisFuncName[] = "void Bitmap::save(const char *fname)";
     if(file.is_open()) {
         if(fh.bm[0] == 'B' && fh.bm[1] == 'M') {
             file.write((char*)fh.bm, 2);                                        // -File Header.
@@ -405,10 +459,12 @@ void Bitmap::save(const char *fname) const{
             file.close();
         } else {
             file.close();
-            throw "Not a valid bitmap file.";
+            throwMessage_cerr(thisFuncName, "Not a valid bitmap file");
+            throw std::runtime_error("Not a valid bitmap file.");
         }
     } else {
-        throw "File could not be written.";
+        throwMessage_cerr(thisFuncName, "File could not be written");
+        throw std::runtime_error("File could not be written.");
     }
 }
 
