@@ -40,3 +40,4 @@ Testing*
 
 # Cryptographic keys
 *.key
+*.aeskey
