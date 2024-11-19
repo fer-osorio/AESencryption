@@ -6,8 +6,10 @@ Use ``make`` commands to build the executables.
 2. ``make AESencryption.exe`` to build executable for decryption.
 3. ``make`` to build both.
 
-### Passing arguments to the executable.
-We can pass arguments to the executables to encrypt/decrypt a single file. Set as first argument the name/path of the encryption key we want to use followed by the fiele (.bmp or .txt) we want to encrypt as second argument, this will encrypt/decrypt your file passed as second argument using the key regferenced in the first arguemt.
+### Passing arguments to the executables.
+We can pass arguments to the executables to encrypt/decrypt a single file. Set as first argument the name/path of the encryption
+key we want to use followed by the files (currently supported) that are meant to be encrypted as the following arguments, this
+will encrypt/decrypt the files using the key regferenced in the first arguemt.
 
 **Example:**
 
