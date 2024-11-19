@@ -6,6 +6,23 @@
 
 /************************************* Default values for substitution boxes. This are the values showed in the standard ******************************************/
 
+
+static const char a[4] 	  = {0x02, 0x03, 0x01, 0x01};				            // -For MixColumns.
+static const char aInv[4] = {0x0E, 0x0B, 0x0D, 0x09};				            // -For InvMixColumns.
+
+static const char Rcon[10][4] = {						                        // -Notice that the value of the left most char in polynomial form is 2^i.
+	{0x01, 0x00, 0x00, 0x00},
+  	{0x02, 0x00, 0x00, 0x00},
+	{0x04, 0x00, 0x00, 0x00},
+	{0x08, 0x00, 0x00, 0x00},
+	{0x10, 0x00, 0x00, 0x00},
+	{0x20, 0x00, 0x00, 0x00},
+	{0x40, 0x00, 0x00, 0x00},
+	{(char)0x80, 0x00, 0x00, 0x00},
+	{0x1B, 0x00, 0x00, 0x00},
+  	{0x36, 0x00, 0x00, 0x00}
+};
+
 static const uint8_t SBox[256] = {
 	0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
 	0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
@@ -104,7 +121,10 @@ Key::Key(const Key& ak):lengthBits(ak.lengthBits), lengthBytes(ak.lengthBytes), 
     unsigned i;
     this->key = new char[ak.lengthBytes];
     for(i = 0; i < ak.lengthBytes; i++) this->key[i] = ak.key[i];               // -Supposing Cipher object is well constructed, this is, ak.key != NULL
-    if(ak.operation_mode == CBC) for(i=0; i < AES_BLK_SZ; i++) this->IV[i]=ak.IV[i];// -Without CBC, copying IV is pointless.
+    if(ak.operation_mode == CBC) {                                              // -Without CBC, copying IV is pointless.
+        if((this->initializedIV = ak.initializedIV) == true)                    // -Copying and checking argument inside the 'if'
+            for(i = 0; i < AES_BLK_SZ; i++) this->IV[i] = ak.IV[i];
+    }
 }
 
 Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), operation_mode(ECB) { // -Building from .key file
@@ -146,7 +166,7 @@ Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), oper
 
                 if(this->operation_mode == CBC) {
                     file.read((char*)this->IV, AES_BLK_SZ);                     // -In CBC case, reading IV.
-                    this->notInitializedIV = false;
+                    this->initializedIV = true;
                 }
            } else {
                 std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname): String " << fname << " does not represent a valid AES key file.\n";
@@ -175,7 +195,8 @@ Key& Key::operator = (const Key& k) {
         for(i = 0; i < k.lengthBytes; i++) this->key[i] = k.key[i];
         this->operation_mode = k.operation_mode;
         if(k.operation_mode == CBC)                                             // -Without CBC, copying IV is pointless.
-            for(i = 0; i < AES_BLK_SZ; i++) this->IV[i] = k.IV[i];
+            if((this->initializedIV = k.initializedIV) == true)
+                for(i = 0; i < AES_BLK_SZ; i++) this->IV[i] = k.IV[i];
     }
     return *this;
 }
@@ -209,8 +230,8 @@ std::ostream& AES::operator << (std::ostream& ost, Key k) {
 }
 
 void Key::set_IV(const char source[AES_BLK_SZ]) {
-    if(this->notInitializedIV) for(int i = 0; i < AES_BLK_SZ; i++) this->IV[i] = source[i];
-    this->notInitializedIV = false;
+    if(!this->initializedIV) for(int i = 0; i < AES_BLK_SZ; i++) this->IV[i] = source[i];
+    this->initializedIV = true;
 }
 
 void Key::save(const char* const fname) const {
@@ -243,7 +264,7 @@ void Key::save(const char* const fname) const {
         file.write(op_mode, 3);                                                 // -Operation mode
         file.write((char*)&this->lengthBits, 2);                                // -Key lengthBits in bits
         file.write(this->key, this->lengthBytes);                               // -Key
-        if(this->operation_mode == CBC) file.write(this->IV, AES_BLK_SZ); // -If CBC, writes initial vector
+        if(this->operation_mode == CBC) file.write(this->IV, AES_BLK_SZ);       // -If CBC, writes initial vector
     } else {
         std::cerr << "In file Source/AES.cpp, function void Key::save(const char* const fname): Failed to write " << fname << " file.\n";
         throw std::runtime_error("File could not be written.");
@@ -259,16 +280,13 @@ Cipher::Cipher() {
 }
 
 Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.getLengthBytes() >> 2), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
-    char* _key = new char[ak.getLengthBytes()];
-    ak.write_Key(_key);
-    this->create_KeyExpansion(_key);
+    this->create_KeyExpansion(ak.key);
     if(this->key.getOperationMode() == Key::CBC)
-        if(this->key.IVisNotInitialized()) {                                          // -In case of CBC, setting initial vector.
+        if(!this->key.IVisInitialized()) {                                      // -In case of CBC, setting initial vector.
             char IVsource[AES_BLK_SZ];
             this->setAndWrite_IV(IVsource);
             this->key.set_IV(IVsource);
         }
-    delete[] _key;
 }
 
 Cipher::Cipher(const Cipher& a) : key(a.key), Nk(a.Nk), Nr(a.Nr), keyExpLen(a.keyExpLen) {

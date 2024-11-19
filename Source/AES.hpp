@@ -24,7 +24,7 @@ struct Key {
 	Length 	 lengthBits;							// -Length in bits.
 	unsigned lengthBytes;							// -Length in bytes.
 	OperationMode operation_mode;
-	bool notInitializedIV = true;						// -Tells if the initial vector is already initialized or not
+	bool initializedIV  = false;						// -Tells if the initial vector is already initialized or not
 	char IV[AES_BLK_SZ] =  {0, 0, 0, 0,					// -Initial vector for the CBC operation mode
 				0, 0, 0, 0,					// -This default value (just zeros) is left
 				0, 0, 0, 0,					//  for the case in which we do not use CBC
@@ -49,7 +49,7 @@ struct Key {
 	friend Cipher;
 
 	void set_IV(const char source[AES_BLK_SZ]);				// -Sets initial vector by copying the array passed as argument
-	bool IVisNotInitialized() const { return this->notInitializedIV; }
+	bool IVisInitialized() const { return this->initializedIV; }
 	void write_IV(char*const destination) const {				// -Writes IV in destination
 		for(int i = 0; i < AES_BLK_SZ; i++) destination[i] = this->IV[i]; // -Warning: We are supposing we have at least 16 bytes of space in destination
 	}
@@ -62,22 +62,6 @@ class Cipher {
 	Key	key = Key();							// -The default values for a cipher object are the values for a key of 256 bits
 	int	Nk = 8, Nr = 14, keyExpLen = 240;
 	char*	keyExpansion = NULL;
-
-	char a[4] 	= {0x02, 0x03, 0x01, 0x01};				// -For MixColumns.
-	char aInv[4]	= {0x0E, 0x0B, 0x0D, 0x09};				// -For InvMixColumns.
-
-	const char Rcon[10][4] = {						// -Notice that the value of the left most char in polynomial form is 2^i.
-		{0x01, 0x00, 0x00, 0x00},
-  		{0x02, 0x00, 0x00, 0x00},
-  		{0x04, 0x00, 0x00, 0x00},
-  		{0x08, 0x00, 0x00, 0x00},
-  		{0x10, 0x00, 0x00, 0x00},
-  		{0x20, 0x00, 0x00, 0x00},
-  		{0x40, 0x00, 0x00, 0x00},
-  		{(char)0x80, 0x00, 0x00, 0x00},
-		{0x1B, 0x00, 0x00, 0x00},
-  		{0x36, 0x00, 0x00, 0x00}
-  	};
 
 	public:
 	Cipher();								// -The default constructor will set the key expansion as zero in every element.
