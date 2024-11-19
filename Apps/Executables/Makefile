@@ -4,8 +4,8 @@ WARNINGS = -Wall -Weffc++ -Wextra -Wsign-conversion -pedantic-errors
 DEBUG    = -ggdb -fno-omit-frame-pointer
 OPTIMIZE = -O2
 STANDARD = -std=c++2a
-SOURCE   = ../../Source/*.cpp
-HEADERS  = ../../Source/*.hpp
+SOURCE   = ../Settings.cpp ../../Source/*.cpp
+HEADERS  = ../Settings.hpp ../../Source/*.hpp
 
 AESencryption.exe: Makefile ../encryption.cpp $(SOURCE) $(HEADERS)
 	$(CXX) -o $@ $(WARNINGS) $(DEBUG) $(OPTIMIZE) $(STANDARD) ../encryption.cpp $(SOURCE)
