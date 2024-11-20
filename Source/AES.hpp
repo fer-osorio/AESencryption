@@ -2,7 +2,8 @@
 
 #ifndef _INCLUDED_AES_
 #define _INCLUDED_AES_
-#define AES_BLK_SZ 16
+#define AES_BLK_SZ  16
+#define SBOX_SIZE  256
 
 namespace AES {
 
@@ -22,7 +23,7 @@ struct Key {
 	private:
 	char*	 key = NULL;
 	Length 	 lengthBits;							// -Length in bits.
-	unsigned lengthBytes;							// -Length in bytes.
+	size_t lengthBytes;							// -Length in bytes.
 	OperationMode operation_mode;
 	bool initializedIV  = false;						// -Tells if the initial vector is already initialized or not
 	char IV[AES_BLK_SZ] =  {0, 0, 0, 0,					// -Initial vector for the CBC operation mode
@@ -41,7 +42,7 @@ struct Key {
 	friend std::ostream& operator << (std::ostream& ost, Key k);
 
 	OperationMode getOperationMode() const{ return this->operation_mode; }
-	unsigned getLengthBytes() const {return this->lengthBytes;}
+	size_t getLengthBytes() const {return this->lengthBytes;}
 	bool KeyIsNULL() {return this->key == NULL;}
 	void save(const char* const) const;					// -Saving information in a binary file.
 
@@ -54,7 +55,7 @@ struct Key {
 		for(int i = 0; i < AES_BLK_SZ; i++) destination[i] = this->IV[i]; // -Warning: We are supposing we have at least 16 bytes of space in destination
 	}
 	void write_Key(char*const destination) const {				// -Writes key in destination. Warning: We're supposing we have enough space in
-		for(unsigned i = 0; i < this->lengthBytes; i++) destination[i] = this->key[i]; //  destination array.
+		for(int i = 0; i < this->lengthBytes; i++) destination[i] = this->key[i]; //  destination array.
 	}
 };
 
@@ -62,6 +63,22 @@ class Cipher {
 	Key	key = Key();							// -The default values for a cipher object are the values for a key of 256 bits
 	int	Nk = 8, Nr = 14, keyExpLen = 240;
 	char*	keyExpansion = NULL;
+
+	struct PiRoundKey {							// -This will act as a AES round key but having a size bigger or equal than the
+		private:
+		char*	roundkey= NULL;						//  data array. To obtain it, the process will be similar to multiply the key with
+	    	size_t 	size	= 0;						//  the number pi
+    		PiRoundKey& operator = (const PiRoundKey&);			// -Making private operator '=', so the object cant be copied
+    		char dinamicSbox[SBOX_SIZE];
+    		char dinamicSboxInv[SBOX_SIZE];
+
+    		public:
+    		~PiRoundKey() { if(this->roundkey != NULL) delete[] this->roundkey; }
+    		char	operator [] (const unsigned i) const{ return roundkey[i]; }
+    		size_t	getSize() const{ return this->size; }
+    		bool	notNULLroundKey() const{ return this->roundkey != NULL; }
+    		void	setPiRoundKey(const Key& K);
+	} piRoundkey ;
 
 	public:
 	Cipher();								// -The default constructor will set the key expansion as zero in every element.
@@ -72,8 +89,8 @@ class Cipher {
 	Cipher& operator = (const Cipher& a);
 	friend std::ostream& operator << (std::ostream& st, const Cipher& c);
 
-	void encrypt(char*const data, unsigned size)const;			// -Encrypts using operation mode stored in Key object
-	void decrypt(char*const data, unsigned size)const;			// -Decrypts using operation mode stored in Key object
+	void encrypt(char*const data, size_t size)const;			// -Encrypts using operation mode stored in Key object
+	void decrypt(char*const data, size_t size)const;			// -Decrypts using operation mode stored in Key object
 
 	void saveKey(const char*const fname)  const{this->key.save(fname);}
 	Key::OperationMode getOperationMode() const{ return this->key.getOperationMode(); }
@@ -81,15 +98,15 @@ class Cipher {
 	private:
 	void create_KeyExpansion(const char* const);				// -Creates key expansion
 
-	void encryptECB(char*const data, unsigned size)const;			// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
+	void encryptECB(char*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
 										//  size (in bytes) is  provided by the 'size' argument.
-	void decryptECB(char*const data, unsigned size)const;			// -Decrypts the message pointed by 'data' using the ECB operation mode. The data
+	void decryptECB(char*const data, size_t size)const;			// -Decrypts the message pointed by 'data' using the ECB operation mode. The data
 										//  size (in bytes) is  provided by the 'size' argument.
 	void setAndWrite_IV(char destination[AES_BLK_SZ]) const;		// -Creates initial vector and writes it on destination array
 
-	void encryptCBC(char*const data, unsigned size)const;			// -Encrypts the message pointed by 'data' using the CBC operation mode. The data
+	void encryptCBC(char*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the CBC operation mode. The data
 										//  size (in bytes) is  provided by the 'size' argument.
-	void decryptCBC(char*const data, unsigned size)const;			// -Decrypts the message pointed by 'data'. The message must had been encrypted
+	void decryptCBC(char*const data, size_t size)const;			// -Decrypts the message pointed by 'data'. The message must had been encrypted
 										//  using the CBC mode operation.
 	void XORblocks(char b1[AES_BLK_SZ], char b2[AES_BLK_SZ], char r[AES_BLK_SZ]) const; // -Xor operation over 16 bytes array.
 	void printWord(const char word[4]);					// -Prints an array of 4 bytes.

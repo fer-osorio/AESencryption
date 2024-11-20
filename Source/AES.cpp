@@ -4,6 +4,8 @@
 #include"AES.hpp"
 #include"OperationsGF256.hpp"
 
+#define MAX_KEY_LENGTH_BYTES 32
+
 /************************************* Default values for substitution boxes. This are the values showed in the standard ******************************************/
 
 
@@ -23,7 +25,7 @@ static const char Rcon[10][4] = {						                        // -Notice that t
   	{0x36, 0x00, 0x00, 0x00}
 };
 
-static const uint8_t SBox[256] = {
+static const uint8_t SBox[SBOX_SIZE] = {
 	0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
 	0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
 	0xB7, 0xFD, 0x93, 0x26, 0x36, 0x3F, 0xF7, 0xCC, 0x34, 0xA5, 0xE5, 0xF1, 0x71, 0xD8, 0x31, 0x15,
@@ -42,7 +44,7 @@ static const uint8_t SBox[256] = {
 	0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
 };
 
-static const uint8_t invSBox[256] = {
+static const uint8_t invSBox[SBOX_SIZE] = {
 	0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB,
 	0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87, 0x34, 0x8E, 0x43, 0x44, 0xC4, 0xDE, 0xE9, 0xCB,
 	0x54, 0x7B, 0x94, 0x32, 0xA6, 0xC2, 0x23, 0x3D, 0xEE, 0x4C, 0x95, 0x0B, 0x42, 0xFA, 0xC3, 0x4E,
@@ -64,10 +66,58 @@ static const uint8_t invSBox[256] = {
 
 /****************************************** Multiplication of two numbers of 256 bits to obtain a 512 bits number ************************************************/
 
-union intToChar {
-    int  int_;                                                                  // Useful when casting from a 32 bits integer to an array of four chars
-    char chars[4];
+union int_char {
+    int32_t int_;                                                              // Useful when casting from a 32 bits integer to an array of four chars
+    char    chars[4];
 };
+union uint64_uint32 {                                                           // -Useful for a casting from a 64 bits unsigned integer to an array of two 32 bits
+    uint64_t uint64;                                                            //  integer
+    unsigned uint32[2];
+};
+union _16uint32_64uchar {                                                       // -Representing 256 bits in an union of 8 unsigned int and 32 char
+    unsigned uint32[16];
+    uint8_t  chars[64];
+};
+struct Uint256 {
+    union {                                                                     // -256 bits in a anonymous union of 8 unsigned int and 32 char
+        uint8_t  chars[32];
+        unsigned uint32[8];
+    } NumberPlaces = {0,0,0,0,0,0,0,0};
+
+    Uint256() {}
+    Uint256(const char*const data) {
+        for(int i = 0; i < 32; i++)
+            NumberPlaces.chars[i] = (uint8_t)data[i];
+    }
+
+    unsigned operator [] (int i) const {
+        if(i < 0 || i >= 8) i &= 7;                                             // -i&7 is equivalent to i%8
+        return this->NumberPlaces.uint32[i];
+    }
+    void reWriteLeastSignificantBytes(const char*const array, size_t arraySize = 32) {    // -Rewrites the least significant bytes of the NumberPlaces union.
+        if(arraySize > 32) arraySize &= 31;                                     // -Writing the array from left to right, those bytes would be the left ones.
+        for(int i = 0; i < arraySize; i++)                                      // -arraySize % 32
+            this->NumberPlaces.chars[i] = (uint8_t)array[i];                    // -The rest of the bytes (i >= arraySize) are left untouched
+    }
+};
+
+static _16uint32_64uchar operator * (const Uint256& a, const Uint256& b) { // -Multiplying two integers of 256 bits each one
+    int i, j;
+    unsigned carriage = 0;
+    uint64_uint32 buff = {0};
+    _16uint32_64uchar result = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};               // -The result will need 512 bits (for arbitrary arguments)
+
+    for(i = 0; i < 8 ; i++) {                                                   // -Implementing pencil and paper algorithm
+        for(j = 0; j < 8; j++) {
+            buff.uint64 = (uint64_t)a[i] * b[j] + result.uint32[i+j] + carriage;
+            result.uint32[i+j] = buff.uint32[0];                                // -Equivalent to obtaining the modulus 2^32
+            carriage = buff.uint32[1];                                          // -Equivalent to obtaining the quotient 2^32
+        }
+        result.uint32[i+j] = carriage;
+        carriage = 0;
+    }
+    return result;
+}
 
 using namespace AES;
 
@@ -108,17 +158,16 @@ static int bytesToHexString(const char*const origin, char*const destination, con
 
 Key::Key(): lengthBits(Length::_256), lengthBytes(32), operation_mode(OperationMode::CBC) {
     this->key = new char[this->lengthBytes];
-    for(unsigned i = 0; i < this->lengthBytes; i++) this->key[i] = 0;
+    for(int i = 0; i < this->lengthBytes; i++) this->key[i] = 0;
 }
 
 Key::Key(const char* const _key, Length len, OperationMode op_m):lengthBits(len),lengthBytes((unsigned)len >> 3),operation_mode(op_m){
-    unsigned i;
     this->key = new char[this->lengthBytes];
-    if(_key != NULL) for(i = 0; i < this->lengthBytes; i++) this->key[i] = _key[i];
+    if(_key != NULL) for(int i = 0; i < this->lengthBytes; i++) this->key[i] = _key[i];
 }
 
 Key::Key(const Key& ak):lengthBits(ak.lengthBits), lengthBytes(ak.lengthBytes), operation_mode(ak.operation_mode) {
-    unsigned i;
+    int i;
     this->key = new char[ak.lengthBytes];
     for(i = 0; i < ak.lengthBytes; i++) this->key[i] = ak.key[i];               // -Supposing Cipher object is well constructed, this is, ak.key != NULL
     if(ak.operation_mode == CBC) {                                              // -Without CBC, copying IV is pointless.
@@ -202,9 +251,9 @@ Key& Key::operator = (const Key& k) {
 }
 
 bool Key::operator == (const Key& k) const{
-    int i;
+    unsigned i;
     if(this->lengthBytes != k.lengthBytes) return false;
-    for(i = 0; (unsigned)i < this->lengthBytes; i++) if(this->key[i] != k.key[i]) return false;
+    for(i = 0; i < this->lengthBytes; i++) if(this->key[i] != k.key[i]) return false;
     if(this->operation_mode == k.operation_mode) {
         if(this->operation_mode == OperationMode::CBC)
             for(i = 0; i < AES_BLK_SZ; i++) if(this->IV[i] != k.IV[i]) return false;
@@ -273,6 +322,51 @@ void Key::save(const char* const fname) const {
 
 
 /************************************************** AES encryption and decryption algorithms implementation ******************************************************/
+
+void Cipher::PiRoundKey::setPiRoundKey(const Key &K) {
+    if(this->roundkey != NULL) delete[] this->roundkey;
+    std::ifstream file;
+    file.open("pi.bin", std::ios::binary);
+    if(file.is_open()) {
+        Uint256 a;                                                              // -Representation of a number of 256 bits (32 bytes)
+        Uint256 b;                                                              // -Representation of a number of 256 bits (32 bytes)
+        _16uint32_64uchar c;                                                    // -Will save the multiplication result
+        unsigned i, j, piIndex;                                                 // -piIndex will be used to go throw the pi array
+        char _key_[MAX_KEY_LENGTH_BYTES];                                       // -Cryptographic key
+        const size_t sizeof_c = sizeof(c.chars), sizeof__key_ = sizeof(_key_);
+        const unsigned PIsize = 3*1024*1024, blockSize = 32;                    // -Size of pi array, size of the blocks we will divide pi array for its processing
+        const unsigned _32bytesBlocks = PIsize >> 5;                            // -Amount of blocks of 32 bytes, _32bytesBlocks = PIsize / 32
+        const unsigned lastBlockSize  = PIsize & 31;                            // -Size of the last block, lastBlockSize = dataSize % 32
+        char* const pi = new char[PIsize];
+
+        this->roundkey = new char[PIsize << 1];                                 // -PIsize << 1 == PIsize*2
+        file.read(pi, PIsize);                                                  // -Uploading pi
+        file.close();
+        K.write_Key(_key_);                                                     // -Writing key on _key array
+        if(K.getLengthBytes() < sizeof__key_)
+            for(i = K.getLengthBytes(), j = 0; i < sizeof__key_; i++, j++)
+                _key_[i] = _key_[j];                                            // -Padding with the beginning of the key
+
+        a = Uint256(_key_);                                                     // -Creating 256 bits unsigned integer from _key_ array
+
+        for(i = 0, piIndex = 0; i < _32bytesBlocks; i++, piIndex += blockSize) {
+            b.reWriteLeastSignificantBytes(&pi[piIndex]);                       // -Number created from a 32 bytes chunk of pi
+            c = a*b;                                                            // -Product with the number created from key
+            for(j = 0 ; j < sizeof_c; j++)                                      // -Writing the result on roundkey array. Remember, the product of two 256 bits
+                this->roundkey[this->size++] = (char)c.chars[j];                //  (32 bytes) numbers results on a 512 bits (64 bytes) number
+        }
+        if(lastBlockSize > 0) {
+            b.reWriteLeastSignificantBytes(&pi[piIndex], lastBlockSize);        // -Rewriting with the bytes left
+            c = a*b;                                                            // -Product with the key
+            for(j = 0 ; j < lastBlockSize; j++)
+                this->roundkey[this->size++] = (char)c.chars[j];
+        }
+        if(pi != NULL) delete[] pi;
+    } else {
+        std::cerr << "Could not find/open pi.bin file.\n";
+    }
+    std::cout << "\nPI round key size established as " << this->size << std::endl;
+}
 
 Cipher::Cipher() {
     this->keyExpansion = new char[this->keyExpLen];
@@ -428,7 +522,7 @@ void Cipher::printWord(const char word[4]) {
 	std::cout << ']';
 }
 
-void Cipher::encryptECB(char*const data, unsigned size) const{
+void Cipher::encryptECB(char*const data, size_t size) const{
     if(size == 0)    return;
     if(data == NULL) return;
 
@@ -449,7 +543,7 @@ void Cipher::encryptECB(char*const data, unsigned size) const{
     encryptBlock(currentDataBlock);
 }
 
-void Cipher::decryptECB(char *const data, unsigned int size) const{
+void Cipher::decryptECB(char *const data, size_t size) const{
     if(size == 0)    return;
     if(data == NULL) return;
 
@@ -471,7 +565,7 @@ void Cipher::decryptECB(char *const data, unsigned int size) const{
 }
 
 void Cipher::setAndWrite_IV(char destination[AES_BLK_SZ]) const{                // -Simple method for setting the initial vector. The main idea is, when CBC is
-    intToChar ic; ic.int_ = time(NULL);                                         //  used, encryptBlock function encrypts a block of four consecutive 32 bits int's
+    int_char ic; ic.int_ = time(NULL);                                         //  used, encryptBlock function encrypts a block of four consecutive 32 bits int's
     int icIntWordSize = sizeof(ic.int_);                                        // -At this moment, this is suppose to be equal to 4
     int j, k;
     for(k = 0; k < AES_BLK_SZ; ic.int_++)
@@ -479,7 +573,7 @@ void Cipher::setAndWrite_IV(char destination[AES_BLK_SZ]) const{                
     this->encryptBlock(destination);
 }
 
-void Cipher::encryptCBC(char*const data, unsigned size) const{
+void Cipher::encryptCBC(char*const data, size_t size) const{
     if(size == 0)    return;
     if(data == NULL) return;
 
@@ -507,7 +601,7 @@ void Cipher::encryptCBC(char*const data, unsigned size) const{
 }
 
 
-void Cipher::decryptCBC(char*const data, unsigned size) const{
+void Cipher::decryptCBC(char*const data, size_t size) const{
     if(size == 0)    return;
     if(data == NULL) return;
 
@@ -543,7 +637,7 @@ void Cipher::decryptCBC(char*const data, unsigned size) const{
     }
 }
 
-void Cipher::encrypt(char*const data, unsigned size) const{
+void Cipher::encrypt(char*const data, size_t size) const{
     if(size == 0)    return;
     if(data == NULL) return;
     Key::OperationMode opMode = this->key.getOperationMode();
@@ -563,7 +657,7 @@ void Cipher::encrypt(char*const data, unsigned size) const{
     }
 }
 
-void Cipher::decrypt(char*const data, unsigned size) const{
+void Cipher::decrypt(char*const data, size_t size) const{
     if(size == 0)    return;
     if(data == NULL) return;
     Key::OperationMode opMode = this->key.getOperationMode();
