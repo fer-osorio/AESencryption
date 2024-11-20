@@ -139,10 +139,17 @@ void FileName::FN(const char str[]) const{
     const char thisFuncName[] = "void FileName::FN(const char str[])";
     CharType ct = FileName::characterType(str[this->currentStringIndex]);
     switch(ct) {
+        case slash:                                                             // -Allowing slash for file paths
+            this->currentStringIndex++;
+            try { if(this->Sld(str)) return; }                                  // -This lines can be interpreted as: Read (always starting with a letter) letters,
+            catch(std::runtime_error&) {                                         //  digits and (if allowed) spaces; when a proper ending character is found
+                rethrowMessageFor_cerr(thisFuncName);                           //  (0, '\'', '"',' ') then return, otherwise continue reading
+                throw;
+            }
+            break;
         case letter:                                                            // -We can interpret this lines of codes as: A file name con start with a letter,
         case underscore:                                                        //  a underscore or a hyphen
         case hyphen:                                                            //  ...
-        case slash:                                                             // -Allowing slash for file paths
             try { if(this->Sld(str)) return; }                                  // -This lines can be interpreted as: Read (always starting with a letter) letters,
             catch(std::runtime_error&) {                                         //  digits and (if allowed) spaces; when a proper ending character is found
                 rethrowMessageFor_cerr(thisFuncName);                           //  (0, '\'', '"',' ') then return, otherwise continue reading
@@ -152,6 +159,7 @@ void FileName::FN(const char str[]) const{
         case dot:                                                               // -Cases for dot
             if(str[++this->currentStringIndex] == '.') {                        // -The string "../" is allowed as a sub-string so we can use relative paths
                 if(str[++this->currentStringIndex] == '/') {                    //  ...
+                    this->currentStringIndex++;
                     try { this->FN(str); }
                     catch(std::runtime_error&) {
                         rethrowMessageFor_cerr(thisFuncName);
