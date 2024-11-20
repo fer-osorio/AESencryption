@@ -13,11 +13,13 @@ will encrypt/decrypt the files using the key referenced in the first argument.
 
 **Example:**
 
-1. Encryption; executing ``./AESencryption.exe AESencryption.key Pic01.bmp``.
+Note: Videos were edited to decrease the size of these gifts.
+
+1. Executing ``./AESencryption.exe AESencryption.aeskey Files_for_testing/Pic00.bmp Files_for_testing/Pic01.bmp``.
 
 ![Encryption](../../Images/AESencryption.gif)
 
-2. Decryption; executing ``./AESdecryption.exe AESencryption.key Text00.txt``.
+2. Executing ``./AESdecryption.exe AESencryption.aeskey Files_for_testing/Text00.txt Files_for_testing/Text01.txt``.
 
 ![Decryption](../../Images/AESdecryption.gif)
 
