@@ -331,7 +331,7 @@ void Cipher::PiRoundKey::setPiRoundKey(const Key &K) {
         Uint256 a;                                                              // -Representation of a number of 256 bits (32 bytes)
         Uint256 b;                                                              // -Representation of a number of 256 bits (32 bytes)
         _16uint32_64uchar c;                                                    // -Will save the multiplication result
-        unsigned i, j, piIndex;                                                 // -piIndex will be used to go throw the pi array
+        unsigned i, j, k, piIndex;                                              // -piIndex will be used to go throw the pi array
         char _key_[MAX_KEY_LENGTH_BYTES];                                       // -Cryptographic key
         const size_t sizeof_c = sizeof(c.chars), sizeof__key_ = sizeof(_key_);
         const unsigned PIsize = 3*1024*1024, blockSize = 32;                    // -Size of pi array, size of the blocks we will divide pi array for its processing
@@ -361,7 +361,23 @@ void Cipher::PiRoundKey::setPiRoundKey(const Key &K) {
             for(j = 0 ; j < lastBlockSize; j++)
                 this->roundkey[this->size++] = (char)c.chars[j];
         }
-        if(pi != NULL) delete[] pi;
+        if(pi != NULL) delete[] pi;                                             // -Finishing with the creation of PiRoundKey
+
+        size_t unwrittenSBoxSize = SBOX_SIZE ;                                  // -Creating dinamicSbox, this is the size of the entries not substituted yet
+        uint8_t  permutationBuffer[SBOX_SIZE];                                  // -Will be used in the creation of new Sbox
+
+        if(this->size < 256)
+            std::cerr <<
+            "In Source/AES.cpp, function void Cipher::PiRoundKey::setPiRoundKey(const Key&). WARNING: PiRoundKey size < SBOX_SIZE.\n"
+            "PiRoundKey size ==" << this->size << ", SBOX_SIZE = " << SBOX_SIZE << '\n';
+
+        for(i = 0; i < SBOX_SIZE; i++ ) permutationBuffer[i] = (uint8_t)i;
+            for(i = size-1, j = 0; unwrittenSBoxSize > 0; i--, j++, unwrittenSBoxSize--) {
+                k = (uint8_t)this->roundkey[i] % unwrittenSBoxSize;
+                this->dinamicSbox[j] = permutationBuffer[k];
+                permutationBuffer[k] = permutationBuffer[unwrittenSBoxSize - 1];
+            }
+        for(i = 0; i < SBOX_SIZE; i++ ) this->dinamicSboxInv[this->dinamicSbox[i]] = i; // -Building Sbox inverse
     } else {
         std::cerr << "Could not find/open pi.bin file.\n";
     }

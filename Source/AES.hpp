@@ -66,9 +66,9 @@ class Cipher {
 
 	struct PiRoundKey {							// -This will act as a AES round key but having a size bigger or equal than the
 		private:
-		char*	roundkey= NULL;						//  data array. To obtain it, the process will be similar to multiply the key with
-	    	size_t 	size	= 0;						//  the number pi
-    		PiRoundKey& operator = (const PiRoundKey&);			// -Making private operator '=', so the object cant be copied
+		char*	roundkey	= NULL;					//  data array. To obtain it, the process will be similar to multiply the key with
+	    	size_t 	size		= 0;					//  the number pi
+    		PiRoundKey& operator 	= (const PiRoundKey&);			// -Making private operator '=', so the object cant be copied
     		char dinamicSbox[SBOX_SIZE];
     		char dinamicSboxInv[SBOX_SIZE];
 
