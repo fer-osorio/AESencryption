@@ -58,7 +58,7 @@ mandatory to not use this constructor for nothing more than type declaration.
 
 ## Encryption and decryption
 
-Once we have a Cipher object, for encryption of an array named ``data`` with ``size`` bytes it is only necessary to invoke the
+Once we have a Cipher object, for encryption of an array named ```data``` with ``size`` bytes it is only necessary to invoke the
 member function 
 
 ```
@@ -103,6 +103,81 @@ friend void encrypt(TXT& txt, AES::Cipher& e)
 
 ```
 friend void decrypt(TXT& txt, AES::Cipher& e)
+```
+
+# PVS operation mode
+
+This is an experimental operation mode. It uses the digits of the number pi together with the key to generate a round key with size
+equal to the size of the data to encrypt and a dynamic Sbox. To describe the algorithm, we will need some notation.
+
+- ``piRoundkey``:   Round key mentioned above
+- ``dinSubBytes``:  Similar to SubBytes function specified in NIST standard, but using the dynamic Sbox mentioned above.
+- ``data``:         Data byte array
+- ``size``:         Data size
+- ``BLOCK_SIZE``:   Size of blocks specified in NIST standard, its value is 16
+
+I will borrow some notation from C programming language; when doubts arise in the meaning of some particular section of code,
+suppose it has the same meaning as if it were a peace of code in C. The algorithm for PVS operation mode for encryption is:
+
+```
+encryptPVS(data, size) {
+    for(i = 0; i < size; i++)   data[i] ^= this->piRoundkey[i];
+    for(i = 0; i < size; i+= BLOCK_SIZE) dinSubBytes(&data[i]);
+    encryptECB(data, size);
+}
+```
+
+Were ``encryptECB`` corresponds to AES encryption under ECB operation mode. Notice how we are supposing that ``size`` is a multiple of
+``BLOCK_SIZE``, in a real implementation we have to attend this case.
+The algorithm for decryption is very similar, as you can notice:
+
+- ``dinSubBytesInv``:   Corresponds with the inverse function of ``dinSubBytes``.
+
+```
+decryptPVS(data, size) {
+    decryptECB(data, size);
+    for(i = 0; i < size; i+= BLOCK_SIZE) ``dinSubBytesInv``(&data[i]);
+    for(i = 0; i < size; i++)   data[i] ^= this->piRoundkey[i];
+}
+```
+
+It can be said that what decryption does is to apply the inverses of process in encryption in reveres order.
+
+To create the functions ``dinSubBytes`` adn dinSubBytesInv, it is enough to calculate the arrays ``dinSbox`` ans its inverse dinSboxInv, The algorithm for the creation of
+the arrays ``piRoundkey``, ``dinSbox`` and dinSboxInv is the following:
+
+- ``SBOX_SIZE``:    Size of Sbox, fixed to 256
+- ``dinSbox``:      Array of 256 elements representing the dynamic Sbox
+- ``key``:          Cryptographic key
+- ``pi``:           array containing the digits of the number pi, this array has the same size than ``data``
+- ``NUM_SIZE``:     Size in bytes of the numbers we will be handling, fixed to 32 (equivalent to 256 bits)
+- ``prkSize``:      Round key size, initialized as 0.
+- ``size``:         Size desired for ``piRoundkey`` array
+- ``a``,``b``:      Two 256 bits (32 bytes) unsigned numbers
+- ``c``:            A 512 bits (64 bytes) unsigned number
+- ``unWSBoxSz``:    Unwritten SBox size, amount of entries not defined yet. Initialized as ``SBOX_SIZE``
+- ``buffer``:       Array that will be used in the creation of new Sbox
+- ``uNum256bit``:   Funtion: takes an 256 bits array and interprets it as a 256 bits number
+
+```
+setPiRoundKeyAndDinSbox(key, size) {
+    a = uNum256bit(key), b = 0, c = 0;
+    prkSize = 0;
+    unWSBoxSz = SBOX_SIZE;
+    for(i = 0; prkSize < size; i += NUM_SIZE) {                                 // -Beginning with the creation of piRoundkey array
+        b = uNum256bit(&pi[i]);                                                 // -Basically, take a chunck of 256 bits from pi array and treat it as a number
+        c = a*b;                                                                // -Product with the number created from key
+        for(j = 0 ; j < 2*NUM_SIZE; j++)                                        // -Writing the result on piRoundkey array. Remember, the product of two 256 bits
+            piRoundkey[prkSize++] = c[j];                                       //  (32 bytes) numbers results on a 512 bits (64 bytes) number
+    }
+    for(i = 0; i < SBOX_SIZE; i++) buffer[i] = i;                               // -Filling buffer with 1, 2, ..., 255
+        for(i = size-1, j = 0; unWSBoxSz > 0; i--, j++, unWSBoxSz--) {          // -Creating dinamic Sbox
+            k = piRoundkey[i] % unWSBoxSz;                                      // -Selecting a 'random' number and applying mod unWSBoxSz
+            this->dinSBox[j] = buffer[k];                                       // -Selecting and available entry
+            buffer[k] = buffer[unWSBoxSz - 1];                                  // -Substituting old value with one not used yet
+        }
+    for(i = 0; i < SBOX_SIZE; i++ ) this->dinSboxInv[dinSBox[i]] = i;           // -Building dinamic Sbox inverse
+}
 ```
 
 #  Executable Files
