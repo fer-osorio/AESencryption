@@ -135,7 +135,7 @@ static void operationModeToString(Key::OperationMode opm, char*const destination
             break;
         case Key::CTR: strcpy(destination, "CTR");
             break;
-        case Key::PVS: strcpy(destination, "CTR");
+        case Key::PVS: strcpy(destination, "PVS");
             break;
     }
 }
@@ -434,18 +434,16 @@ Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.getLengthBytes() >> 2), Nr(Nk
             this->setAndWrite_IV(IVsource);
             this->key.set_IV(IVsource);
         }
-        return;
     }
     if(this->key.operation_mode == Key::PVS) {                                  // -In case of PVS operation mode, initialize piRoundKey
-        if(this->piRoundkey.roundKeyIsNULL())
-            this->piRoundkey.setPiRoundKey(this->key);
-        return;
+        this->piRoundkey.setPiRoundKey(this->key);
     }
 }
 
 Cipher::Cipher(const Cipher& a) : key(a.key), Nk(a.Nk), Nr(a.Nr), keyExpLen(a.keyExpLen), piRoundkey() {
     this->keyExpansion = new char[(unsigned)a.keyExpLen];
     for(int i = 0; i < a.keyExpLen; i++) this->keyExpansion[i] = a.keyExpansion[i];
+    this->piRoundkey = a.piRoundkey;
 }
 
 Cipher::~Cipher() {
@@ -464,6 +462,7 @@ Cipher& Cipher::operator = (const Cipher& a) {
             this->keyExpansion = new char[(unsigned)a.keyExpLen];
         }
         for(int i = 0; i < a.keyExpLen; i++) this->keyExpansion[i] = a.keyExpansion[i];
+        this->piRoundkey = a.piRoundkey;
     }
     return *this;
 }
@@ -698,7 +697,7 @@ void Cipher::decryptCBC(char*const data, size_t size) const{
 }
 
 void Cipher::encryptPVS(char*const data, size_t size) const{
-    if(!this->piRoundkey.roundKeyIsNULL()) {
+    if(!this->piRoundkey.roundKeyIsNULL()) { std::cout << "\nLine 701 AES.cpp" << std::endl;
         unsigned i, j;
         size_t piSize = this->piRoundkey.getSize();
         size_t size_blocks = size >> 4;                                         // -size_blocks = size / 16
