@@ -41,13 +41,13 @@ struct FileName {
 	private:
 	enum CharType {letter, digit, dot, underscore, hyphen, slash, space, singleQuote ,doubleQuote, notAllowed, zero};
 
-	Extension	extension 			= NoExtension;
-	unsigned	size				= 0;
-	char* 		string 				= NULL;			// -File name.
+	Extension	extension 		= NoExtension;
+	unsigned	size			= 0;
+	char* 		string 			= NULL;				// -File name.
 	mutable int	currentStringIndex	= 0;				// -We will use this to analyze and validate the 'string' atribute
 	bool		beginsDoubleQuote 	= false;			// -Starting with quotes will allow spaces in the middle of Sld strings, but will
 	bool		beginsSingleQuote 	= false;			//  require to finish the string with the corresponding quote
-	bool        allowSpaces         = false;				// -This will allow spaces in the middle of Sld strings
+	bool		allowSpaces		= false;			// -This will allow spaces in the middle of Sld strings
 
 	Extension isSupportedExtension(const char[]) const;			// -Compares its input with the strings in supportedExtension array
 	static CharType characterType(const char c);				// -True for the character that may appear in the file name, false in other case
@@ -155,12 +155,12 @@ class Bitmap {									// -Handling bitmap format images.
 
 	friend void encrypt(Bitmap& bmp, AES::Cipher& e) {			// -Encrypts using the operation mode defined in Key object
 		e.encrypt(bmp.data, bmp.ih.SizeOfBitmap);
-    	bmp.save(bmp.name);							// -The reason of the existence of these friend functions is to be capable of
+    		bmp.save(bmp.name);						// -The reason of the existence of these friend functions is to be capable of
 	}									//  encrypt and decrypt many files with the same Cipher object while maintaining
 										//  attributes of bmp object private
 	friend void decrypt(Bitmap& bmp, AES::Cipher& e) {			// -Decrypts using the operation mode defined in Key object
 		e.decrypt(bmp.data, bmp.ih.SizeOfBitmap);
-    	bmp.save(bmp.name);
+    		bmp.save(bmp.name);
 	}
 };
 };
