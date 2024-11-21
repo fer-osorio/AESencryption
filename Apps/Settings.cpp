@@ -30,13 +30,15 @@ namespace Available {
 	}
 	enum Operation_modes {
 		ecb,
-		cbc
+		cbc,
+		pvs
 	};
-	const AES::Key::OperationMode OperationModeValues[] = {AES::Key::ECB, AES::Key::CBC};
+	const AES::Key::OperationMode OperationModeValues[] = {AES::Key::ECB, AES::Key::CBC, AES::Key::PVS};
 	static bool isAvailableOperationModesValue(int t) {
 		return
 		t == ecb ||
-		t == cbc;
+		t == cbc ||
+		t == pvs;
 	}
 };
 
@@ -306,7 +308,7 @@ static const char selectKeySize[] =
 
 static const char selectOperationMode[] =
 "Select operation mode:\n"
-"(0) ECB,    (1) CBC\n";
+"(0) ECB,    (1) CBC,   (2) PVS\n";
 
 int CLI::retreaveValidOption(const char optionsString[], bool (validOptionCriteria)(int)) { // -Will ask the user for input from a set of options
     int option;
