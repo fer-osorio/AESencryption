@@ -56,7 +56,7 @@ struct Key {
 		for(int i = 0; i < AES_BLK_SZ; i++) destination[i] = this->IV[i]; // -Warning: We are supposing we have at least 16 bytes of space in destination
 	}
 	void write_Key(char*const destination) const {				// -Writes key in destination. Warning: We're supposing we have enough space in
-		for(int i = 0; i < this->lengthBytes; i++) destination[i] = this->key[i]; //  destination array.
+		for(size_t i = 0; i < this->lengthBytes; i++) destination[i] = this->key[i]; //  destination array.
 	}
 };
 
@@ -69,12 +69,12 @@ class Cipher {
 		private:
 		char*	roundkey	= NULL;					//  data array. To obtain it, the process will be similar to multiply the key with
 	    	size_t 	size		= 0;					//  the number pi
-    		PiRoundKey& operator 	= (const PiRoundKey&);			// -Making private operator '=', so the object cant be copied
     		char dinamicSbox[SBOX_SIZE];
     		char dinamicSboxInv[SBOX_SIZE];
 
     		public:
     		~PiRoundKey() { if(this->roundkey != NULL) delete[] this->roundkey; }
+    		PiRoundKey& operator = (const PiRoundKey&);
     		char	operator[](const unsigned i) const{ return roundkey[i]; }
     		size_t	getSize()const{ return this->size; }
     		bool	roundKeyIsNULL() const{ return this->roundkey == NULL; }

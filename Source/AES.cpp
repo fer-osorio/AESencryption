@@ -96,7 +96,7 @@ struct Uint256 {
     }
     void reWriteLeastSignificantBytes(const char*const array, size_t arraySize = 32) {    // -Rewrites the least significant bytes of the NumberPlaces union.
         if(arraySize > 32) arraySize &= 31;                                     // -Writing the array from left to right, those bytes would be the left ones.
-        for(int i = 0; i < arraySize; i++)                                      // -arraySize % 32
+        for(size_t i = 0; i < arraySize; i++)                                   // -arraySize % 32
             this->NumberPlaces.chars[i] = (uint8_t)array[i];                    // -The rest of the bytes (i >= arraySize) are left untouched
     }
 };
@@ -160,16 +160,16 @@ static int bytesToHexString(const char*const origin, char*const destination, con
 
 Key::Key(): lengthBits(Length::_256), lengthBytes(32), operation_mode(OperationMode::CBC) {
     this->key = new char[this->lengthBytes];
-    for(int i = 0; i < this->lengthBytes; i++) this->key[i] = 0;
+    for(size_t i = 0; i < this->lengthBytes; i++) this->key[i] = 0;
 }
 
 Key::Key(const char* const _key, Length len, OperationMode op_m):lengthBits(len),lengthBytes((size_t)len >> 3),operation_mode(op_m){
     this->key = new char[this->lengthBytes];
-    if(_key != NULL) for(int i = 0; i < this->lengthBytes; i++) this->key[i] = _key[i];
+    if(_key != NULL) for(size_t i = 0; i < this->lengthBytes; i++) this->key[i] = _key[i];
 }
 
 Key::Key(const Key& ak):lengthBits(ak.lengthBits), lengthBytes(ak.lengthBytes), operation_mode(ak.operation_mode) {
-    int i;
+    size_t i;
     this->key = new char[ak.lengthBytes];
     for(i = 0; i < ak.lengthBytes; i++) this->key[i] = ak.key[i];               // -Supposing Cipher object is well constructed, this is, ak.key != NULL
     if(ak.operation_mode == CBC) {                                              // -Without CBC, copying IV is pointless.
@@ -183,11 +183,11 @@ Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), oper
     char AESKEY[7];
     char opMode[4];
     uint16_t keyLen;
-    size_t   len_aeskeyStr = strlen(aeskeyStr);
+    size_t len_aeskeyStr = strlen(aeskeyStr);
     std::ifstream file;
     file.open(fname, std::ios::binary);
     if(file.is_open()) {
-        file.read((char*)AESKEY, len_aeskeyStr);                                // -Determining if file is a .key file
+        file.read((char*)AESKEY, (std::streamsize)len_aeskeyStr);               // -Determining if file is a .key file
         AESKEY[6] = 0;                                                          // -End of string
         if(strcmp(AESKEY, aeskeyStr) == 0) {
                 file.read((char*)opMode, 3);                                    // -Determining operation mode
@@ -212,7 +212,7 @@ Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), oper
                 this->lengthBytes = keyLen >> 3;                                // -lengthBytes = len / 8;
 
                 this->key = new char[this->lengthBytes];                        // -Reading key
-                file.read(this->key, this->lengthBytes);
+                file.read(this->key, (std::streamsize)this->lengthBytes);
 
                 if(this->operation_mode == CBC) {
                     file.read((char*)this->IV, AES_BLK_SZ);                     // -In CBC case, reading IV.
@@ -313,7 +313,7 @@ void Key::save(const char* const fname) const {
         file.write(aeskey,  6);                                                 // -File type
         file.write(op_mode, 3);                                                 // -Operation mode
         file.write((char*)&this->lengthBits, 2);                                // -Key lengthBits in bits
-        file.write(this->key, this->lengthBytes);                               // -Key
+        file.write(this->key, (std::streamsize)this->lengthBytes);              // -Key
         if(this->operation_mode == CBC) file.write(this->IV, AES_BLK_SZ);       // -If CBC, writes initial vector
     } else {
         std::cerr << "In file Source/AES.cpp, function void Key::save(const char* const fname): Failed to write " << fname << " file.\n";
@@ -323,6 +323,34 @@ void Key::save(const char* const fname) const {
 
 
 /************************************************** AES encryption and decryption algorithms implementation ******************************************************/
+
+Cipher::PiRoundKey& Cipher::PiRoundKey::operator = (const PiRoundKey& prk) {
+    if(this != &prk) {                                                          // -Guarding against self assignment
+        size_t i;
+        if(prk.roundkey == NULL) {
+            if(this->roundkey != NULL) {
+                delete[] this->roundkey;
+                this->roundkey = NULL;
+                this->size = 0;
+                return *this;
+            }
+        }
+        if(this->roundkey != NULL) {
+            if(this->size != prk.size) {
+                delete[] this->roundkey;
+                this->roundkey = new char[prk.size];
+                this->size = prk.size;
+            }
+        } else {
+            this->roundkey = new char[prk.size];
+            this->size = prk.size;
+        }
+        for(i = 0; i < this->size; i++) this->roundkey[i] = prk.roundkey[i];
+        for(i = 0; i < SBOX_SIZE; i++)  this->dinamicSbox[i] = prk.dinamicSbox[i];
+        for(i = 0; i < SBOX_SIZE; i++)  this->dinamicSboxInv[i] = prk.dinamicSboxInv[i];
+    }
+    return *this;
+}
 
 void Cipher::PiRoundKey::setPiRoundKey(const Key &K) {
     if(this->roundkey != NULL) delete[] this->roundkey;
@@ -375,10 +403,10 @@ void Cipher::PiRoundKey::setPiRoundKey(const Key &K) {
         for(i = 0; i < SBOX_SIZE; i++ ) permutationBuffer[i] = (uint8_t)i;
             for(i = size-1, j = 0; unwrittenSBoxSize > 0; i--, j++, unwrittenSBoxSize--) {
                 k = (uint8_t)this->roundkey[i] % unwrittenSBoxSize;
-                this->dinamicSbox[j] = permutationBuffer[k];
+                this->dinamicSbox[j] = (char)permutationBuffer[k];
                 permutationBuffer[k] = permutationBuffer[unwrittenSBoxSize - 1];
             }
-        for(i = 0; i < SBOX_SIZE; i++ ) this->dinamicSboxInv[this->dinamicSbox[i]] = i; // -Building Sbox inverse
+        for(i = 0; i < SBOX_SIZE; i++ ) this->dinamicSboxInv[(uint32_t)(uint8_t)this->dinamicSbox[i]] = i; // -Building Sbox inverse
     } else {
         std::cerr << "Could not find/open pi.bin file.\n";
     }
@@ -393,12 +421,12 @@ void Cipher::PiRoundKey::invSubBytes(char state[AES_BLK_SZ]) const{
     for(int i = 0; i < AES_BLK_SZ; i++) state[i] = (char)this->dinamicSboxInv[(ui08)state[i]];
 }
 
-Cipher::Cipher() {
+Cipher::Cipher(): piRoundkey() {
     this->keyExpansion = new char[this->keyExpLen];
     for(int i = 0; i < this->keyExpLen; i++) this->keyExpansion[i] = 0;         // -Since the key constitutes of just zeros, key expansion is also just zeros
 }
 
-Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.getLengthBytes() >> 2), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
+Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.getLengthBytes() >> 2), Nr(Nk+6), keyExpLen((Nr+1)<<4), piRoundkey() {
     this->create_KeyExpansion(ak.key);
     if(this->key.operation_mode == Key::CBC) {
         if(!this->key.IVisInitialized()) {                                      // -In case of CBC, setting initial vector.
@@ -415,7 +443,7 @@ Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.getLengthBytes() >> 2), Nr(Nk
     }
 }
 
-Cipher::Cipher(const Cipher& a) : key(a.key), Nk(a.Nk), Nr(a.Nr), keyExpLen(a.keyExpLen) {
+Cipher::Cipher(const Cipher& a) : key(a.key), Nk(a.Nk), Nr(a.Nr), keyExpLen(a.keyExpLen), piRoundkey() {
     this->keyExpansion = new char[(unsigned)a.keyExpLen];
     for(int i = 0; i < a.keyExpLen; i++) this->keyExpansion[i] = a.keyExpansion[i];
 }
