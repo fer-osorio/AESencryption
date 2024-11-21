@@ -395,7 +395,7 @@ void Cipher::PiRoundKey::setPiRoundKey(const Key &K) {
         size_t unwrittenSBoxSize = SBOX_SIZE ;                                  // -Creating dinamicSbox, this is the size of the entries not substituted yet
         uint8_t  permutationBuffer[SBOX_SIZE];                                  // -Will be used in the creation of new Sbox
 
-        if(this->size < 256)
+        if(this->size < SBOX_SIZE)
             std::cerr <<
             "In Source/AES.cpp, function void Cipher::PiRoundKey::setPiRoundKey(const Key&). WARNING: PiRoundKey size < SBOX_SIZE.\n"
             "PiRoundKey size ==" << this->size << ", SBOX_SIZE = " << SBOX_SIZE << '\n';
@@ -707,9 +707,9 @@ void Cipher::encryptPVS(char*const data, size_t size) const{
             data[i] ^= this->piRoundkey[j];
         }
         for(i = 0, j = 0; i < size_blocks; i++)
-            this->piRoundkey.subBytes(&data[i << 4]);
-        if(last_blk_sz > 0) this->piRoundkey.subBytes(&data[size - 16]);
-        this->encryptECB(data, size);                                           // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
+            this->piRoundkey.subBytes(data + (i << 4));                         // -data + i*16
+        if(last_blk_sz > 0) this->piRoundkey.subBytes(data + (size - 16));      // -Handling case when data size is not a multiple of 16
+        this->encryptECB(data, size);
     }
     else this->encryptECB(data, size);
 }
@@ -720,10 +720,10 @@ void Cipher::decryptPVS(char*const data, size_t size) const{
         size_t piSize = this->piRoundkey.getSize();
         size_t size_blocks = size >> 4;                                         // -size_blocks = size / 16
         size_t last_blk_sz = size & 15;                                         // -last_blk_sz = size % 16
-        this->decryptECB(data, size);                                           // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
+        this->decryptECB(data, size);
         for(i = 0, j = 0; i < size_blocks; i++)
-            this->piRoundkey.invSubBytes(&data[i << 4]);
-        if(last_blk_sz > 0) this->piRoundkey.invSubBytes(&data[size - 16]);
+            this->piRoundkey.invSubBytes(data + (i << 4));                      // -data + i*16
+        if(last_blk_sz > 0) this->piRoundkey.invSubBytes(data + (size - 16));
         for(i = 0, j = 0; i < size; i++, j++) {
             if(j == piSize) j = 0;
             data[i] ^= this->piRoundkey[j];
