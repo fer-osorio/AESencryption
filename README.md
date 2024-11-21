@@ -10,10 +10,11 @@ Implementation of symmetric block cipher AES (published by [NIST](https://www.ni
 of this standard can be found [here](https://www.nist.gov/publications/advanced-encryption-standard-aes-0). Then, AES class,
 together with other structures, is used to encrypt Text files and BMP images.
 
-At the moment of writing this README, the supported operation modes are:
+At the moment (21 of November, 2024), the supported operation modes are:
 
 - ECB [Electronic Code Book]
 - CBC [Cipher Block Chaining]
+- PVS [Pi Variable Sbox] (experimental, not specified in the NIST standard)
 
 And all key length specified in the standard (that is: 128, 192 and 256 bits) are supported. Also, the supported files are
 
