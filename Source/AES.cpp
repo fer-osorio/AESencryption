@@ -697,7 +697,7 @@ void Cipher::decryptCBC(char*const data, size_t size) const{
 }
 
 void Cipher::encryptPVS(char*const data, size_t size) const{
-    if(!this->piRoundkey.roundKeyIsNULL()) { std::cout << "\nLine 701 AES.cpp" << std::endl;
+    if(!this->piRoundkey.roundKeyIsNULL()) {
         unsigned i, j;
         size_t piSize = this->piRoundkey.getSize();
         size_t size_blocks = size >> 4;                                         // -size_blocks = size / 16
