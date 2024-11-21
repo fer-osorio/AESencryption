@@ -19,11 +19,12 @@ struct Key {
 		CFB,
 		OFB,
 		CTR,
+		PVS
 	};
 	private:
-	char*	 key = NULL;
-	Length 	 lengthBits;							// -Length in bits.
-	size_t lengthBytes;							// -Length in bytes.
+	char*	key = NULL;
+	Length	lengthBits;							// -Length in bits.
+	size_t	lengthBytes;							// -Length in bytes.
 	OperationMode operation_mode;
 	bool initializedIV  = false;						// -Tells if the initial vector is already initialized or not
 	char IV[AES_BLK_SZ] =  {0, 0, 0, 0,					// -Initial vector for the CBC operation mode
@@ -74,10 +75,12 @@ class Cipher {
 
     		public:
     		~PiRoundKey() { if(this->roundkey != NULL) delete[] this->roundkey; }
-    		char	operator [] (const unsigned i) const{ return roundkey[i]; }
-    		size_t	getSize() const{ return this->size; }
-    		bool	notNULLroundKey() const{ return this->roundkey != NULL; }
+    		char	operator[](const unsigned i) const{ return roundkey[i]; }
+    		size_t	getSize()const{ return this->size; }
+    		bool	roundKeyIsNULL() const{ return this->roundkey == NULL; }
     		void	setPiRoundKey(const Key& K);
+    		void	subBytes(char state[AES_BLK_SZ]) const;
+    		void	invSubBytes(char state[AES_BLK_SZ]) const;
 	} piRoundkey ;
 
 	public:
@@ -108,6 +111,11 @@ class Cipher {
 										//  size (in bytes) is  provided by the 'size' argument.
 	void decryptCBC(char*const data, size_t size)const;			// -Decrypts the message pointed by 'data'. The message must had been encrypted
 										//  using the CBC mode operation.
+	void encryptPVS(char*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the PVS operation mode.
+										//  The data size (in bytes) is  provided by the 'size' argument.
+	void decryptPVS(char*const data, size_t size)const;			// -Decrypts the message pointed by 'data' using the PVS operation mode.
+										//  The size of the message is provided by the 'size' argument.
+
 	void XORblocks(char b1[AES_BLK_SZ], char b2[AES_BLK_SZ], char r[AES_BLK_SZ]) const; // -Xor operation over 16 bytes array.
 	void printWord(const char word[4]);					// -Prints an array of 4 bytes.
 	void printState(const char state[AES_BLK_SZ]);				// -Prints an array of 16 bytes.

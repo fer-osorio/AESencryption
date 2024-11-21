@@ -135,6 +135,8 @@ static void operationModeToString(Key::OperationMode opm, char*const destination
             break;
         case Key::CTR: strcpy(destination, "CTR");
             break;
+        case Key::PVS: strcpy(destination, "CTR");
+            break;
     }
 }
 
@@ -161,7 +163,7 @@ Key::Key(): lengthBits(Length::_256), lengthBytes(32), operation_mode(OperationM
     for(int i = 0; i < this->lengthBytes; i++) this->key[i] = 0;
 }
 
-Key::Key(const char* const _key, Length len, OperationMode op_m):lengthBits(len),lengthBytes((unsigned)len >> 3),operation_mode(op_m){
+Key::Key(const char* const _key, Length len, OperationMode op_m):lengthBits(len),lengthBytes((size_t)len >> 3),operation_mode(op_m){
     this->key = new char[this->lengthBytes];
     if(_key != NULL) for(int i = 0; i < this->lengthBytes; i++) this->key[i] = _key[i];
 }
@@ -177,38 +179,37 @@ Key::Key(const Key& ak):lengthBits(ak.lengthBits), lengthBytes(ak.lengthBytes), 
 }
 
 Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), operation_mode(ECB) { // -Building from .key file
-    char AESKEY[6];
+    char aeskeyStr[] = "AESKEY";
+    char AESKEY[7];
     char opMode[4];
-    short len;
+    uint16_t keyLen;
+    size_t   len_aeskeyStr = strlen(aeskeyStr);
     std::ifstream file;
     file.open(fname, std::ios::binary);
     if(file.is_open()) {
-        file.read((char*)AESKEY, 6);                                            // -Determining if file is a .key file
-        if(AESKEY[0] == 'A' || AESKEY[1] == 'E' || AESKEY[2] == 'S' || AESKEY[3] == 'K' || AESKEY[4] == 'E' || AESKEY[5] == 'Y') {
+        file.read((char*)AESKEY, len_aeskeyStr);                                // -Determining if file is a .key file
+        AESKEY[6] = 0;                                                          // -End of string
+        if(strcmp(AESKEY, aeskeyStr) == 0) {
                 file.read((char*)opMode, 3);                                    // -Determining operation mode
                 opMode[3] = 0;
-                if(opMode[0]=='E' && opMode[1]=='C' && opMode[2]=='B')
-                    this->operation_mode = ECB;
-                else if(opMode[0]=='C' && opMode[1]=='B' && opMode[2]=='C')
-                    this->operation_mode = CBC;
-                else if(opMode[0]=='C' && opMode[1]=='F' && opMode[2]=='B')
-                    this->operation_mode = CFB;
-                else if(opMode[0]=='O' && opMode[1]=='F' && opMode[2]=='B')
-                    this->operation_mode = OFB;
-                else if(opMode[0]=='C' && opMode[1]=='T' && opMode[2]=='R')
-                    this->operation_mode = CTR;
+                if(strcmp(opMode, "ECB") == 0) this->operation_mode = ECB;
+                else if(strcmp(opMode, "CBC") == 0) this->operation_mode = CBC;
+                else if(strcmp(opMode, "CFB") == 0) this->operation_mode = CFB;
+                else if(strcmp(opMode, "OFB") == 0) this->operation_mode = OFB;
+                else if(strcmp(opMode, "CTR") == 0) this->operation_mode = CTR;
+                else if(strcmp(opMode, "PVS") == 0) this->operation_mode = PVS;
                 else {
                     std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname):" << opMode << ", not a recognized operation mode.\n";
                     throw std::runtime_error("Not a recognized operation mode");
                 }
 
-                file.read((char*)&len, 2);                                      // -Reading key lengthBits
-                if(len == 128 || len == 192 || len == 256) this->lengthBits = (Length)len;
+                file.read((char*)&keyLen, 2);                                      // -Reading key lengthBits
+                if(keyLen == 128 || keyLen == 192 || keyLen == 256) this->lengthBits = (Length)keyLen;
                 else {
-                    std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname):" << len << " is not a valid length in bits for key.\n";
+                    std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname):" << keyLen << " is not a valid length in bits for key.\n";
                     throw std::runtime_error("Key length not allowed.");
                 }
-                this->lengthBytes = (unsigned)len >> 3;                         // -lengthBytes = len / 8;
+                this->lengthBytes = keyLen >> 3;                                // -lengthBytes = len / 8;
 
                 this->key = new char[this->lengthBytes];                        // -Reading key
                 file.read(this->key, this->lengthBytes);
@@ -285,7 +286,7 @@ void Key::set_IV(const char source[AES_BLK_SZ]) {
 
 void Key::save(const char* const fname) const {
     const char* aeskey = "AESKEY";                                              // File type.
-    const char* op_mode;
+    const char* op_mode= "ECB";
     switch(this->operation_mode) {                                              // -Operation mode.
         case ECB:
             op_mode = "ECB";
@@ -302,8 +303,8 @@ void Key::save(const char* const fname) const {
         case CTR:
             op_mode = "CTR";
             break;
-        default:
-            op_mode = "ECB";
+        case PVS:
+            op_mode = "PVS";
             break;
     }
     std::ofstream file;
@@ -384,6 +385,14 @@ void Cipher::PiRoundKey::setPiRoundKey(const Key &K) {
     std::cout << "\nPI round key size established as " << this->size << std::endl;
 }
 
+void Cipher::PiRoundKey::subBytes(char state[AES_BLK_SZ]) const{
+    for(int i = 0; i < AES_BLK_SZ; i++) state[i] = (char)this->dinamicSbox[(ui08)state[i]];
+}
+
+void Cipher::PiRoundKey::invSubBytes(char state[AES_BLK_SZ]) const{
+    for(int i = 0; i < AES_BLK_SZ; i++) state[i] = (char)this->dinamicSboxInv[(ui08)state[i]];
+}
+
 Cipher::Cipher() {
     this->keyExpansion = new char[this->keyExpLen];
     for(int i = 0; i < this->keyExpLen; i++) this->keyExpansion[i] = 0;         // -Since the key constitutes of just zeros, key expansion is also just zeros
@@ -391,12 +400,19 @@ Cipher::Cipher() {
 
 Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.getLengthBytes() >> 2), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
     this->create_KeyExpansion(ak.key);
-    if(this->key.getOperationMode() == Key::CBC)
+    if(this->key.operation_mode == Key::CBC) {
         if(!this->key.IVisInitialized()) {                                      // -In case of CBC, setting initial vector.
             char IVsource[AES_BLK_SZ];
             this->setAndWrite_IV(IVsource);
             this->key.set_IV(IVsource);
         }
+        return;
+    }
+    if(this->key.operation_mode == Key::PVS) {                                  // -In case of PVS operation mode, initialize piRoundKey
+        if(this->piRoundkey.roundKeyIsNULL())
+            this->piRoundkey.setPiRoundKey(this->key);
+        return;
+    }
 }
 
 Cipher::Cipher(const Cipher& a) : key(a.key), Nk(a.Nk), Nr(a.Nr), keyExpLen(a.keyExpLen) {
@@ -653,6 +669,42 @@ void Cipher::decryptCBC(char*const data, size_t size) const{
     }
 }
 
+void Cipher::encryptPVS(char*const data, size_t size) const{
+    if(!this->piRoundkey.roundKeyIsNULL()) {
+        unsigned i, j;
+        size_t piSize = this->piRoundkey.getSize();
+        size_t size_blocks = size >> 4;                                         // -size_blocks = size / 16
+        size_t last_blk_sz = size & 15;                                         // -last_blk_sz = size % 16
+        for(i = 0, j = 0; i < size; i++, j++) {
+            if(j == piSize) j = 0;
+            data[i] ^= this->piRoundkey[j];
+        }
+        for(i = 0, j = 0; i < size_blocks; i++)
+            this->piRoundkey.subBytes(&data[i << 4]);
+        if(last_blk_sz > 0) this->piRoundkey.subBytes(&data[size - 16]);
+        this->encryptECB(data, size);                                           // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
+    }
+    else this->encryptECB(data, size);
+}
+
+void Cipher::decryptPVS(char*const data, size_t size) const{
+    if(!this->piRoundkey.roundKeyIsNULL()) {
+        unsigned i, j;
+        size_t piSize = this->piRoundkey.getSize();
+        size_t size_blocks = size >> 4;                                         // -size_blocks = size / 16
+        size_t last_blk_sz = size & 15;                                         // -last_blk_sz = size % 16
+        this->decryptECB(data, size);                                           // -Notice that, if pi.bin file is not found, this operation mode becomes ECB
+        for(i = 0, j = 0; i < size_blocks; i++)
+            this->piRoundkey.invSubBytes(&data[i << 4]);
+        if(last_blk_sz > 0) this->piRoundkey.invSubBytes(&data[size - 16]);
+        for(i = 0, j = 0; i < size; i++, j++) {
+            if(j == piSize) j = 0;
+            data[i] ^= this->piRoundkey[j];
+        }
+    }
+    else this->decryptECB(data, size);
+}
+
 void Cipher::encrypt(char*const data, size_t size) const{
     if(size == 0)    return;
     if(data == NULL) return;
@@ -669,6 +721,9 @@ void Cipher::encrypt(char*const data, size_t size) const{
         case Key::OFB:
             break;
         case Key::CTR:
+            break;
+        case Key::PVS:
+            this->encryptPVS(data, size);
             break;
     }
 }
@@ -689,6 +744,9 @@ void Cipher::decrypt(char*const data, size_t size) const{
         case Key::OFB:
             break;
         case Key::CTR:
+            break;
+        case Key::PVS:
+            this->decryptPVS(data, size);
             break;
     }
 }
