@@ -43,14 +43,14 @@ Optionally, you can run the following commands on your terminal (command prompt 
 
 For AESencryption.exe:
 ```
-// This is, literally, the command that "make AESencryption.exe" calls.
+# This is, literally, the command that "make AESencryption.exe" calls.
 g++ -o AESencryption.exe -Wall -Weffc++ -Wextra -Wsign-conversion -pedantic-errors -ggdb -fno-omit-frame-pointer -O2 -std=c++2a
 ../encryption.cpp ../Settings.cpp ../../Source/*.cpp
 ```
 
 For AESdecryption.exe:
 ```
-// This is, literally, the command that "make AESdecryption.exe" calls.
+# This is, literally, the command that "make AESdecryption.exe" calls.
 g++ -o AESdecryption.exe -Wall -Weffc++ -Wextra -Wsign-conversion -pedantic-errors -ggdb -fno-omit-frame-pointer -O2 -std=c++2a
 ../decryption.cpp ../Settings.cpp ../../Source/*.cpp
 ```
