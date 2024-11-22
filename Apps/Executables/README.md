@@ -28,7 +28,7 @@ To verify if you hame GNU ``make`` installed:
     - Type ``make --version``
 
 To install GNU ``make``, you can follow the instructions of the following links:
-[Windows](https://stackoverflow.com/a/57042516)
+[Windows](https://stackoverflow.com/a/57042516), 
 [MacOS](https://ipv6.rs/tutorial/macOS/GNU_Make/)
 
 ## Use make commands
@@ -62,15 +62,15 @@ We can pass arguments to the executables to encrypt/decrypt a single file. Set a
 key we want to use followed by the files (currently supported) that are meant to be encrypted as the following arguments, this
 will encrypt/decrypt the files using the key referenced in the first argument.
 
-**Example:**
+**Examples:**
 
 Note: Videos were edited to decrease the size of these gifts.
 
-1. Executing ``./AESencryption.exe AESencryption.aeskey Files_for_testing/Pic00.bmp Files_for_testing/Pic01.bmp``.
+1. Encrypting two ``bmp`` images by passing the relative paths of these files to the executable. In concrete, executing: ``./AESencryption.exe AESencryption.aeskey Files_for_testing/Pic00.bmp Files_for_testing/Pic01.bmp``.
 
 ![Encryption](../../Images/AESencryption.gif)
 
-2. Executing ``./AESdecryption.exe AESencryption.aeskey Files_for_testing/Text00.txt Files_for_testing/Text01.txt``.
+1. Decrypting two text files by passing the relative paths of these files to the executable. In concrete, executing: ``./AESdecryption.exe AESencryption.aeskey Files_for_testing/Text00.txt Files_for_testing/Text01.txt``.
 
 ![Decryption](../../Images/AESdecryption.gif)
 
