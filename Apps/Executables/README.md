@@ -66,11 +66,13 @@ will encrypt/decrypt the files using the key referenced in the first argument.
 
 Note: Videos were edited to decrease the size of these gifts.
 
-1. Encrypting two ``bmp`` images by passing the relative paths of these files to the executable. In concrete, executing: ``./AESencryption.exe AESencryption.aeskey Files_for_testing/Pic00.bmp Files_for_testing/Pic01.bmp``.
+1. Encrypting two ``bmp`` images by passing the relative paths of these files to the executable. In concrete, executing:
+``./AESencryption.exe AESencryption.aeskey Files_for_testing/Pic00.bmp Files_for_testing/Pic01.bmp``.
 
 ![Encryption](../../Images/AESencryption.gif)
 
-1. Decrypting two text files by passing the relative paths of these files to the executable. In concrete, executing: ``./AESdecryption.exe AESencryption.aeskey Files_for_testing/Text00.txt Files_for_testing/Text01.txt``.
+1. Decrypting two text files by passing the relative paths of these files to the executable. In concrete, executing:
+``./AESdecryption.exe AESencryption.aeskey Files_for_testing/Text00.txt Files_for_testing/Text01.txt``.
 
 ![Decryption](../../Images/AESdecryption.gif)
 
