@@ -8,4 +8,4 @@
 
 ## Why friends
 -   Friend functions are used for the encryption and decryption of files because, through this method, one single ``AES::Cipher``
-    object can encrypt multiple files.
+    instance can encrypt multiple objects while the attributes of those objects are manteined private.
