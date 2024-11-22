@@ -120,6 +120,7 @@ I will borrow some notation from C programming language; when doubts arise in th
 suppose it has the same meaning as if it were a peace of code in C. The algorithm for PVS operation mode for encryption is:
 
 ```
+// Pseudo code for encryption with PVS mode
 encryptPVS(data, size) {
     for(i = 0; i < size; i++)   data[i] ^= this->piRoundkey[i];
     for(i = 0; i < size; i+= BLOCK_SIZE) dinSubBytes(&data[i]);
@@ -134,6 +135,7 @@ The algorithm for decryption is very similar, as you can notice:
 - ``dinSubBytesInv``:   Corresponds with the inverse function of ``dinSubBytes``.
 
 ```
+// Pseudo code for decryption with PVS mode
 decryptPVS(data, size) {
     decryptECB(data, size);
     for(i = 0; i < size; i+= BLOCK_SIZE) ``dinSubBytesInv``(&data[i]);
@@ -160,6 +162,7 @@ the arrays ``piRoundkey``, ``dinSbox`` and dinSboxInv is the following:
 - ``uNum256bit``:   Funtion: takes an 256 bits array and interprets it as a 256 bits number
 
 ```
+// Pseudo code for creation of PiRoundkey and dinamic Sbox with inverse
 setPiRoundKeyAndDinSbox(key, size) {
     a = uNum256bit(key), b = 0, c = 0;
     prkSize = 0;
