@@ -223,7 +223,7 @@ void setEncryptionObjectFromFile(const char _fileName_[]) {
 }
 
 void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[]) {
-    const char thisFunc[] = "void Options::file(const char fileName[])";
+    const char thisFunc[] = "void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[])";
     bool fileOpenSucces = true;
     File::FileName::Extension ext;
     File::FileName Fname;
