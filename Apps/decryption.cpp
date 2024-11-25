@@ -1,7 +1,5 @@
 #include"Settings.hpp"
 
-#define BUFFER_SIZE 1025
-
 int main(int argc, char *argv[]) {
     if(argc > 1) {                                                              // -Handling arguments from console
         try {
