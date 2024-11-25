@@ -1,4 +1,3 @@
-#include<iostream>
 #include"Settings.hpp"
 
 int main(int argc, const char *argv[]) {
