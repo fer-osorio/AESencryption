@@ -36,7 +36,7 @@ To install GNU ``make``, you can follow the instructions of the following links:
 Use ``make`` commands to build the executables.
 
 1. ``make AESencryption.exe`` to build executable for encryption.
-2. ``make AESencryption.exe`` to build executable for decryption.
+2. ``make AESdecryption.exe`` to build executable for decryption.
 3. ``make`` to build both.
 
 Optionally, you can run the following commands on your terminal (command prompt on Windows)
