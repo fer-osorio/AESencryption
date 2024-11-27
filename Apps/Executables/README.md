@@ -71,7 +71,7 @@ Note: Videos were edited to decrease the size of these gifts.
 
 ![Encryption](../../Images/AESencryption.gif)
 
-1. Decrypting two text files by passing the relative paths of these files to the executable. In concrete, executing:
+2. Decrypting two text files by passing the relative paths of these files to the executable. In concrete, executing:
 ``./AESdecryption.exe AESencryption.aeskey Files_for_testing/Text00.txt Files_for_testing/Text01.txt``.
 
 ![Decryption](../../Images/AESdecryption.gif)
