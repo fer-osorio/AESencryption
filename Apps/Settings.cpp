@@ -63,11 +63,16 @@ namespace Options {                                                             
 	    encryptTextFromCLI,
 	    saveKey
 	};
-	static bool isEncryptionMainMenu(int t) {
+	static bool isEncryptionMainMenuValue(int t) {
 		return
 		t == encryptFiles ||
 		t == encryptTextFromCLI ||
 		t == saveKey;
+	}
+	static bool isEncryptionMainMenuValueNoSaveKey(int t) {
+		return
+		t == encryptFiles ||
+		t == encryptTextFromCLI;
 	}
 };
 
@@ -162,6 +167,7 @@ int subStringDelimitedBySpacesOrQuotation(const char* source, const int startAt,
         }
     }
     destination[j] = 0;
+    if(endingMark == '\'' || endingMark == '"') return i+1;
     return i;
 }
 
@@ -221,16 +227,10 @@ void setEncryptionObjectFromFile(const char _fileName_[]) {
 void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[]) {
     const char thisFunc[] = "void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[])";
     bool fileOpenSucces = true;
-    File::FileName::Extension ext;
-    File::FileName Fname;
-    try{
-        Fname = File::FileName(Name, true);                                     // -Allowing spaces
-    } catch(...){
-        cerrMessageBeforeReThrow(thisFunc);
-    }
-    ext = Fname.getExtension();                                                 // -Recognizing extension.
+    File::StringFileNameAnalize::Extension ext;
+    ext = File::StringFileNameAnalize::getExtension(Name);                            // -Recognizing extension.
     switch(ext) {
-        case File::FileName::bmp:
+        case File::StringFileNameAnalize::bmp:
             try {
                 bmp = File::Bitmap(Name);
             } catch(std::runtime_error& exp) {
@@ -253,7 +253,7 @@ void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[]) 
                 }
             }
             break;
-        case File::FileName::txt:
+        case File::StringFileNameAnalize::txt:
             try {
                 txt = File::TXT(Name);
             } catch(std::runtime_error& exp) {
@@ -276,11 +276,27 @@ void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[]) 
                 }
             }
             break;
-        case File::FileName::aeskey:
+        case File::StringFileNameAnalize::NoExtension:
+            std::cerr << "No extension found.";
+            switch(act) {
+                case Options::Cipher_object::Ciphering:
+                    std::cerr << "No encryption action taken...\n";
+                    break;
+                case Options::Cipher_object::Deciphering:
+                    std::cerr << "No decryption action taken...\n";
+                    break;
+            }
             break;
-        case File::FileName::NoExtension:
-            break;
-        case File::FileName::Unrecognised:
+        case File::StringFileNameAnalize::Unrecognized:
+            std::cerr << "Unable to recognize the extension";
+            switch(act) {
+                case Options::Cipher_object::Ciphering:
+                    std::cerr << "No encryption action taken...\n";
+                    break;
+                case Options::Cipher_object::Deciphering:
+                    std::cerr << "No decryption action taken...\n";
+                    break;
+            }
             break;
     }
 }
@@ -292,6 +308,11 @@ static const char encryptionMainMenu[] =
 "(0) to encrypt files.\n"
 "(1) to encrypt text retrieved from console.\n"
 "(2) to save encryption key.\n";
+
+static const char encryptionMainMenuNoSaveKey[] =
+"\nPress:\n"
+"(0) to encrypt files.\n"
+"(1) to encrypt text retrieved from console.\n";
 
 static const char keyRetreavingOptions[] =
 "Would you like to:\n"
@@ -341,8 +362,9 @@ void CLI::getFilesAndCipherAct(Options::Cipher_object op) {
     char buffer[UPPER_BOUND];
     char fileName[NAME_MAX_LEN];
     bool subStringExp = false;
-    int  inputSize = UPPER_BOUND - 1;
-    int  i, j;
+    size_t bufferSize = UPPER_BOUND - 1;
+    size_t i, j;
+    size_t inputStrSize;
 
     const char enc[] = "encrypt", dec[] = "decrypt";
     const char* opStr;
@@ -350,11 +372,12 @@ void CLI::getFilesAndCipherAct(Options::Cipher_object op) {
     if(op == Options::Cipher_object::Deciphering) opStr = dec;
     std::cout <<
     "Write the names/paths of the files you desire to " << opStr << "separated with spaces. Once done, press enter (input must not have spaces and should be\n"
-    "at most " << inputSize << " characters long. File names/paths must have at most "<< NAME_MAX_LEN << " characters):\n\n";
-    std::cin.getline(buffer, inputSize, '\n');
-    for(i = 0, j = 0;; i += j) {                                                // -'for' ends with the break statement on its end (equivalent to a do-while)
+    "at most " << bufferSize << " characters long. File names/paths must have at most "<< NAME_MAX_LEN << " characters):\n\n";
+    std::cin.getline(buffer, (std::streamsize)bufferSize, '\n');
+    inputStrSize = strlen(buffer);
+    for(i = 0, j = 0; i < inputStrSize && j < inputStrSize;) {                  // -'for' ends with the break statement on its end (equivalent to a do-while)
         try{
-            j = subStringDelimitedBySpacesOrQuotation(&buffer[i], i, fileName);
+            j = (size_t)subStringDelimitedBySpacesOrQuotation(buffer, i, fileName);
         } catch(std::runtime_error& exp) {
             std::cout << exp.what();
             subStringExp = true;
@@ -362,6 +385,7 @@ void CLI::getFilesAndCipherAct(Options::Cipher_object op) {
         if(!subStringExp) {
             cipherObjectOverFile(op, fileName);
         }
+        i += j;
         while(buffer[i] == ' ' || buffer[i] == '\t') if(buffer[i++] == 0) break;// -Terminating 'for'
     }
 }
@@ -421,8 +445,7 @@ void CLI::retreaveKey(Options::Key_retreaving Kr) {                             
 void runProgram(const Options::Cipher_object op) {
     char keyNameStr[NAME_MAX_LEN];
     bool validName = false;                                                     // -Flags is the given name for the encryption key given by the user is valid
-    File::FileName keyName;
-    Options::Encryption_main_menu encMainMen;
+    Options::Encryption_main_menu encMainMen = Options::Encryption_main_menu::saveKey;
     Options::Key_retreaving  Kr;
 
     Kr = (Options::Key_retreaving)CLI::retreaveValidOption(keyRetreavingOptions, Options::isKeyRetreavingValue);    // -Before encryption, the key must obtain
@@ -430,7 +453,10 @@ void runProgram(const Options::Cipher_object op) {
 
     switch(op) {
         case Options::Cipher_object::Ciphering:
-            encMainMen = (Options::Encryption_main_menu)CLI::retreaveValidOption(encryptionMainMenu, Options::isEncryptionMainMenu);// -Asking what we will encrypt
+            if(Kr == Options::Key_retreaving::CreateNew)                        // -If the program generates the key, we need to save it
+                encMainMen = (Options::Encryption_main_menu)CLI::retreaveValidOption(encryptionMainMenu, Options::isEncryptionMainMenuValue);
+            if(Kr == Options::Key_retreaving::RetrieveFromFile)                 // -If the key is retrieved from file, there is no need to save it
+                encMainMen = (Options::Encryption_main_menu)CLI::retreaveValidOption(encryptionMainMenuNoSaveKey, Options::isEncryptionMainMenuValueNoSaveKey);
             switch(encMainMen) {
                 case Options::Encryption_main_menu::encryptFiles:
                     CLI::getFilesAndCipherAct(Options::Cipher_object::Ciphering);// -Encrypting files passed in a line from CLI
@@ -441,19 +467,15 @@ void runProgram(const Options::Cipher_object op) {
                 case Options::Encryption_main_menu::saveKey:
                     break;
             }
-            CLI::getLine("Assign a name to the key file.", keyNameStr);
-            while(!validName) {                                                 // -Validating the name for the key files
-                validName = true;
-                try{
-                    keyName = File::FileName(keyNameStr);
-                } catch(std::runtime_error& exp) {
-                    validName = false;
-                    std::cerr << exp.what();
-                    CLI::getLine("Assign a name to the key file.", keyNameStr);
+            if(Kr == Options::Key_retreaving::CreateNew) {
+                CLI::getLine("Assign a name to the key file.", keyNameStr);
+                validName = File::StringFileNameAnalize::isValidFileName(keyNameStr);
+                while(!validName) {                                                 // -Validating the name for the key files
+                    CLI::getLine("Invalid name for file, try again. Assign a name to the key file.", keyNameStr);
+                    validName = File::StringFileNameAnalize::isValidFileName(keyNameStr);
                 }
+                e.saveKey(keyNameStr);
             }
-            keyName.writestring(keyNameStr);
-            e.saveKey(keyNameStr);
             break;
         case::Options::Cipher_object::Deciphering:
             CLI::getFilesAndCipherAct(Options::Cipher_object::Deciphering);
