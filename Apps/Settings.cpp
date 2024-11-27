@@ -117,8 +117,8 @@ void CLI::getLine(const char* message, char* const destination) {
     std::cin.getline(destination, NAME_MAX_LEN - 1, '\n');
 }
 
-int subStringDelimitedBySpacesOrQuotation(const char* source, const int startAt, char* destination) {
-    const char thisFunc[] = "int subStringDelimitedBySpacesOrQuotation(const char* source, const int startAt, char* destination)";
+int subStringDelimitedBySpacesOrQuotation(const char* source, const int startAt, char* destination) { // -Writes on destination the fist sub-string delimited by
+    const char thisFunc[] = "int subStringDelimitedBySpacesOrQuotation(const char* source, const int startAt, char* destination)"; //    spaces or quotations
     if(source == NULL) {
         cerrMessageBeforeThrow(thisFunc, "Source pointer is a NULL pointer ~~> source == NULL.");
         throw std::invalid_argument("Source pointer is a NULL pointer ~~> source == NULL.\n");
@@ -132,35 +132,31 @@ int subStringDelimitedBySpacesOrQuotation(const char* source, const int startAt,
     for(i = startAt; source[i] == ' ' || source[i] == '\t'; i++) {              // -Ignoring spaces and tabs
         if(i >= UPPER_BOUND) {
             cerrMessageBeforeThrow(thisFunc, "The upper bound for the index looking for the starting token was overreached ~~> i >= UPPER_BOUND.");
-            throw std::runtime_error("Upper bound for reached.");
+            throw std::runtime_error("Upper bound reached.");
         }
         if(source[i] == 0) {
-            cerrMessageBeforeThrow(thisFunc, "End of string reached, starting token not found ~~> source[i] == 0.");
+            cerrMessageBeforeThrow(thisFunc, "End of string reached, nothing but spaces found ~~> source[i] == 0.");
             throw std::runtime_error("End of string reached.");
         }
     }
     endingMark = source[i];
-    if(endingMark == '\'' || endingMark == '"') {
-        for(i++; source[i] != endingMark; i++) {
+    if(endingMark == '\'' || endingMark == '"') {                               // -If quotation is found (single or double), then the writing on destination will
+        for(i++; source[i] != endingMark; i++, j++) {                           //  stop when the same quotation is found
             if(i >= UPPER_BOUND) {
                 cerrMessageBeforeThrow(thisFunc, "The upper bound for the index looking for the starting token was overreached ~~> i >= UPPER_BOUND.");
-                throw std::runtime_error("Upper bound for reached.");
+                throw std::runtime_error("Upper bound reached.");
             }
             if(source[i] == 0) {
-                cerrMessageBeforeThrow(thisFunc, "End of string reached, starting token not found ~~> source[i] == 0.");
+                cerrMessageBeforeThrow(thisFunc, "End of string reached, ending token not found ~~> source[i] == 0.");
                 throw std::runtime_error("End of string reached.");
             }
             destination[j] = source[i];
         }
     } else {
-        for(; source[i] != ' ' || source[i] != '\t'; i++) {
-            if(i >= UPPER_BOUND) {
-                cerrMessageBeforeThrow(thisFunc, "The upper bound for the index looking for the starting token was overreached ~~> i >= UPPER_BOUND.");
-                throw std::runtime_error("Upper bound for reached.");
-            }
-            if(source[i] == 0) {
-                cerrMessageBeforeThrow(thisFunc, "End of string reached, starting token not found ~~> source[i] == 0.");
-                throw std::runtime_error("End of string reached.");
+        for(; source[i] != ' ' && source[i] != '\t' && source[i] != 0; i++, j++) { // -After ignoring tabs and spaces, the first character found is not a quotation,
+            if(i >= UPPER_BOUND) {                                              //  then the writing on destination will stop when a space is found
+                cerrMessageBeforeThrow(thisFunc, "The upper bound for the index looking for the ending token was overreached ~~> i >= UPPER_BOUND.");
+                throw std::runtime_error("Upper bound reached.");
             }
             destination[j] = source[i];
         }
