@@ -34,56 +34,44 @@ FN  ->  FN/·Sld·FN   |   ../FN	|	/·Sld·FN				// -Considering file paths (Abs
 Note: SPACES can be represented by single spaces, or a concatenation of spaces
 */
 
-struct FileName {
-	public: enum Extension { bmp, txt, aeskey, NoExtension, Unrecognised };
-	private:const char* extensionString[3] = { "bmp", "txt", "aeskey"};
-	private:const unsigned extensionStringAmount = sizeof(extensionString) / sizeof(extensionString)[0];
+struct StringFileNameAnalize {
+	public:	enum Extension { bmp, txt, NoExtension, Unrecognized };
+	private:static const Extension  SupportedExtension[2];
+	private:static const size_t	SupportedExtensionAmount;
+	private:static const char* 	SupportedExtensionString[2];
+	private:static const size_t 	extensionStringAmount;
 	private:
-	enum CharType {letter, digit, dot, underscore, hyphen, slash, space, singleQuote ,doubleQuote, notAllowed, zero};
+	enum CharType {zero, letter, digit, dot, underscore, hyphen, slash, space, singleQuote ,doubleQuote, notAllowed};
 
-	Extension	extension 		= NoExtension;
-	unsigned	size			= 0;
-	char* 		string 			= NULL;				// -File name.
-	mutable int	currentStringIndex	= 0;				// -We will use this to analyze and validate the 'string' atribute
-	bool		beginsDoubleQuote 	= false;			// -Starting with quotes will allow spaces in the middle of Sld strings, but will
-	bool		beginsSingleQuote 	= false;			//  require to finish the string with the corresponding quote
-	bool		allowSpaces		= false;			// -This will allow spaces in the middle of Sld strings
+	const char* str = NULL;
+	size_t      size = 0;
+	unsigned    currentIndex = 0;
 
-	Extension isSupportedExtension(const char[]) const;			// -Compares its input with the strings in supportedExtension array
-	static CharType characterType(const char c);				// -True for the character that may appear in the file name, false in other case
+	static	CharType characterType(const char c);				// -True for the character that may appear in the file name, false in other case
+	void 	cerrSyntaxErrMsg(const char[]);
 
-	bool Sld(const char str[])const;					// -The returned bool flags the founding of zero byte or the characters '\'' or '"'
-	void FN (const char str[])const;
+	bool Sld();                                                                 // -The returned bool flags the founding of zero byte or the characters '\'' or '"')
+	bool FN ();
+
+	StringFileNameAnalize(const char str_[]);
 
 	public:
-	FileName() {}
-	FileName(const char* _fileName, bool acceptSpaces = false);
-	FileName(const FileName& nm);
-	FileName& operator = (const FileName& nm);
-	~FileName() {
-		if(this->string != NULL) delete[] this->string;
-		this->string = NULL;
-		size = 0;
-	}
-	void writestring(char*const destiantion) const;
-	void print(const char*const atBeginning = NULL, const char*const atEnd = NULL) const{ std::cout << atBeginning << this->string << atEnd; }
-	void println() const{ std::cout << this->string << '\n'; }
-	unsigned  getSize() const{ return size;	}
-	Extension getExtension() const{ return extension; }
-	FileName  returnThisNewExtension(Extension newExt) const; 		// -Keeps same name, changes the extension
+	static Extension getExtension(const char[]);				// -Compares its input with the strings in supportedExtension array
+	static bool isValidFileName(const char str[]);
 };
 
 class TXT {									// -Handling .txt files
-	FileName name;
-	char* content = NULL;							// -Text file content.
-	unsigned size = 0;
+	char* name 	= NULL;
+	char* content	= NULL;							// -Text file content.
+	unsigned size	= 0;
 
 	public:
 	TXT() : name() {}							// -Just for type declaration.
 	TXT(const char* fname);							// -Building from file.
-	TXT(FileName& fname);
 	TXT(const TXT&);
 	~TXT() {
+		if(this->name != NULL) delete [] this->name;
+		this->name = NULL;
 		if(this->content != NULL) delete[] this->content;
 		this->content = NULL;
 		this->size = 0;
@@ -91,8 +79,7 @@ class TXT {									// -Handling .txt files
 
 	TXT& operator = (const TXT&);
 	void save(const char* fname = NULL) const;
-	FileName::Extension fileExtension() const{ return name.getExtension(); }
-	void printName(const char*const atBeginning = NULL, const char*const atEnd = NULL) const{ this->name.print(atBeginning, atEnd); }
+	void printName() const{ if(this->name != NULL) std::cout << this->name; }
 
 	friend void encrypt(TXT& txt, AES::Cipher& e) {				// -Encrypts using the operation mode defined in Key object
 		e.encrypt(txt.content, txt.size);

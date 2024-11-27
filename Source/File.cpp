@@ -8,11 +8,6 @@ static void throwMessage_cerr(const char callerFunction[], const char message[])
     std::cerr << "In file Source/File.cpp, function " << callerFunction << ": " << message << '\n';
 }
 
-static void rethrowMessageFor_cerr(const char callerFunction[], const char message[] = "") {
-    if(callerFunction == NULL) return;
-    std::cerr << "Called from: File Source/File.cpp, function " << callerFunction << " ..."<< message << '\n';
-}
-
 using namespace File;
 
 /*************************************************************** Handling the name of the files *******************************************************************/
@@ -44,19 +39,31 @@ FN  ->  FN/·Sld·FN   |   ../FN	|	/·Sld·FN									// -Considering file paths
 Note: SPACES can be represented by single spaces, or a concatenation of spaces
 */
 
-FileName::Extension FileName::isSupportedExtension(const char str[]) const{
-    if(str == NULL || str[0] == 0) return FileName::NoExtension;
-    Extension temp[3] = {bmp, txt, aeskey};
-    unsigned i, j = 0;
-    for(i = 0; i < this->extensionStringAmount && extensionString[i][j] != 0; i++) {
-        for(j = 0; str[j] == extensionString[i][j]; j++) {
-            if(extensionString[i][j] == 0) return temp[i];
-        }
+const StringFileNameAnalize::Extension  StringFileNameAnalize::SupportedExtension[2]= { bmp,   txt };
+const char* 	StringFileNameAnalize::SupportedExtensionString[2]                  = {"bmp", "txt"};
+const size_t	StringFileNameAnalize::SupportedExtensionAmount	    = sizeof(SupportedExtension) / sizeof(SupportedExtension[0]);
+const size_t 	StringFileNameAnalize::extensionStringAmount 		= sizeof(SupportedExtensionString) / sizeof(SupportedExtensionString)[0];
+
+StringFileNameAnalize::Extension StringFileNameAnalize::getExtension(const char fileName[]) {
+    if(fileName == NULL) {
+        std::cerr << "In file Source/NTRUencryption.cpp, function static FileExtensions getExtension(const char fileName[]). filename == NULL...\n";
+        return Unrecognized;
     }
-    return Unrecognised;
+    int i = -1;
+    size_t j;
+    while(fileName[++i] != 0) {}                                                // -Looking for end of string
+    while(fileName[i] != '.' && i > 0) {i--;}                                   // -Looking for last point
+
+    if(i >= 0) {
+        for(i++, j = 0; j < SupportedExtensionAmount; j++) {
+            if(strcmp(&fileName[i], SupportedExtensionString[j]) == 0) return SupportedExtension[j];
+        }
+        return Unrecognized;
+    }
+    return NoExtension;                                                         // -Could not find the point
 }
 
-FileName::CharType FileName::characterType(const char c){                       // -Just checks if the character may be used in a File Name
+StringFileNameAnalize::CharType StringFileNameAnalize::characterType(const char c){                       // -Just checks if the character may be used in a File Name
     if((c > 64 && c < 91) || (c > 96 && c < 123)) return letter;                // -Letters
     if(c > 47 && c < 58) return digit;                                          // -Decimal digits
     if(c == '.') return dot;                                                    // -And finally special symbols
@@ -88,208 +95,111 @@ static bool isLetterOrDigit(const char c) {
             c == '_' || c == '-';                                               // -Seeking simplicity, '-' and '_' will be consider as letters
 }
 
-bool FileName::Sld(const char str[]) const{
-    const char thisFuncName[] = "bool FileName::Sld(const char str[])";         // -Useful at the moment of describing exceptions
-    if(!isLetter(str[this->currentStringIndex])) {                              // -This ensures we have a letter at the beginning of the string
-        if(isDigit(str[this->currentStringIndex])) {
-            throwMessage_cerr(thisFuncName, "Syntax Error: File name can not start with a digit.");
-            throw std::runtime_error("File Name Syntax Error: Name can not start with a digit.");
-        }
-        throwMessage_cerr(thisFuncName, "Syntax Error: Expected a character from English alphabet.");
-        throw std::runtime_error("File Name Syntax Error: Expected a character from English alphabet.");
-    }
-    int i = 0;
-    if(this->allowSpaces){                                                      // -If file name starts with single/double quote or the constructor sets as so
-        for(i = ++this->currentStringIndex; isLetterOrDigit(str[i]) || str[i] == ' '; i++) {} // -Running trough letters, digits and spaces
+void StringFileNameAnalize::cerrSyntaxErrMsg(const char msg[]) {
+    const char SinErr[] = "Syntax Error: ";
+    size_t sz = strlen(SinErr) + this->currentIndex;
+    unsigned i;
+    std::cerr << SinErr;
+    std::cerr << this->str << std::endl;
+    for(i = 0; i < sz; i++) std::cerr << ' ';
+    std::cerr << "^~~~ " << msg << std::endl;
+    if(isDigit(this->str[this->currentIndex]) || this->str[this->currentIndex] == ' ') {
+        if(isDigit(this->str[this->currentIndex]))
+            while(isDigit(this->str[this->currentIndex])) this->currentIndex++;
+        else
+            while(this->str[this->currentIndex] == ' ') this->currentIndex++;
     } else
-        for(i = ++this->currentStringIndex; isLetterOrDigit(str[i]); i++) {}    // -Running trough letters and digits
+        this->currentIndex++;
+    if(this->str[this->currentIndex] != 0 && this->currentIndex < this->size) {
+        this->FN();
+    }
+}
 
-    this->currentStringIndex = i;
+bool StringFileNameAnalize::Sld() {
+    if(!isLetter(this->str[this->currentIndex])) {                              // -This ensures we have a letter at the beginning of the string
+        if(isDigit(this->str[this->currentIndex])) {
+            this->cerrSyntaxErrMsg("File name can not start with a digit.");
+            return false;
+        }
+        this->cerrSyntaxErrMsg("Expected a character from English alphabet.");
+        return false;
+    }
+    unsigned i = 0;
+    for(i = ++this->currentIndex; isLetterOrDigit(this->str[i]) || this->str[i] == ' '; i++) {} // -Running trough letters, digits and spaces
+    this->currentIndex = i;
 
-    if(str[this->currentStringIndex] == 0) {
-        if(this->beginsSingleQuote) {
-            throwMessage_cerr(thisFuncName, "Syntax Error: String started with single quote, then it should finish with single quotes.");
-            throw std::runtime_error("File Name Syntax Error: Started with single quote, then it should finish with single quotes.");
-        }
-        if(this->beginsDoubleQuote) {
-        throwMessage_cerr(thisFuncName, "Syntax Error: String started with double quote, then it should finish with double quotes.");
-        throw std::runtime_error("File Name Syntax Error: Started with double quote, then it should finish with double quotes.");
+    if(this->str[this->currentIndex] == 0) {
+        if(this->str[this->currentIndex-1] == ' ') {
+            this->cerrSyntaxErrMsg("File Name/Path can not finish with spaces.");
+            return false;
         }
         return true;
     }
-    if(this->beginsSingleQuote && str[this->currentStringIndex] == '\'') { // -Starting with single quote, finishing with single quote
-        if(str[this->currentStringIndex-1] == ' ') {
-            throwMessage_cerr(thisFuncName,"Syntax Error: File Name/Path can not finish with spaces.");
-            throw std::runtime_error("File Name Syntax Error: Name/Path can not finish with spaces.");
-        }
-        return true;
+    return this->FN();
+}
+
+bool StringFileNameAnalize::FN() {
+    CharType ct = characterType(this->str[this->currentIndex]);
+    switch(ct) {
+        case slash:                                                             // -Allowing slash for file paths
+            this->currentIndex++;
+            return this->Sld();
+        case letter:
+        case underscore:
+        case hyphen:
+            return this->Sld();                                // -Read (always starting with a letter) letters, digits and (if allowed) spaces;
+            break;                                                              //  when a proper ending character is found (0,'\'','"',' ') then return
+        case dot:                                                               // -Cases for dot
+            if(this->str[++this->currentIndex] == '.') {                        // -The string "../" is allowed as a sub-string so we can use relative paths
+                if(this->str[++this->currentIndex] == '/') {
+                    this->currentIndex++;
+                    return this->FN();
+                } else {
+                    this->cerrSyntaxErrMsg("Syntax Error: Expected '/' character.");
+                    return false;
+                }
+            } else {
+                return this->Sld();                            // -This lines can be interpreted as: Read (always starting with a letter) letters,
+            }                                                                   //  digits and (if allowed) spaces; when a proper ending character is found
+        case digit:
+            this->cerrSyntaxErrMsg("File name can not start with a digit.");
+            return false;
+        case space:
+            this->cerrSyntaxErrMsg("File name can not start with a space.");
+            return false;
+        case singleQuote:
+            this->cerrSyntaxErrMsg("Not Expecting a single quote here.");
+            return false;
+        case doubleQuote:
+            this->cerrSyntaxErrMsg("Not expecting a double quote here.");
+            return false;
+        case notAllowed:
+            this->cerrSyntaxErrMsg("Unexpected character/symbol.");
+            return false;
+        case zero:
+            this->cerrSyntaxErrMsg("Unexpected end of string.");
+            return false;
     }
-    if(this->beginsDoubleQuote && str[this->currentStringIndex] == '"' ) { // -Starting with double quote, finishing with double quote
-        if(str[this->currentStringIndex-1] == ' ') {
-            throwMessage_cerr(thisFuncName,"Syntax Error: File Name/Path can not finish with spaces.");
-            throw std::runtime_error("File Name Syntax Error: Name/Path can not finish with spaces.");
-        }
-        return true;
-    }
-    if(str[this->currentStringIndex] == ' ') return true;                       // -At this point, a space is a proper ending for the input string
     return false;
 }
 
-void FileName::FN(const char str[]) const{
-    const char thisFuncName[] = "void FileName::FN(const char str[])";
-    CharType ct = FileName::characterType(str[this->currentStringIndex]);
-    switch(ct) {
-        case slash:                                                             // -Allowing slash for file paths
-            this->currentStringIndex++;
-            try { if(this->Sld(str)) return; }                                  // -This lines can be interpreted as: Read (always starting with a letter) letters,
-            catch(std::runtime_error&) {                                         //  digits and (if allowed) spaces; when a proper ending character is found
-                rethrowMessageFor_cerr(thisFuncName);                           //  (0, '\'', '"',' ') then return, otherwise continue reading
-                throw;
-            }
-            break;
-        case letter:                                                            // -We can interpret this lines of codes as: A file name con start with a letter,
-        case underscore:                                                        //  a underscore or a hyphen
-        case hyphen:                                                            //  ...
-            try { if(this->Sld(str)) return; }                                  // -This lines can be interpreted as: Read (always starting with a letter) letters,
-            catch(std::runtime_error&) {                                         //  digits and (if allowed) spaces; when a proper ending character is found
-                rethrowMessageFor_cerr(thisFuncName);                           //  (0, '\'', '"',' ') then return, otherwise continue reading
-                throw;
-            }
-            break;
-        case dot:                                                               // -Cases for dot
-            if(str[++this->currentStringIndex] == '.') {                        // -The string "../" is allowed as a sub-string so we can use relative paths
-                if(str[++this->currentStringIndex] == '/') {                    //  ...
-                    this->currentStringIndex++;
-                    try { this->FN(str); }
-                    catch(std::runtime_error&) {
-                        rethrowMessageFor_cerr(thisFuncName);
-                        throw;
-                    }
-                } else {
-                    throwMessage_cerr(thisFuncName, "Syntax Error: Expected '/' character.");
-                    throw std::runtime_error("File Name Syntax Error: Expected '/' character.");
-                }
-            } else {
-                try { if(this->Sld(str)) return; }                              // -This lines can be interpreted as: Read (always starting with a letter) letters,
-                catch(std::runtime_error&) {                                     //  digits and (if allowed) spaces; when a proper ending character is found
-                    rethrowMessageFor_cerr(thisFuncName);
-                    throw;
-                }
-            }
-        break;
-        case digit:
-            throwMessage_cerr(thisFuncName, "Syntax Error: File name can not start with a digit.");
-            throw std::runtime_error("File Name Syntax Error: File name can not start with a digit.");
-        case space:
-            throwMessage_cerr(thisFuncName, "Syntax Error: Not Expecting a space here.");
-            throw std::runtime_error("File Name Syntax Error: Not expecting a space here.");
-        case singleQuote:
-            throwMessage_cerr(thisFuncName, "Syntax Error: Not Expecting a single quote here.");
-            throw std::runtime_error("File Name Syntax Error: Not expecting a single quote here.");
-        case doubleQuote:
-            throwMessage_cerr(thisFuncName, "Syntax Error: Not expecting a double quote here.");
-            throw std::runtime_error("File Name Syntax Error: Not expecting a double quote here.");
-        case notAllowed:
-            throwMessage_cerr(thisFuncName, "Syntax Error: Unexpected character/symbol.");
-            throw std::runtime_error("File Name Syntax Error: Unexpected character/symbol.");
-        case zero:
-            throwMessage_cerr(thisFuncName, "Syntax Error: Unexpected end of string.");
-            throw std::runtime_error("File Name Syntax Error: Unexpected end of string.");
-    }
-    try { this->FN(str); }
-    catch(std::runtime_error&) {
-        rethrowMessageFor_cerr(thisFuncName);
-        throw;
-    }
+StringFileNameAnalize::StringFileNameAnalize(const char _str_[]): str(_str_) {
+    if(this->str != NULL) while(this->str[this->size] != 0) this->size++;
 }
 
-FileName::FileName(const char* fileName_, bool acceptSpaces): allowSpaces(acceptSpaces) {
-    const char thisFuncName[] = "FileName::FileName(const char* fileName_, bool acceptSpaces)";
-    int i = 0, j = 0, markBeginning = 0, markEnd = 0;                           // -Markers for the beginning and end of input string
-    int pointIndex = -1;
-
-    if(fileName_ == NULL) {
-        throwMessage_cerr(thisFuncName, "Could not build 'FileName' object from null const char* input.");
-        throw std::invalid_argument("Could not build 'FileName' object from null const char* input");
-    }
-    if(fileName_[0] == 0) {
-        throwMessage_cerr(thisFuncName, "Could not build 'FileName' object from trivial string \"\"");
-        throw  std::invalid_argument("Could not build 'FileName' object from trivial string \"\"");
-    }
-
-    while(fileName_[i] == ' ' || fileName_[i] == '\t') i++;                     // -Ignoring the spaces and tabs that could be at the beginning of the input
-
-    if(fileName_[i] == '\'' || fileName_[i] == '"') {                           // -We can interpret this as: Spaces are allowed; read till the next double/single
-        if(fileName_[i] == '\'')this->beginsSingleQuote = true;                 //  quote
-        else                    this->beginsDoubleQuote = true;
-        this->allowSpaces = true;
-        i++;
-    }
-    this->currentStringIndex = markBeginning = i;                               // -Marking the beginning of the file name inside the string
-
-    try{                                                                        // -Validating passed string as a valid file name
-        this->FN(fileName_);
-    } catch(std::runtime_error&) {
-        rethrowMessageFor_cerr(thisFuncName);
-        throw ;
-    }
-    markEnd = this->currentStringIndex;
-    this->size = unsigned(markEnd - markBeginning);
-    this->string = new char[this->size + 1];
-
-	for(i = markBeginning, j = 0; i < markEnd; i++, j++) this->string[j] = fileName_[i]; // -Copying the part of the string that represents the files name
-	this->string[j] = 0;
-	while(j >= 0 && this->string[j] != '.') j--;
-	pointIndex = j;
-
-	if(pointIndex >= 0 && pointIndex <= NAME_MAX_LEN - 3) extension = isSupportedExtension(&fileName_[pointIndex + 1]); // -Identifying extension
-	else extension = NoExtension;
+bool StringFileNameAnalize::isValidFileName(const char str[]) {                 // -Validating string as a file name
+    StringFileNameAnalize s(str);
+    return s.FN();
 }
-
-FileName::FileName(const FileName& nm): extension(nm.extension), size(nm.size) {
-	this->string = new char[nm.size];
-	for(unsigned i = 0; i < nm.size; i++)
-		this->string[i] = nm.string[i];
-}
-
-FileName& FileName::operator = (const FileName& nm) {
-	if(this != &nm) {
-		this->extension = nm.extension;
-		this->size = nm.size;
-		if(this->string != NULL) delete[] this->string;
-		this->string = new char[nm.size];
-		for(unsigned i = 0; i <= nm.size; i++)                                  // -The <= condition is necessary to copy the '0' that ends the string. Remember,
-			this->string[i] = nm.string[i];                                     //  this is a formatted string.
-	}
-	return *this;
-}
-
-FileName FileName::returnThisNewExtension(Extension newExt) const{
-    if(newExt == NoExtension || newExt == Unrecognised) return *this;           // -In this cases we return a copy of original extension
-    FileName r;
-    r.size = this->size + strlen(this->extensionString[newExt]);
-    r.string = new char[r.size];                                                // -Making room for new extension
-    strcpy(r.string, this->string);                                             // -Copying original file name
-    strcpy(&r.string[this->size], this->extensionString[newExt]);               // -Adding new extension
-    r.extension = newExt;
-    return r;
-}
-
-void FileName::writestring(char *const destiantion) const{ 					// -Assuming destination has enough space for the String
-	if(this->string == NULL) return;
-	for(unsigned i = 0; i < this->size; i++) {
-		destiantion[i] = this->string[i];
-	}
-	destiantion[this->size] = 0;
-}
-
 
 /******************************************************************* Text files (.txt files) **********************************************************************/
 
-TXT::TXT(const char* fname): name(fname) { // -Building from file.
+TXT::TXT(const char* fname) { // -Building from file.
     std::ifstream file;
     file.open(fname);
     if(file.is_open()) {
+        this->name = new char[strlen(fname)];
+        strcpy(this->name, fname);
         file.seekg(0, std::ios::end);
         std::streampos fileSize = file.tellg();
         this->size = fileSize;
@@ -303,54 +213,33 @@ TXT::TXT(const char* fname): name(fname) { // -Building from file.
     }
 }
 
-TXT::TXT(FileName& fname): name(fname) {
-    std::ifstream file;
-    char*const nameStr = new char[this->name.getSize()];
-    this->name.writestring(nameStr);
-    file.open(nameStr);
-    if(file.is_open()) {
-        file.seekg(0, std::ios::end);
-        std::streampos fileSize = file.tellg();
-        this->size = fileSize;
-        file.seekg(0, std::ios::beg);
-        this->content = new char[fileSize];
-        file.read(this->content, fileSize);
-        file.close();
-    } else {
-        throwMessage_cerr("TXT::TXT(FileName& fname)", "Could not open file.");
-        throw std::runtime_error("Could not open file.");
-    }
-    if(nameStr != NULL) delete[] nameStr;
-}
-
-TXT::TXT(const TXT& t): name(t.name), size(t.size) {
+TXT::TXT(const TXT& t): size(t.size) {
+    this->name = new char[strlen(t.name)];
+    strcpy(this->name, t.name);
     this->content = new char[t.size];
     for(unsigned i = 0; i < t.size; i++) this->content[i] = t.content[i];
 }
 
 void TXT::save(const char* fname)  const{                                       // -The user can provide a name for the file
     std::ofstream file;
-    char* nameStr = NULL;
-    if(fname != NULL) file.open(fname);
-    else {                                                                      // -If no name provided, the string inside attribute name will be used
-        nameStr = new char[this->name.getSize()];
-        this->name.writestring(nameStr);
-        file.open(nameStr);
-    }
+    if(fname != NULL)
+        file.open(fname);
+    else                                                                        // -If no name provided, the string inside attribute name will be used
+        file.open(this->name);
     if(file.is_open()) {
         file.write(this->content, this->size);
         file.close();
     } else {
-        if(nameStr != NULL) delete[] nameStr;
         throwMessage_cerr("void TXT::save(const char* fname)", "File could not be written.");
         throw std::runtime_error("File could not be written.");
     }
-    if(nameStr != NULL) delete[] nameStr;
 }
 
 TXT& TXT::operator = (const TXT& t) {
     if(this != &t) {
-        this->name = t.name;
+        if(this->name != NULL) delete[] this->name;
+        this->name = new char[strlen(t.name)];
+        strcpy(this->name, t.name);
         this->size = t.size;
         if(content != NULL) delete[] content;
         this->content = new char[t.size];
