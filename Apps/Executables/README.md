@@ -64,7 +64,7 @@ arguments:
 ./AESencryption.exe
 ```
 Then, the program will give you instructions for the creation of public-private key pairs (and other encryption options, if desired).
-The following image shows the process of public-private key creation:
+The following image shows the process creating and saving keys:
 
 ![Key Creation](../../Images/KeyCreation.gif)
 
