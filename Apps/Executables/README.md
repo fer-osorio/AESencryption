@@ -57,7 +57,17 @@ g++ -o AESdecryption.exe -Wall -Weffc++ -Wextra -Wsign-conversion -pedantic-erro
 
 These last two commands are convenient if you do not have ``make`` installed. 
 
-## Passing arguments to the executables.
+# Passing arguments to the executables.
+**Important**: Right now I am assuming you have a key available; if you do not, please run the encryption executable with no
+arguments:
+```
+./AESencryption.exe
+```
+Then, the program will give you instructions for the creation of public-private key pairs (and other encryption options, if desired).
+The following image shows the process of public-private key creation:
+
+![Key Creation](../../Images/KeyCreation.gif)
+
 We can pass arguments to the executables to encrypt/decrypt a single file. Set as first argument the name/path of the encryption
 key we want to use followed by the files (currently supported) that are meant to be encrypted as the following arguments, this
 will encrypt/decrypt the files using the key referenced in the first argument.
