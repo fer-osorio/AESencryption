@@ -11,6 +11,9 @@ int main(int argc, const char *argv[]) {
         for(int i = 2; i < argc; i++) encryptFile(argv[i]);
         return EXIT_SUCCESS;
     }
+    std::cout <<
+    "Hello! I am a program which is particularly good at encryption BMP images and text files. Feel free to use me to encrypt any\n"
+    ".txt or .bmp file you desire. At any moment you can stop me by pressing the keys 'CTRL+C'. Before anything...\n\n";
     runEncryptionProgram();
     return EXIT_SUCCESS;
 }
