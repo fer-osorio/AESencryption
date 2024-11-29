@@ -16,10 +16,7 @@ struct Key {
 	enum OperationMode {
 		ECB,								// -Electronic Code Book (not recommended).
 		CBC,								// -Cipher Block Chaining.
-		CFB,
-		OFB,
-		CTR,
-		PVS
+		PVS								// -Permutation Variable SBox
 	};
 	private:
 	char*	key = NULL;

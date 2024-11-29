@@ -129,12 +129,6 @@ static void operationModeToString(Key::OperationMode opm, char*const destination
             break;
         case Key::CBC: strcpy(destination, "CBC");
             break;
-        case Key::CFB: strcpy(destination, "CFB");
-            break;
-        case Key::OFB: strcpy(destination, "OFB");
-            break;
-        case Key::CTR: strcpy(destination, "CTR");
-            break;
         case Key::PVS: strcpy(destination, "PVS");
             break;
     }
@@ -194,9 +188,6 @@ Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), oper
                 opMode[3] = 0;
                 if(strcmp(opMode, "ECB") == 0) this->operation_mode = ECB;
                 else if(strcmp(opMode, "CBC") == 0) this->operation_mode = CBC;
-                else if(strcmp(opMode, "CFB") == 0) this->operation_mode = CFB;
-                else if(strcmp(opMode, "OFB") == 0) this->operation_mode = OFB;
-                else if(strcmp(opMode, "CTR") == 0) this->operation_mode = CTR;
                 else if(strcmp(opMode, "PVS") == 0) this->operation_mode = PVS;
                 else {
                     std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname):" << opMode << ", not a recognized operation mode.\n";
@@ -293,15 +284,6 @@ void Key::save(const char* const fname) const {
             break;
         case CBC:
             op_mode = "CBC";
-            break;
-        case CFB:
-            op_mode = "CFB";
-            break;
-        case OFB:
-            op_mode = "OFB";
-            break;
-        case CTR:
-            op_mode = "CTR";
             break;
         case PVS:
             op_mode = "PVS";
@@ -743,12 +725,6 @@ void Cipher::encrypt(char*const data, size_t size) const{
         case Key::CBC:
             this->encryptCBC(data, size);
             break;
-        case Key::CFB:
-            break;
-        case Key::OFB:
-            break;
-        case Key::CTR:
-            break;
         case Key::PVS:
             this->encryptPVS(data, size);
             break;
@@ -765,12 +741,6 @@ void Cipher::decrypt(char*const data, size_t size) const{
             break;
         case Key::CBC:
             this->decryptCBC(data, size);
-            break;
-        case Key::CFB:
-            break;
-        case Key::OFB:
-            break;
-        case Key::CTR:
             break;
         case Key::PVS:
             this->decryptPVS(data, size);
