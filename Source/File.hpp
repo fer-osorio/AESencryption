@@ -1,5 +1,7 @@
 // -Set of structures representing files. The intention is to handle files for its encryption
-#include "AES.hpp"
+#include<cstdint>
+#include"AES.hpp"
+#include <iomanip>
 
 #ifndef _INCLUDED_FILE_
 #define _INCLUDED_FILE_
@@ -50,7 +52,7 @@ struct StringFileNameAnalize {
 	static	CharType characterType(const char c);				// -True for the character that may appear in the file name, false in other case
 	void 	cerrSyntaxErrMsg(const char[]);
 
-	bool Sld();                                                                 // -The returned bool flags the founding of zero byte or the characters '\'' or '"')
+	bool Sld();								// -The returned bool flags the founding of zero byte or the characters '\'' or '"')
 	bool FN ();
 
 	StringFileNameAnalize(const char str_[]);
@@ -95,40 +97,40 @@ class TXT {									// -Handling .txt files
 class Bitmap;									// -The intention is to use the name Bitmap in the next function
 std::ostream& operator << (std::ostream& st, const Bitmap& bmp);		// -What we want is to make this function visible inside the name space scope
 class Bitmap {									// -Handling bitmap format images.
-	typedef unsigned char  ui08;
-	typedef unsigned short ui16;
-	typedef unsigned int   ui32;
-
+	enum ColorID{ Red, Green, Blue};
 	struct RGB {
-		ui08 red;
-		ui08 green;
-		ui08 blue;
+		uint8_t red;
+		uint8_t green;
+		uint8_t blue;
 	};
 	struct FileHeader {
-		char bm[2];							// [B, M] for bmp files
+		char     bm[2];							// [B, M] for bmp files
 		unsigned size;  						// File size
-		ui16 reserved1;							// Dependent on the originator application
-		ui16 reserved2;							// Dependent on the originator application
-		ui32 offset;							// Starting address of the image data
+		uint16_t reserved1;						// Dependent on the originator application
+		uint16_t reserved2;						// Dependent on the originator application
+		uint32_t offset;						// Starting address of the image data
 	} fh = {0,0,0,0,0,0};
 
 	struct ImageHeader {
-		ui32 size;							// Size of this header
-		int Width;							// Image width in pixels
-		int Height;							// Image height in pixels
-		ui16 Planes;							// Number of color planes (must be 1)
-		ui16 BitsPerPixel;						// Number of bits per pixel, in this case 24
-		ui32 Compression;						// Compression method
-		ui32 SizeOfBitmap;						// Size of raw bitmap data
-		int HorzResolution; 						// Horizontal pixel per meter
-		int VertResolution; 						// Vertical pixel per meter
-		ui32 ColorsUsed;						// Colors in the color palette, 0 to default
-		ui32 ColorsImportant;						// Zero when every color is important
+		uint32_t size;							// Size of this header
+		int 	 Width;							// Image width in pixels
+		int	 Height;						// Image height in pixels
+		uint16_t Planes;						// Number of color planes (must be 1)
+		uint16_t BitsPerPixel;						// Number of bits per pixel, in this case 24
+		uint32_t Compression;						// Compression method
+		uint32_t SizeOfBitmap;						// Size of raw bitmap data
+		int	 HorzResolution; 					// Horizontal pixel per meter
+		int	 VertResolution; 					// Vertical pixel per meter
+		uint32_t ColorsUsed;						// Colors in the color palette, 0 to default
+		uint32_t ColorsImportant;					// Zero when every color is important
 	} ih = {0,0,0,0,0,0,0,0,0,0,0};
 
 	char* data = NULL;
 	RGB** img  = NULL;
 	char* name = NULL;
+
+	double calculateEntropy(const ColorID) const;
+	double computeEntropy(const ColorID) const;
 
 	public:
 	Bitmap() {} 								// -Just for type declaration
@@ -142,6 +144,15 @@ class Bitmap {									// -Handling bitmap format images.
 
 	friend void encrypt(Bitmap& bmp, AES::Cipher& e) {			// -Encrypts using the operation mode defined in Key object
 		e.encrypt(bmp.data, bmp.ih.SizeOfBitmap);
+		std::cout << std::endl;
+		std::cout << "Entropy red   = " << bmp.computeEntropyRed()   << '\n';
+		std::cout << "Entropy green = " << bmp.computeEntropyGreen() << '\n';
+		std::cout << "Entropy blue  = " << bmp.computeEntropyBlue()  << '\n';
+		std::cout << "Total entropy = " << bmp.computeEntropy()  << '\n';
+		std::cout << std::endl;
+		/*std::cout << "Entropy red   = " << bmp.calculateEntropyRed()   << std::endl;
+		std::cout << "Entropy green = " << bmp.calculateEntropyGreen() << std::endl;
+		std::cout << "Entropy blue  = " << bmp.calculateEntropyBlue()  << std::endl;*/
     		bmp.save(bmp.name);						// -The reason of the existence of these friend functions is to be capable of
 	}									//  encrypt and decrypt many files with the same Cipher object while maintaining
 										//  attributes of bmp object private
@@ -149,6 +160,15 @@ class Bitmap {									// -Handling bitmap format images.
 		e.decrypt(bmp.data, bmp.ih.SizeOfBitmap);
     		bmp.save(bmp.name);
 	}
+
+	double computeEntropy() const;
+	double computeEntropyRed()	const;
+	double computeEntropyGreen()	const;
+	double computeEntropyBlue()	const;
+
+	double calculateEntropyRed()	const;
+	double calculateEntropyGreen()	const;
+	double calculateEntropyBlue()	const;
 };
 };
 #endif

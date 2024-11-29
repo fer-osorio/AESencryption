@@ -1,6 +1,7 @@
 #include"File.hpp"
 #include<fstream>
 #include<cstring>
+#include<cmath>
 #include<exception>
 
 static void throwMessage_cerr(const char callerFunction[], const char message[]) {
@@ -251,6 +252,89 @@ TXT& TXT::operator = (const TXT& t) {
 
 /******************************************************************* BMP images (.bmp files) **********************************************************************/
 
+double Bitmap::calculateEntropy(const ColorID color) const{
+    double  entropy =  0.0 ;
+    double  p[256]  = {0.0};
+    double  sz      = (double)this->ih.Height*(double)this->ih.Width;
+    int     H[256]  = {0}  ;
+    int     i = 0, j=  0;
+    std::cout << "line 261" << std::endl;
+    switch(color) {
+        case Red: std::cout << "line 263" << std::endl;
+            for(i = 0; i < this->ih.Height; i++)
+                for(j = 0; j < this->ih.Width; j++)
+                    H[this->img[i][j].red]++;
+            break;
+        case Green: std::cout << "line 268 " << std::endl;
+            for(i = 0; i < this->ih.Height; i++)
+                for(j = 0; j < this->ih.Width; j++)
+                    H[this->img[i][j].green]++;
+            break;
+        case Blue: std::cout << "line 273 " << std::endl;
+            for(i = 0; i < this->ih.Height; i++)
+                for(j = 0; j < this->ih.Width; j++)
+                    H[this->img[i][j].blue]++;
+            break;
+    }
+    for(i = 0; i < 256; i++) p[i] = H[i]/sz;
+    for(i = 0; i < 256; i++) if(p[i] != 0) entropy -= p[i]*log2(p[i]);
+
+    return entropy;
+}
+
+double Bitmap::computeEntropy(const ColorID color) const{
+    double  entropy =  0.0 ;
+    double  p[256]  = {0.0};
+    double  sz      = (double)this->ih.SizeOfBitmap/3.0;
+    int     H[256]  = {0}  ;
+    size_t  i = 0;
+
+    for(i = color; i < this->ih.SizeOfBitmap; i += 3) H[(size_t)(uint8_t)data[i]]++;
+
+    for(i = 0; i < 256; i++) p[i] = H[i]/sz;
+    for(i = 0; i < 256; i++) if(p[i] != 0) entropy -= p[i]*log2(p[i]);
+
+    return entropy;
+}
+
+double Bitmap::calculateEntropyRed() const{
+    return this->calculateEntropy(Red);
+}
+
+double Bitmap::calculateEntropyGreen() const{
+    return this->calculateEntropy(Green);
+}
+
+double Bitmap::calculateEntropyBlue() const{
+    return this->calculateEntropy(Blue);
+}
+
+double Bitmap::computeEntropyRed() const{
+    return this->computeEntropy(Red);
+}
+
+double Bitmap::computeEntropyGreen() const{
+    return this->computeEntropy(Green);
+}
+
+double Bitmap::computeEntropyBlue() const{
+    return this->computeEntropy(Blue);
+}
+
+double Bitmap::computeEntropy() const{
+    double  entropy =  0.0 ;
+    double  p[256]  = {0.0};
+    int     H[256]  = {0}  ;
+    size_t  i = 0;
+
+    for(i = 0; i < this->ih.SizeOfBitmap; i++) H[(size_t)(uint8_t)data[i]]++;
+
+    for(i = 0; i < 256; i++) p[i] = H[i]/(double)this->ih.SizeOfBitmap;
+    for(i = 0; i < 256; i++) if(p[i] != 0) entropy -= p[i]*log2(p[i]);
+
+    return entropy;
+}
+
 Bitmap::Bitmap(const char* fname) {
     std::ifstream file;
     file.open(fname, std::ios::binary);
@@ -310,14 +394,14 @@ Bitmap::Bitmap(const Bitmap& bmp) {
 
     this->ih = bmp.ih;                                                          // -Initializing image header. Using the default member to member copy.
 
-    ui32 i;                                                                     // -Initializing data.
+    uint32_t i;                                                                     // -Initializing data.
     this->data = new char[bmp.ih.SizeOfBitmap];
     for(i = 0; i < bmp.ih.SizeOfBitmap; i++) this->data[i] = bmp.data[i];
 
     this->img = new RGB*[bmp.ih.Height];
     for(i = 0; (int)i < bmp.ih.Height; i++) this->img[i] = bmp.img[i];
 
-    ui32 sz = 0;                                                                // Initializing name
+    uint32_t sz = 0;                                                                // Initializing name
     while(bmp.name[sz++] != 0) {} // -Getting name size.
     name = new char[sz];
     for(i = 0; i < sz; i++) name[i] = bmp.name[i];
@@ -376,7 +460,7 @@ Bitmap& Bitmap::operator = (const Bitmap &bmp) {
 
         this->ih = bmp.ih;                                                      // -Copying image header. Using the default member to member copy.
 
-        ui32 i;                                                                 // -Copying data.
+        uint32_t i;                                                                 // -Copying data.
         if(this->data != NULL) delete[] this->data;
         this->data = new char[bmp.ih.SizeOfBitmap];
         for(i = 0; i < bmp.ih.SizeOfBitmap; i++) this->data[i] = bmp.data[i];
@@ -385,7 +469,7 @@ Bitmap& Bitmap::operator = (const Bitmap &bmp) {
         this->img = new RGB*[bmp.ih.Height];
         for(i = 0; (int)i < bmp.ih.Height; i++) this->img[i] = bmp.img[i];
 
-        ui32 sz = 0;
+        uint32_t sz = 0;
         while(bmp.name[sz++] != 0) {}                                           // -Getting name size.
         if(this->name != NULL) delete[] this->name;
         this->name = new char[sz];
