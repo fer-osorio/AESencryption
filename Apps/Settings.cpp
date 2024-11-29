@@ -242,6 +242,7 @@ void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[]) 
                 switch(act) {
                     case Options::Cipher_object::Ciphering:
                         std::cout << "\nEncrypting bmp file...\n";
+                        std::cout << bmp << std::endl;
                         encrypt(bmp, e);
                         std::cout << e << '\n';
                         break;
