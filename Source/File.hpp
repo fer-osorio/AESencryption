@@ -160,7 +160,7 @@ class Bitmap {									// -Handling bitmap format images.
 										//  attributes of bmp object private
 	friend void decrypt(Bitmap& bmp, AES::Cipher& e, bool save = true) {	// -Decrypts using the operation mode defined in Key object
 		e.decrypt(bmp.data, bmp.ih.SizeOfBitmap);
-    		bmp.save(bmp.name);
+    		if(save) bmp.save(bmp.name);
 	}
 
 	double computeEntropy() const;
