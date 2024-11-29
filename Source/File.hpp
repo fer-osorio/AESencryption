@@ -142,21 +142,23 @@ class Bitmap {									// -Handling bitmap format images.
 	Bitmap& operator = (const Bitmap& bmp);
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 
-	friend void encrypt(Bitmap& bmp, AES::Cipher& e) {			// -Encrypts using the operation mode defined in Key object
+	friend void encrypt(Bitmap& bmp, AES::Cipher& e, bool showEntropy = true, bool save = true) {	// -Encrypts using the operation mode defined in Key object
 		e.encrypt(bmp.data, bmp.ih.SizeOfBitmap);
-		std::cout << std::endl;
-		std::cout << "Entropy red   = " << bmp.computeEntropyRed()   << '\n';
-		std::cout << "Entropy green = " << bmp.computeEntropyGreen() << '\n';
-		std::cout << "Entropy blue  = " << bmp.computeEntropyBlue()  << '\n';
-		std::cout << "Total entropy = " << bmp.computeEntropy()  << '\n';
-		std::cout << std::endl;
+		if(showEntropy) {
+			std::cout << std::endl;
+			std::cout << "Entropy red   = " << bmp.computeEntropyRed()   << '\n';
+			std::cout << "Entropy green = " << bmp.computeEntropyGreen() << '\n';
+			std::cout << "Entropy blue  = " << bmp.computeEntropyBlue()  << '\n';
+			std::cout << "Total entropy = " << bmp.computeEntropy()  << '\n';
+			std::cout << std::endl;
+		}
 		/*std::cout << "Entropy red   = " << bmp.calculateEntropyRed()   << std::endl;
 		std::cout << "Entropy green = " << bmp.calculateEntropyGreen() << std::endl;
 		std::cout << "Entropy blue  = " << bmp.calculateEntropyBlue()  << std::endl;*/
-    		bmp.save(bmp.name);						// -The reason of the existence of these friend functions is to be capable of
+    		if(save) bmp.save(bmp.name);					// -The reason of the existence of these friend functions is to be capable of
 	}									//  encrypt and decrypt many files with the same Cipher object while maintaining
 										//  attributes of bmp object private
-	friend void decrypt(Bitmap& bmp, AES::Cipher& e) {			// -Decrypts using the operation mode defined in Key object
+	friend void decrypt(Bitmap& bmp, AES::Cipher& e, bool save = true) {	// -Decrypts using the operation mode defined in Key object
 		e.decrypt(bmp.data, bmp.ih.SizeOfBitmap);
     		bmp.save(bmp.name);
 	}
