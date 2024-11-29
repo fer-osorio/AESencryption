@@ -112,7 +112,7 @@ static char key128[] = {char(0x2B), char(0x7E), char(0x15), char(0x16),
                         char(0x09), char(0xCF), char(0x4F), char(0x3C)};
 
 static AES::Key		    mainKey;
-static AES::Cipher	    e;
+static AES::Cipher	    AEScipher;
 static File::Bitmap	    bmp;
 static File::TXT	    txt;
 
@@ -211,7 +211,7 @@ void setEncryptionObject(AES::Key::Length len, AES::Key::OperationMode op_mode) 
             mainKey = AES::Key(key256, len, op_mode);
             break;
     }
-    e = AES::Cipher(mainKey);
+    AEScipher = AES::Cipher(mainKey);
 }
 
 void setEncryptionObjectFromFile(const char _fileName_[]) {
@@ -221,7 +221,7 @@ void setEncryptionObjectFromFile(const char _fileName_[]) {
         cerrMessageBeforeReThrow("void setEncryptionObjectFromFile(const char _fileName_[])");
         throw;
     }
-    e = AES::Cipher(mainKey);
+    AEScipher = AES::Cipher(mainKey);
 }
 
 void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[]) {
@@ -243,13 +243,13 @@ void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[]) 
                     case Options::Cipher_object::Ciphering:
                         std::cout << "\nEncrypting bmp file...\n";
                         std::cout << bmp << std::endl;
-                        encrypt(bmp, e);
-                        std::cout << e << '\n';
+                        encrypt(bmp, AEScipher);
+                        std::cout << AEScipher << '\n';
                         break;
                     case Options::Cipher_object::Deciphering:
                         std::cout << "\nDecrypting bmp file...\n";
-                        decrypt(bmp, e);
-                        std::cout << e << '\n';
+                        decrypt(bmp, AEScipher);
+                        std::cout << AEScipher << '\n';
                         break;
                 }
             }
@@ -266,13 +266,13 @@ void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[]) 
                 switch(act) {
                     case Options::Cipher_object::Ciphering:
                         std::cout << "\nEncrypting text file...\n";
-                        encrypt(txt, e);
-                        std::cout << e << '\n';
+                        encrypt(txt, AEScipher);
+                        std::cout << AEScipher << '\n';
                         break;
                     case Options::Cipher_object::Deciphering:
                         std::cout << "\nDecrypting text file...\n";
-                        decrypt(txt, e);
-                        std::cout << e << '\n';
+                        decrypt(txt, AEScipher);
+                        std::cout << AEScipher << '\n';
                         break;
                 }
             }
@@ -418,7 +418,7 @@ void CLI::retreaveTexAndEncrypt() {
     CLI::getLine("Write the name for the .txt file that will contain the encryption.\n", fileName);
     file.open(fileName);
     if(file.is_open()) {
-        e.encrypt(consoleInput, stringSize);
+        AEScipher.encrypt(consoleInput, stringSize);
         file.write(consoleInput, (std::streamsize)stringSize);
         file.close();
     } else {
@@ -475,7 +475,7 @@ void runProgram(const Options::Cipher_object op) {
                     CLI::getLine("Invalid name for file, try again. Assign a name to the key file.", keyNameStr);
                     validName = File::StringFileNameAnalize::isValidFileName(keyNameStr);
                 }
-                e.saveKey(keyNameStr);
+                AEScipher.saveKey(keyNameStr);
             }
             break;
         case::Options::Cipher_object::Deciphering:
