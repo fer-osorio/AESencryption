@@ -99,9 +99,9 @@ std::ostream& operator << (std::ostream& st, const Bitmap& bmp);		// -What we wa
 class Bitmap {									// -Handling bitmap format images.
 	enum ColorID{ Red, Green, Blue};
 	struct RGB {
-		uint8_t red;
-		uint8_t green;
-		uint8_t blue;
+		char red;
+		char green;
+		char blue;
 	};
 	struct FileHeader {
 		char     bm[2];							// [B, M] for bmp files
@@ -152,9 +152,6 @@ class Bitmap {									// -Handling bitmap format images.
 			std::cout << "Total entropy = " << bmp.computeEntropy()  << '\n';
 			std::cout << std::endl;
 		}
-		/*std::cout << "Entropy red   = " << bmp.calculateEntropyRed()   << std::endl;
-		std::cout << "Entropy green = " << bmp.calculateEntropyGreen() << std::endl;
-		std::cout << "Entropy blue  = " << bmp.calculateEntropyBlue()  << std::endl;*/
     		if(save) bmp.save(bmp.name);					// -The reason of the existence of these friend functions is to be capable of
 	}									//  encrypt and decrypt many files with the same Cipher object while maintaining
 										//  attributes of bmp object private
@@ -163,14 +160,10 @@ class Bitmap {									// -Handling bitmap format images.
     		if(save) bmp.save(bmp.name);
 	}
 
-	double computeEntropy() const;
+	double computeEntropy() 	const;
 	double computeEntropyRed()	const;
 	double computeEntropyGreen()	const;
 	double computeEntropyBlue()	const;
-
-	double calculateEntropyRed()	const;
-	double calculateEntropyGreen()	const;
-	double calculateEntropyBlue()	const;
 };
 };
 #endif
