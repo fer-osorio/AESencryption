@@ -13,6 +13,7 @@ int main(int argc, char* argv[]) {
             std::cerr << "Could not create File::Bitmap object.\n" << exp.what();
             return EXIT_FAILURE;
         }
+        const File::Bitmap bmp__ = bmp;
         std::cout << '\n' << argv[1] << " characteristics:\n\n";
         std::cout << bmp << "\n\n";
 
@@ -31,6 +32,8 @@ int main(int argc, char* argv[]) {
             entropy[3][0] = bmp.computeEntropy();
             decrypt(bmp, AEScph, false);
 
+            if(bmp__ != bmp) std::cout << "Something went wrong with decryption" << std::endl;
+
             k = AES::Key(klen, AES::Key::CBC);
             AEScph = AES::Cipher(k);
             //std::cout << AEScph << '\n';
@@ -41,6 +44,8 @@ int main(int argc, char* argv[]) {
             entropy[3][1] = bmp.computeEntropy();
             decrypt(bmp, AEScph, false);
 
+            if(bmp__ != bmp) std::cout << "Something went wrong with decryption" << std::endl;
+
             k = AES::Key(klen, AES::Key::PVS);
             AEScph = AES::Cipher(k);
             //std::cout << AEScph << '\n';
@@ -50,6 +55,8 @@ int main(int argc, char* argv[]) {
             entropy[2][2] = bmp.computeEntropyBlue();
             entropy[3][2] = bmp.computeEntropy();
             decrypt(bmp, AEScph, false);
+
+            if(bmp__ != bmp) std::cout << "Something went wrong with decryption" << std::endl;
 
             std::cout << std::fixed << std::endl;
             std::cout << "Entropy. Key size = " << (int)klen << " -------------------\n";
