@@ -30,6 +30,7 @@ struct Key {
 			    	0, 0, 0, 0};
 	public:
 	Key();									// -Assigns lengthBits of 256 bits and zero value for each byte of array char* key
+	Key(Length, OperationMode);
 	Key(const char* const _key, Length, OperationMode);
 	Key(const char*const fname);						// -Building from binary file.
 	Key(const Key&);
