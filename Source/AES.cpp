@@ -161,7 +161,7 @@ Key::Key(): lengthBits(Length::_256), lengthBytes(32), operation_mode(OperationM
 Key::Key(Length len, OperationMode op_m): lengthBits(len), lengthBytes((size_t)len >> 3), operation_mode(op_m){
     std::random_device dev; std::mt19937 seed(dev());
     std::uniform_int_distribution<std::mt19937::result_type> distribution;      // -Random number with uniform distribution
-    int i, j;
+    size_t i;
     union { int integer; char chars[4]; } buff;                                 // -Anonymous union. Casting from 32 bits integer to four chars
     this->key = new char[this->lengthBytes];
     for(i = 0; i < this->lengthBytes; i += 4) {                                 // -I am supposing everything is fine and lengthBytes is a multiple of four
