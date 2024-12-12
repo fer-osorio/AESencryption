@@ -322,24 +322,14 @@ void Key::save(const char* const fname) const {
 Cipher::PiRoundKey& Cipher::PiRoundKey::operator = (const PiRoundKey& prk) {
     if(this != &prk) {                                                          // -Guarding against self assignment
         size_t i;
-        if(prk.roundkey == NULL) {
-            if(this->roundkey != NULL) {
-                delete[] this->roundkey;
-                this->roundkey = NULL;
-                this->size = 0;
-                return *this;
-            }
+        if(this->roundkey != NULL){
+            delete[] this->roundkey;
+            this->roundkey = NULL;
+            this->size = 0;
         }
-        if(this->roundkey != NULL) {
-            if(this->size != prk.size) {
-                delete[] this->roundkey;
-                this->roundkey = new char[prk.size];
-                this->size = prk.size;
-            }
-        } else {
-            this->roundkey = new char[prk.size];
-            this->size = prk.size;
-        }
+        if(prk.roundkey == NULL) return *this;
+        this->roundkey = new char[prk.size];
+        this->size = prk.size;
         for(i = 0; i < this->size; i++) this->roundkey[i] = prk.roundkey[i];
         for(i = 0; i < SBOX_SIZE; i++)  this->dinamicSbox[i] = prk.dinamicSbox[i];
         for(i = 0; i < SBOX_SIZE; i++)  this->dinamicSboxInv[i] = prk.dinamicSboxInv[i];
