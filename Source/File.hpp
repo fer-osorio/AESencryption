@@ -142,6 +142,9 @@ class Bitmap {									// -Handling bitmap format images.
 	Bitmap& operator = (const Bitmap& bmp);
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 
+	bool operator == (const Bitmap& bmp) const;
+	bool operator != (const Bitmap& bmp) const;
+
 	friend void encrypt(Bitmap& bmp, AES::Cipher& e, bool showEntropy = true, bool save = true) {	// -Encrypts using the operation mode defined in Key object
 		e.encrypt(bmp.data, bmp.ih.SizeOfBitmap);
 		if(showEntropy) {

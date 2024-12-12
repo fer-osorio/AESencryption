@@ -493,3 +493,35 @@ std::ostream& File::operator << (std::ostream &stream, const Bitmap &bmp) {
 
     return stream;
 }
+
+bool Bitmap::operator == (const Bitmap &bmp) const{
+    bool equal =
+    this->fh.bm[0] == bmp.fh.bm[0] &&
+    this->fh.bm[1] == bmp.fh.bm[1] &&
+    this->fh.size  == bmp.fh.size  &&
+    this->fh.reserved1 == bmp.fh.reserved1 &&
+    this->fh.reserved2 == bmp.fh.reserved2 &&
+    this->fh.offset    == bmp.fh.offset    &&
+    this->ih.size      == bmp.ih.size      &&
+    this->ih.Height    == bmp.ih.Height    &&
+    this->ih.Width     == bmp.ih.Width     &&
+    this->ih.Planes    == bmp.ih.Planes    &&
+    this->ih.BitsPerPixel   == bmp.ih.BitsPerPixel &&
+    this->ih.Compression    == bmp.ih.Compression  &&
+    this->ih.SizeOfBitmap   == bmp.ih.SizeOfBitmap &&
+    this->ih.HorzResolution == bmp.ih.HorzResolution &&
+    this->ih.VertResolution == bmp.ih.VertResolution &&
+    this->ih.ColorsUsed     == bmp.ih.ColorsUsed     &&
+    this->ih.ColorsImportant== bmp.ih.ColorsImportant;
+
+    if(!equal) return false;
+
+    for(size_t i = 0; i < bmp.ih.SizeOfBitmap; i++)
+        if(this->data[i] != bmp.data[i]) return false;
+
+    return true;
+}
+
+bool Bitmap::operator != (const Bitmap &bmp) const{
+    return !this->operator==(bmp);
+}
