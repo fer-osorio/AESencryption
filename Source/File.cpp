@@ -4,7 +4,12 @@
 #include<cmath>
 #include<exception>
 
-static void throwMessage_cerr(const char callerFunction[], const char message[]) {
+static void cerrWargingMessage(const char callerFunction[], const char message[]){
+    if(callerFunction == NULL) return;
+    std::cerr << "In file Source/File.cpp, function " << callerFunction << ": " << message << '\n';
+}
+
+static void cerrMessageBeforeThrow(const char callerFunction[], const char message[]) {
     if(callerFunction == NULL) return;
     std::cerr << "In file Source/File.cpp, function " << callerFunction << ": " << message << '\n';
 }
@@ -209,7 +214,7 @@ TXT::TXT(const char* fname) { // -Building from file.
         file.read(this->content, fileSize);
         file.close();
     } else {
-        throwMessage_cerr("TXT::TXT(const char* fname)", "Could not open file.");
+        cerrMessageBeforeThrow("TXT::TXT(const char* fname)", "Could not open file.");
         throw std::runtime_error("Could not open file.");
     }
 }
@@ -231,7 +236,7 @@ void TXT::save(const char* fname)  const{                                       
         file.write(this->content, this->size);
         file.close();
     } else {
-        throwMessage_cerr("void TXT::save(const char* fname)", "File could not be written.");
+        cerrMessageBeforeThrow("void TXT::save(const char* fname)", "File could not be written.");
         throw std::runtime_error("File could not be written.");
     }
 }
@@ -252,82 +257,11 @@ TXT& TXT::operator = (const TXT& t) {
 
 /******************************************************************* BMP images (.bmp files) **********************************************************************/
 
-double Bitmap::computeEntropy(const ColorID color) const{
-    double  entropy =  0.0 ;
-    double  p[256]  = {0.0};
-    double  sz      = (double)this->ih.Height*(double)this->ih.Width;
-    int     H[256]  = {0}  ;
-    int     i = 0, j=  0;
-
-    switch(color) {
-        case Red:
-            for(i = 0; i < this->ih.Height; i++)
-                for(j = 0; j < this->ih.Width; j++)
-                    H[(unsigned char)this->img[i][j].red]++;
-            break;
-        case Green:
-            for(i = 0; i < this->ih.Height; i++)
-                for(j = 0; j < this->ih.Width; j++)
-                    H[(unsigned char)this->img[i][j].green]++;
-            break;
-        case Blue:
-            for(i = 0; i < this->ih.Height; i++)
-                for(j = 0; j < this->ih.Width; j++)
-                    H[(unsigned char)this->img[i][j].blue]++;
-            break;
-    }
-    for(i = 0; i < 256; i++) p[i] = H[i]/sz;
-    for(i = 0; i < 256; i++) if(p[i] != 0) entropy -= p[i]*log2(p[i]);
-
-    return entropy;
-}
-/*
-double Bitmap::computeEntropy(const ColorID color) const{
-    double  entropy =  0.0 ;
-    double  p[256]  = {0.0};
-    double  sz      = (double)this->ih.SizeOfBitmap/3.0;
-    int     H[256]  = {0}  ;
-    size_t  i = 0;
-
-    for(i = color; i < this->ih.SizeOfBitmap; i += 3) H[(size_t)(uint8_t)data[i]]++;
-
-    for(i = 0; i < 256; i++) p[i] = H[i]/sz;
-    for(i = 0; i < 256; i++) if(p[i] != 0) entropy -= p[i]*log2(p[i]);
-
-    return entropy;
-}
-*/
-double Bitmap::computeEntropyRed() const{
-    return this->computeEntropy(Red);
-}
-
-double Bitmap::computeEntropyGreen() const{
-    return this->computeEntropy(Green);
-}
-
-double Bitmap::computeEntropyBlue() const{
-    return this->computeEntropy(Blue);
-}
-
-double Bitmap::computeEntropy() const{
-    double  entropy =  0.0 ;
-    double  p[256]  = {0.0};
-    int     H[256]  = {0}  ;
-    size_t  i = 0;
-
-    for(i = 0; i < this->ih.SizeOfBitmap; i++) H[(size_t)(uint8_t)data[i]]++;
-
-    for(i = 0; i < 256; i++) p[i] = H[i]/(double)this->ih.SizeOfBitmap;
-    for(i = 0; i < 256; i++) if(p[i] != 0) entropy -= p[i]*log2(p[i]);
-
-    return entropy;
-}
-
 Bitmap::Bitmap(const char* fname) {
+    const char thisFuncName[] = "Bitmap::Bitmap(const char* fname)";
     std::ifstream file;
     file.open(fname, std::ios::binary);
     int i, j, sz = 0;
-    const char thisFuncName[] = "Bitmap::Bitmap(const char* fname)";
     if(file.is_open()) {
         file.read((char*)fh.bm, 2);
         if(fh.bm[0] == 'B' && fh.bm[1] == 'M') {
@@ -349,25 +283,28 @@ Bitmap::Bitmap(const char* fname) {
             file.read((char*)&ih.VertResolution, 4);
             file.read((char*)&ih.ColorsUsed, 4);
             file.read((char*)&ih.ColorsImportant, 4);
-            data = new char[ih.SizeOfBitmap];
 
-            file.read((char*)data, ih.SizeOfBitmap);                            // -Initializing bitmap data
+            this->pixelAmount = this->ih.Height * this->ih.Width;
+            this->bytesPerPixel = this->ih.BitsPerPixel >> 3;                   // -this->ih.BitsPerPixel >> 3 == this->ih.BitsPerPixel / 8
 
-            img = new RGB*[ih.Height];                                          // -Building pixel matrix
-            for(i = ih.Height - 1, j = 0; i >= 0; i--, j++) {
-                img[j] = (RGB*)&data[3 * i * ih.Width];
+            this->data = new char[ih.SizeOfBitmap];
+            file.read(this->data, ih.SizeOfBitmap);                            // -Initializing bitmap data
+
+            this->img = new RGB*[this->ih.Height];                                          // -Building pixel matrix
+            for(i = this->ih.Height - 1, j = 0; i >= 0; i--, j++) {
+                this->img[j] = (RGB*)&this->data[3 * i * this->ih.Width];
             }
             while(fname[sz++] != 0) {}                                          // -Getting name size.
-            name = new char[sz];
-            for(i = 0; i < sz; i++) name[i] = fname[i];                         // -Copying name
+            this->name = new char[sz];
+            for(i = 0; i < sz; i++) this->name[i] = fname[i];                         // -Copying name
             file.close();
         } else {
             file.close();
-            throwMessage_cerr(thisFuncName, "Not a valid bitmap file.");
+            cerrMessageBeforeThrow(thisFuncName, "Not a valid bitmap file.");
             throw std::runtime_error("Not a valid bitmap file.");
         }
     } else {
-        throwMessage_cerr(thisFuncName, "File could not be opened.");
+        cerrMessageBeforeThrow(thisFuncName, "File could not be opened.");
         throw std::runtime_error("File could not be opened.");
     }
 }
@@ -381,6 +318,8 @@ Bitmap::Bitmap(const Bitmap& bmp) {
     this->fh.offset = bmp.fh.offset;                                            // ...
 
     this->ih = bmp.ih;                                                          // -Initializing image header. Using the default member to member copy.
+    this->pixelAmount = bmp.pixelAmount;
+    this->bytesPerPixel = bmp.bytesPerPixel;
 
     int i, j;                                                                   // -Initializing data.
     this->data = new char[bmp.ih.SizeOfBitmap];
@@ -430,11 +369,11 @@ void Bitmap::save(const char *fname) const{
             file.close();
         } else {
             file.close();
-            throwMessage_cerr(thisFuncName, "Not a valid bitmap file");
+            cerrMessageBeforeThrow(thisFuncName, "Not a valid bitmap file");
             throw std::runtime_error("Not a valid bitmap file.");
         }
     } else {
-        throwMessage_cerr(thisFuncName, "File could not be written");
+        cerrMessageBeforeThrow(thisFuncName, "File could not be written");
         throw std::runtime_error("File could not be written.");
     }
 }
@@ -449,6 +388,8 @@ Bitmap& Bitmap::operator = (const Bitmap &bmp) {
         this->fh.offset = bmp.fh.offset;                                        // ...
 
         this->ih = bmp.ih;                                                      // -Copying image header. Using the default member to member copy.
+        this->pixelAmount = bmp.pixelAmount;
+        this->bytesPerPixel = bmp.bytesPerPixel;
 
         int i, j;                                                               // -Copying data.
         if(this->data != NULL) delete[] this->data;
@@ -525,3 +466,102 @@ bool Bitmap::operator == (const Bitmap &bmp) const{
 bool Bitmap::operator != (const Bitmap &bmp) const{
     return !this->operator==(bmp);
 }
+
+uint8_t Bitmap::getPixelColor(int i, int j, ColorID CId)  const{
+    if(i > this->ih.Height) i %= this->ih.Height;
+    if(i < 0) (i = i % this->ih.Height) < 0 ? i += this->ih.Height: i;
+    if(j > this->ih.Width) j %= this->ih.Width;
+    if(j < 0) (j = j % this->ih.Width)  < 0 ? j += this->ih.Width : j;
+    switch(CId){
+        case Red:
+            return this->img[i][j].red;
+        case Green:
+            return this->img[i][j].green;
+        case Blue:
+            return this->img[i][j].blue;
+    }
+}
+
+BitmapStats::BitmapStats(const Bitmap* pbmp_, Bitmap::ColorID CId, Bitmap::Direction Dr): pbmp(pbmp_), color_id(CId), dr(Dr) {
+    this->Average    = this->average(this->color_id);
+    this->Variance   = this->variance(this->color_id, this->dr);
+    this->Covariance = this->covariance(this->color_id, this->dr, 1);
+    this->Correlation= this->Covariance / this->Variance;
+    this->Entropy    = this->entropy(this->color_id);
+}
+
+double BitmapStats::average(const Bitmap::ColorID CId) const{
+    const char thisFunc[] = "double BitmapStats::average(const Bitmap::ColorID, size_t, size_t, Bitmap::Direction) const";
+    double average = 0.0;
+    for(int i = 0, j; i < this->pbmp->ih.Height; i++)
+        for(j = 0; j < this->pbmp->ih.Width; i++)
+            average += (double)this->pbmp->getPixelColor(i,j,CId);
+    average /= double(this->pbmp->pixelAmount);
+    return average;
+}
+
+double BitmapStats::covariance(const Bitmap::ColorID CId, Bitmap::Direction dr, size_t offset) const{
+    if(offset >= this->pbmp->pixelAmount) offset %= this->pbmp->pixelAmount;
+    int i, j, k, l;
+    const int h = this->pbmp->ih.Height, w = this->pbmp->ih.Width;
+    const int h_offset = offset / this->pbmp->ih.Width, w_offset = offset % this->pbmp->ih.Width;
+    double covariance = 0.0;
+    const double avr = this->Average == -1 ? this->average(CId) : this->Average;
+
+    switch(dr){
+        case Bitmap::horizontal:
+            for(i = 0, k = h_offset; i < h; i++, k++){
+                if(k == h) k = 0;
+                for(j = 0, l = w_offset; j < w; j++, l++){
+                    if(l == w) {
+                        l = 0;
+                        k++;
+                        if(k == h) k = 0;
+                    }
+                    covariance += ((double)this->pbmp->getPixelColor(i, j, CId) - avr)*((double)this->pbmp->getPixelColor(k, l, CId) - avr);
+                }
+            }
+            break;
+        case Bitmap::vertical:
+            for(j = 0, l = w_offset; j < w; j++, l++){
+                if(l == w) l = 0;
+                for(i = 0, k = h_offset; i < h; i++, k++){
+                    if(k == h) {
+                        k = 0;
+                        l++;
+                        if(l == w) l = 0;
+                    }
+                    covariance += ((double)this->pbmp->getPixelColor(i, j, CId) - avr)*((double)this->pbmp->getPixelColor(k, l, CId) - avr);
+                }
+            }
+            break;
+    }
+    covariance /= (double)(this->pbmp->pixelAmount);
+    return covariance;
+}
+
+double BitmapStats::variance(const Bitmap::ColorID CId, Bitmap::Direction dr) const{
+    return this->covariance(CId, dr, 0);
+}
+
+double BitmapStats::correlation(const Bitmap::ColorID CId, Bitmap::Direction dr, size_t offset) const{
+    return this->covariance(CId, dr, offset) / this->variance(CId, dr);
+}
+
+double BitmapStats::entropy(const Bitmap::ColorID color) const{
+    double  entropy =  0.0 ;
+    double  p[256]  = {0.0};
+    double  sz      = (double)this->pbmp->ih.Height*(double)this->pbmp->ih.Width;
+    int     H[256]  = {0}  ;
+    int     i = 0, j=  0;
+
+    for(i = 0; i < this->pbmp->ih.Height; i++)
+        for(j = 0; j < this->pbmp->ih.Width; j++)
+            H[this->pbmp->getPixelColor(i, j, color)]++;
+
+    for(i = 0; i < 256; i++) p[i] = H[i]/sz;
+    for(i = 0; i < 256; i++) if(p[i] != 0) entropy -= p[i]*log2(p[i]);
+
+    return entropy;
+}
+

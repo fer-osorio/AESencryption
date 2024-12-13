@@ -96,12 +96,14 @@ class TXT {									// -Handling .txt files
 
 class Bitmap;									// -The intention is to use the name Bitmap in the next function
 std::ostream& operator << (std::ostream& st, const Bitmap& bmp);		// -What we want is to make this function visible inside the name space scope
+struct BitmapStats;
 class Bitmap {									// -Handling bitmap format images.
 	enum ColorID{ Red, Green, Blue};
+	enum Direction{ horizontal, vertical };
 	struct RGB {
-		char red;
-		char green;
-		char blue;
+		uint8_t red;
+		uint8_t green;
+		uint8_t blue;
 	};
 	struct FileHeader {
 		char     bm[2];							// [B, M] for bmp files
@@ -125,12 +127,15 @@ class Bitmap {									// -Handling bitmap format images.
 		uint32_t ColorsImportant;					// Zero when every color is important
 	} ih = {0,0,0,0,0,0,0,0,0,0,0};
 
+	size_t pixelAmount = 0;
+	size_t bytesPerPixel = 3;
+
 	char* data = NULL;
 	RGB** img  = NULL;
 	char* name = NULL;
 
-	double calculateEntropy(const ColorID) const;
-	double computeEntropy(const ColorID) const;
+	uint8_t getPixelColor(int i, int j, ColorID CId) const;
+
 
 	public:
 	Bitmap() {} 								// -Just for type declaration
@@ -163,10 +168,27 @@ class Bitmap {									// -Handling bitmap format images.
     		if(save) bmp.save(bmp.name);
 	}
 
-	double computeEntropy() 	const;
-	double computeEntropyRed()	const;
-	double computeEntropyGreen()	const;
-	double computeEntropyBlue()	const;
+	friend BitmapStats;
+};
+
+struct BitmapStats{
+	private:
+	const Bitmap* pbmp = NULL;
+	Bitmap::ColorID color_id   = Bitmap::Red;
+	Bitmap::Direction dr	   = Bitmap::horizontal;
+	double Average     = -1.0;
+	double Variance    = -1.0;
+	double Covariance  =  0.0;
+	double Correlation = 10.0;
+	double Entropy     =  0.0;
+	BitmapStats() {}
+	BitmapStats(const Bitmap* pbmp_, Bitmap::ColorID CId, Bitmap::Direction Dr);
+
+	double average(const Bitmap::ColorID) const;				// -Average value of color in a range of pixels. Horizontal calculation
+	double covariance(const Bitmap::ColorID, Bitmap::Direction dr, size_t offset) const;
+	double variance(const Bitmap::ColorID, Bitmap::Direction dr) const;
+	double correlation(const Bitmap::ColorID, Bitmap::Direction, size_t offset)const;
+	double entropy(const Bitmap::ColorID) const;
 };
 };
 #endif
