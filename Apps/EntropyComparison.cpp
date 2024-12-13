@@ -1,70 +1,87 @@
 #include"../Source/File.hpp"
+#define KEY_SIZE_AMOUNT  3
+#define OPERATION_MODE_AMOUNT 3
 
 int main(int argc, char* argv[]) {
     if(argc == 2) {
-        AES::Key k;
+        AES::Key key;
         AES::Key::Length klen;
-        AES::Cipher AEScph = AES::Cipher(k);
+        AES::Key::OperationMode opm;
+        AES::Cipher AEScph = AES::Cipher(key);
         File::Bitmap bmp;
-        double entropy[4][3];
+        File::BitmapStats bmpSts;
+        double entropy[PIXEL_COMPONENTS_AMOUNT][OPERATION_MODE_AMOUNT];
+        double correlation[PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT][OPERATION_MODE_AMOUNT];
+        int i, j, k, l;
+
         try {
             bmp = File::Bitmap(argv[1]);
         } catch(std::runtime_error& exp) {;
             std::cerr << "Could not create File::Bitmap object.\n" << exp.what();
             return EXIT_FAILURE;
         }
+
         const File::Bitmap bmp__ = bmp;
         std::cout << '\n' << argv[1] << " characteristics:\n\n";
         std::cout << bmp << "\n\n";
 
-        for(int i = 0; i < 3; i++){
-            if(i == 0) klen = AES::Key::_128;
-            if(i == 1) klen = AES::Key::_192;
-            if(i == 2) klen = AES::Key::_256;
+        for(i = 0; i < KEY_SIZE_AMOUNT; i++){
+            switch(i){
+                case 0: klen = AES::Key::_128;
+                    break;
+                case 1: klen = AES::Key::_192;
+                    break;
+                case 2: klen = AES::Key::_256;
+                    break;
+                default:klen = AES::Key::_256;
+            }
 
-            k = AES::Key(klen, AES::Key::ECB);
-            AEScph = AES::Cipher(k);
-            //std::cout << AEScph << '\n';
-            encrypt(bmp, AEScph, false, false);
-            entropy[0][0] = bmp.computeEntropyRed();
-            entropy[1][0] = bmp.computeEntropyGreen();
-            entropy[2][0] = bmp.computeEntropyBlue();
-            entropy[3][0] = bmp.computeEntropy();
-            decrypt(bmp, AEScph, false);
+            for(j = 0; j < OPERATION_MODE_AMOUNT; j++){
+                switch(j){
+                    case 0: opm = AES::Key::ECB;
+                        break;
+                    case 1: opm = AES::Key::CBC;
+                        break;
+                    case 2: opm = AES::Key::PVS;
+                        break;
+                    default:opm = AES::Key::ECB;
+                }
+                key = AES::Key(klen, opm);
+                AEScph = AES::Cipher(key);
+                //std::cout << AEScph << '\n';
+                encrypt(bmp, AEScph, false);
+                bmpSts = File::BitmapStats(&bmp);
+                for(k = 0; k < PIXEL_COMPONENTS_AMOUNT; k++) {
+                    entropy[k][j] = bmpSts.retreaveEntropy(File::Bitmap::ColorID(k));
+                    for(l = 0; l < DIRECTIONS_AMOUNT; l++){
+                        correlation[k][l][j] = bmpSts.retreaveCorrelation(File::Bitmap::ColorID(k), File::Bitmap::Direction(l));
+                    }
+                }
+                decrypt(bmp, AEScph, false);
+                if(bmp__ != bmp) std::cout << "Something went wrong with decryption" << std::endl;
+            }
 
-            if(bmp__ != bmp) std::cout << "Something went wrong with decryption" << std::endl;
+            std::cout << std::fixed << std::setprecision(5) <<std::endl;
+            std::cout << "Key size = " << (int)klen << " -----------------------------------\n\n";
+            std::cout << "Entropy        ECV      CBC      PVS     \n";
+            std::cout << "Red          " << entropy[0][0] << ' ' << entropy[0][1] << ' ' << entropy[0][2] << '\n';
+            std::cout << "Green        " << entropy[1][0] << ' ' << entropy[1][1] << ' ' << entropy[1][2] << '\n';
+            std::cout << "Blue         " << entropy[2][0] << ' ' << entropy[2][1] << ' ' << entropy[2][2] << '\n';
 
-            k = AES::Key(klen, AES::Key::CBC);
-            AEScph = AES::Cipher(k);
-            //std::cout << AEScph << '\n';
-            encrypt(bmp, AEScph, false, false);
-            entropy[0][1] = bmp.computeEntropyRed();
-            entropy[1][1] = bmp.computeEntropyGreen();
-            entropy[2][1] = bmp.computeEntropyBlue();
-            entropy[3][1] = bmp.computeEntropy();
-            decrypt(bmp, AEScph, false);
+            std::cout << std::endl;
 
-            if(bmp__ != bmp) std::cout << "Something went wrong with decryption" << std::endl;
-
-            k = AES::Key(klen, AES::Key::PVS);
-            AEScph = AES::Cipher(k);
-            //std::cout << AEScph << '\n';
-            encrypt(bmp, AEScph, false, false);
-            entropy[0][2] = bmp.computeEntropyRed();
-            entropy[1][2] = bmp.computeEntropyGreen();
-            entropy[2][2] = bmp.computeEntropyBlue();
-            entropy[3][2] = bmp.computeEntropy();
-            decrypt(bmp, AEScph, false);
-
-            if(bmp__ != bmp) std::cout << "Something went wrong with decryption" << std::endl;
-
-            std::cout << std::fixed << std::endl;
-            std::cout << "Entropy. Key size = " << (int)klen << " -------------------\n";
-            std::cout << "                ECV      CBC      PVS     \n";
-            std::cout << "Entropy red     " << std::setprecision(6) << entropy[0][0] << ' ' << entropy[0][1] << ' ' << entropy[0][2] << '\n';
-            std::cout << "Entropy green   " << std::setprecision(6) << entropy[1][0] << ' ' << entropy[1][1] << ' ' << entropy[1][2] << '\n';
-            std::cout << "Entropy blue    " << std::setprecision(6) << entropy[2][0] << ' ' << entropy[2][1] << ' ' << entropy[2][2] << '\n';
-            std::cout << "Overall entropy " << std::setprecision(6) << entropy[3][0] << ' ' << entropy[3][1] << ' ' << entropy[3][2] << '\n';
+            for(k = 0; k < DIRECTIONS_AMOUNT; k++){
+                if(k == File::Bitmap::horizontal) std::cout << "Horizontal Correlation    ECV      CBC      PVS     \n";
+                if(k == File::Bitmap::vertical)   std::cout << "Vertical Correlation      ECV      CBC      PVS     \n";
+                std::cout << "Red                    ";
+                for(l = 0; l < OPERATION_MODE_AMOUNT; l++) std::cout << (correlation[0][k][l] < 0 ? "" : " ") << correlation[0][k][l] << ' ';
+                std::cout << '\n' << "Green                  ";
+                for(l = 0; l < OPERATION_MODE_AMOUNT; l++) std::cout << (correlation[1][k][l] < 0 ? "" : " ") << correlation[1][k][l] << ' ';
+                std::cout << '\n' << "Blue                   ";
+                for(l = 0; l < OPERATION_MODE_AMOUNT; l++) std::cout << (correlation[2][k][l] < 0 ? "" : " ") << correlation[2][k][l] << ' ';
+                std::cout << '\n';
+                std::cout << std::endl;
+            }
             std::cout << std::endl;
         }
     }
