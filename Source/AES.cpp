@@ -395,7 +395,6 @@ void Cipher::PiRoundKey::setPiRoundKey(const Key &K) {
     } else {
         std::cerr << "Could not find/open pi.bin file.\n";
     }
-    std::cout << "\nPI round key size established as " << this->size << std::endl;
 }
 
 void Cipher::PiRoundKey::subBytes(char state[AES_BLK_SZ]) const{
