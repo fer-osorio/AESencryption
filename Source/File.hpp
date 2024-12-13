@@ -6,6 +6,8 @@
 #ifndef _INCLUDED_FILE_
 #define _INCLUDED_FILE_
 #define NAME_MAX_LEN 4096
+#define PIXEL_COMPONENTS_AMOUNT	3
+#define DIRECTIONS_AMOUNT	2
 
 namespace File {
 
@@ -98,8 +100,9 @@ class Bitmap;									// -The intention is to use the name Bitmap in the next fu
 std::ostream& operator << (std::ostream& st, const Bitmap& bmp);		// -What we want is to make this function visible inside the name space scope
 struct BitmapStats;
 class Bitmap {									// -Handling bitmap format images.
-	enum ColorID{ Red, Green, Blue};
-	enum Direction{ horizontal, vertical };
+	public: enum ColorID{ Red, Green, Blue};
+	public: enum Direction{ horizontal, vertical };
+	private:
 	struct RGB {
 		uint8_t red;
 		uint8_t green;
@@ -150,16 +153,8 @@ class Bitmap {									// -Handling bitmap format images.
 	bool operator == (const Bitmap& bmp) const;
 	bool operator != (const Bitmap& bmp) const;
 
-	friend void encrypt(Bitmap& bmp, AES::Cipher& e, bool showEntropy = true, bool save = true) {	// -Encrypts using the operation mode defined in Key object
+	friend void encrypt(Bitmap& bmp, AES::Cipher& e, bool save = true) {	// -Encrypts using the operation mode defined in Key object
 		e.encrypt(bmp.data, bmp.ih.SizeOfBitmap);
-		if(showEntropy) {
-			std::cout << std::endl;
-			std::cout << "Entropy red   = " << bmp.computeEntropyRed()   << '\n';
-			std::cout << "Entropy green = " << bmp.computeEntropyGreen() << '\n';
-			std::cout << "Entropy blue  = " << bmp.computeEntropyBlue()  << '\n';
-			std::cout << "Total entropy = " << bmp.computeEntropy()  << '\n';
-			std::cout << std::endl;
-		}
     		if(save) bmp.save(bmp.name);					// -The reason of the existence of these friend functions is to be capable of
 	}									//  encrypt and decrypt many files with the same Cipher object while maintaining
 										//  attributes of bmp object private
@@ -173,22 +168,27 @@ class Bitmap {									// -Handling bitmap format images.
 
 struct BitmapStats{
 	private:
-	const Bitmap* pbmp = NULL;
-	Bitmap::ColorID color_id   = Bitmap::Red;
-	Bitmap::Direction dr	   = Bitmap::horizontal;
-	double Average     = -1.0;
-	double Variance    = -1.0;
-	double Covariance  =  0.0;
-	double Correlation = 10.0;
-	double Entropy     =  0.0;
-	BitmapStats() {}
-	BitmapStats(const Bitmap* pbmp_, Bitmap::ColorID CId, Bitmap::Direction Dr);
+	const  Bitmap* 	  pbmp		= NULL;
+	double Average    [PIXEL_COMPONENTS_AMOUNT]  = {-1.0};
+	double Covariance [PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{ 0.0, 0.0},{ 0.0, 0.0},{ 0.0, 0.0}};
+	double Variance   [PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{-1.0,-1.0},{-1.0,-1.0},{-1.0,-1.0}};
+	double Correlation[PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{10.0,10.0},{10.0,10.0},{10.0,10.0}};
+	double Entropy    [PIXEL_COMPONENTS_AMOUNT]  = { 0.0};
 
-	double average(const Bitmap::ColorID) const;				// -Average value of color in a range of pixels. Horizontal calculation
-	double covariance(const Bitmap::ColorID, Bitmap::Direction dr, size_t offset) const;
-	double variance(const Bitmap::ColorID, Bitmap::Direction dr) const;
-	double correlation(const Bitmap::ColorID, Bitmap::Direction, size_t offset)const;
-	double entropy(const Bitmap::ColorID) const;
+	double average(    const Bitmap::ColorID) const;			// -Average value of color in a range of pixels. Horizontal calculation
+	double covariance( const Bitmap::ColorID, Bitmap::Direction dr, size_t offset) const;
+	double variance(   const Bitmap::ColorID, Bitmap::Direction dr) const;
+	double correlation(const Bitmap::ColorID, Bitmap::Direction dr, size_t offset) const;
+	double entropy(	   const Bitmap::ColorID) const;
+
+	public:
+	BitmapStats() {}
+	BitmapStats(const BitmapStats&);
+	BitmapStats(const Bitmap* pbmp_);
+	BitmapStats& operator = (const BitmapStats&);
+
+	double retreaveCorrelation(const Bitmap::ColorID CID, Bitmap::Direction dr) const{ return this->Correlation[CID][dr]; }
+	double retreaveEntropy(const Bitmap::ColorID CID) const{ return this->Entropy[CID]; }
 };
 };
 #endif

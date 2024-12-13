@@ -4,10 +4,10 @@
 #include<cmath>
 #include<exception>
 
-static void cerrWargingMessage(const char callerFunction[], const char message[]){
+/*static void cerrWargingMessage(const char callerFunction[], const char message[]){
     if(callerFunction == NULL) return;
     std::cerr << "In file Source/File.cpp, function " << callerFunction << ": " << message << '\n';
-}
+}*/
 
 static void cerrMessageBeforeThrow(const char callerFunction[], const char message[]) {
     if(callerFunction == NULL) return;
@@ -284,7 +284,7 @@ Bitmap::Bitmap(const char* fname) {
             file.read((char*)&ih.ColorsUsed, 4);
             file.read((char*)&ih.ColorsImportant, 4);
 
-            this->pixelAmount = this->ih.Height * this->ih.Width;
+            this->pixelAmount = (size_t)this->ih.Height * (size_t)this->ih.Width;
             this->bytesPerPixel = this->ih.BitsPerPixel >> 3;                   // -this->ih.BitsPerPixel >> 3 == this->ih.BitsPerPixel / 8
 
             this->data = new char[ih.SizeOfBitmap];
@@ -480,21 +480,64 @@ uint8_t Bitmap::getPixelColor(int i, int j, ColorID CId)  const{
         case Blue:
             return this->img[i][j].blue;
     }
+    return this->img[i][j].red;                                                 // -Just to prevent a compiler warning from appearing
 }
 
-BitmapStats::BitmapStats(const Bitmap* pbmp_, Bitmap::ColorID CId, Bitmap::Direction Dr): pbmp(pbmp_), color_id(CId), dr(Dr) {
-    this->Average    = this->average(this->color_id);
-    this->Variance   = this->variance(this->color_id, this->dr);
-    this->Covariance = this->covariance(this->color_id, this->dr, 1);
-    this->Correlation= this->Covariance / this->Variance;
-    this->Entropy    = this->entropy(this->color_id);
+BitmapStats::BitmapStats(const BitmapStats& bmpSts): pbmp(bmpSts.pbmp){
+    int i, j;
+    if(bmpSts.pbmp == NULL) return;
+    for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++) {
+        this->Average[i] = bmpSts.Average[i];
+        this->Entropy[i] = bmpSts.Entropy[i];
+    }
+    for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++){
+        for(j = 0; j < DIRECTIONS_AMOUNT; j++) {
+            this->Covariance [i][j]= bmpSts.Covariance[i][j];
+            this->Variance   [i][j]= bmpSts.Variance[i][j];
+            this->Correlation[i][j]= bmpSts.Correlation[i][j];
+        }
+    }
+}
+
+BitmapStats::BitmapStats(const Bitmap* pbmp_): pbmp(pbmp_) {
+    int i,j;
+    if(this->pbmp == NULL) return;
+    for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++) {
+        this->Average[i] = this->average(Bitmap::ColorID(i));
+        this->Entropy[i] = this->entropy(Bitmap::ColorID(i));
+    }
+    for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++){
+        for(j = 0; j < DIRECTIONS_AMOUNT; j++) {
+            this->Covariance [i][j] = this->covariance( Bitmap::ColorID(i), Bitmap::Direction(j), 1);
+            this->Variance   [i][j] = this->variance(   Bitmap::ColorID(i), Bitmap::Direction(j));
+            this->Correlation[i][j] = this->correlation(Bitmap::ColorID(i), Bitmap::Direction(j), 1);
+        }
+    }
+}
+
+BitmapStats& BitmapStats::operator = (const BitmapStats& bmpSts){
+    if(this != &bmpSts) {
+        int i,j;
+        this->pbmp = bmpSts.pbmp;
+        for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++) {
+            this->Average[i] = bmpSts.Average[i];
+            this->Entropy[i] = bmpSts.Entropy[i];
+        }
+        for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++){
+            for(j = 0; j < DIRECTIONS_AMOUNT; j++) {
+                this->Covariance [i][j]= bmpSts.Covariance[i][j];
+                this->Variance   [i][j]= bmpSts.Variance[i][j];
+                this->Correlation[i][j]= bmpSts.Correlation[i][j];
+            }
+        }
+    }
+    return *this;
 }
 
 double BitmapStats::average(const Bitmap::ColorID CId) const{
-    const char thisFunc[] = "double BitmapStats::average(const Bitmap::ColorID, size_t, size_t, Bitmap::Direction) const";
     double average = 0.0;
     for(int i = 0, j; i < this->pbmp->ih.Height; i++)
-        for(j = 0; j < this->pbmp->ih.Width; i++)
+        for(j = 0; j < this->pbmp->ih.Width; j++)
             average += (double)this->pbmp->getPixelColor(i,j,CId);
     average /= double(this->pbmp->pixelAmount);
     return average;
@@ -504,9 +547,9 @@ double BitmapStats::covariance(const Bitmap::ColorID CId, Bitmap::Direction dr, 
     if(offset >= this->pbmp->pixelAmount) offset %= this->pbmp->pixelAmount;
     int i, j, k, l;
     const int h = this->pbmp->ih.Height, w = this->pbmp->ih.Width;
-    const int h_offset = offset / this->pbmp->ih.Width, w_offset = offset % this->pbmp->ih.Width;
+    const int h_offset = offset / (size_t)this->pbmp->ih.Width, w_offset = offset % (size_t)this->pbmp->ih.Width;
     double covariance = 0.0;
-    const double avr = this->Average == -1 ? this->average(CId) : this->Average;
+    const double avr = this->Average[CId] == -1.0 ? this->average(CId) : this->Average[CId];
 
     switch(dr){
         case Bitmap::horizontal:
@@ -545,7 +588,8 @@ double BitmapStats::variance(const Bitmap::ColorID CId, Bitmap::Direction dr) co
 }
 
 double BitmapStats::correlation(const Bitmap::ColorID CId, Bitmap::Direction dr, size_t offset) const{
-    return this->covariance(CId, dr, offset) / this->variance(CId, dr);
+    if(this->Variance[CId][dr] == -1.0) return this->covariance(CId, dr, offset) / this->variance(CId, dr);
+    return this->Covariance[CId][dr] / this->Variance[CId][dr];
 }
 
 double BitmapStats::entropy(const Bitmap::ColorID color) const{
