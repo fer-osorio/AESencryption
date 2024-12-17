@@ -119,7 +119,7 @@ static File::TXT	    txt;
 
 
 void CLI::getLine(const char* message, char* const destination) {
-    std::cout << message << " The maximum amount of characters allowed is " << NAME_MAX_LEN << ":\n";
+    std::cout << message << "The maximum amount of characters allowed is " << NAME_MAX_LEN << ":\n";
     std::cin.getline(destination, NAME_MAX_LEN - 1, '\n');
 }
 
@@ -306,13 +306,13 @@ void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[]) 
 static const char invalidInputMsg[] = "\nInvalid input. Try again.\n";
 
 static const char encryptionMainMenu[] =
-"\nPress:\n"
+"Press:\n"
 "(0) to encrypt files.\n"
 "(1) to encrypt text retrieved from console.\n"
 "(2) to save encryption key.\n";
 
 static const char encryptionMainMenuNoSaveKey[] =
-"\nPress:\n"
+"Press:\n"
 "(0) to encrypt files.\n"
 "(1) to encrypt text retrieved from console.\n";
 
@@ -356,7 +356,7 @@ int CLI::retreaveValidOption(const char optionsString[], bool (validOptionCriter
 void CLI::getLineAndRetreaveKeyFromFile() {
     char buffer[NAME_MAX_LEN];
     bool notValidAESkeyFile = true;
-    CLI::getLine("Write the name/path of the key we will use for encryption.", buffer);
+    CLI::getLine("Write the name/path of the cryptographic key.\n", buffer);
     while(notValidAESkeyFile) {
         notValidAESkeyFile = false;
         try {                                                                   // -Tries to build a key from file, if fails because the file does not exist, tries
@@ -383,8 +383,9 @@ void CLI::getFilesAndCipherAct(Options::Cipher_object op) {
     if(op == Options::Cipher_object::Ciphering)   opStr = enc;
     if(op == Options::Cipher_object::Deciphering) opStr = dec;
     std::cout <<
-    "Write the names/paths of the files you desire to " << opStr << "separated with spaces. Once done, press enter (input must not have spaces and should be\n"
-    "at most " << bufferSize << " characters long. File names/paths must have at most "<< NAME_MAX_LEN << " characters):\n\n";
+    "Write the names/paths of the files you desire to " <<opStr<< " separated with spaces.\n"
+    "Once done, press enter (input should be at most " <<bufferSize<< " characters long.\n"
+    "File names/paths must have at most "<< NAME_MAX_LEN << " characters):\n";
     std::cin.getline(buffer, (std::streamsize)bufferSize, '\n');
     inputStrSize = strlen(buffer);
     for(i = 0, j = 0; i < inputStrSize && j < inputStrSize;) {                  // -'for' ends with the break statement on its end (equivalent to a do-while)
@@ -409,9 +410,10 @@ void CLI::retreaveTexAndEncrypt() {
     size_t stringSize = 0, k = 0;
     std::ofstream file;
     std::cout <<
-    "\nWrite the string you want to encrypt. To process the string sent the value 'EOF', which you can do by:\n\n"
+    "Write the string you want to encrypt. To process the string sent the value\n"
+    "'EOF', which you can do by:\n"
     "- Pressing twice the keys CTRL+Z for Windows.\n"
-    "- Pressing twice the keys CTRL+D for Unix and Linux.\n\n";
+    "- Pressing twice the keys CTRL+D for Unix and Linux.\n";
 
     consoleInput = new char[UPPER_BOUND];
     while(std::cin.get(consoleInput[stringSize++])) {                           // -Input from CLI.
@@ -425,6 +427,7 @@ void CLI::retreaveTexAndEncrypt() {
             k = 0;
         } else { k++; }
     }
+    std::cout << std::endl;
     while(stringSize < 16) consoleInput[stringSize++] = 0;                      // -We need at least 16 bytes for AES
     CLI::getLine("Write the name for the .txt file that will contain the encryption.\n", fileName);
     file.open(fileName);
@@ -458,10 +461,11 @@ void runProgram(const Options::Cipher_object op) {
     char keyNameStr[NAME_MAX_LEN];
     bool validName = false;                                                     // -Flags is the given name for the encryption key given by the user is valid
     Options::Encryption_main_menu encMainMen = Options::Encryption_main_menu::saveKey;
-    Options::Key_retreaving  Kr;
+    Options::Key_retreaving  Kr = Options::Key_retreaving::RetrieveFromFile;
 
-    Kr = (Options::Key_retreaving)CLI::retreaveValidOption(keyRetreavingOptions, Options::isKeyRetreavingValue);    // -Before encryption, the key must obtain
-    CLI::retreaveKey(Kr);                                                                                           //  the encryption key
+    if(op == Options::Cipher_object::Ciphering)                                 // -Before encryption or decryption, the key must obtain the encryption key
+        Kr = (Options::Key_retreaving)CLI::retreaveValidOption(keyRetreavingOptions, Options::isKeyRetreavingValue);
+    CLI::retreaveKey(Kr);
 
     switch(op) {
         case Options::Cipher_object::Ciphering:

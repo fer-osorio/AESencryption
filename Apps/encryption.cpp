@@ -12,8 +12,10 @@ int main(int argc, const char *argv[]) {
         return EXIT_SUCCESS;
     }
     std::cout <<
-    "Hello! I am a program which is particularly good at encryption BMP images and text files. Feel free to use me to encrypt any\n"
-    ".txt or .bmp file you desire. At any moment you can stop me by pressing the keys 'CTRL+C'. Before anything...\n\n";
+    "Hello! I am a program which is particularly good at encryption BMP images and\n"
+    "text files. Feel free to use me  to encrypt any .txt or .bmp file you desire.\n"
+    "At any moment you can stop me by pressing the keys 'CTRL+C'.\n\n"
+    "Before anything...\n";
     runEncryptionProgram();
     return EXIT_SUCCESS;
 }

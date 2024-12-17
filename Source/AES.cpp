@@ -341,6 +341,10 @@ void Cipher::PiRoundKey::setPiRoundKey(const Key &K) {
     if(this->roundkey != NULL) delete[] this->roundkey;
     std::ifstream file;
     file.open("pi.bin", std::ios::binary);
+    if(!file.is_open()){
+        file.close();
+        file.open("Apps/Executables/pi.bin", std::ios::binary);
+    }
     if(file.is_open()) {
         Uint256 a;                                                              // -Representation of a number of 256 bits (32 bytes)
         Uint256 b;                                                              // -Representation of a number of 256 bits (32 bytes)
