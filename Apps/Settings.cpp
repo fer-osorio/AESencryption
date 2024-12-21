@@ -249,6 +249,7 @@ void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[]) 
                         break;
                     case Options::Cipher_object::Deciphering:
                         std::cout << "\nDecrypting bmp file...\n";
+                        std::cout << bmp << std::endl;
                         decrypt(bmp, AEScipher);
                         std::cout << AEScipher << '\n';
                         break;
