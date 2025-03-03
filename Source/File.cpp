@@ -489,6 +489,7 @@ BitmapStats::BitmapStats(const BitmapStats& bmpSts): pbmp(bmpSts.pbmp){
     for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++) {
         this->Average[i] = bmpSts.Average[i];
         this->Entropy[i] = bmpSts.Entropy[i];
+        this->XiSquare[i]= bmpSts.XiSquare[i];
     }
     for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++){
         for(j = 0; j < DIRECTIONS_AMOUNT; j++) {
@@ -502,9 +503,11 @@ BitmapStats::BitmapStats(const BitmapStats& bmpSts): pbmp(bmpSts.pbmp){
 BitmapStats::BitmapStats(const Bitmap* pbmp_): pbmp(pbmp_) {
     int i,j;
     if(this->pbmp == NULL) return;
+    this->setpixelValueFrequence();
     for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++) {
         this->Average[i] = this->average(Bitmap::ColorID(i));
         this->Entropy[i] = this->entropy(Bitmap::ColorID(i));
+        this->XiSquare[i]= this->xiSquare(Bitmap::ColorID(i));
     }
     for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++){
         for(j = 0; j < DIRECTIONS_AMOUNT; j++) {
@@ -522,6 +525,7 @@ BitmapStats& BitmapStats::operator = (const BitmapStats& bmpSts){
         for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++) {
             this->Average[i] = bmpSts.Average[i];
             this->Entropy[i] = bmpSts.Entropy[i];
+            this->XiSquare[i]= bmpSts.XiSquare[i];
         }
         for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++){
             for(j = 0; j < DIRECTIONS_AMOUNT; j++) {
@@ -592,20 +596,41 @@ double BitmapStats::correlation(const Bitmap::ColorID CId, Bitmap::Direction dr,
     return this->Covariance[CId][dr] / this->Variance[CId][dr];
 }
 
+void BitmapStats::setpixelValueFrequence(){
+    int i = 0, j=  0;
+    if(!this->pixelValueFrequenceStablished) {
+        for(i = 0; i < this->pbmp->ih.Height; i++)
+            for(j = 0; j < this->pbmp->ih.Width; j++) {
+                this->pixelValueFrequence[Bitmap::ColorID::Red][this->pbmp->getPixelColor(i, j, Bitmap::ColorID::Red)]++;
+                this->pixelValueFrequence[Bitmap::ColorID::Green][this->pbmp->getPixelColor(i, j, Bitmap::ColorID::Green)]++;
+                this->pixelValueFrequence[Bitmap::ColorID::Blue][this->pbmp->getPixelColor(i, j, Bitmap::ColorID::Blue)]++;
+        }
+        this->pixelValueFrequenceStablished = true;
+    }
+}
+
 double BitmapStats::entropy(const Bitmap::ColorID color) const{
     double  entropy =  0.0 ;
     double  p[256]  = {0.0};
     double  sz      = (double)this->pbmp->ih.Height*(double)this->pbmp->ih.Width;
-    int     H[256]  = {0}  ;
     int     i = 0, j=  0;
 
-    for(i = 0; i < this->pbmp->ih.Height; i++)
-        for(j = 0; j < this->pbmp->ih.Width; j++)
-            H[this->pbmp->getPixelColor(i, j, color)]++;
-
-    for(i = 0; i < 256; i++) p[i] = H[i]/sz;
+    for(i = 0; i < 256; i++) p[i] = this->pixelValueFrequence[color][i]/sz;
     for(i = 0; i < 256; i++) if(p[i] != 0) entropy -= p[i]*log2(p[i]);
 
     return entropy;
+}
+
+double BitmapStats::xiSquare(const Bitmap::ColorID color) const{
+    double  xiSquare=  0.0 ;
+    double  sz      = (double)this->pbmp->ih.Height*(double)this->pbmp->ih.Width;
+    double  pn      = sz/256.0;
+    int     i = 0, j=  0;
+
+    for(i = 0; i < 256; i++)
+        xiSquare += (double)(this->pixelValueFrequence[color][i]*this->pixelValueFrequence[color][i])*256.0;
+    xiSquare /= sz; xiSquare -= sz;
+
+    return xiSquare;
 }
 

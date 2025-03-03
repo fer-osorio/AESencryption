@@ -11,6 +11,7 @@ int main(int argc, char* argv[]) {
         File::Bitmap bmp;
         File::BitmapStats bmpSts;
         double entropy[PIXEL_COMPONENTS_AMOUNT][OPERATION_MODE_AMOUNT];
+        double XiSquare[PIXEL_COMPONENTS_AMOUNT][OPERATION_MODE_AMOUNT];
         double correlation[PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT][OPERATION_MODE_AMOUNT];
         int i, j, k, l;
 
@@ -53,6 +54,7 @@ int main(int argc, char* argv[]) {
                 bmpSts = File::BitmapStats(&bmp);
                 for(k = 0; k < PIXEL_COMPONENTS_AMOUNT; k++) {
                     entropy[k][j] = bmpSts.retreaveEntropy(File::Bitmap::ColorID(k));
+                    XiSquare[k][j] = bmpSts.retreaveXiSquare(File::Bitmap::ColorID(k));
                     for(l = 0; l < DIRECTIONS_AMOUNT; l++){
                         correlation[k][l][j] = bmpSts.retreaveCorrelation(File::Bitmap::ColorID(k), File::Bitmap::Direction(l));
                     }
@@ -67,6 +69,13 @@ int main(int argc, char* argv[]) {
             std::cout << "Red          " << entropy[0][0] << ' ' << entropy[0][1] << ' ' << entropy[0][2] << '\n';
             std::cout << "Green        " << entropy[1][0] << ' ' << entropy[1][1] << ' ' << entropy[1][2] << '\n';
             std::cout << "Blue         " << entropy[2][0] << ' ' << entropy[2][1] << ' ' << entropy[2][2] << '\n';
+
+            std::cout << std::endl;
+
+            std::cout << "XiSquare        ECV      CBC      PVS     \n";
+            std::cout << "Red          " << XiSquare[0][0] << ' ' << XiSquare[0][1] << ' ' << XiSquare[0][2] << '\n';
+            std::cout << "Green        " << XiSquare[1][0] << ' ' << XiSquare[1][1] << ' ' << XiSquare[1][2] << '\n';
+            std::cout << "Blue         " << XiSquare[2][0] << ' ' << XiSquare[2][1] << ' ' << XiSquare[2][2] << '\n';
 
             std::cout << std::endl;
 

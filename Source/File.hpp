@@ -173,13 +173,21 @@ struct BitmapStats{
 	double Covariance [PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{ 0.0, 0.0},{ 0.0, 0.0},{ 0.0, 0.0}};
 	double Variance   [PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{-1.0,-1.0},{-1.0,-1.0},{-1.0,-1.0}};
 	double Correlation[PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{10.0,10.0},{10.0,10.0},{10.0,10.0}};
+
+	uint32_t pixelValueFrequence[PIXEL_COMPONENTS_AMOUNT][256] = {{0},{0},{0}};
+	bool	 pixelValueFrequenceStablished = false;
+
 	double Entropy    [PIXEL_COMPONENTS_AMOUNT]  = { 0.0};
+	double XiSquare   [PIXEL_COMPONENTS_AMOUNT]  = { 0.0};
 
 	double average(    const Bitmap::ColorID) const;			// -Average value of color in a range of pixels. Horizontal calculation
 	double covariance( const Bitmap::ColorID, Bitmap::Direction dr, size_t offset) const;
 	double variance(   const Bitmap::ColorID, Bitmap::Direction dr) const;
 	double correlation(const Bitmap::ColorID, Bitmap::Direction dr, size_t offset) const;
-	double entropy(	   const Bitmap::ColorID) const;
+	double entropy(const Bitmap::ColorID) const;
+	double xiSquare(const Bitmap::ColorID)const;
+
+	void setpixelValueFrequence();
 
 	public:
 	BitmapStats() {}
@@ -189,6 +197,8 @@ struct BitmapStats{
 
 	double retreaveCorrelation(const Bitmap::ColorID CID, Bitmap::Direction dr) const{ return this->Correlation[CID][dr]; }
 	double retreaveEntropy(const Bitmap::ColorID CID) const{ return this->Entropy[CID]; }
+	double retreaveXiSquare(const Bitmap::ColorID CID) const{ return this->XiSquare[CID]; }
+
 };
 };
 #endif
