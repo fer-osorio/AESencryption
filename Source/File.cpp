@@ -613,7 +613,7 @@ double BitmapStats::entropy(const Bitmap::ColorID color) const{
     double  entropy =  0.0 ;
     double  p[256]  = {0.0};
     double  sz      = (double)this->pbmp->ih.Height*(double)this->pbmp->ih.Width;
-    int     i = 0, j=  0;
+    int     i = 0;
 
     for(i = 0; i < 256; i++) p[i] = this->pixelValueFrequence[color][i]/sz;
     for(i = 0; i < 256; i++) if(p[i] != 0) entropy -= p[i]*log2(p[i]);
@@ -624,12 +624,11 @@ double BitmapStats::entropy(const Bitmap::ColorID color) const{
 double BitmapStats::xiSquare(const Bitmap::ColorID color) const{
     double  xiSquare=  0.0 ;
     double  sz      = (double)this->pbmp->ih.Height*(double)this->pbmp->ih.Width;
-    double  pn      = sz/256.0;
-    int     i = 0, j=  0;
+    int     i = 0;
 
     for(i = 0; i < 256; i++)
-        xiSquare += (double)(this->pixelValueFrequence[color][i]*this->pixelValueFrequence[color][i])*256.0;
-    xiSquare /= sz; xiSquare -= sz;
+        xiSquare += (double)(this->pixelValueFrequence[color][i]*this->pixelValueFrequence[color][i]);
+    xiSquare *= 256.0/sz; xiSquare -= sz;
 
     return xiSquare;
 }
