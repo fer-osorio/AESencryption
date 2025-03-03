@@ -1,6 +1,11 @@
 #include"../Source/File.hpp"
+#include<tgmath.h>
 #define KEY_SIZE_AMOUNT  3
 #define OPERATION_MODE_AMOUNT 3
+
+static double chiSquarePercentagePointsAprox(uint32_t v, double xp){
+    return v + sqrt(2*(double)v)*xp + 2*(xp*xp - 1)/3;
+}
 
 int main(int argc, char* argv[]) {
     if(argc == 2) {
@@ -72,6 +77,9 @@ int main(int argc, char* argv[]) {
 
             std::cout << std::endl;
 
+            std::cout << "Percentage points of the Chi-Square distribution at 25%, 50% and 75% (plus O(1/sqrt(255))): "
+            << chiSquarePercentagePointsAprox(255,-0.674) << ", " << chiSquarePercentagePointsAprox(255,0.0) << ", " << chiSquarePercentagePointsAprox(255,0.674);
+            std::cout << std::endl;
             std::cout << "XiSquare        ECV      CBC      PVS     \n";
             std::cout << "Red          " << XiSquare[0][0] << ' ' << XiSquare[0][1] << ' ' << XiSquare[0][2] << '\n';
             std::cout << "Green        " << XiSquare[1][0] << ' ' << XiSquare[1][1] << ' ' << XiSquare[1][2] << '\n';
