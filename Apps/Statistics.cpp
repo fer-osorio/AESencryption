@@ -77,10 +77,16 @@ int main(int argc, char* argv[]) {
 
             std::cout << std::endl;
 
-            std::cout << "Percentage points of the Chi-Square distribution at 25%, 50% and 75% (plus O(1/sqrt(255))): "
-            << chiSquarePercentagePointsAprox(255,-0.674) << ", " << chiSquarePercentagePointsAprox(255,0.0) << ", " << chiSquarePercentagePointsAprox(255,0.674);
+            std::cout << "Percentage points of the Chi-Square distribution at 5%, 25%, 50%, 75% and 95% (plus O(1/sqrt(255))): "
+            << chiSquarePercentagePointsAprox(255,-1.64)    << ", "
+            << chiSquarePercentagePointsAprox(255,-0.674)   << ", "
+            << chiSquarePercentagePointsAprox(255,0.0)      << ", "
+            << chiSquarePercentagePointsAprox(255,0.674)    << ", "
+            << chiSquarePercentagePointsAprox(255,1.64);
+
             std::cout << std::endl;
-            std::cout << "XiSquare        ECV      CBC      PVS     \n";
+
+            std::cout << "XiSquare          ECV        CBC        PVS     \n";
             std::cout << "Red          " << XiSquare[0][0] << ' ' << XiSquare[0][1] << ' ' << XiSquare[0][2] << '\n';
             std::cout << "Green        " << XiSquare[1][0] << ' ' << XiSquare[1][1] << ' ' << XiSquare[1][2] << '\n';
             std::cout << "Blue         " << XiSquare[2][0] << ' ' << XiSquare[2][1] << ' ' << XiSquare[2][2] << '\n';
