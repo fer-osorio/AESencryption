@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
         std::cout << '\n' << argv[1] << " characteristics:\n\n";
         std::cout << bmp << "\n\n";
 
-
+        std::cout << "\nAverage of statistical measures with " << testsAmount << " tests.\n";
         for(i = 0; i < KEY_SIZES_AMOUNT; i++){
             switch(i){
                 case 0: klen = AES::Key::_128;
@@ -121,8 +121,6 @@ int main(int argc, char* argv[]) {
                     for(q = 0; q < DIRECTIONS_AMOUNT; q++) Correlation[j][l][q] = StatisticalDispersion(correlations[j][l][q], testsAmount)*100.0;
                 }
             }
-
-            std::cout << "\nAverage of statistical measures with " << testsAmount << " tests.\n";
 
             std::cout << std::fixed << std::setprecision(6) <<std::endl;
             std::cout << "Key size = " << (int)klen << " -----------------------------------\n\n";
