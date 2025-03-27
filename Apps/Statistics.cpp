@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
         AES::Key::OperationMode opm;
         AES::Cipher AEScph = AES::Cipher(key);
         File::Bitmap bmp;
-        File::BitmapStats bmpSts;
+        File::BitmapStatistics bmpSts;
 
         double entropies[OPERATION_MODES_AMOUNT][PIXEL_COMPONENTS_AMOUNT][MAX_TEST_AMOUND];
         StatisticalDispersion Entropy[OPERATION_MODES_AMOUNT][PIXEL_COMPONENTS_AMOUNT];
@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
                     key = AES::Key(klen, opm);
                     AEScph = AES::Cipher(key);
                     encrypt(bmp, AEScph, false);
-                    bmpSts = File::BitmapStats(&bmp);
+                    bmpSts = File::BitmapStatistics(&bmp);
                     for(l = 0; l < PIXEL_COMPONENTS_AMOUNT; l++) {
                         entropies[j][l][k] = bmpSts.retreaveEntropy(File::Bitmap::ColorID(l));
                         XiSquares[j][l][k]= bmpSts.retreaveXiSquare(File::Bitmap::ColorID(l));

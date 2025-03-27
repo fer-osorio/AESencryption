@@ -98,7 +98,7 @@ class TXT {									// -Handling .txt files
 
 class Bitmap;									// -The intention is to use the name Bitmap in the next function
 std::ostream& operator << (std::ostream& st, const Bitmap& bmp);		// -What we want is to make this function visible inside the name space scope
-struct BitmapStats;
+struct BitmapStatistics;
 class Bitmap {									// -Handling bitmap format images.
 	public: enum ColorID{ Red, Green, Blue};
 	public: enum Direction{ horizontal, vertical };
@@ -163,10 +163,10 @@ class Bitmap {									// -Handling bitmap format images.
     		if(save) bmp.save(bmp.name);
 	}
 
-	friend BitmapStats;
+	friend BitmapStatistics;
 };
 
-struct BitmapStats{
+struct BitmapStatistics{
 	private:
 	const  Bitmap* 	  pbmp		= NULL;
 	double Average    [PIXEL_COMPONENTS_AMOUNT]  = {-1.0};
@@ -190,10 +190,10 @@ struct BitmapStats{
 	void setpixelValueFrequence();
 
 	public:
-	BitmapStats() {}
-	BitmapStats(const BitmapStats&);
-	BitmapStats(const Bitmap* pbmp_);
-	BitmapStats& operator = (const BitmapStats&);
+	BitmapStatistics() {}
+	BitmapStatistics(const BitmapStatistics&);
+	BitmapStatistics(const Bitmap* pbmp_);
+	BitmapStatistics& operator = (const BitmapStatistics&);
 
 	double retreaveCorrelation(const Bitmap::ColorID CID, Bitmap::Direction dr) const{ return this->Correlation[CID][dr]; }
 	double retreaveEntropy(const Bitmap::ColorID CID) const{ return this->Entropy[CID]; }
