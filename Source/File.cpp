@@ -633,3 +633,55 @@ double BitmapStatistics::xiSquare(const Bitmap::ColorID color) const{
     return xiSquare;
 }
 
+static std::ostream& fixedLengthNumber(std::ostream& os, const double n, size_t len){
+    double    abs_n = (n < 0.0 ? -n : n);                                       // -Guarding against exception with log10
+    const int log_n = (abs_n == 0.0 ? -1 : log10(abs_n));                       // -This will tell us the number of digits in the integral part
+    const int intPartdigitsAmoutn = log_n + 1;                                  // -Amount of digits in the integral part
+    long long intPart_n = (long long)abs_n;                                     // -Saving the integral part
+    double    aux;
+
+    if(len > 308) len = 308;                                                    // -Maximum number of digits for a double
+    if(len == 0)  return os;
+    if((int)len < intPartdigitsAmoutn) len = (size_t)intPartdigitsAmoutn;       // -We will sent at least the integer part
+    if(n < 0) os << '-';                                                        // -Considering the sign not as part of the number
+    if(intPartdigitsAmoutn >= 1){
+        os << intPart_n;                                                        // -Sending the integer part.
+        abs_n -= (double)intPart_n;                                             // -Taking out the integral part.
+        if((len -= (size_t)intPartdigitsAmoutn) == 0) return os;
+    } else {
+        os << '0';                                                              // -There is no integral part, just decimals after the point.
+        if((--len) == 0) return os;
+    }
+    os << '.';
+    abs_n *= 10, intPart_n = (long long)abs_n;
+    while(intPart_n == 0 && len > 0){                                           // -Considering the decimal part as a integer number, sending the left
+        os << '0';                                                              //  zeros of it
+        len--;
+        abs_n *= 10;
+        intPart_n = (long long)abs_n;
+    }
+    for(aux = abs_n; len > 0; len--) {                                          // Passing the decimal part to the integral part
+        aux *= 10.0;
+        if(aux >= (double)(uint64_t)0xFFFFFFFFFFFFFFFF){                        // Guarding against overflow
+            intPart_n = (long long)abs_n;                                       // Returning one digit
+            os << intPart_n;                                                    // Sending integer part
+            abs_n -= (double)intPart_n;
+            aux = abs_n;
+            len++;
+        } else abs_n = aux;
+    }
+    os << (long long)abs_n;
+    return os;
+}
+
+std::ostream& File::operator << (std::ostream& os, const BitmapStatistics& bmSt){
+    int i;
+    os << "              \tRed\t\tGreen\t\tBlue\n";
+    os << "Entropy      :\t"; for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++) os << bmSt.Entropy[i] << "\t\t"; os << '\n';
+    os << "Xi Square    :\t"; for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++) os << bmSt.XiSquare[i] << "\t\t"; os << '\n';
+    os << "Correlation" << '\n';
+    os << "Horizontal   :\t"; for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++) fixedLengthNumber(os, bmSt.Correlation[i][0], 7) << "\t"; os << '\n';
+    os << "Vertical     :\t"; for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++) fixedLengthNumber(os, bmSt.Correlation[i][1], 7) << "\t"; os << '\n';
+
+    return os;
+}

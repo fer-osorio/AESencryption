@@ -166,6 +166,7 @@ class Bitmap {									// -Handling bitmap format images.
 	friend BitmapStatistics;
 };
 
+std::ostream& operator << (std::ostream& os, const BitmapStatistics& bmSt);
 struct BitmapStatistics{
 	private:
 	const  Bitmap* 	  pbmp		= NULL;
@@ -199,6 +200,7 @@ struct BitmapStatistics{
 	double retreaveEntropy(const Bitmap::ColorID CID) const{ return this->Entropy[CID]; }
 	double retreaveXiSquare(const Bitmap::ColorID CID) const{ return this->XiSquare[CID]; }
 
+	friend std::ostream& operator << (std::ostream& os, const BitmapStatistics& bmSt);
 };
 };
 #endif
