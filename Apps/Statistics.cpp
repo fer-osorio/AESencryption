@@ -67,8 +67,10 @@ int main(int argc, char* argv[]) {
         }
 
         const File::Bitmap bmp__ = bmp;
+        bmpSts = File::BitmapStatistics(&bmp);
         std::cout << '\n' << argv[1] << " characteristics:\n\n";
-        std::cout << bmp << "\n\n";
+        std::cout << bmp << '\n';
+        std::cout << bmpSts << "\n\n";
 
         std::cout << "\nAverage of statistical measures with " << testsAmount << " tests.\n";
         for(i = 0; i < KEY_SIZES_AMOUNT; i++){
@@ -106,6 +108,13 @@ int main(int argc, char* argv[]) {
                     AEScph = AES::Cipher(key);
                     encrypt(bmp, AEScph, false);
                     bmpSts = File::BitmapStatistics(&bmp);
+                    if((k & 31) == 0) {
+                        std::cout << '\n' << "Test number " << k << '\n';
+                        std::cout << "Cipher object:\n";
+                        std::cout << AEScph;
+                        std::cout << "Encrypted image statistics:\n";
+                        std::cout << bmpSts << "\n\n";
+                    }
                     for(l = 0; l < PIXEL_COMPONENTS_AMOUNT; l++) {
                         entropies[j][l][k] = bmpSts.retreaveEntropy(File::Bitmap::ColorID(l));
                         XiSquares[j][l][k]= bmpSts.retreaveXiSquare(File::Bitmap::ColorID(l));
