@@ -549,17 +549,18 @@ double BitmapStatistics::average(const Bitmap::ColorID CId) const{
 
 double BitmapStatistics::covariance(const Bitmap::ColorID CId, Bitmap::Direction dr, size_t offset) const{
     if(offset >= this->pbmp->pixelAmount) offset %= this->pbmp->pixelAmount;
-    int i, j, k, l;
+    int i, j, k, l;                                                             // -(i,j) is the first point and (k,l) is the second point
     const int h = this->pbmp->ih.Height, w = this->pbmp->ih.Width;
-    const int h_offset = offset / (size_t)this->pbmp->ih.Width, w_offset = offset % (size_t)this->pbmp->ih.Width;
+    const int vertical_offset = offset / (size_t)w;                             // -Looking offset as a point in the matrix that represents the image. Using
+    const int horizontal_offset = offset % (size_t)w;                           //  division algorithm offset = vertical_offset*w + horizontal offset
     double covariance = 0.0;
-    const double avr = this->Average[CId] == -1.0 ? this->average(CId) : this->Average[CId];
+    const double avr = this->Average[CId] == -1.0 ? this->average(CId) : this->Average[CId];// -Pixel-color values are nonnegative, so avr >= 0.
 
     switch(dr){
         case Bitmap::horizontal:
-            for(i = 0, k = h_offset; i < h; i++, k++){
+            for(i = 0, k = vertical_offset; i < h; i++, k++){
                 if(k == h) k = 0;
-                for(j = 0, l = w_offset; j < w; j++, l++){
+                for(j = 0, l = horizontal_offset; j < w; j++, l++){
                     if(l == w) {
                         l = 0;
                         k++;
@@ -570,9 +571,9 @@ double BitmapStatistics::covariance(const Bitmap::ColorID CId, Bitmap::Direction
             }
             break;
         case Bitmap::vertical:
-            for(j = 0, l = w_offset; j < w; j++, l++){
+            for(j = 0, l = horizontal_offset; j < w; j++, l++){
                 if(l == w) l = 0;
-                for(i = 0, k = h_offset; i < h; i++, k++){
+                for(i = 0, k = vertical_offset; i < h; i++, k++){
                     if(k == h) {
                         k = 0;
                         l++;
