@@ -7,7 +7,7 @@
 #define _INCLUDED_FILE_
 #define NAME_MAX_LEN 4096
 #define PIXEL_COMPONENTS_AMOUNT	3
-#define DIRECTIONS_AMOUNT	2
+#define DIRECTIONS_AMOUNT	3
 
 namespace File {
 
@@ -101,7 +101,7 @@ std::ostream& operator << (std::ostream& st, const Bitmap& bmp);		// -What we wa
 struct BitmapStatistics;
 class Bitmap {									// -Handling bitmap format images.
 	public: enum ColorID{ Red, Green, Blue};
-	public: enum Direction{ horizontal, vertical };
+	public: enum Direction{ horizontal, vertical, diagonal };
 	private:
 	struct RGB {
 		uint8_t red;
@@ -171,9 +171,9 @@ struct BitmapStatistics{
 	private:
 	const  Bitmap* 	  pbmp		= NULL;
 	double Average    [PIXEL_COMPONENTS_AMOUNT]  = {-1.0};
-	double Covariance [PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{ 0.0, 0.0},{ 0.0, 0.0},{ 0.0, 0.0}};
-	double Variance   [PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{-1.0,-1.0},{-1.0,-1.0},{-1.0,-1.0}};
-	double Correlation[PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{10.0,10.0},{10.0,10.0},{10.0,10.0}};
+	double Covariance [PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{ 0.0, 0.0, 0.0},{ 0.0, 0.0, 0.0},{ 0.0, 0.0, 0.0}};
+	double Variance   [PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{-1.0,-1.0,-1.0},{-1.0,-1.0,-1.0},{-1.0,-1.0,-1.0}};
+	double Correlation[PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{10.0,10.0,10.0},{10.0,10.0,10.0},{10.0,10.0,10.0}};
 
 	uint32_t pixelValueFrequence[PIXEL_COMPONENTS_AMOUNT][256] = {{0},{0},{0}};
 	bool	 pixelValueFrequenceStablished = false;

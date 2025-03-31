@@ -549,15 +549,17 @@ double BitmapStatistics::average(const Bitmap::ColorID CId) const{
 
 double BitmapStatistics::covariance(const Bitmap::ColorID CId, Bitmap::Direction dr, size_t offset) const{
     if(offset >= this->pbmp->pixelAmount) offset %= this->pbmp->pixelAmount;
-    int i, j, k, l;                                                             // -(i,j) is the first point and (k,l) is the second point
+    int i, j, k, l, r;                                                          // -(i,j) is the first point and (k,l) is the second point
     const int h = this->pbmp->ih.Height, w = this->pbmp->ih.Width;
-    const int vertical_offset = offset / (size_t)w;                             // -Looking offset as a point in the matrix that represents the image. Using
-    const int horizontal_offset = offset % (size_t)w;                           //  division algorithm offset = vertical_offset*w + horizontal offset
+    int vertical_offset;                                                        // -Looking offset as a point in the matrix that represents the image. Using
+    int horizontal_offset;                                                      //  division algorithm offset = vertical_offset*w + horizontal offset
     double covariance = 0.0;
     const double avr = this->Average[CId] == -1.0 ? this->average(CId) : this->Average[CId];// -Pixel-color values are nonnegative, so avr >= 0.
 
     switch(dr){
         case Bitmap::horizontal:
+            vertical_offset = (int)offset / w;
+            horizontal_offset = (int)offset % w;
             for(i = 0, k = vertical_offset; i < h; i++, k++){
                 if(k == h) k = 0;
                 for(j = 0, l = horizontal_offset; j < w; j++, l++){
@@ -571,6 +573,8 @@ double BitmapStatistics::covariance(const Bitmap::ColorID CId, Bitmap::Direction
             }
             break;
         case Bitmap::vertical:
+            vertical_offset = (int)offset % h;
+            horizontal_offset = (int)offset / h;
             for(j = 0, l = horizontal_offset; j < w; j++, l++){
                 if(l == w) l = 0;
                 for(i = 0, k = vertical_offset; i < h; i++, k++){
@@ -579,6 +583,26 @@ double BitmapStatistics::covariance(const Bitmap::ColorID CId, Bitmap::Direction
                         l++;
                         if(l == w) l = 0;
                     }
+                    covariance += ((double)this->pbmp->getPixelColor(i, j, CId) - avr)*((double)this->pbmp->getPixelColor(k, l, CId) - avr);
+                }
+            }
+            break;
+        case Bitmap::diagonal:
+            vertical_offset = (int)offset % h;
+            horizontal_offset = (int)offset % w;
+            for(r = w-1; r >= 0; r--){
+                for(i = 0, j = r, k = vertical_offset, l = horizontal_offset + r; j < w; i++, j++, k++, l++) {
+                    if(i == h) break;
+                    if(k == h) k = 0;
+                    if(l == w) l = 0;
+                    covariance += ((double)this->pbmp->getPixelColor(i, j, CId) - avr)*((double)this->pbmp->getPixelColor(k, l, CId) - avr);
+                }
+            }
+            for(r = 1; r < h; r++){
+                for(i = r, j = 0, k = vertical_offset + r, l = horizontal_offset; i < h; i++, j++, k++, l++) {
+                    if(j == w) break;
+                    if(k == h) k = 0;
+                    if(l == w) l = 0;
                     covariance += ((double)this->pbmp->getPixelColor(i, j, CId) - avr)*((double)this->pbmp->getPixelColor(k, l, CId) - avr);
                 }
             }
