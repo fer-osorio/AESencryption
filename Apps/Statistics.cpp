@@ -25,6 +25,8 @@ struct StatisticalDispersion{
     StatisticalDispersion operator*(const double t) const;
 };
 
+const char options[] = "\t0) Entropy\n\t1) Xi Square\n\t2) Correlations [Horizontal, vertical and diagonal]\n\t3) All of the above\n";
+
 int main(int argc, char* argv[]) {
     if(argc == 3) {
         AES::Key key;
@@ -43,7 +45,7 @@ int main(int argc, char* argv[]) {
         double correlations[OPERATION_MODES_AMOUNT][PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT][MAX_TEST_AMOUND];
         StatisticalDispersion Correlation[OPERATION_MODES_AMOUNT][PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT];
 
-        int i, j, k, l, q, r;
+        int i, j, k, l, q, r, selected_op;
         uint32_t testsAmount;
 
         try {
@@ -62,9 +64,13 @@ int main(int argc, char* argv[]) {
         }
 
         if(testsAmount > MAX_TEST_AMOUND){
-            std::cout << "Maximum number of tests exceeded. " << "Procceding with testsAmount = 512\n";
-            testsAmount = 512;
+            std::cout << "\nMaximum number of tests exceeded. " << "Procceding with testsAmount = " << MAX_TEST_AMOUND << "\n\n";
+            testsAmount = MAX_TEST_AMOUND;
         }
+
+        std::cout << options << '\n';
+        std::cin >> selected_op;
+        if(selected_op > 3 || selected_op < 0) return 0;
 
         const File::Bitmap bmp__ = bmp;
         bmpSts = File::BitmapStatistics(&bmp);
@@ -116,61 +122,138 @@ int main(int argc, char* argv[]) {
                         std::cout << bmpSts << "\n\n";
                     }
                     for(l = 0; l < PIXEL_COMPONENTS_AMOUNT; l++) {
-                        entropies[j][l][k] = bmpSts.retreaveEntropy(File::Bitmap::ColorID(l));
-                        XiSquares[j][l][k]= bmpSts.retreaveXiSquare(File::Bitmap::ColorID(l));
-                        for(q = 0; q < DIRECTIONS_AMOUNT; q++)
-                            correlations[j][l][q][k] = bmpSts.retreaveCorrelation(File::Bitmap::ColorID(l), File::Bitmap::Direction(q));
+                        switch(selected_op){
+                            case 0:
+                                entropies[j][l][k] = bmpSts.retreaveEntropy(File::Bitmap::ColorID(l));
+                                break;
+                            case 1:
+                                XiSquares[j][l][k]= bmpSts.retreaveXiSquare(File::Bitmap::ColorID(l));
+                                break;
+                            case 2:
+                                for(q = 0; q < DIRECTIONS_AMOUNT; q++)
+                                    correlations[j][l][q][k] = bmpSts.retreaveCorrelation(File::Bitmap::ColorID(l), File::Bitmap::Direction(q));
+                                break;
+                            case 3:
+                                entropies[j][l][k] = bmpSts.retreaveEntropy(File::Bitmap::ColorID(l));
+                                XiSquares[j][l][k]= bmpSts.retreaveXiSquare(File::Bitmap::ColorID(l));
+                                for(q = 0; q < DIRECTIONS_AMOUNT; q++)
+                                    correlations[j][l][q][k] = bmpSts.retreaveCorrelation(File::Bitmap::ColorID(l), File::Bitmap::Direction(q));
+                                break;
+                            default:
+                                return 0;
+                        }
                     }
                     decrypt(bmp, AEScph, false);
                     if(bmp__ != bmp) std::cout << "Something went wrong with decryption" << std::endl;
                 }
                 for(l = 0; l < PIXEL_COMPONENTS_AMOUNT; l++) {
-                    Entropy[j][l] = StatisticalDispersion(entropies[j][l], testsAmount);
-                    XiSquare[j][l]= StatisticalDispersion(XiSquares[j][l], testsAmount);
-                    for(q = 0; q < DIRECTIONS_AMOUNT; q++) Correlation[j][l][q] = StatisticalDispersion(correlations[j][l][q], testsAmount)*100.0;
+                    switch(selected_op){
+                        case 0:
+                            Entropy[j][l] = StatisticalDispersion(entropies[j][l], testsAmount);
+                            break;
+                        case 1:
+                            XiSquare[j][l]= StatisticalDispersion(XiSquares[j][l], testsAmount);
+                            break;
+                        case 2:
+                            for(q = 0; q < DIRECTIONS_AMOUNT; q++) Correlation[j][l][q] = StatisticalDispersion(correlations[j][l][q], testsAmount)*100.0;
+                            break;
+                        case 3:
+                            Entropy[j][l] = StatisticalDispersion(entropies[j][l], testsAmount);
+                            XiSquare[j][l]= StatisticalDispersion(XiSquares[j][l], testsAmount);
+                            for(q = 0; q < DIRECTIONS_AMOUNT; q++) Correlation[j][l][q] = StatisticalDispersion(correlations[j][l][q], testsAmount)*100.0;
+                            break;
+                        default:
+                            return 0;
+                    }
                 }
             }
 
             std::cout << std::fixed << std::setprecision(6) <<std::endl;
-            std::cout << "Key size = " << (int)klen << " -----------------------------------\n\n";
-            std::cout << "Entropy        ECV     CBC     PVS     \n";
-            std::cout << "Red          " << Entropy[0][0] << ' ' << Entropy[1][0] << ' ' << Entropy[2][0] << '\n';
-            std::cout << "Green        " << Entropy[0][1] << ' ' << Entropy[1][1] << ' ' << Entropy[2][1] << '\n';
-            std::cout << "Blue         " << Entropy[0][2] << ' ' << Entropy[1][2] << ' ' << Entropy[2][2] << '\n';
+            switch(selected_op){
+                case 0:
+                    std::cout << "Key size = " << (int)klen << " -----------------------------------\n\n";
+                    std::cout << "Entropy        ECV     CBC     PVS     \n";
+                    std::cout << "Red          " << Entropy[0][0] << ' ' << Entropy[1][0] << ' ' << Entropy[2][0] << '\n';
+                    std::cout << "Green        " << Entropy[0][1] << ' ' << Entropy[1][1] << ' ' << Entropy[2][1] << '\n';
+                    std::cout << "Blue         " << Entropy[0][2] << ' ' << Entropy[1][2] << ' ' << Entropy[2][2] << '\n';
+                    break;
+                case 1:
+                    std::cout << "Percentage points of the Chi-Square distribution at 5%, 25%, 50%, 75% and 95% (plus O(1/sqrt(255))):\n"
+                    << chiSquarePercentagePointsAprox(255,-1.64)    << ", "
+                    << chiSquarePercentagePointsAprox(255,-0.674)   << ", "
+                    << chiSquarePercentagePointsAprox(255,0.0)      << ", "
+                    << chiSquarePercentagePointsAprox(255,0.674)    << ", "
+                    << chiSquarePercentagePointsAprox(255,1.64);
 
-            std::cout << std::endl;
+                    std::cout << std::endl;
 
-            std::cout << "Percentage points of the Chi-Square distribution at 5%, 25%, 50%, 75% and 95% (plus O(1/sqrt(255))):\n"
-            << chiSquarePercentagePointsAprox(255,-1.64)    << ", "
-            << chiSquarePercentagePointsAprox(255,-0.674)   << ", "
-            << chiSquarePercentagePointsAprox(255,0.0)      << ", "
-            << chiSquarePercentagePointsAprox(255,0.674)    << ", "
-            << chiSquarePercentagePointsAprox(255,1.64);
+                    std::cout << std::fixed << std::setprecision(2) <<std::endl;
+                    std::cout << "XiSquares          ECV        CBC        PVS     \n";
+                    std::cout << "Red          " << XiSquare[0][0] << ' ' << XiSquare[1][0] << ' ' << XiSquare[2][0] << '\n';
+                    std::cout << "Green        " << XiSquare[0][1] << ' ' << XiSquare[1][1] << ' ' << XiSquare[2][1] << '\n';
+                    std::cout << "Blue         " << XiSquare[0][2] << ' ' << XiSquare[1][2] << ' ' << XiSquare[2][2] << '\n';
+                    break;
+                case 2:
+                    std::cout << std::fixed << std::setprecision(6) <<std::endl;
+                    for(k = 0; k < DIRECTIONS_AMOUNT; k++){
+                        if(k == File::Bitmap::horizontal) std::cout << "Horizontal Correlation x100    ECV      CBC      PVS     \n";
+                        if(k == File::Bitmap::vertical)   std::cout << "Vertical Correlation   x100   ECV      CBC      PVS     \n";
+                        if(k == File::Bitmap::diagonal)   std::cout << "Diagonal Correlation   x100   ECV      CBC      PVS     \n";
+                        std::cout << "Red                      ";
+                        for(l = 0; l < OPERATION_MODES_AMOUNT; l++) std::cout << Correlation[l][0][k] << ' ';
+                        std::cout << '\n' << "Green                    ";
+                        for(l = 0; l < OPERATION_MODES_AMOUNT; l++) std::cout << Correlation[l][1][k] << ' ';
+                        std::cout << '\n' << "Blue                     ";
+                        for(l = 0; l < OPERATION_MODES_AMOUNT; l++) std::cout << Correlation[l][2][k] << ' ';
+                        std::cout << '\n';
+                        std::cout << std::endl;
+                    }
+                    break;
+                case 3:
+                    std::cout << "Key size = " << (int)klen << " -----------------------------------\n\n";
+                    std::cout << "Entropy        ECV     CBC     PVS     \n";
+                    std::cout << "Red          " << Entropy[0][0] << ' ' << Entropy[1][0] << ' ' << Entropy[2][0] << '\n';
+                    std::cout << "Green        " << Entropy[0][1] << ' ' << Entropy[1][1] << ' ' << Entropy[2][1] << '\n';
+                    std::cout << "Blue         " << Entropy[0][2] << ' ' << Entropy[1][2] << ' ' << Entropy[2][2] << '\n';
 
-            std::cout << std::endl;
+                    std::cout << std::endl;
 
-            std::cout << std::fixed << std::setprecision(2) <<std::endl;
-            std::cout << "XiSquares          ECV        CBC        PVS     \n";
-            std::cout << "Red          " << XiSquare[0][0] << ' ' << XiSquare[1][0] << ' ' << XiSquare[2][0] << '\n';
-            std::cout << "Green        " << XiSquare[0][1] << ' ' << XiSquare[1][1] << ' ' << XiSquare[2][1] << '\n';
-            std::cout << "Blue         " << XiSquare[0][2] << ' ' << XiSquare[1][2] << ' ' << XiSquare[2][2] << '\n';
+                    std::cout << "Percentage points of the Chi-Square distribution at 5%, 25%, 50%, 75% and 95% (plus O(1/sqrt(255))):\n"
+                    << chiSquarePercentagePointsAprox(255,-1.64)    << ", "
+                    << chiSquarePercentagePointsAprox(255,-0.674)   << ", "
+                    << chiSquarePercentagePointsAprox(255,0.0)      << ", "
+                    << chiSquarePercentagePointsAprox(255,0.674)    << ", "
+                    << chiSquarePercentagePointsAprox(255,1.64);
 
-            std::cout << std::endl;
+                    std::cout << std::endl;
 
-            std::cout << std::fixed << std::setprecision(6) <<std::endl;
-            for(k = 0; k < DIRECTIONS_AMOUNT; k++){
-                if(k == File::Bitmap::horizontal) std::cout << "Horizontal Correlation x100    ECV      CBC      PVS     \n";
-                if(k == File::Bitmap::vertical)   std::cout << "Vertical Correlation   x100   ECV      CBC      PVS     \n";
-                std::cout << "Red                      ";
-                for(l = 0; l < OPERATION_MODES_AMOUNT; l++) std::cout << Correlation[l][0][k] << ' ';
-                std::cout << '\n' << "Green                    ";
-                for(l = 0; l < OPERATION_MODES_AMOUNT; l++) std::cout << Correlation[l][1][k] << ' ';
-                std::cout << '\n' << "Blue                     ";
-                for(l = 0; l < OPERATION_MODES_AMOUNT; l++) std::cout << Correlation[l][2][k] << ' ';
-                std::cout << '\n';
-                std::cout << std::endl;
+                    std::cout << std::fixed << std::setprecision(2) <<std::endl;
+                    std::cout << "XiSquares          ECV        CBC        PVS     \n";
+                    std::cout << "Red          " << XiSquare[0][0] << ' ' << XiSquare[1][0] << ' ' << XiSquare[2][0] << '\n';
+                    std::cout << "Green        " << XiSquare[0][1] << ' ' << XiSquare[1][1] << ' ' << XiSquare[2][1] << '\n';
+                    std::cout << "Blue         " << XiSquare[0][2] << ' ' << XiSquare[1][2] << ' ' << XiSquare[2][2] << '\n';
+
+                    std::cout << std::endl;
+
+                    std::cout << std::fixed << std::setprecision(6) <<std::endl;
+                    for(k = 0; k < DIRECTIONS_AMOUNT; k++){
+                        if(k == File::Bitmap::horizontal) std::cout << "Horizontal Correlation x100    ECV      CBC      PVS     \n";
+                        if(k == File::Bitmap::vertical)   std::cout << "Vertical Correlation   x100   ECV      CBC      PVS     \n";
+                        if(k == File::Bitmap::diagonal)   std::cout << "Diagonal Correlation   x100   ECV      CBC      PVS     \n";
+                        std::cout << "Red                      ";
+                        for(l = 0; l < OPERATION_MODES_AMOUNT; l++) std::cout << Correlation[l][0][k] << ' ';
+                        std::cout << '\n' << "Green                    ";
+                        for(l = 0; l < OPERATION_MODES_AMOUNT; l++) std::cout << Correlation[l][1][k] << ' ';
+                        std::cout << '\n' << "Blue                     ";
+                        for(l = 0; l < OPERATION_MODES_AMOUNT; l++) std::cout << Correlation[l][2][k] << ' ';
+                        std::cout << '\n';
+                        std::cout << std::endl;
+                    }
+                    std::cout << std::endl;
+                    break;
+                default:
+                    return 0;
             }
-            std::cout << std::endl;
         }
     }
     return 0;
