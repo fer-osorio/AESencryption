@@ -707,6 +707,7 @@ std::ostream& File::operator << (std::ostream& os, const BitmapStatistics& bmSt)
     os << "Correlation" << '\n';
     os << "Horizontal   :\t"; for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++) fixedLengthNumber(os, bmSt.Correlation[i][0], 7) << "\t"; os << '\n';
     os << "Vertical     :\t"; for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++) fixedLengthNumber(os, bmSt.Correlation[i][1], 7) << "\t"; os << '\n';
+    os << "Diagonal     :\t"; for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++) fixedLengthNumber(os, bmSt.Correlation[i][2], 7) << "\t"; os << '\n';
 
     return os;
 }
