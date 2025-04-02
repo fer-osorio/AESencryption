@@ -114,7 +114,7 @@ int main(int argc, char* argv[]) {
                     AEScph = AES::Cipher(key);
                     encrypt(bmp, AEScph, false);
                     bmpSts = File::BitmapStatistics(&bmp);
-                    if((k & 31) == 0) {
+                    if((k & 255) == 0) {
                         std::cout << '\n' << "Test number " << k << '\n';
                         std::cout << "Cipher object:\n";
                         std::cout << AEScph;
