@@ -503,7 +503,7 @@ BitmapStatistics::BitmapStatistics(const BitmapStatistics& bmpSts): pbmp(bmpSts.
 BitmapStatistics::BitmapStatistics(const Bitmap* pbmp_): pbmp(pbmp_) {
     int i,j;
     if(this->pbmp == NULL) return;
-    this->setpixelValueFrequence();
+    this->sethistogram();
     for(i = 0; i < PIXEL_COMPONENTS_AMOUNT; i++) {
         this->Average[i] = this->average(Bitmap::ColorID(i));
         this->Entropy[i] = this->entropy(Bitmap::ColorID(i));
@@ -549,7 +549,7 @@ double BitmapStatistics::average(const Bitmap::ColorID CId) const{
 
 double BitmapStatistics::covariance(const Bitmap::ColorID CId, Bitmap::Direction dr, size_t offset) const{
     if(offset >= this->pbmp->pixelAmount) offset %= this->pbmp->pixelAmount;
-    int i, j, k, l, r;                                                          // -(i,j) is the first point and (k,l) is the second point
+    int i, j, k, l, r, c;                                                          // -(i,j) is the first point and (k,l) is the second point
     const int h = this->pbmp->ih.Height, w = this->pbmp->ih.Width;
     int vertical_offset;                                                        // -Looking offset as a point in the matrix that represents the image. Using
     int horizontal_offset;                                                      //  division algorithm offset = vertical_offset*w + horizontal offset
@@ -560,7 +560,7 @@ double BitmapStatistics::covariance(const Bitmap::ColorID CId, Bitmap::Direction
         case Bitmap::horizontal:
             vertical_offset = (int)offset / w;
             horizontal_offset = (int)offset % w;
-            for(i = 0, k = vertical_offset; i < h; i++, k++){
+            for(i = 0, c = 0, k = vertical_offset; i < h; i++, k++){
                 if(k == h) k = 0;
                 for(j = 0, l = horizontal_offset; j < w; j++, l++){
                     if(l == w) {
@@ -575,7 +575,7 @@ double BitmapStatistics::covariance(const Bitmap::ColorID CId, Bitmap::Direction
         case Bitmap::vertical:
             vertical_offset = (int)offset % h;
             horizontal_offset = (int)offset / h;
-            for(j = 0, l = horizontal_offset; j < w; j++, l++){
+            for(j = 0, c = 0, l = horizontal_offset; j < w; j++, l++){
                 if(l == w) l = 0;
                 for(i = 0, k = vertical_offset; i < h; i++, k++){
                     if(k == h) {
@@ -590,7 +590,7 @@ double BitmapStatistics::covariance(const Bitmap::ColorID CId, Bitmap::Direction
         case Bitmap::diagonal:
             vertical_offset = (int)offset % h;
             horizontal_offset = (int)offset % w;
-            for(r = w-1; r >= 0; r--){
+            for(r = w-1, c = 0; r >= 0; r--){
                 for(i = 0, j = r, k = vertical_offset, l = horizontal_offset + r; j < w; i++, j++, k++, l++) {
                     if(i == h) break;
                     if(k == h) k = 0;
@@ -598,7 +598,7 @@ double BitmapStatistics::covariance(const Bitmap::ColorID CId, Bitmap::Direction
                     covariance += ((double)this->pbmp->getPixelColor(i, j, CId) - avr)*((double)this->pbmp->getPixelColor(k, l, CId) - avr);
                 }
             }
-            for(r = 1; r < h; r++){
+            for(r = 1, c = 0; r < h; r++){
                 for(i = r, j = 0, k = vertical_offset + r, l = horizontal_offset; i < h; i++, j++, k++, l++) {
                     if(j == w) break;
                     if(k == h) k = 0;
@@ -621,16 +621,16 @@ double BitmapStatistics::correlation(const Bitmap::ColorID CId, Bitmap::Directio
     return this->Covariance[CId][dr] / this->Variance[CId][dr];
 }
 
-void BitmapStatistics::setpixelValueFrequence(){
+void BitmapStatistics::sethistogram(){
     int i = 0, j=  0;
-    if(!this->pixelValueFrequenceStablished) {
+    if(!this->histogramStablished) {
         for(i = 0; i < this->pbmp->ih.Height; i++)
             for(j = 0; j < this->pbmp->ih.Width; j++) {
-                this->pixelValueFrequence[Bitmap::ColorID::Red][this->pbmp->getPixelColor(i, j, Bitmap::ColorID::Red)]++;
-                this->pixelValueFrequence[Bitmap::ColorID::Green][this->pbmp->getPixelColor(i, j, Bitmap::ColorID::Green)]++;
-                this->pixelValueFrequence[Bitmap::ColorID::Blue][this->pbmp->getPixelColor(i, j, Bitmap::ColorID::Blue)]++;
+                this->histogram[Bitmap::ColorID::Red][this->pbmp->getPixelColor(i, j, Bitmap::ColorID::Red)]++;
+                this->histogram[Bitmap::ColorID::Green][this->pbmp->getPixelColor(i, j, Bitmap::ColorID::Green)]++;
+                this->histogram[Bitmap::ColorID::Blue][this->pbmp->getPixelColor(i, j, Bitmap::ColorID::Blue)]++;
         }
-        this->pixelValueFrequenceStablished = true;
+        this->histogramStablished = true;
     }
 }
 
@@ -640,7 +640,7 @@ double BitmapStatistics::entropy(const Bitmap::ColorID color) const{
     double  sz      = (double)this->pbmp->ih.Height*(double)this->pbmp->ih.Width;
     int     i = 0;
 
-    for(i = 0; i < 256; i++) p[i] = this->pixelValueFrequence[color][i]/sz;
+    for(i = 0; i < 256; i++) p[i] = this->histogram[color][i]/sz;
     for(i = 0; i < 256; i++) if(p[i] != 0) entropy -= p[i]*log2(p[i]);
 
     return entropy;
@@ -652,10 +652,77 @@ double BitmapStatistics::xiSquare(const Bitmap::ColorID color) const{
     int     i = 0;
 
     for(i = 0; i < 256; i++)
-        xiSquare += (double)(this->pixelValueFrequence[color][i]*this->pixelValueFrequence[color][i]);
+        xiSquare += (double)(this->histogram[color][i]*this->histogram[color][i]);
     xiSquare *= 256.0/sz; xiSquare -= sz;
 
     return xiSquare;
+}
+
+double BitmapStatistics::retreaveCorrelation(const Bitmap::ColorID CID, Bitmap::Direction dr, uint8_t* xAxis_dest, uint8_t* yAxis_dest) const{
+    int i, j, k, l, r, c;                                                       // -(i,j) is the first point and (k,l) is the second point
+    const int h = this->pbmp->ih.Height, w = this->pbmp->ih.Width;
+    int vertical_offset;                                                        // -Looking offset as a point in the matrix that represents the image. Using
+    int horizontal_offset;                                                      //  division algorithm offset = vertical_offset*w + horizontal offset
+
+    if(xAxis_dest != NULL && yAxis_dest != NULL) {
+        switch(dr){
+            case Bitmap::horizontal:
+                vertical_offset = 0;
+                horizontal_offset = 1;
+                for(i = 0, c = 0, k = vertical_offset; i < h; i++, k++){
+                    if(k == h) k = 0;
+                    for(j = 0, l = horizontal_offset; j < w; j++, l++){
+                        if(l == w) {
+                            l = 0;
+                            k++;
+                            if(k == h) k = 0;
+                        }
+                        if(xAxis_dest != NULL) xAxis_dest[c++] = this->pbmp->getPixelColor(i, j, CID);
+                        if(yAxis_dest != NULL) yAxis_dest[c++] = this->pbmp->getPixelColor(k, l, CID);
+                    }
+                }
+                break;
+            case Bitmap::vertical:
+                vertical_offset = 1;
+                horizontal_offset = 0;
+                for(j = 0, c = 0, l = horizontal_offset; j < w; j++, l++){
+                    if(l == w) l = 0;
+                    for(i = 0, k = vertical_offset; i < h; i++, k++){
+                        if(k == h) {
+                            k = 0;
+                            l++;
+                            if(l == w) l = 0;
+                        }
+                        if(xAxis_dest != NULL) xAxis_dest[c++] = this->pbmp->getPixelColor(i, j, CID);
+                        if(yAxis_dest != NULL) yAxis_dest[c++] = this->pbmp->getPixelColor(k, l, CID);
+                    }
+                }
+                break;
+            case Bitmap::diagonal:
+                vertical_offset = 1;
+                horizontal_offset = 1;
+                for(r = w-1, c = 0; r >= 0; r--){
+                    for(i = 0, j = r, k = vertical_offset, l = horizontal_offset + r; j < w; i++, j++, k++, l++) {
+                        if(i == h) break;
+                        if(k == h) k = 0;
+                        if(l == w) l = 0;
+                        if(xAxis_dest != NULL) xAxis_dest[c++] = this->pbmp->getPixelColor(i, j, CID);
+                        if(yAxis_dest != NULL) yAxis_dest[c++] = this->pbmp->getPixelColor(k, l, CID);
+                    }
+                }
+                for(r = 1, c = 0; r < h; r++){
+                    for(i = r, j = 0, k = vertical_offset + r, l = horizontal_offset; i < h; i++, j++, k++, l++) {
+                        if(j == w) break;
+                        if(k == h) k = 0;
+                        if(l == w) l = 0;
+                        if(xAxis_dest != NULL) xAxis_dest[c++] = this->pbmp->getPixelColor(i, j, CID);
+                        if(yAxis_dest != NULL) yAxis_dest[c++] = this->pbmp->getPixelColor(k, l, CID);
+                    }
+                }
+                break;
+        }
+    }
+    return this->Correlation[CID][dr];
 }
 
 static std::ostream& fixedLengthNumber(std::ostream& os, const double n, size_t len){

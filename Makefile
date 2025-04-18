@@ -10,6 +10,7 @@ HEADERS  = Apps/Settings.hpp Source/*.hpp
 ENCRYPTF = Apps/encryption.cpp
 DECRYPTF = Apps/decryption.cpp
 STATSF	 = Apps/Statistics.cpp
+GRAF	 = Apps/Grafiken.cpp
 EXEDIR	 = Apps/Executables/
 EXERPATH = Apps/Executables/$@
 
@@ -21,6 +22,9 @@ AESdecryption.exe: Makefile $(DECRYPTF) $(SOURCE) $(HEADERS)
 
 Statistics.exe: Makefile $(STATSF) Source/File.cpp Source/File.hpp Source/AES.cpp Source/AES.hpp
 	$(CXX) -o $(EXERPATH) $(WARNINGS) $(DEBUG) $(OPTIMIZE) $(STANDARD) $(STATSF) Source/File.cpp Source/AES.cpp
+
+Grafiken.exe: Makefile $(GRAF) Source/File.cpp Source/File.hpp Source/AES.cpp Source/AES.hpp
+	$(CXX) -o $(GRAF) Source/File.cpp Source/AES.cpp `pkg-config --cflags --libs plplot-c++`
 
 clean:
 	rm -f $(EXEDIR)*.exe

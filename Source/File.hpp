@@ -153,6 +153,9 @@ class Bitmap {									// -Handling bitmap format images.
 	bool operator == (const Bitmap& bmp) const;
 	bool operator != (const Bitmap& bmp) const;
 
+	size_t PixelAmount() const{ return this->pixelAmount; }
+	size_t dataSize() const{ return this->ih.SizeOfBitmap; }
+
 	friend void encrypt(Bitmap& bmp, AES::Cipher& e, bool save = true) {	// -Encrypts using the operation mode defined in Key object
 		e.encrypt(bmp.data, bmp.ih.SizeOfBitmap);
     		if(save) bmp.save(bmp.name);					// -The reason of the existence of these friend functions is to be capable of
@@ -175,8 +178,8 @@ struct BitmapStatistics{
 	double Variance   [PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{-1.0,-1.0,-1.0},{-1.0,-1.0,-1.0},{-1.0,-1.0,-1.0}};
 	double Correlation[PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{10.0,10.0,10.0},{10.0,10.0,10.0},{10.0,10.0,10.0}};
 
-	uint32_t pixelValueFrequence[PIXEL_COMPONENTS_AMOUNT][256] = {{0},{0},{0}};
-	bool	 pixelValueFrequenceStablished = false;
+	uint32_t histogram[PIXEL_COMPONENTS_AMOUNT][256] = {{0},{0},{0}};
+	bool	 histogramStablished = false;
 
 	double Entropy    [PIXEL_COMPONENTS_AMOUNT]  = { 0.0};
 	double XiSquare   [PIXEL_COMPONENTS_AMOUNT]  = { 0.0};
@@ -188,7 +191,7 @@ struct BitmapStatistics{
 	double entropy(const Bitmap::ColorID) const;
 	double xiSquare(const Bitmap::ColorID)const;
 
-	void setpixelValueFrequence();
+	void sethistogram();
 
 	public:
 	BitmapStatistics() {}
@@ -196,7 +199,7 @@ struct BitmapStatistics{
 	BitmapStatistics(const Bitmap* pbmp_);
 	BitmapStatistics& operator = (const BitmapStatistics&);
 
-	double retreaveCorrelation(const Bitmap::ColorID CID, Bitmap::Direction dr) const{ return this->Correlation[CID][dr]; }
+	double retreaveCorrelation(const Bitmap::ColorID CID, Bitmap::Direction dr, uint8_t* xAxis_dest = NULL, uint8_t* yAxis_dest = NULL) const;
 	double retreaveEntropy(const Bitmap::ColorID CID) const{ return this->Entropy[CID]; }
 	double retreaveXiSquare(const Bitmap::ColorID CID) const{ return this->XiSquare[CID]; }
 
