@@ -24,7 +24,7 @@ Statistics.exe: Makefile $(STATSF) Source/File.cpp Source/File.hpp Source/AES.cp
 	$(CXX) -o $(EXERPATH) $(WARNINGS) $(DEBUG) $(OPTIMIZE) $(STANDARD) $(STATSF) Source/File.cpp Source/AES.cpp
 
 Grafiken.exe: Makefile $(GRAF) Source/File.cpp Source/File.hpp Source/AES.cpp Source/AES.hpp
-	$(CXX) -o $(GRAF) Source/File.cpp Source/AES.cpp `pkg-config --cflags --libs plplot-c++`
+	$(CXX) -o $(EXERPATH) $(WARNINGS) $(DEBUG) $(OPTIMIZE) $(STANDARD) $(GRAF) Source/File.cpp Source/AES.cpp `pkg-config --cflags --libs plplot-c++`
 
 clean:
 	rm -f $(EXEDIR)*.exe
