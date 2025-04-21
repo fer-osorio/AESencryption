@@ -6,7 +6,7 @@
 #ifndef _INCLUDED_FILE_
 #define _INCLUDED_FILE_
 #define NAME_MAX_LEN 4096
-#define PIXEL_COMPONENTS_AMOUNT	3
+#define RGB_COMPONENTS_AMOUNT	3
 #define DIRECTIONS_AMOUNT	3
 
 namespace File {
@@ -102,6 +102,7 @@ struct BitmapStatistics;
 class Bitmap {									// -Handling bitmap format images.
 	public: enum ColorID{ Red, Green, Blue};
 	public: enum Direction{ horizontal, vertical, diagonal };
+	public: static const char*const RGBlabels[RGB_COMPONENTS_AMOUNT];
 	private:
 	struct RGB {
 		uint8_t red;
@@ -173,16 +174,16 @@ std::ostream& operator << (std::ostream& os, const BitmapStatistics& bmSt);
 struct BitmapStatistics{
 	private:
 	const  Bitmap* 	  pbmp		= NULL;
-	double Average    [PIXEL_COMPONENTS_AMOUNT]  = {-1.0};
-	double Covariance [PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{ 0.0, 0.0, 0.0},{ 0.0, 0.0, 0.0},{ 0.0, 0.0, 0.0}};
-	double Variance   [PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{-1.0,-1.0,-1.0},{-1.0,-1.0,-1.0},{-1.0,-1.0,-1.0}};
-	double Correlation[PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{10.0,10.0,10.0},{10.0,10.0,10.0},{10.0,10.0,10.0}};
+	double Average    [RGB_COMPONENTS_AMOUNT]  = {-1.0};
+	double Covariance [RGB_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{ 0.0, 0.0, 0.0},{ 0.0, 0.0, 0.0},{ 0.0, 0.0, 0.0}};
+	double Variance   [RGB_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{-1.0,-1.0,-1.0},{-1.0,-1.0,-1.0},{-1.0,-1.0,-1.0}};
+	double Correlation[RGB_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{10.0,10.0,10.0},{10.0,10.0,10.0},{10.0,10.0,10.0}};
 
-	uint32_t histogram[PIXEL_COMPONENTS_AMOUNT][256] = {{0},{0},{0}};
+	uint32_t histogram[RGB_COMPONENTS_AMOUNT][256] = {{0},{0},{0}};
 	bool	 histogramStablished = false;
 
-	double Entropy    [PIXEL_COMPONENTS_AMOUNT]  = { 0.0};
-	double XiSquare   [PIXEL_COMPONENTS_AMOUNT]  = { 0.0};
+	double Entropy    [RGB_COMPONENTS_AMOUNT]  = { 0.0};
+	double XiSquare   [RGB_COMPONENTS_AMOUNT]  = { 0.0};
 
 	double average(    const Bitmap::ColorID) const;			// -Average value of color in a range of pixels. Horizontal calculation
 	double covariance( const Bitmap::ColorID, Bitmap::Direction dr, size_t offset) const;
@@ -199,11 +200,14 @@ struct BitmapStatistics{
 	BitmapStatistics(const Bitmap* pbmp_);
 	BitmapStatistics& operator = (const BitmapStatistics&);
 
-	double retreaveCorrelation(const Bitmap::ColorID CID, Bitmap::Direction dr, uint8_t* xAxis_dest = NULL, uint8_t* yAxis_dest = NULL) const;
+	double retreaveCorrelation(const Bitmap::ColorID CID, Bitmap::Direction dr, double* xAxis_dest = NULL, double* yAxis_dest = NULL) const;
 	double retreaveEntropy(const Bitmap::ColorID CID) const{ return this->Entropy[CID]; }
 	double retreaveXiSquare(const Bitmap::ColorID CID) const{ return this->XiSquare[CID]; }
+	size_t pixelAmount() const{ return this->pbmp->PixelAmount(); }
+	void   writeHistogram(Bitmap::ColorID CID, double destination[]) const{ for(int i = 0; i < 256; i++) destination[i] = this->histogram[CID][i]; }
 
 	friend std::ostream& operator << (std::ostream& os, const BitmapStatistics& bmSt);
+	void writeBmpName(char destination[]) const;
 };
 };
 #endif
