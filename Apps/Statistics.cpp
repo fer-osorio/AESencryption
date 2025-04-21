@@ -36,14 +36,14 @@ int main(int argc, char* argv[]) {
         File::Bitmap bmp;
         File::BitmapStatistics bmpSts;
 
-        double entropies[OPERATION_MODES_AMOUNT][PIXEL_COMPONENTS_AMOUNT][MAX_TEST_AMOUND];
-        StatisticalDispersion Entropy[OPERATION_MODES_AMOUNT][PIXEL_COMPONENTS_AMOUNT];
+        double entropies[OPERATION_MODES_AMOUNT][RGB_COMPONENTS_AMOUNT][MAX_TEST_AMOUND];
+        StatisticalDispersion Entropy[OPERATION_MODES_AMOUNT][RGB_COMPONENTS_AMOUNT];
 
-        double XiSquares[OPERATION_MODES_AMOUNT][PIXEL_COMPONENTS_AMOUNT][MAX_TEST_AMOUND];
-        StatisticalDispersion XiSquare[OPERATION_MODES_AMOUNT][PIXEL_COMPONENTS_AMOUNT];
+        double XiSquares[OPERATION_MODES_AMOUNT][RGB_COMPONENTS_AMOUNT][MAX_TEST_AMOUND];
+        StatisticalDispersion XiSquare[OPERATION_MODES_AMOUNT][RGB_COMPONENTS_AMOUNT];
 
-        double correlations[OPERATION_MODES_AMOUNT][PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT][MAX_TEST_AMOUND];
-        StatisticalDispersion Correlation[OPERATION_MODES_AMOUNT][PIXEL_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT];
+        double correlations[OPERATION_MODES_AMOUNT][RGB_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT][MAX_TEST_AMOUND];
+        StatisticalDispersion Correlation[OPERATION_MODES_AMOUNT][RGB_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT];
 
         int i, j, k, l, q, r, selected_op;
         uint32_t testsAmount;
@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
                 }
 
                 for(k = 0; (uint32_t)k < testsAmount; k++) {
-                    for(l = 0; l < PIXEL_COMPONENTS_AMOUNT; l++) {
+                    for(l = 0; l < RGB_COMPONENTS_AMOUNT; l++) {
                         entropies[j][l][k] = 0;
                         XiSquares[j][l][k]= 0;
                         for(q = 0; q < DIRECTIONS_AMOUNT; q++) correlations[j][l][q][k] = 0;
@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
                         std::cout << "Encrypted image statistics:\n";
                         std::cout << bmpSts << "\n\n";
                     }
-                    for(l = 0; l < PIXEL_COMPONENTS_AMOUNT; l++) {
+                    for(l = 0; l < RGB_COMPONENTS_AMOUNT; l++) {
                         switch(selected_op){
                             case 0:
                                 entropies[j][l][k] = bmpSts.retreaveEntropy(File::Bitmap::ColorID(l));
@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
                     decrypt(bmp, AEScph, false);
                     if(bmp__ != bmp) std::cout << "Something went wrong with decryption" << std::endl;
                 }
-                for(l = 0; l < PIXEL_COMPONENTS_AMOUNT; l++) {
+                for(l = 0; l < RGB_COMPONENTS_AMOUNT; l++) {
                     switch(selected_op){
                         case 0:
                             Entropy[j][l] = StatisticalDispersion(entropies[j][l], testsAmount);
