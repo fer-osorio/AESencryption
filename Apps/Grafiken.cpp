@@ -43,24 +43,39 @@ struct PlotBmpStats: public File::BitmapStatistics {
     }
     PlotBmpStats& operator=(const PlotBmpStats& pbs);
     double histogram(File::Bitmap::ColorID CID, const char* Hname = NULL, const char* Hlabel = NULL) const;
-    double correlationGraph(File::Bitmap::ColorID CID, File::Bitmap::Direction dr, const char* CGname = NULL, const char* CGlabel = NULL) const;
+    double correlationGraph(File::Bitmap::ColorID CID,
+                            File::Bitmap::Direction dr,
+                            const char* CGname = NULL,                          //  -Correlation Graph name
+                            const char* CGlabel = NULL,                         //  -Correlation Graph label
+                            char sym = '.',                                     //  -Symbol to be used in the graph
+                            size_t ssym = 1) const;                             //  -Factor of scaling for symbol size
 };
 
 int main(int argc, const char* argv[]){
-    if(argc == 2){
+    if(argc == 4){
         File::Bitmap bmp;
+        uint32_t ssym;
+        int r;
+        char sym = argv[2][0];
         try{
             bmp = File::Bitmap(argv[1]);
+            ssym = uint32_t((r = std::stoi(argv[3])) < 0 ? -r : r);
         } catch(const std::runtime_error& exp){
             std::cout << "Could not open bitmap file..." << exp.what() << "\n";
             return 0;
+        } catch(const std::invalid_argument& exp){
+            std::cout << "std::invalid_argument::what(): " << exp.what() << '\n' << "Procceding with ssym = 1\n";
+            ssym = 1;
+        } catch(const std::out_of_range& exp){
+            std::cout << "std::out_of_range::what(): " << exp.what() << '\n' << "Procceding with ssym = 1\n";
+            ssym = 1;
         }
         PlotBmpStats pl(bmp);
         int i, j;
         for(i = 0; i < RGB_COMPONENTS_AMOUNT; i++){
             pl.histogram((File::Bitmap::ColorID)i);
             for(j = 0; j < DIRECTIONS_AMOUNT; j++){
-                pl.correlationGraph((File::Bitmap::ColorID)i, (File::Bitmap::Direction)j);
+                pl.correlationGraph((File::Bitmap::ColorID)i, (File::Bitmap::Direction)j, NULL, NULL, sym, ssym);
             }
         }
     }
@@ -197,7 +212,7 @@ double PlotBmpStats::histogram(File::Bitmap::ColorID CID, const char* Hname, con
     return this->retreaveEntropy(CID);
 }
 
-double PlotBmpStats::correlationGraph(File::Bitmap::ColorID CID, File::Bitmap::Direction dr, const char *CGname, const char* CGlabel) const{
+double PlotBmpStats::correlationGraph(File::Bitmap::ColorID CID, File::Bitmap::Direction dr, const char *CGname, const char* CGlabel, char sym, size_t ssym) const{
     plstream pCG;                                                               // Plot correlation Graph
     double c = this->retreaveCorrelation(CID, dr);
     if(c < 0) c = -c;
@@ -209,14 +224,9 @@ double PlotBmpStats::correlationGraph(File::Bitmap::ColorID CID, File::Bitmap::D
         this->makePlotName(CID, plotName, "GraphCorrelation",".png", dr);
         this->initializeGraph(&pCG, plotName, 10, 256, 253, "Pixel value (i,j)", "Pixel value (i+1,j+1)", plotLabel, this->toPlplotColor(CID));
     }
-    if(c >= 0.9){
-        pCG.ssym(0.0, 1);
-        pCG.poin(this->pixelAmount(), this->X[CID][dr], this->Y[CID][dr], '+'); // Draw the scatter points with symbol +
-    }
-    if(c < 0.9 && c >= 0.01 ) pCG.poin(this->pixelAmount(), this->X[CID][dr], this->Y[CID][dr], '.'); // Draw the scatter points with symbol .
-    else {
-        pCG.ssym(0.0, 0.3);
-        pCG.poin(this->pixelAmount(), this->X[CID][dr], this->Y[CID][dr], '.'); // Draw the scatter points with symbol .
-    }
+    if(sym < 0) sym += 128;
+    if(ssym > 10) ssym = 10;
+    pCG.ssym(0.0, ssym);
+    pCG.poin(this->pixelAmount(), this->X[CID][dr], this->Y[CID][dr], sym); // Draw the scatter points with symbol .
     return this->retreaveCorrelation(CID, dr);
 }
