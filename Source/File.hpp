@@ -215,7 +215,7 @@ struct BitmapStatistics{
 	void   writeHistogram(Bitmap::ColorID CID, double destination[]) const{ for(int i = 0; i < 256; i++) destination[i] = this->histogram[CID][i]; }
 
 	friend std::ostream& operator << (std::ostream& os, const BitmapStatistics& bmSt);
-	void writeBmpName(char destination[]) { this->pbmp->writeBmpName(destination); }
+	void writeBmpName(char destination[]) const{ this->pbmp->writeBmpName(destination); }
 };
 };
 #endif
