@@ -2,7 +2,6 @@
 #include<string.h>
 #include"../Source/File.hpp"
 #include<plplot/plstream.h>
-//#include<plstream.h>
 
 struct PlotBmpStats: public File::BitmapStatistics {
     private:
@@ -26,8 +25,9 @@ struct PlotBmpStats: public File::BitmapStatistics {
                          int graphColor,                                        //  Determines color weill be use for the graphic
                          const char* sdev = "pngcairo") const;                  //  Output device
 
-    void makePlotLabel(File::Bitmap::ColorID CID, char* destination, const char* prefix = NULL) const;
-    void makePlotName(File::Bitmap::ColorID CID, char* destination, const char* prefix = NULL, const char* postfix = NULL) const;
+    void catNameNoextensionNoslash(char* destination) const;
+    void makePlotLabel(File::Bitmap::ColorID CID, char* destination, const char* prefix = NULL, int direction = -1) const;
+    void makePlotName(File::Bitmap::ColorID CID, char* destination, const char* prefix = NULL, const char* postfix = NULL, int direction = -1) const;
     int toPlplotColor(File::Bitmap::ColorID CID) const;
 
     public:
@@ -47,25 +47,22 @@ struct PlotBmpStats: public File::BitmapStatistics {
 };
 
 int main(int argc, const char* argv[]){
-    if(argc == 3){
-        AES::Key k;
-        try{
-            k = AES::Key(argv[1]);
-        } catch(const std::runtime_error& exp){
-            std::cout << "Could not open aeskey file..." << exp.what() << "\n";
-            return 0;
-        }
-        AES::Cipher ch(k);
+    if(argc == 2){
         File::Bitmap bmp;
         try{
-            bmp = File::Bitmap(argv[2]);
+            bmp = File::Bitmap(argv[1]);
         } catch(const std::runtime_error& exp){
             std::cout << "Could not open bitmap file..." << exp.what() << "\n";
             return 0;
         }
         PlotBmpStats pl(bmp);
-        pl.correlationGraph(File::Bitmap::Blue, File::Bitmap::diagonal);
-        pl.histogram(File::Bitmap::Red);
+        int i, j;
+        for(i = 0; i < RGB_COMPONENTS_AMOUNT; i++){
+            pl.histogram((File::Bitmap::ColorID)i);
+            for(j = 0; j < DIRECTIONS_AMOUNT; j++){
+                pl.correlationGraph((File::Bitmap::ColorID)i, (File::Bitmap::Direction)j);
+            }
+        }
     }
     return 0;
 }
@@ -128,28 +125,40 @@ void PlotBmpStats::initializeGraph( plstream*const pl,
     pl->col0(graphColor);
 }
 
-void PlotBmpStats::makePlotLabel(File::Bitmap::ColorID CID, char *destination, const char* prefix) const{
-    const char* colorLabel = File::Bitmap::RGBlabels[CID];
+void PlotBmpStats::catNameNoextensionNoslash(char *destination) const{
     char bmpName[NAME_MAX_LEN];
+    int i = 0;
     this->writeBmpName(bmpName);
+    while(bmpName[i] != 0) {i++;}
+    while(bmpName[i] != '.') {i--;}
+    if(i >= 0 && strcmp(bmpName + i, ".bmp") == 0) bmpName[i] = 0;
+    while(bmpName[i] != '/') {i--;}
+    if(i >= 0) strcat(destination, bmpName+i+1);
+    else strcat(destination, bmpName);
+}
+
+void PlotBmpStats::makePlotLabel(File::Bitmap::ColorID CID, char *destination, const char* prefix, int direction) const{
     if(prefix != NULL) {
         strcpy(destination, prefix);
         strcat(destination, " ");
     }
     else destination[0] = 0;
-    strcat(destination, bmpName);
+    this->catNameNoextensionNoslash(destination);
     strcat(destination, " ");
-    strcat(destination, colorLabel);
+    if(direction > -1 && direction < DIRECTIONS_AMOUNT){
+        strcat(destination, File::Bitmap::DirectionLabels[direction]);
+        strcat(destination, " ");
+    }
+    strcat(destination, File::Bitmap::RGBlabels[CID]);
+
 }
 
-void PlotBmpStats::makePlotName(File::Bitmap::ColorID CID, char *destination, const char* prefix, const char* postfix) const{
-    const char* colorLabel = File::Bitmap::RGBlabels[CID];
-    char bmpName[NAME_MAX_LEN];
-    this->writeBmpName(bmpName);
+void PlotBmpStats::makePlotName(File::Bitmap::ColorID CID, char *destination, const char* prefix, const char* postfix, int direction) const{
     if(prefix != NULL) strcpy(destination, prefix);
     else destination[0] = 0;
-    strcat(destination, bmpName);
-    strcat(destination, colorLabel);
+    this->catNameNoextensionNoslash(destination);
+    if(direction > -1 && direction < DIRECTIONS_AMOUNT) strcat(destination, File::Bitmap::DirectionLabels[direction]);
+    strcat(destination, File::Bitmap::RGBlabels[CID]);
     if(postfix != NULL) strcat(destination, postfix);
 }
 
@@ -196,8 +205,8 @@ double PlotBmpStats::correlationGraph(File::Bitmap::ColorID CID, File::Bitmap::D
     else {
         char plotLabel[NAME_MAX_LEN];
         char plotName[NAME_MAX_LEN];
-        this->makePlotLabel(CID, plotLabel,"Graph Correlation ");
-        this->makePlotName(CID, plotName, "GraphCorrelation",".png");
+        this->makePlotLabel(CID, plotLabel,"Graph Correlation ", dr);
+        this->makePlotName(CID, plotName, "GraphCorrelation",".png", dr);
         this->initializeGraph(&pCG, plotName, 10, 256, 253, "Pixel value (i,j)", "Pixel value (i+1,j+1)", plotLabel, this->toPlplotColor(CID));
     }
     if(c >= 0.9){
