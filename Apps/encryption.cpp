@@ -1,4 +1,5 @@
 #include"Settings.hpp"
+#include<string.h>
 
 int main(int argc, const char *argv[]) {
     if(argc > 1) {                                                              // -Handling arguments from console
@@ -8,7 +9,19 @@ int main(int argc, const char *argv[]) {
             std::cout << "Could not create AES::Cipher object.\n" << exp.what() << '\n';
             return EXIT_FAILURE;
         }
-        for(int i = 2; i < argc; i++) encryptFile(argv[i]);
+        for(int i = 2; i < argc; i++) {
+            char newName[NAME_MAX_LEN];
+            int j = -1;
+            strcpy(newName, argv[i]);
+            while(newName[++j] != 0) {}
+            while(newName[--j] != '.') {}
+            if(j > 0 && strcmp(newName+j, ".bmp")==0) {
+                newName[j] = 0;
+                strcat(newName, "Encrypted.bmp");
+                encryptFile(argv[i], newName);
+            } else
+                encryptFile(argv[i]);
+        }
         return EXIT_SUCCESS;
     }
     std::cout <<

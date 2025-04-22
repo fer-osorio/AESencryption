@@ -88,7 +88,7 @@ namespace CLI {                                                                 
 
 static int  subStringDelimitedBySpacesOrQuotation(const char* source, const int start, char* destination);
 static void setEncryptionObject(AES::Key::Length len, AES::Key::OperationMode op_mode);	// -Not proven to be secure
-static void cipherObjectOverFile(const Options::Cipher_object, const char name[]);// -Encrypts or decrypts file of second argument accordingly to the first argument
+static void cipherObjectOverFile(const Options::Cipher_object, const char name[], const char newName[] = NULL);// -Encrypts or decrypts file of second argument accordingly to the first argument
 static void runProgram(const Options::Cipher_object);
 
 static char key256[] = {(char)0x60, (char)0x3D, (char)0xEB, (char)0x10,         // -Initializing keys with the ones showed in the NIST standard.
@@ -225,7 +225,7 @@ void setEncryptionObjectFromFile(const char _fileName_[]) {
     AEScipher = AES::Cipher(mainKey);
 }
 
-void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[]) {
+void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[], const char newName[]) {
     const char thisFunc[] = "void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[])";
     bool fileOpenSucces = true;
     File::StringFileNameAnalize::Extension ext;
@@ -244,13 +244,13 @@ void cipherObjectOverFile(const Options::Cipher_object act,  const char Name[]) 
                     case Options::Cipher_object::Ciphering:
                         std::cout << "\nEncrypting bmp file...\n";
                         std::cout << bmp << std::endl;
-                        encrypt(bmp, AEScipher);
+                        encrypt(bmp, AEScipher, true, newName);
                         std::cout << AEScipher << '\n';
                         break;
                     case Options::Cipher_object::Deciphering:
                         std::cout << "\nDecrypting bmp file...\n";
                         std::cout << bmp << std::endl;
-                        decrypt(bmp, AEScipher);
+                        decrypt(bmp, AEScipher, true, newName);
                         std::cout << AEScipher << '\n';
                         break;
                 }
@@ -386,7 +386,8 @@ void CLI::getFilesAndCipherAct(Options::Cipher_object op) {
     std::cout <<
     "Write the names/paths of the files you desire to " <<opStr<< " separated with spaces.\n"
     "Once done, press enter (input should be at most " <<bufferSize<< " characters long.\n"
-    "File names/paths must have at most "<< NAME_MAX_LEN << " characters):\n";
+    "File names/paths must have at most "<< NAME_MAX_LEN << " characters):\n"
+    "WARNING: THE FILES ARE GOING TO BE RE-WRITEN WITH NO ORIGINAL FIEL BACKUP...\n";
     std::cin.getline(buffer, (std::streamsize)bufferSize, '\n');
     inputStrSize = strlen(buffer);
     for(i = 0, j = 0; i < inputStrSize && j < inputStrSize;) {                  // -'for' ends with the break statement on its end (equivalent to a do-while)
@@ -500,8 +501,8 @@ void runProgram(const Options::Cipher_object op) {
     }
 }
 
-void encryptFile(const char fileName[]) {
-    cipherObjectOverFile(Options::Cipher_object::Ciphering, fileName);
+void encryptFile(const char fileName[], const char newName[]) {
+    cipherObjectOverFile(Options::Cipher_object::Ciphering, fileName, newName);
 }
 
 void decryptFile(const char fileName[]) {
