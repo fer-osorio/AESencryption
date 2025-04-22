@@ -103,6 +103,7 @@ class Bitmap {									// -Handling bitmap format images.
 	public: enum ColorID{ Red, Green, Blue};
 	public: enum Direction{ horizontal, vertical, diagonal };
 	public: static const char*const RGBlabels[RGB_COMPONENTS_AMOUNT];
+	public: static const char*const DirectionLabels[DIRECTIONS_AMOUNT];
 	private:
 	struct RGB {
 		uint8_t red;
@@ -154,17 +155,24 @@ class Bitmap {									// -Handling bitmap format images.
 	bool operator == (const Bitmap& bmp) const;
 	bool operator != (const Bitmap& bmp) const;
 
+	void writeBmpName(char destination[]) const;
+
 	size_t PixelAmount() const{ return this->pixelAmount; }
 	size_t dataSize() const{ return this->ih.SizeOfBitmap; }
 
-	friend void encrypt(Bitmap& bmp, AES::Cipher& e, bool save = true) {	// -Encrypts using the operation mode defined in Key object
-		e.encrypt(bmp.data, bmp.ih.SizeOfBitmap);
-    		if(save) bmp.save(bmp.name);					// -The reason of the existence of these friend functions is to be capable of
-	}									//  encrypt and decrypt many files with the same Cipher object while maintaining
-										//  attributes of bmp object private
-	friend void decrypt(Bitmap& bmp, AES::Cipher& e, bool save = true) {	// -Decrypts using the operation mode defined in Key object
+	friend void encrypt(Bitmap& bmp, AES::Cipher& e, bool save = true, const char* newName = NULL) {// -Encrypts using the operation mode defined in Key object
+		e.encrypt(bmp.data, bmp.ih.SizeOfBitmap);			// -The reason of the existence of these friend functions is to be capable of
+    		if(save){							//  encrypt and decrypt many files with the same Cipher object while maintaining
+    			if(newName != NULL) bmp.save(newName); 			//  attributes of bmp object private
+    			else bmp.save(bmp.name);
+    		}
+	}
+	friend void decrypt(Bitmap& bmp, AES::Cipher& e, bool save = true, const char* newName = NULL) {	// -Decrypts using the operation mode defined in Key object
 		e.decrypt(bmp.data, bmp.ih.SizeOfBitmap);
-    		if(save) bmp.save(bmp.name);
+    		if(save) {
+    			if(newName != NULL) bmp.save(newName);
+    			else bmp.save(bmp.name);
+    		}
 	}
 
 	friend BitmapStatistics;
@@ -207,7 +215,7 @@ struct BitmapStatistics{
 	void   writeHistogram(Bitmap::ColorID CID, double destination[]) const{ for(int i = 0; i < 256; i++) destination[i] = this->histogram[CID][i]; }
 
 	friend std::ostream& operator << (std::ostream& os, const BitmapStatistics& bmSt);
-	void writeBmpName(char destination[]) const;
+	void writeBmpName(char destination[]) { this->pbmp->writeBmpName(destination); }
 };
 };
 #endif

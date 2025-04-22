@@ -258,6 +258,7 @@ TXT& TXT::operator = (const TXT& t) {
 /******************************************************************* BMP images (.bmp files) **********************************************************************/
 
 const char*const Bitmap::RGBlabels[RGB_COMPONENTS_AMOUNT] = {"Red", "Green", "Blue"};
+const char*const Bitmap::DirectionLabels[DIRECTIONS_AMOUNT] = {"Horizontal", "Vertical", "Diagonal"};
 
 Bitmap::Bitmap(const char* fname) {
     const char thisFuncName[] = "Bitmap::Bitmap(const char* fname)";
@@ -484,6 +485,16 @@ uint8_t Bitmap::getPixelColor(int i, int j, ColorID CId)  const{
     }
     return this->img[i][j].red;                                                 // -Just to prevent a compiler warning from appearing
 }
+
+void File::Bitmap::writeBmpName(char *destination) const{
+    int i = -1;
+    while(this->name[++i] != 0) destination[i] = this->name[i];
+    destination[i] = 0;
+}
+
+/******************************************************************************************************************************************************************
+                                                                        BitmapStatistics
+******************************************************************************************************************************************************************/
 
 BitmapStatistics::BitmapStatistics(const BitmapStatistics& bmpSts): pbmp(bmpSts.pbmp){
     int i, j;
@@ -783,10 +794,4 @@ std::ostream& File::operator << (std::ostream& os, const BitmapStatistics& bmSt)
     os << "Diagonal     :\t"; for(i = 0; i < RGB_COMPONENTS_AMOUNT; i++) fixedLengthNumber(os, bmSt.Correlation[i][2], 7) << "\t"; os << '\n';
 
     return os;
-}
-
-void File::BitmapStatistics::writeBmpName(char *destination) const{
-    int i = -1;
-    while(this->pbmp->name[++i] != 0) destination[i] = this->pbmp->name[i];
-    destination[i] = 0;
 }
