@@ -39,6 +39,6 @@ Testing*
 
 
 # Cryptographic keys
-*.key
+*key
 *.aeskey
 *.aes
