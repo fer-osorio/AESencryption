@@ -52,7 +52,7 @@ const size_t 	StringFileNameAnalize::extensionStringAmount 		= sizeof(SupportedE
 
 StringFileNameAnalize::Extension StringFileNameAnalize::getExtension(const char fileName[]) {
     if(fileName == NULL) {
-        std::cerr << "In file Source/NTRUencryption.cpp, function static FileExtensions getExtension(const char fileName[]). filename == NULL...\n";
+        std::cerr << "In file Source/File.cpp, function static FileExtensions getExtension(const char fileName[]). filename == NULL...\n";
         return Unrecognized;
     }
     int i = -1;
