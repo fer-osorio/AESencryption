@@ -9,7 +9,7 @@ int main(int argc, const char *argv[]) {
             std::cout << "Could not create AES::Cipher object.\n" << exp.what() << '\n';
             return EXIT_FAILURE;
         }
-        for(int i = 2; i < argc; i++) {
+        /*for(int i = 2; i < argc; i++) {
             char newName[NAME_MAX_LEN];
             int j = -1;
             strcpy(newName, argv[i]);
@@ -21,7 +21,8 @@ int main(int argc, const char *argv[]) {
                 encryptFile(argv[i], newName);
             } else
                 encryptFile(argv[i]);
-        }
+        }*/
+        for(int i = 2; i < argc; i++) encryptFile(argv[i]);
         return EXIT_SUCCESS;
     }
     std::cout <<
