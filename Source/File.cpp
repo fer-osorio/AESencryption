@@ -291,15 +291,19 @@ Bitmap::Bitmap(const char* fname) {
             this->bytesPerPixel = this->ih.BitsPerPixel >> 3;                   // -this->ih.BitsPerPixel >> 3 == this->ih.BitsPerPixel / 8
 
             this->data = new char[ih.SizeOfBitmap];
-            file.read(this->data, ih.SizeOfBitmap);                            // -Initializing bitmap data
+            file.seekg(this->fh.offset);
+            file.read(this->data, ih.SizeOfBitmap);                             // -Initializing bitmap data
+            this->ih.size = sizeof(ImageHeader);
+            this->fh.offset = 14 + this->ih.size;
+            this->fh.size = ih.SizeOfBitmap + fh.offset;
 
-            this->img = new RGB*[this->ih.Height];                                          // -Building pixel matrix
+            this->img = new RGB*[this->ih.Height];                              // -Building pixel matrix
             for(i = this->ih.Height - 1, j = 0; i >= 0; i--, j++) {
                 this->img[j] = (RGB*)&this->data[3 * i * this->ih.Width];
             }
             while(fname[sz++] != 0) {}                                          // -Getting name size.
             this->name = new char[sz];
-            for(i = 0; i < sz; i++) this->name[i] = fname[i];                         // -Copying name
+            for(i = 0; i < sz; i++) this->name[i] = fname[i];                   // -Copying name
             file.close();
         } else {
             file.close();
