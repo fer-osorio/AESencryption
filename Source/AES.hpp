@@ -11,14 +11,16 @@ struct Key;
 std::ostream& operator << (std::ostream& ost, Key k);
 class Cipher;									// -Declaring class name "Cipher". The intention is to use it in the next function
 std::ostream& operator << (std::ostream& st, const Cipher& c);			// -Declaration here so this function is inside the name space function.
+
 struct Key {
+public:
 	enum Length {_128 = 128,_192 = 192,_256 = 256};				// -Allowed AES key lengths
 	enum OperationMode {
 		ECB,								// -Electronic Code Book (not recommended).
 		CBC,								// -Cipher Block Chaining.
 		PVS								// -Permutation Variable SBox
 	};
-	private:
+private:
 	char*	key = NULL;
 	Length	lengthBits;							// -Length in bits.
 	size_t	lengthBytes;							// -Length in bytes.
@@ -28,7 +30,7 @@ struct Key {
 				0, 0, 0, 0,					// -This default value (just zeros) is left
 				0, 0, 0, 0,					//  for the case in which we do not use CBC
 			    	0, 0, 0, 0};
-	public:
+public:
 	Key();									// -Assigns lengthBits of 256 bits and zero value for each byte of array char* key
 	Key(Length, OperationMode);
 	Key(const char* const _key, Length, OperationMode);
@@ -45,9 +47,8 @@ struct Key {
 	bool KeyIsNULL() {return this->key == NULL;}
 	void save(const char* const) const;					// -Saving information in a binary file.
 
-	private:
+private:
 	friend Cipher;
-
 	void set_IV(const char source[AES_BLK_SZ]);				// -Sets initial vector by copying the array passed as argument
 	bool IVisInitialized() const { return this->initializedIV; }
 	void write_IV(char*const destination) const {				// -Writes IV in destination
@@ -59,18 +60,19 @@ struct Key {
 };
 
 class Cipher {
+private:
 	Key	key = Key();							// -The default values for a cipher object are the values for a key of 256 bits
 	int	Nk = 8, Nr = 14, keyExpLen = 240;
 	char*	keyExpansion = NULL;
 
 	struct PiRoundKey {							// -This will act as a AES round key but having a size bigger or equal than the
-		private:
+	private:
 		char*	roundkey	= NULL;					//  data array. To obtain it, the process will be similar to multiply the key with
 	    	size_t 	size		= 0;					//  the number pi
     		char dinamicSbox[SBOX_SIZE];
     		char dinamicSboxInv[SBOX_SIZE];
 
-    		public:
+    	public:
     		~PiRoundKey() { if(this->roundkey != NULL) delete[] this->roundkey; }
     		PiRoundKey& operator = (const PiRoundKey&);
     		char	operator[](const unsigned i) const{ return roundkey[i]; }
@@ -81,7 +83,7 @@ class Cipher {
     		void	invSubBytes(char state[AES_BLK_SZ]) const;
 	} piRoundkey ;
 
-	public:
+public:
 	Cipher();								// -The default constructor will set the key expansion as zero in every element.
 	Cipher(const Key&);
 	Cipher(const Cipher& a);
