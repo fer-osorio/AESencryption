@@ -68,7 +68,7 @@ static const uint8_t invSBox[SBOX_SIZE] = {
 /****************************************** Multiplication of two numbers of 256 bits to obtain a 512 bits number ************************************************/
 
 union int_char {
-    int32_t int_;                                                              // Useful when casting from a 32 bits integer to an array of four chars
+    int32_t int_;                                                               // Useful when casting from a 32 bits integer to an array of four chars
     char    chars[4];
 };
 union uint64_uint32 {                                                           // -Useful for a casting from a 64 bits unsigned integer to an array of two 32 bits
@@ -124,13 +124,13 @@ using namespace AES;
 
 /*********************************************************************** Helper functions ************************************************************************/
 
-static void operationModeToString(Key::OperationMode opm, char*const destination) {  // -Assuming destination is a pointer to an array of at least four elements.
+static void OpModeToString(Key::OpMode opm, char*const destination) {  // -Assuming destination is a pointer to an array of at least four elements.
     switch(opm) {
-        case Key::ECB: strcpy(destination, "ECB");
+        case Key::OpMode::ECB: strcpy(destination, "ECB");
             break;
-        case Key::CBC: strcpy(destination, "CBC");
+        case Key::OpMode::CBC: strcpy(destination, "CBC");
             break;
-        case Key::PVS: strcpy(destination, "PVS");
+        case Key::OpMode::PVS: strcpy(destination, "PVS");
             break;
     }
 }
@@ -139,7 +139,7 @@ static int bytesToHexString(const char*const origin, char*const destination, con
     if(len <= 0) return -1;                                                     //  representation in hexadecimal of that byte array
     char buff;                                                                  // -The resulting string is written on the "destination" pointer. We assume this
     int  i, j;
-    for(i = 0, j = 0; i < len; i++) {                                           //  pointer points to an array with lengthBits at least 2*len+1
+    for(i = 0, j = 0; i < len; i++) {                                           //  pointer points to an array with lenBits at least 2*len+1
         buff = (char)((uint8_t)origin[i] >> 4);                                 // -Taking the four most significant bits
         if(buff<10) destination[j++] = buff + 48;                               // -To hexadecimal digit
         else        destination[j++] = buff + 55;                               //  ...
@@ -153,39 +153,39 @@ static int bytesToHexString(const char*const origin, char*const destination, con
 
 /************************************************************** Handling AES cryptographic keys ******************************************************************/
 
-Key::Key(): lengthBits(Length::_256), lengthBytes(32), operation_mode(OperationMode::CBC) {
-    this->key = new char[this->lengthBytes];
-    for(size_t i = 0; i < this->lengthBytes; i++) this->key[i] = 0;
+Key::Key(): lenBits(Len::_256), lenBytes(32), opMode_(OpMode::CBC) {
+    this->key = new char[this->lenBytes];
+    for(size_t i = 0; i < this->lenBytes; i++) this->key[i] = 0;
 }
 
-Key::Key(Length len, OperationMode op_m): lengthBits(len), lengthBytes((size_t)len >> 3), operation_mode(op_m){
+Key::Key(Len len, OpMode op_m): lenBits(len), lenBytes((size_t)len >> 3), opMode_(op_m){
     std::random_device dev; std::mt19937 seed(dev());
     std::uniform_int_distribution<std::mt19937::result_type> distribution;      // -Random number with uniform distribution
     size_t i;
     union { int integer; char chars[4]; } buff;                                 // -Anonymous union. Casting from 32 bits integer to four chars
-    this->key = new char[this->lengthBytes];
-    for(i = 0; i < this->lengthBytes; i += 4) {                                 // -I am supposing everything is fine and lengthBytes is a multiple of four
+    this->key = new char[this->lenBytes];
+    for(i = 0; i < this->lenBytes; i += 4) {                                 // -I am supposing everything is fine and lenBytes is a multiple of four
         buff.integer = distribution(seed);                                      // -Taking a random 32 bits integer to divide it into four bytes
         memcpy((char*)(this->key + i), buff.chars, 4);
     }
 }
 
-Key::Key(const char* const _key, Length len, OperationMode op_m): lengthBits(len), lengthBytes((size_t)len >> 3), operation_mode(op_m){
-    this->key = new char[this->lengthBytes];
-    if(_key != NULL) for(size_t i = 0; i < this->lengthBytes; i++) this->key[i] = _key[i];
+Key::Key(const char* const _key, Len len, OpMode op_m): lenBits(len), lenBytes((size_t)len >> 3), opMode_(op_m){
+    this->key = new char[this->lenBytes];
+    if(_key != NULL) for(size_t i = 0; i < this->lenBytes; i++) this->key[i] = _key[i];
 }
 
-Key::Key(const Key& ak):lengthBits(ak.lengthBits), lengthBytes(ak.lengthBytes), operation_mode(ak.operation_mode) {
+Key::Key(const Key& ak):lenBits(ak.lenBits), lenBytes(ak.lenBytes), opMode_(ak.opMode_) {
     size_t i;
-    this->key = new char[ak.lengthBytes];
-    for(i = 0; i < ak.lengthBytes; i++) this->key[i] = ak.key[i];               // -Supposing Cipher object is well constructed, this is, ak.key != NULL
-    if(ak.operation_mode == CBC) {                                              // -Without CBC, copying IV is pointless.
+    this->key = new char[ak.lenBytes];
+    for(i = 0; i < ak.lenBytes; i++) this->key[i] = ak.key[i];               // -Supposing Cipher object is well constructed, this is, ak.key != NULL
+    if(ak.opMode_ == OpMode::CBC) {                                              // -Without CBC, copying IV is pointless.
         if((this->initializedIV = ak.initializedIV) == true)                    // -Copying and checking argument inside the 'if'
             for(i = 0; i < AES_BLK_SZ; i++) this->IV[i] = ak.IV[i];
     }
 }
 
-Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), operation_mode(ECB) { // -Building from .key file
+Key::Key(const char*const fname):lenBits(Len::_128), lenBytes(AES_BLK_SZ), opMode_(OpMode::ECB) { // -Building from .key file
     char aeskeyStr[] = "AESKEY";
     char AESKEY[7];
     char opMode[4];
@@ -199,26 +199,26 @@ Key::Key(const char*const fname):lengthBits(_128), lengthBytes(AES_BLK_SZ), oper
         if(strcmp(AESKEY, aeskeyStr) == 0) {
                 file.read((char*)opMode, 3);                                    // -Determining operation mode
                 opMode[3] = 0;
-                if(strcmp(opMode, "ECB") == 0) this->operation_mode = ECB;
-                else if(strcmp(opMode, "CBC") == 0) this->operation_mode = CBC;
-                else if(strcmp(opMode, "PVS") == 0) this->operation_mode = PVS;
+                if(strcmp(opMode, "ECB") == 0) this->opMode_ = OpMode::ECB;
+                else if(strcmp(opMode, "CBC") == 0) this->opMode_ = OpMode::CBC;
+                else if(strcmp(opMode, "PVS") == 0) this->opMode_ = OpMode::PVS;
                 else {
                     std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname):" << opMode << ", not a recognized operation mode.\n";
                     throw std::runtime_error("Not a recognized operation mode");
                 }
 
-                file.read((char*)&keyLen, 2);                                      // -Reading key lengthBits
-                if(keyLen == 128 || keyLen == 192 || keyLen == 256) this->lengthBits = (Length)keyLen;
+                file.read((char*)&keyLen, 2);                                      // -Reading key lenBits
+                if(keyLen == 128 || keyLen == 192 || keyLen == 256) this->lenBits = (Len)keyLen;
                 else {
                     std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname):" << keyLen << " is not a valid length in bits for key.\n";
                     throw std::runtime_error("Key length not allowed.");
                 }
-                this->lengthBytes = keyLen >> 3;                                // -lengthBytes = len / 8;
+                this->lenBytes = keyLen >> 3;                                // -lenBytes = len / 8;
 
-                this->key = new char[this->lengthBytes];                        // -Reading key
-                file.read(this->key, (std::streamsize)this->lengthBytes);
+                this->key = new char[this->lenBytes];                        // -Reading key
+                file.read(this->key, (std::streamsize)this->lenBytes);
 
-                if(this->operation_mode == CBC) {
+                if(this->opMode_ == OpMode::CBC) {
                     file.read((char*)this->IV, AES_BLK_SZ);                     // -In CBC case, reading IV.
                     this->initializedIV = true;
                 }
@@ -240,15 +240,15 @@ Key::~Key() {
 Key& Key::operator = (const Key& k) {
     if(this != &k) {                                                            // -Guarding against self assignment
         unsigned i;
-        if(this->lengthBytes != k.lengthBytes) {                                // -Modifying length and array containing key only if necessary
-            this->lengthBits = k.lengthBits;
-            this->lengthBytes = k.lengthBytes;
+        if(this->lenBytes != k.lenBytes) {                                // -Modifying length and array containing key only if necessary
+            this->lenBits = k.lenBits;
+            this->lenBytes = k.lenBytes;
             if(this->key != NULL) delete[] this->key;
-            this->key = new char[k.lengthBytes];
+            this->key = new char[k.lenBytes];
         }
-        for(i = 0; i < k.lengthBytes; i++) this->key[i] = k.key[i];
-        this->operation_mode = k.operation_mode;
-        if(k.operation_mode == CBC)                                             // -Without CBC, copying IV is pointless.
+        for(i = 0; i < k.lenBytes; i++) this->key[i] = k.key[i];
+        this->opMode_ = k.opMode_;
+        if(k.opMode_ == OpMode::CBC)                                             // -Without CBC, copying IV is pointless.
             if((this->initializedIV = k.initializedIV) == true)
                 for(i = 0; i < AES_BLK_SZ; i++) this->IV[i] = k.IV[i];
     }
@@ -257,10 +257,10 @@ Key& Key::operator = (const Key& k) {
 
 bool Key::operator == (const Key& k) const{
     unsigned i;
-    if(this->lengthBytes != k.lengthBytes) return false;
-    for(i = 0; i < this->lengthBytes; i++) if(this->key[i] != k.key[i]) return false;
-    if(this->operation_mode == k.operation_mode) {
-        if(this->operation_mode == OperationMode::CBC)
+    if(this->lenBytes != k.lenBytes) return false;
+    for(i = 0; i < this->lenBytes; i++) if(this->key[i] != k.key[i]) return false;
+    if(this->opMode_ == k.opMode_) {
+        if(this->opMode_ == OpMode::CBC)
             for(i = 0; i < AES_BLK_SZ; i++) if(this->IV[i] != k.IV[i]) return false;
     } else return false;
     return true;
@@ -271,11 +271,11 @@ std::ostream& AES::operator << (std::ostream& ost, Key k) {
     char opModeStr[4];
     char IVstring[33];
 
-    operationModeToString(k.operation_mode, opModeStr);
-    bytesToHexString(k.key, keyStr, (int)k.lengthBytes);
+    OpModeToString(k.opMode_, opModeStr);
+    bytesToHexString(k.key, keyStr, (int)k.lenBytes);
     bytesToHexString(k.IV, IVstring, AES_BLK_SZ);
 
-    ost << "\tKey size: " << k.lengthBits << " bits, " << k.lengthBytes << " bytes, Nk = " << (k.lengthBytes >> 2) << " words" << '\n';
+    ost << "\tKey size: " << static_cast<int>(k.lenBits) << " bits, " << k.lenBytes << " bytes, Nk = " << (k.lenBytes >> 2) << " words" << '\n';
     ost << "\tKey: " << keyStr << '\n';
     ost << "\tOperation mode: " << opModeStr << '\n';
     ost << "\tIV (in case of CBC): "<< IVstring << '\n';
@@ -291,14 +291,14 @@ void Key::set_IV(const char source[AES_BLK_SZ]) {
 void Key::save(const char* const fname) const {
     const char* aeskey = "AESKEY";                                              // File type.
     const char* op_mode= "ECB";
-    switch(this->operation_mode) {                                              // -Operation mode.
-        case ECB:
+    switch(this->opMode_) {                                              // -Operation mode.
+        case OpMode::ECB:
             op_mode = "ECB";
             break;
-        case CBC:
+        case OpMode::CBC:
             op_mode = "CBC";
             break;
-        case PVS:
+        case OpMode::PVS:
             op_mode = "PVS";
             break;
     }
@@ -307,9 +307,9 @@ void Key::save(const char* const fname) const {
     if(file.is_open()) {
         file.write(aeskey,  6);                                                 // -File type
         file.write(op_mode, 3);                                                 // -Operation mode
-        file.write((char*)&this->lengthBits, 2);                                // -Key lengthBits in bits
-        file.write(this->key, (std::streamsize)this->lengthBytes);              // -Key
-        if(this->operation_mode == CBC) file.write(this->IV, AES_BLK_SZ);       // -If CBC, writes initial vector
+        file.write((char*)&this->lenBits, 2);                                // -Key lenBits in bits
+        file.write(this->key, (std::streamsize)this->lenBytes);              // -Key
+        if(this->opMode_ == OpMode::CBC) file.write(this->IV, AES_BLK_SZ);       // -If CBC, writes initial vector
     } else {
         std::cerr << "In file Source/AES.cpp, function void Key::save(const char* const fname): Failed to write " << fname << " file.\n";
         throw std::runtime_error("File could not be written.");
@@ -361,8 +361,8 @@ void Cipher::PiRoundKey::setPiRoundKey(const Key &K) {
         file.read(pi, PIsize);                                                  // -Uploading pi
         file.close();
         K.write_Key(_key_);                                                     // -Writing key on _key array
-        if(K.getLengthBytes() < sizeof__key_)
-            for(i = K.getLengthBytes(), j = 0; i < sizeof__key_; i++, j++)
+        if(K.getLenBytes() < sizeof__key_)
+            for(i = K.getLenBytes(), j = 0; i < sizeof__key_; i++, j++)
                 _key_[i] = _key_[j];                                            // -Padding with the beginning of the key
 
         a = Uint256(_key_);                                                     // -Creating 256 bits unsigned integer from _key_ array
@@ -414,16 +414,16 @@ Cipher::Cipher(): piRoundkey() {
     for(int i = 0; i < this->keyExpLen; i++) this->keyExpansion[i] = 0;         // -Since the key constitutes of just zeros, key expansion is also just zeros
 }
 
-Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.getLengthBytes() >> 2), Nr(Nk+6), keyExpLen((Nr+1)<<4), piRoundkey() {
+Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.getLenBytes() >> 2), Nr(Nk+6), keyExpLen((Nr+1)<<4), piRoundkey() {
     this->create_KeyExpansion(ak.key);
-    if(this->key.operation_mode == Key::CBC) {
+    if(this->key.opMode_ == Key::OpMode::CBC) {
         if(!this->key.IVisInitialized()) {                                      // -In case of CBC, setting initial vector.
             char IVsource[AES_BLK_SZ];
             this->setAndWrite_IV(IVsource);
             this->key.set_IV(IVsource);
         }
     }
-    if(this->key.operation_mode == Key::PVS) {                                  // -In case of PVS operation mode, initialize piRoundKey
+    if(this->key.opMode_ == Key::OpMode::PVS) {                                  // -In case of PVS operation mode, initialize piRoundKey
         this->piRoundkey.setPiRoundKey(this->key);
     }
 }
@@ -483,7 +483,7 @@ std::ostream& AES::operator << (std::ostream& ost, const Cipher& c) {
 
 void Cipher::create_KeyExpansion(const char* const _key) {
     char temp[4];                                                               // (Nr+1)*16
-	int i, keyExpansionLen = this->keyExpLen;                                   // Key expansion lengthBits in bytes
+	int i, keyExpansionLen = this->keyExpLen;                                   // Key expansion lenBits in bytes
 	keyExpansion = new char[(unsigned)keyExpansionLen];
 	keyExpansionLen >>= 2;                                                      // keyExpansionLen in words (block of 4 bytes). keyExpansionLen /= 4
 	int NkBytes = Nk << 2;                                                      // -The first Nk words of the key expansion are the key itself. // Nk * 4
@@ -723,15 +723,15 @@ void Cipher::decryptPVS(char*const data, size_t size) const{
 void Cipher::encrypt(char*const data, size_t size) const{
     if(size == 0)    return;
     if(data == NULL) return;
-    Key::OperationMode opMode = this->key.getOperationMode();
+    Key::OpMode opMode = this->key.getOpMode();
     switch(opMode) {
-        case Key::ECB:
+        case Key::OpMode::ECB:
             this->encryptECB(data, size);
             break;
-        case Key::CBC:
+        case Key::OpMode::CBC:
             this->encryptCBC(data, size);
             break;
-        case Key::PVS:
+        case Key::OpMode::PVS:
             this->encryptPVS(data, size);
             break;
     }
@@ -740,15 +740,15 @@ void Cipher::encrypt(char*const data, size_t size) const{
 void Cipher::decrypt(char*const data, size_t size) const{
     if(size == 0)    return;
     if(data == NULL) return;
-    Key::OperationMode opMode = this->key.getOperationMode();
+    Key::OpMode opMode = this->key.getOpMode();
     switch(opMode) {
-        case Key::ECB:
+        case Key::OpMode::ECB:
             this->decryptECB(data, size);
             break;
-        case Key::CBC:
+        case Key::OpMode::CBC:
             this->decryptCBC(data, size);
             break;
-        case Key::PVS:
+        case Key::OpMode::PVS:
             this->decryptPVS(data, size);
             break;
     }

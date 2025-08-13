@@ -14,26 +14,26 @@ std::ostream& operator << (std::ostream& st, const Cipher& c);			// -Declaration
 
 struct Key {
 public:
-	enum Length {_128 = 128,_192 = 192,_256 = 256};				// -Allowed AES key lengths
-	enum OperationMode {
+	enum struct Len {_128 = 128,_192 = 192,_256 = 256};			// -Allowed AES key lengths
+	enum struct OpMode {
 		ECB,								// -Electronic Code Book (not recommended).
 		CBC,								// -Cipher Block Chaining.
 		PVS								// -Permutation Variable SBox
 	};
 private:
 	char*	key = NULL;
-	Length	lengthBits;							// -Length in bits.
-	size_t	lengthBytes;							// -Length in bytes.
-	OperationMode operation_mode;
+	Len	lenBits;							// -Length in bits.
+	size_t	lenBytes;							// -Length in bytes.
+	OpMode	opMode_;
 	bool initializedIV  = false;						// -Tells if the initial vector is already initialized or not
 	char IV[AES_BLK_SZ] =  {0, 0, 0, 0,					// -Initial vector for the CBC operation mode
 				0, 0, 0, 0,					// -This default value (just zeros) is left
 				0, 0, 0, 0,					//  for the case in which we do not use CBC
 			    	0, 0, 0, 0};
 public:
-	Key();									// -Assigns lengthBits of 256 bits and zero value for each byte of array char* key
-	Key(Length, OperationMode);
-	Key(const char* const _key, Length, OperationMode);
+	Key();									// -Assigns lenBits of 256 bits and zero value for each byte of array char* key
+	Key(Len, OpMode);
+	Key(const char* const _key, Len, OpMode);
 	Key(const char*const fname);						// -Building from binary file.
 	Key(const Key&);
 	~Key();
@@ -42,9 +42,9 @@ public:
 	bool operator == (const Key&) const;
 	friend std::ostream& operator << (std::ostream& ost, Key k);
 
-	OperationMode getOperationMode() const{ return this->operation_mode; }
-	size_t getLengthBytes() const {return this->lengthBytes;}
-	bool KeyIsNULL() {return this->key == NULL;}
+	OpMode getOpMode() const{ return this->opMode_; }
+	size_t getLenBytes() const {return this->lenBytes;}
+	//bool KeyIsNULL() {return this->key == NULL;}
 	void save(const char* const) const;					// -Saving information in a binary file.
 
 private:
@@ -55,7 +55,7 @@ private:
 		for(int i = 0; i < AES_BLK_SZ; i++) destination[i] = this->IV[i]; // -Warning: We are supposing we have at least 16 bytes of space in destination
 	}
 	void write_Key(char*const destination) const {				// -Writes key in destination. Warning: We're supposing we have enough space in
-		for(size_t i = 0; i < this->lengthBytes; i++) destination[i] = this->key[i]; //  destination array.
+		for(size_t i = 0; i < this->lenBytes; i++) destination[i] = this->key[i]; //  destination array.
 	}
 };
 
@@ -96,7 +96,7 @@ public:
 	void decrypt(char*const data, size_t size)const;			// -Decrypts using operation mode stored in Key object
 
 	void saveKey(const char*const fname)  const{this->key.save(fname);}
-	Key::OperationMode getOperationMode() const{ return this->key.getOperationMode(); }
+	Key::OpMode getOpMode() const{ return this->key.getOpMode(); }
 
 	private:
 	void create_KeyExpansion(const char* const);				// -Creates key expansion
