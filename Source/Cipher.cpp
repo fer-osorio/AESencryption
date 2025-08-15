@@ -4,18 +4,9 @@
 
 /************************************* Default values for substitution boxes. This are the values showed in the standard ******************************************/
 
-static const char Rcon[10][4] = {						                        // -Notice that the value of the left most char in polynomial form is 2^i.
-	{0x01, 0x00, 0x00, 0x00},
-  	{0x02, 0x00, 0x00, 0x00},
-	{0x04, 0x00, 0x00, 0x00},
-	{0x08, 0x00, 0x00, 0x00},
-	{0x10, 0x00, 0x00, 0x00},
-	{0x20, 0x00, 0x00, 0x00},
-	{0x40, 0x00, 0x00, 0x00},
-	{(char)0x80, 0x00, 0x00, 0x00},
-	{0x1B, 0x00, 0x00, 0x00},
-  	{0x36, 0x00, 0x00, 0x00}
-};
+/*
+    Determines the endianess used by the system
+*/
 
 static const uint8_t SBox[SBOX_SIZE] = {
 	0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
@@ -59,70 +50,89 @@ static const uint8_t invSBox[SBOX_SIZE] = {
 #define WORD_LEN_SHORTS 2
 #define WORD_LASTIND 3                                                          // -Last index of a word
 #define WORD_LASTIND_SHORT 1                                                    // -Last index of a word using short's
-struct Word{
-    union {
-        char char_[WORD_LEN];
-        short short_[WORD_LEN_SHORTS];
-        uint32_t uint32_t_;
-    };
+
+union Word {
+    uint8_t  uint08_[WORD_LEN];
+    uint16_t uint16_[WORD_LEN_SHORTS];
+    uint32_t uint32_;
 };
+
+static bool usingLittleEndian(){
+    Word val = {.uint32_ = 1};                                                                // Represents 0x00000001 in hexadecimal
+    return val.uint08_[0] == 1;                                                  // Cast the address of the integer to a uint8_t pointer to access individual bytes
+}
 
 void printWord(const Word& w) {
 	uint32_t WL_1 = WORD_LEN-1, i;
     printf("[");
-    for(i = 0; i < WL_1; i++) printf("%.2X,", (uint32_t)(uint8_t)w.char_[i]);
-	printf("%.2X]", (uint32_t)(uint8_t)w.char_[i]);
+    for(i = 0; i < WL_1; i++) printf("%.2X,", (uint32_t)w.uint08_[i]);
+	printf("%.2X]", (uint32_t)w.uint08_[i]);
 };
+
+void copyWord(const Word* orgin, Word* dest){
+    dest->uint32_ = orgin->uint32_;
+}
+
+static void RotWord(Word* word) {
+    uint8_t temp = word->uint08_[0];                                               // As a byte array, the rotation must be performed to the left, but since integer
+    usingLittleEndian()? word->uint32_ >>= 8 : word->uint32_ <<= 8;             // types have endianess, the bit rotation must be perform according to it
+	word->uint08_[WORD_LASTIND] = temp;
+}
+
+static void SubWord(Word* w) {
+    w->uint08_[0] = SBox[w->uint08_[0]];
+    w->uint08_[1] = SBox[w->uint08_[1]];
+    w->uint08_[2] = SBox[w->uint08_[2]];
+    w->uint08_[3] = SBox[w->uint08_[3]];
+}
 
 #define BLOCK_LEN 16
 #define Nb 4                                                                    // AES standard constant, length of blocks in words
 #define BLOCK_LEN_INT64 2
-struct Block{
-    union {
-        char char_[BLOCK_LEN];
-        Word word_[Nb];
-        uint64_t uint64_t_[BLOCK_LEN_INT64];
-    };
+union Block{
+    uint8_t  uint08_[BLOCK_LEN];
+    Word     word_[Nb];
+    uint64_t uint64_[BLOCK_LEN_INT64];
 };
 
 #define BLOCK_OPERATION(res,arg1,arg2,op) \
-    res->uint64_t_[0] = arg1->uint64_t_[0] op arg2->uint64_t_[0]; \
-    res->uint64_t_[1] = arg1->uint64_t_[1] op arg2->uint64_t_[1];
+    res->uint64_[0] = arg1->uint64_[0] op arg2->uint64_[0]; \
+    res->uint64_[1] = arg1->uint64_[1] op arg2->uint64_[1];
 
-static const Block a={				                                            // -For MixColumns.
+static const Word Rcon[10] = {						                            // -Notice that the value of the left most byte in polynomial form is 2^i.
+	{0x01, 0x00, 0x00, 0x00},
+  	{0x02, 0x00, 0x00, 0x00},
+	{0x04, 0x00, 0x00, 0x00},
+	{0x08, 0x00, 0x00, 0x00},
+	{0x10, 0x00, 0x00, 0x00},
+	{0x20, 0x00, 0x00, 0x00},
+	{0x40, 0x00, 0x00, 0x00},
+	{0x80, 0x00, 0x00, 0x00},
+	{0x1B, 0x00, 0x00, 0x00},
+  	{0x36, 0x00, 0x00, 0x00}
+};
+
+static const Block a = {			                                            // -For MixColumns.
     0x02, 0x03, 0x01, 0x01,
     0x01, 0x02, 0x03, 0x01,
     0x01, 0x01, 0x02, 0x03,
     0x03, 0x01, 0x01, 0x02
 };
 
-static const Block aInv={   				                                    // -For InvMixColumns.
+static const Block aInv = {   				                                    // -For InvMixColumns.
     0x0E, 0x0B, 0x0D, 0x09,
     0x09, 0x0E, 0x0B, 0x0D,
     0x0D, 0x09, 0x0E, 0x0B,
     0x0B, 0x0D, 0x09, 0x0E
 };
 
-static void printBlock(const Block* b) {
+static void printBlock(const Block* b, const char* rowHeaders[4] = NULL) {
 	int i, j, temp;
 	for(i = 0; i < 4; i++) {
-		std::cout << '[';
-		for(j = 0; j < 4; j++) {
-		    temp = (uint8_t)0xFF & (uint8_t)b->char_[(j << 2) + i];
-			if(temp < 16) std::cout << '0';
-			printf("%X", temp);
-			if(j != 3) std::cout << ", ";
-		}
-		std::cout << "]\n";
+		if(rowHeaders != NULL) std::cout << rowHeaders[i];
+		printWord(b->word_[i]);
+		std::cout << '\n';
 	}
-}
-
-/*
-    Determines the endianess used by the system
-*/
-static bool usingLittleEndian(){
-    int val = 1;                                                                // Represents 0x00000001 in hexadecimal
-    return *(char *)&val == 1;                                                  // Cast the address of the integer to a char pointer to access individual bytes
 }
 
 static void XORblocks(const Block* b1,const Block* b2, Block* result) {
@@ -130,24 +140,11 @@ static void XORblocks(const Block* b1,const Block* b2, Block* result) {
 }
 
 static void CopyBlock(const Block* source, Block* destination) {
-    destination->uint64_t_[0] = source->uint64_t_[0];
-    destination->uint64_t_[1] = source->uint64_t_[1];
+    destination->uint64_[0] = source->uint64_[0];
+    destination->uint64_[1] = source->uint64_[1];
 }
 
-static void RotWord(Word* word) {
-    char temp = word->char_[0];                                                 // As a byte array, the rotation must be performed to the left, but since integer
-    word->uint32_t_ >>= 8;                                                      // types have big endianess, the bit rotation must be perform to the right
-	word->char_[WORD_LASTIND] = temp;
-}
-
-static void SubWord(Word* w) {
-    w->char_[0] = (char)SBox[(uint8_t)w->char_[0]];
-    w->char_[1] = (char)SBox[(uint8_t)w->char_[1]];
-    w->char_[2] = (char)SBox[(uint8_t)w->char_[2]];
-    w->char_[3] = (char)SBox[(uint8_t)w->char_[3]];
-}
-
-static void SubBytes(Block* b) {                                                // -Applies a substitution table (S-box) to each char.
+static void SubBytes(Block* b) {                                                // -Applies a substitution table (S-box) to each uint8_t.
     SubWord(&b->word_[0]);
     SubWord(&b->word_[1]);
     SubWord(&b->word_[2]);
@@ -157,60 +154,59 @@ static void SubBytes(Block* b) {                                                
 static void ShiftRows(Block* b) {                                               // -Shift rows of the state array by different offset.
     bool isLittleEndian = usingLittleEndian();                                  // isLittleEndian will determine the direction of the shift
     // Shift of second row
-    char temp1 = b->word_[1].char_[0];                                          // As a byte array, the rotation must be performed to the left, but since integer
-    isLittleEndian ? b->word_[1].uint32_t_ >>= 8 : b->word_[1].uint32_t_ <<= 8; // types have endianess, the bit rotation must be perform according to it
-	b->word_[1].char_[WORD_LASTIND] = temp1;
+    uint8_t temp1 = b->word_[1].uint08_[0];                                          // As a byte array, the rotation must be performed to the left, but since integer
+    isLittleEndian ? b->word_[1].uint32_ >>= 8 : b->word_[1].uint32_ <<= 8; // types have endianess, the bit rotation must be perform according to it
+	b->word_[1].uint08_[WORD_LASTIND] = temp1;
 	// Shift of third row
-	short temp2 = b->word_[2].short_[0];
-	isLittleEndian ? b->word_[2].uint32_t_ >>= 16 : b->word_[2].uint32_t_ <<= 16;
-	b->word_[2].char_[WORD_LASTIND_SHORT] = temp2;
+	short temp2 = b->word_[2].uint16_[0];
+	isLittleEndian ? b->word_[2].uint32_ >>= 16 : b->word_[2].uint32_ <<= 16;
+	b->word_[2].uint08_[WORD_LASTIND_SHORT] = temp2;
 	// Shift of fourth row
-    char temp3 = b->word_[3].char_[WORD_LASTIND];                               // Three shift to the left is equivalent to one shift to the right
-    isLittleEndian ? b->word_[3].uint32_t_ <<= 8 : b->word_[3].uint32_t_ >>= 8;
-    b->word_[3].char_[0] = temp3;
+    uint8_t temp3 = b->word_[3].uint08_[WORD_LASTIND];                               // Three shift to the left is equivalent to one shift to the right
+    isLittleEndian ? b->word_[3].uint32_ <<= 8 : b->word_[3].uint32_ >>= 8;
+    b->word_[3].uint08_[0] = temp3;
 }
 
-static char dotProductWord(const Word* w1, const Word* w2){                     // Classical dot product with vectors of dimension four with coefficients in
-    return  (char)multiply[(uint8_t)w1->char_[0]][(uint8_t)w2->char_[0]] ^      // GF(256)
-            (char)multiply[(uint8_t)w1->char_[1]][(uint8_t)w2->char_[1]] ^
-            (char)multiply[(uint8_t)w1->char_[2]][(uint8_t)w2->char_[2]] ^
-            (char)multiply[(uint8_t)w1->char_[3]][(uint8_t)w2->char_[3]];
+static uint8_t dotProductWord(const Word* w1, const Word* w2){                  // Classical dot product with vectors of dimension four with coefficients in
+    return  multiply[w1->uint08_[0]][w2->uint08_[0]] ^                          // GF(256)
+            multiply[w1->uint08_[1]][w2->uint08_[1]] ^
+            multiply[w1->uint08_[2]][w2->uint08_[2]] ^
+            multiply[w1->uint08_[3]][w2->uint08_[3]];
 }
 
 static void wordTimesMatrixA(const Word* w, Word* result){
-    result->char_[0] = dotProductWord(w, &a.word_[0]);
-    result->char_[1] = dotProductWord(w, &a.word_[1]);
-    result->char_[2] = dotProductWord(w, &a.word_[2]);
-    result->char_[3] = dotProductWord(w, &a.word_[3]);
+    result->uint08_[0] = dotProductWord(w, &a.word_[0]);
+    result->uint08_[1] = dotProductWord(w, &a.word_[1]);
+    result->uint08_[2] = dotProductWord(w, &a.word_[2]);
+    result->uint08_[3] = dotProductWord(w, &a.word_[3]);
 }
 
-static Block transposeBlock(const Block* b){
-    Block bT;
+static void transposeBlock(const Block* b, Block* bTranspose){
     // Transposing and coping first column
-    bT.word_[0].char_[0] = b->word_[0].char_[0];
-    bT.word_[0].char_[1] = b->word_[1].char_[0];
-    bT.word_[0].char_[2] = b->word_[2].char_[0];
-    bT.word_[0].char_[3] = b->word_[3].char_[0];
+    bTranspose->word_[0].uint08_[0] = b->word_[0].uint08_[0];
+    bTranspose->word_[0].uint08_[1] = b->word_[1].uint08_[0];
+    bTranspose->word_[0].uint08_[2] = b->word_[2].uint08_[0];
+    bTranspose->word_[0].uint08_[3] = b->word_[3].uint08_[0];
     // Transposing and coping second column
-    bT.word_[1].char_[0] = b->word_[0].char_[1];
-    bT.word_[1].char_[1] = b->word_[1].char_[1];
-    bT.word_[1].char_[2] = b->word_[2].char_[1];
-    bT.word_[1].char_[3] = b->word_[3].char_[1];
+    bTranspose->word_[1].uint08_[0] = b->word_[0].uint08_[1];
+    bTranspose->word_[1].uint08_[1] = b->word_[1].uint08_[1];
+    bTranspose->word_[1].uint08_[2] = b->word_[2].uint08_[1];
+    bTranspose->word_[1].uint08_[3] = b->word_[3].uint08_[1];
     // Transposing and coping third column
-    bT.word_[2].char_[0] = b->word_[0].char_[2];
-    bT.word_[2].char_[1] = b->word_[1].char_[2];
-    bT.word_[2].char_[2] = b->word_[2].char_[2];
-    bT.word_[2].char_[3] = b->word_[3].char_[2];
+    bTranspose->word_[2].uint08_[0] = b->word_[0].uint08_[2];
+    bTranspose->word_[2].uint08_[1] = b->word_[1].uint08_[2];
+    bTranspose->word_[2].uint08_[2] = b->word_[2].uint08_[2];
+    bTranspose->word_[2].uint08_[3] = b->word_[3].uint08_[2];
     // Transposing and coping fourth column
-    bT.word_[3].char_[0] = b->word_[0].char_[3];
-    bT.word_[3].char_[1] = b->word_[1].char_[3];
-    bT.word_[3].char_[2] = b->word_[2].char_[3];
-    bT.word_[3].char_[3] = b->word_[3].char_[3];
-    return bT;
+    bTranspose->word_[3].uint08_[0] = b->word_[0].uint08_[3];
+    bTranspose->word_[3].uint08_[1] = b->word_[1].uint08_[3];
+    bTranspose->word_[3].uint08_[2] = b->word_[2].uint08_[3];
+    bTranspose->word_[3].uint08_[3] = b->word_[3].uint08_[3];
 }
 
 static void MixColumns(Block* b) {                                              // -Mixes the data within each column of the state array.
-    Block bT = transposeBlock(b);
+    Block bT;
+    transposeBlock(b,&bT);
     wordTimesMatrixA(&bT.word_[0], &b->word_[0]);
     wordTimesMatrixA(&bT.word_[1], &b->word_[1]);
     wordTimesMatrixA(&bT.word_[2], &b->word_[2]);
@@ -218,8 +214,8 @@ static void MixColumns(Block* b) {                                              
 }
 
 static void AddRoundKey(Block* b, const Block keyExpansion[], size_t round) {          // -Combines a round key with the state.
-    b->uint64_t_[0] ^= keyExpansion[round].uint64_t_[0];                        // -Each block has a 2-uint64 representation
-    b->uint64_t_[1] ^= keyExpansion[round].uint64_t_[1];
+    b->uint64_[0] ^= keyExpansion[round].uint64_[0];                        // -Each block has a 2-uint64 representation
+    b->uint64_[1] ^= keyExpansion[round].uint64_[1];
 }
 
 static void encryptBlock(Block* block, const Block keyExpansion[], size_t Nr) {
@@ -237,38 +233,38 @@ static void encryptBlock(Block* block, const Block keyExpansion[], size_t Nr) {
         ASR = new char[(unsigned)Nr << 4];
 	}
 
-    if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[j] = block->char_[j];
+    if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[j] = block->uint08_[j];
 	AddRoundKey(block, keyExpansion, 0);
-	if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[j + BLOCK_LEN] = block->char_[j];
+	if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[j + BLOCK_LEN] = block->uint08_[j];
 
 	for(i = 1; i < Nr; i++) {
 		SubBytes(block);
-		if(debug) for(j = 0; j < BLOCK_LEN; j++) ASB[((i - 1) << 4) + j] = block->char_[j];
+		if(debug) for(j = 0; j < BLOCK_LEN; j++) ASB[((i - 1) << 4) + j] = block->uint08_[j];
 
 		ShiftRows(block);
-		if(debug) for(j = 0; j < BLOCK_LEN; j++) ASR[((i - 1) << 4) + j] = block->char_[j];
+		if(debug) for(j = 0; j < BLOCK_LEN; j++) ASR[((i - 1) << 4) + j] = block->uint08_[j];
 
 		MixColumns(block);
-		if(debug) for(j = 0; j < BLOCK_LEN; j++) AMC[((i - 1) << 4) + j] = block->char_[j];
+		if(debug) for(j = 0; j < BLOCK_LEN; j++) AMC[((i - 1) << 4) + j] = block->uint08_[j];
 
 		AddRoundKey(block, keyExpansion, i);
-		if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[((i + 1) << 4) + j] = block->char_[j];
+		if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[((i + 1) << 4) + j] = block->uint08_[j];
 	}
 	SubBytes(block);
-	if(debug) for(j = 0; j < BLOCK_LEN; j++) ASB[((i - 1) << 4) + j] = block->char_[j];
+	if(debug) for(j = 0; j < BLOCK_LEN; j++) ASB[((i - 1) << 4) + j] = block->uint08_[j];
 
 	ShiftRows(block);
-	if(debug) for(j = 0; j < BLOCK_LEN; j++) ASR[((i - 1) << 4) + j] = block->char_[j];
+	if(debug) for(j = 0; j < BLOCK_LEN; j++) ASR[((i - 1) << 4) + j] = block->uint08_[j];
 
 	AddRoundKey(block, keyExpansion, i);
-	if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[((i + 1) << 4) + j] = block->char_[j];
+	if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[((i + 1) << 4) + j] = block->uint08_[j];
 
 	if(debug) {
 	    auto printBlockRow = [] (const char blk[BLOCK_LEN], int row) -> void {
 	        unsigned int temp = 0;
             std::cout << '[';
 	        for(int i = 0; i < BLOCK_LEN; i += 4) {
-	            temp = (uint8_t)0xFF & (uint8_t)blk[row + i];
+	            temp = 0xFF & blk[row + i];
 		        if(temp < 16) std::cout << '0';
 		        printf("%X", temp);
 		        if(i != 12) std::cout << ",";
@@ -338,27 +334,27 @@ static void encryptBlock(Block* block, const Block keyExpansion[], size_t Nr) {
 static void InvShiftRows(Block* b) {                                            // -Shift rows of the state array by different offset.
     bool isLittleEndian = usingLittleEndian();                                  // isLittleEndian will determine the direction of the shift
     // Shift of second row
-    char temp1 = b->word_[1].char_[WORD_LASTIND];                                          // As a byte array, the rotation must be performed to the left, but since integer
-    isLittleEndian ? b->word_[1].uint32_t_ <<= 8 : b->word_[1].uint32_t_ >>= 8; // types have endianess, the bit rotation must be perform according to it
-	b->word_[1].char_[0] = temp1;
+    uint8_t temp1 = b->word_[1].uint08_[WORD_LASTIND];                                          // As a byte array, the rotation must be performed to the left, but since integer
+    isLittleEndian ? b->word_[1].uint32_ <<= 8 : b->word_[1].uint32_ >>= 8; // types have endianess, the bit rotation must be perform according to it
+	b->word_[1].uint08_[0] = temp1;
 	// Shift of third row
-	short temp2 = b->word_[2].short_[WORD_LASTIND_SHORT];
-	isLittleEndian ? b->word_[2].uint32_t_ <<= 16 : b->word_[2].uint32_t_ >>= 16;
-	b->word_[2].char_[0] = temp2;
+	short temp2 = b->word_[2].uint16_[WORD_LASTIND_SHORT];
+	isLittleEndian ? b->word_[2].uint32_ <<= 16 : b->word_[2].uint32_ >>= 16;
+	b->word_[2].uint08_[0] = temp2;
 	// Shift of fourth row
-    char temp3 = b->word_[3].char_[0];                               // Three shift to the left is equivalent to one shift to the right
-    isLittleEndian ? b->word_[3].uint32_t_ >>= 8 : b->word_[3].uint32_t_ <<= 8;
-    b->word_[3].char_[WORD_LASTIND] = temp3;
+    uint8_t temp3 = b->word_[3].uint08_[0];                               // Three shift to the left is equivalent to one shift to the right
+    isLittleEndian ? b->word_[3].uint32_ >>= 8 : b->word_[3].uint32_ <<= 8;
+    b->word_[3].uint08_[WORD_LASTIND] = temp3;
 }
 
 static void InvSubWord(Word* w) {
-    w->char_[0] = (char)invSBox[(uint8_t)w->char_[0]];
-    w->char_[1] = (char)invSBox[(uint8_t)w->char_[1]];
-    w->char_[2] = (char)invSBox[(uint8_t)w->char_[2]];
-    w->char_[3] = (char)invSBox[(uint8_t)w->char_[3]];
+    w->uint08_[0] = invSBox[w->uint08_[0]];
+    w->uint08_[1] = invSBox[w->uint08_[1]];
+    w->uint08_[2] = invSBox[w->uint08_[2]];
+    w->uint08_[3] = invSBox[w->uint08_[3]];
 }
 
-static void InvSubBytes(Block* b) {                                                // -Applies a substitution table (S-box) to each char.
+static void InvSubBytes(Block* b) {                                                // -Applies a substitution table (S-box) to each uint8_t.
     InvSubWord(&b->word_[0]);
     InvSubWord(&b->word_[1]);
     InvSubWord(&b->word_[2]);
@@ -366,14 +362,15 @@ static void InvSubBytes(Block* b) {                                             
 }
 
 static void wordTimesMatrixInvA(const Word* w, Word* result){
-    result->char_[0] = dotProductWord(w, &aInv.word_[0]);
-    result->char_[1] = dotProductWord(w, &aInv.word_[1]);
-    result->char_[2] = dotProductWord(w, &aInv.word_[2]);
-    result->char_[3] = dotProductWord(w, &aInv.word_[3]);
+    result->uint08_[0] = dotProductWord(w, &aInv.word_[0]);
+    result->uint08_[1] = dotProductWord(w, &aInv.word_[1]);
+    result->uint08_[2] = dotProductWord(w, &aInv.word_[2]);
+    result->uint08_[3] = dotProductWord(w, &aInv.word_[3]);
 }
 
 static void InvMixColumns(Block* b) {                                              // -Mixes the data within each column of the state array.
-    Block bT = transposeBlock(b);
+    Block bT;
+    transposeBlock(b,&bT);
     wordTimesMatrixInvA(&bT.word_[0], &b->word_[0]);
     wordTimesMatrixInvA(&bT.word_[1], &b->word_[1]);
     wordTimesMatrixInvA(&bT.word_[2], &b->word_[2]);
@@ -392,6 +389,81 @@ void decryptBlock(Block* block, const Block keyExpansion[], size_t Nr) {
 	InvShiftRows(block);
 	InvSubBytes(block);
 	AddRoundKey(block,keyExpansion, 0);
+}
+
+static void build_KeyExpansion(const Word key[], size_t Nk, size_t Nr, Word keyExpansion[]){
+    Word tmp;                                                                   // (Nr+1)*16
+	const size_t NkBytes = Nk << 2;
+	const size_t keyExpLen = Nb*(Nr+1);
+	int i;
+
+	for(i = 0; i < Nk; i++) keyExpansion[i] = key[i];                           // -The first Nk words of the key expansion are the key itself. // Nk * 4
+
+    bool debug = false;                                                         // -Show the construction of the key expansion.
+	if(debug) {
+	    std::cout <<
+	    "-------------------------------------------------- Key Expansion --------------------------------------------------\n"
+	    "-------------------------------------------------------------------------------------------------------------------\n"
+	    "    |               |     After     |     After     |               |   After XOR   |               |     w[i] =   \n"
+        " i  |     temp      |   RotWord()   |   SubWord()   |  Rcon[i/Nk]   |   with Rcon   |    w[i-Nk]    |   temp xor   \n"
+        "    |               |               |               |               |               |               |    w[i-Nk]   \n"
+        "-------------------------------------------------------------------------------------------------------------------\n";
+	}
+
+	for(i = Nk; i < keyExpLen; i++) {
+		copyWord(&keyExpansion[i - 1], &tmp);                                     // -Guarding against modify things that we don't want to modify.
+        if(debug) {
+            std::cout << " " << i;
+            i < 10 ? std::cout << "  | " : std::cout << " | ";
+		    printWord(tmp);
+        }
+		if((i % Nk) == 0) {                                                     // -i is a multiple of Nk, witch value is 8
+			RotWord(&tmp);
+			if(debug) {
+			    std::cout << " | ";
+			    printWord(tmp);
+			}
+			SubWord(&tmp);
+			if(debug) {
+			    std::cout << " | ";
+			    printWord(tmp);
+			}
+			if(debug) {
+			    std::cout << " | ";
+			    printWord(Rcon[i/Nk - 1]);
+			}
+			XORword(tmp, Rcon[i/Nk -1], tmp);
+			if(debug) {
+			    std::cout << " | ";
+			    printWord(tmp);
+			}
+		} else {
+		    if(Nk > 6 && (i % Nk) == 4) {
+		        if(debug) std::cout << " | ------------- | ";
+			    SubWord(&tmp);
+			    if(debug) {
+			        printWord(tmp);
+			        std::cout << " | ------------- | -------------";
+			    }
+		    } else {
+		        if(debug)
+		            std::cout << " |               |               |               |              ";
+		    }
+		}
+		if(debug) {
+			std::cout << " | ";
+			printWord(keyExpansion[i - Nk]);
+		}
+		XORword(&keyExpansion[i - Nk],&tmp,&keyExpansion[i]);
+		if(debug) {
+			std::cout << " | ";
+			printWord(keyExpansion[i]);
+		}
+		if(debug )std::cout << '\n';
+	}
+	if(debug) std::cout << "--------------------------------------------------"
+	"-----------------------------------------------------------------\n\n";
+	debug = false;
 }
 
 using namespace AES;
