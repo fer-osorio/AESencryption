@@ -1,7 +1,7 @@
 // -In this file we save the outputs of the operations in the field GF256; this reduce de complexity of the operations to O(1).
 // -We won't be strict on the notation; in particular we are going to refer the polynomials of GF256 and its asociate number with the same variables,
 //  letting the context specify the object we are talking about.
-#include<cstdint>
+#include<stdint.h>
 
 // -Constants.
 #define BIT01 0x01 // 0000,0001
