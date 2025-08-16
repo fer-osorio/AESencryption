@@ -1,6 +1,9 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<stdint.h>
+#include<stdbool.h>
+#include"GF256.h"
 #include"AES.hpp"
-#include<cstdint>
-#include"OperationsGF256.hpp"
 
 /************************************* Default values for substitution boxes. This are the values showed in the standard ******************************************/
 
@@ -51,134 +54,145 @@ static const uint8_t invSBox[SBOX_SIZE] = {
 #define WORD_LASTIND 3                                                          // -Last index of a word
 #define WORD_LASTIND_SHORT 1                                                    // -Last index of a word using short's
 
-union Word {
-    uint8_t  uint08_[WORD_LEN];
-    uint16_t uint16_[WORD_LEN_SHORTS];
-    uint32_t uint32_;
-};
+typedef union Word_ {
+  uint8_t  uint08_[WORD_LEN];
+  uint16_t uint16_[WORD_LEN_SHORTS];
+  uint32_t uint32_;
+} Word ;
 
 static bool usingLittleEndian(){
-    Word val = {.uint32_ = 1};                                                                // Represents 0x00000001 in hexadecimal
-    return val.uint08_[0] == 1;                                                  // Cast the address of the integer to a uint8_t pointer to access individual bytes
+  Word val = {.uint32_ = 1};                                                                // Represents 0x00000001 in hexadecimal
+  return val.uint08_[0] == 1;                                                  // Cast the address of the integer to a uint8_t pointer to access individual bytes
 }
 
-void printWord(const Word& w) {
-	uint32_t WL_1 = WORD_LEN-1, i;
-    printf("[");
-    for(i = 0; i < WL_1; i++) printf("%.2X,", (uint32_t)w.uint08_[i]);
-	printf("%.2X]", (uint32_t)w.uint08_[i]);
+void printWord(Word w) {
+  uint32_t WL_1 = WORD_LEN-1, i;
+  printf("[");
+  for(i = 0; i < WL_1; i++) printf("%.2X,", (uint32_t)w.uint08_[i]);
+  printf("%.2X]", (uint32_t)w.uint08_[i]);
 };
 
 void copyWord(const Word* orgin, Word* dest){
-    dest->uint32_ = orgin->uint32_;
+  dest->uint32_ = orgin->uint32_;
 }
 
 static void RotWord(Word* word) {
-    uint8_t temp = word->uint08_[0];                                               // As a byte array, the rotation must be performed to the left, but since integer
-    usingLittleEndian()? word->uint32_ >>= 8 : word->uint32_ <<= 8;             // types have endianess, the bit rotation must be perform according to it
-	word->uint08_[WORD_LASTIND] = temp;
+  uint8_t temp = word->uint08_[0];                                              // As a byte array, the rotation must be performed to the left, but since integer
+  if(usingLittleEndian()) word->uint32_ >>= 8;                                  // types have endianess, the bit rotation must be perform according to it
+  else word->uint32_ <<= 8;
+  word->uint08_[WORD_LASTIND] = temp;
 }
 
 static void SubWord(Word* w) {
-    w->uint08_[0] = SBox[w->uint08_[0]];
-    w->uint08_[1] = SBox[w->uint08_[1]];
-    w->uint08_[2] = SBox[w->uint08_[2]];
-    w->uint08_[3] = SBox[w->uint08_[3]];
+  w->uint08_[0] = SBox[w->uint08_[0]];
+  w->uint08_[1] = SBox[w->uint08_[1]];
+  w->uint08_[2] = SBox[w->uint08_[2]];
+  w->uint08_[3] = SBox[w->uint08_[3]];
+}
+
+static void XORword(const Word b1, const Word b2, Word* result) {
+  result->uint32_ = b1.uint32_ ^ b2.uint32_;
 }
 
 #define BLOCK_LEN 16
 #define Nb 4                                                                    // AES standard constant, length of blocks in words
 #define BLOCK_LEN_INT64 2
-union Block{
+typedef union Block_{
     uint8_t  uint08_[BLOCK_LEN];
     Word     word_[Nb];
     uint64_t uint64_[BLOCK_LEN_INT64];
-};
+} Block ;
 
 #define BLOCK_OPERATION(res,arg1,arg2,op) \
-    res->uint64_[0] = arg1->uint64_[0] op arg2->uint64_[0]; \
-    res->uint64_[1] = arg1->uint64_[1] op arg2->uint64_[1];
+  res->uint64_[0] = arg1->uint64_[0] op arg2->uint64_[0]; \
+  res->uint64_[1] = arg1->uint64_[1] op arg2->uint64_[1];
 
 static const Word Rcon[10] = {						                            // -Notice that the value of the left most byte in polynomial form is 2^i.
-	{0x01, 0x00, 0x00, 0x00},
-  	{0x02, 0x00, 0x00, 0x00},
-	{0x04, 0x00, 0x00, 0x00},
-	{0x08, 0x00, 0x00, 0x00},
-	{0x10, 0x00, 0x00, 0x00},
-	{0x20, 0x00, 0x00, 0x00},
-	{0x40, 0x00, 0x00, 0x00},
-	{0x80, 0x00, 0x00, 0x00},
-	{0x1B, 0x00, 0x00, 0x00},
-  	{0x36, 0x00, 0x00, 0x00}
+  {0x01, 0x00, 0x00, 0x00},
+  {0x02, 0x00, 0x00, 0x00},
+  {0x04, 0x00, 0x00, 0x00},
+  {0x08, 0x00, 0x00, 0x00},
+  {0x10, 0x00, 0x00, 0x00},
+  {0x20, 0x00, 0x00, 0x00},
+  {0x40, 0x00, 0x00, 0x00},
+  {0x80, 0x00, 0x00, 0x00},
+  {0x1B, 0x00, 0x00, 0x00},
+  {0x36, 0x00, 0x00, 0x00}
 };
 
 static const Block a = {			                                            // -For MixColumns.
-    0x02, 0x03, 0x01, 0x01,
-    0x01, 0x02, 0x03, 0x01,
-    0x01, 0x01, 0x02, 0x03,
-    0x03, 0x01, 0x01, 0x02
+  0x02, 0x03, 0x01, 0x01,
+  0x01, 0x02, 0x03, 0x01,
+  0x01, 0x01, 0x02, 0x03,
+  0x03, 0x01, 0x01, 0x02
 };
 
 static const Block aInv = {   				                                    // -For InvMixColumns.
-    0x0E, 0x0B, 0x0D, 0x09,
-    0x09, 0x0E, 0x0B, 0x0D,
-    0x0D, 0x09, 0x0E, 0x0B,
-    0x0B, 0x0D, 0x09, 0x0E
+  0x0E, 0x0B, 0x0D, 0x09,
+  0x09, 0x0E, 0x0B, 0x0D,
+  0x0D, 0x09, 0x0E, 0x0B,
+  0x0B, 0x0D, 0x09, 0x0E
 };
 
-static void printBlock(const Block* b, const char* rowHeaders[4] = NULL) {
-	int i, j, temp;
-	for(i = 0; i < 4; i++) {
-		if(rowHeaders != NULL) std::cout << rowHeaders[i];
-		printWord(b->word_[i]);
-		std::cout << '\n';
-	}
+static void printBlock(const Block* b, const char* rowHeaders[4]) {
+  int i, j, temp;
+  for(i = 0; i < 4; i++) {
+    if(rowHeaders != NULL) printf("%s",rowHeaders[i]);
+      printWord(b->word_[i]);
+      printf("\n");
+    }
 }
 
 static void XORblocks(const Block* b1,const Block* b2, Block* result) {
-    BLOCK_OPERATION(result,b1,b2,^);
+  BLOCK_OPERATION(result,b1,b2,^);
 }
 
-static void CopyBlock(const Block* source, Block* destination) {
-    destination->uint64_[0] = source->uint64_[0];
-    destination->uint64_[1] = source->uint64_[1];
+static void copyBlock(const Block* source, Block* destination) {
+  destination->uint64_[0] = source->uint64_[0];
+  destination->uint64_[1] = source->uint64_[1];
 }
 
 static void SubBytes(Block* b) {                                                // -Applies a substitution table (S-box) to each uint8_t.
-    SubWord(&b->word_[0]);
-    SubWord(&b->word_[1]);
-    SubWord(&b->word_[2]);
-    SubWord(&b->word_[3]);
+  SubWord(&b->word_[0]);
+  SubWord(&b->word_[1]);
+  SubWord(&b->word_[2]);
+  SubWord(&b->word_[3]);
 }
 
 static void ShiftRows(Block* b) {                                               // -Shift rows of the state array by different offset.
-    bool isLittleEndian = usingLittleEndian();                                  // isLittleEndian will determine the direction of the shift
-    // Shift of second row
-    uint8_t temp1 = b->word_[1].uint08_[0];                                          // As a byte array, the rotation must be performed to the left, but since integer
-    isLittleEndian ? b->word_[1].uint32_ >>= 8 : b->word_[1].uint32_ <<= 8; // types have endianess, the bit rotation must be perform according to it
-	b->word_[1].uint08_[WORD_LASTIND] = temp1;
-	// Shift of third row
-	short temp2 = b->word_[2].uint16_[0];
-	isLittleEndian ? b->word_[2].uint32_ >>= 16 : b->word_[2].uint32_ <<= 16;
-	b->word_[2].uint08_[WORD_LASTIND_SHORT] = temp2;
-	// Shift of fourth row
-    uint8_t temp3 = b->word_[3].uint08_[WORD_LASTIND];                               // Three shift to the left is equivalent to one shift to the right
-    isLittleEndian ? b->word_[3].uint32_ <<= 8 : b->word_[3].uint32_ >>= 8;
-    b->word_[3].uint08_[0] = temp3;
+  bool isLittleEndian = usingLittleEndian();                                  // isLittleEndian will determine the direction of the shift
+                                                                              //
+  // Shift of second row
+  uint8_t temp1 = b->word_[1].uint08_[0];                                          // As a byte array, the rotation must be performed to the left, but since integer
+  if(isLittleEndian) b->word_[1].uint32_ >>= 8;                                 // types have endianess, the bit rotation must be perform according to it
+  else b->word_[1].uint32_ <<= 8;
+  b->word_[1].uint08_[WORD_LASTIND] = temp1;
+
+  // Shift of third row
+  short temp2 = b->word_[2].uint16_[0];
+  if(isLittleEndian) b->word_[2].uint32_ >>= 16;
+  else b->word_[2].uint32_ <<= 16;
+  b->word_[2].uint08_[WORD_LASTIND_SHORT] = temp2;
+
+  // Shift of fourth row
+  uint8_t temp3 = b->word_[3].uint08_[WORD_LASTIND];                               // Three shift to the left is equivalent to one shift to the right
+  if(isLittleEndian) b->word_[3].uint32_ <<= 8;
+  else b->word_[3].uint32_ >>= 8;
+  b->word_[3].uint08_[0] = temp3;
 }
 
 static uint8_t dotProductWord(const Word* w1, const Word* w2){                  // Classical dot product with vectors of dimension four with coefficients in
-    return  multiply[w1->uint08_[0]][w2->uint08_[0]] ^                          // GF(256)
-            multiply[w1->uint08_[1]][w2->uint08_[1]] ^
-            multiply[w1->uint08_[2]][w2->uint08_[2]] ^
-            multiply[w1->uint08_[3]][w2->uint08_[3]];
+  return  multiply[w1->uint08_[0]][w2->uint08_[0]] ^                          // GF(256)
+          multiply[w1->uint08_[1]][w2->uint08_[1]] ^
+          multiply[w1->uint08_[2]][w2->uint08_[2]] ^
+          multiply[w1->uint08_[3]][w2->uint08_[3]];
 }
 
 static void wordTimesMatrixA(const Word* w, Word* result){
-    result->uint08_[0] = dotProductWord(w, &a.word_[0]);
-    result->uint08_[1] = dotProductWord(w, &a.word_[1]);
-    result->uint08_[2] = dotProductWord(w, &a.word_[2]);
-    result->uint08_[3] = dotProductWord(w, &a.word_[3]);
+  result->uint08_[0] = dotProductWord(w, &a.word_[0]);
+  result->uint08_[1] = dotProductWord(w, &a.word_[1]);
+  result->uint08_[2] = dotProductWord(w, &a.word_[2]);
+  result->uint08_[3] = dotProductWord(w, &a.word_[3]);
 }
 
 static void transposeBlock(const Block* b, Block* bTranspose){
@@ -218,49 +232,7 @@ static void AddRoundKey(Block* b, const Block keyExpansion[], size_t round) {   
     b->uint64_[1] ^= keyExpansion[round].uint64_[1];
 }
 
-static void encryptBlock(Block* block, const Block keyExpansion[], size_t Nr) {
-	int i, j;
-
-	bool debug = false;                                                         // -True to show every encryption step.
-
-	char *SOR, *ASB, *ASR, *AMC;                                                // -Debugging purposes.
-	SOR = ASB = ASR = AMC = NULL;                                               // -Columns of the debugging table.
-
-	if(debug) {                                                                 // (Nr + 2) * 16
-        SOR = new char[(unsigned)(Nr + 2) << 4];
-        AMC = new char[(unsigned)(Nr - 1) << 4];
-        ASB = new char[(unsigned)Nr << 4];
-        ASR = new char[(unsigned)Nr << 4];
-	}
-
-    if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[j] = block->uint08_[j];
-	AddRoundKey(block, keyExpansion, 0);
-	if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[j + BLOCK_LEN] = block->uint08_[j];
-
-	for(i = 1; i < Nr; i++) {
-		SubBytes(block);
-		if(debug) for(j = 0; j < BLOCK_LEN; j++) ASB[((i - 1) << 4) + j] = block->uint08_[j];
-
-		ShiftRows(block);
-		if(debug) for(j = 0; j < BLOCK_LEN; j++) ASR[((i - 1) << 4) + j] = block->uint08_[j];
-
-		MixColumns(block);
-		if(debug) for(j = 0; j < BLOCK_LEN; j++) AMC[((i - 1) << 4) + j] = block->uint08_[j];
-
-		AddRoundKey(block, keyExpansion, i);
-		if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[((i + 1) << 4) + j] = block->uint08_[j];
-	}
-	SubBytes(block);
-	if(debug) for(j = 0; j < BLOCK_LEN; j++) ASB[((i - 1) << 4) + j] = block->uint08_[j];
-
-	ShiftRows(block);
-	if(debug) for(j = 0; j < BLOCK_LEN; j++) ASR[((i - 1) << 4) + j] = block->uint08_[j];
-
-	AddRoundKey(block, keyExpansion, i);
-	if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[((i + 1) << 4) + j] = block->uint08_[j];
-
-	if(debug) {
-	    auto printBlockRow = [] (const char blk[BLOCK_LEN], int row) -> void {
+/*auto printBlockRow = [] (const char blk[BLOCK_LEN], int row) -> void {
 	        unsigned int temp = 0;
             std::cout << '[';
 	        for(int i = 0; i < BLOCK_LEN; i += 4) {
@@ -270,81 +242,146 @@ static void encryptBlock(Block* block, const Block keyExpansion[], size_t Nr) {
 		        if(i != 12) std::cout << ",";
 	        }
 	        std::cout << ']';
-	    };
+	    };*/
 
-	    std::cout <<
-	    "---------------------------------------- Cipher ----------------------------------------\n"
-	    "----------------------------------------------------------------------------------------\n"
-	    " Round   |    Start of   |     After     |     After     |     After     |   Round key  \n"
-        " Number  |     round     |    SubBytes   |   ShiftRows   |   MixColumns  |    value     \n"
-        "         |               |               |               |               |              \n"
-        "----------------------------------------------------------------------------------------\n";
+static void encryptBlock(Block* block, const Block keyExpansion[], size_t Nr) {
+  int i, j;
+  bool debug = false;                                                           // -True to show every encryption step.
+  // -Debugging purposes. Columns of the debugging table.
+  Block* SOR;                                                                   // Start of round
+  Block* ASB;                                                                   // After SubBytes
+  Block* ASR;                                                                   // After ShiftRows
+  Block *AMC;                                                                   // After MixColumns
+  SOR = ASB = ASR = AMC = NULL;
 
-        for(i = 0; i < 4; i++) {
-            i == 1 ? std::cout << " "  << "input"  << "  ": std::cout << "        " ;
-            std::cout << " | ";
-            printBlockRow(SOR, i);
-            std::cout << " |               |               |               | ";
-            printWord(keyExpansion[0].word_[i]);
-            std::cout << '\n';
+  if(debug) {
+    SOR = (Block*)malloc((Nr+2)*sizeof(Block));
+    AMC = (Block*)malloc((Nr - 1)*sizeof(Block));
+    ASB = (Block*)malloc(Nr*sizeof(Block));
+    ASR = (Block*)malloc(Nr*sizeof(Block));
+  }
+
+  if(debug) copyBlock(block,SOR);                                               // Equivalent to copyBlock(block,&SOR[0])
+  AddRoundKey(block, keyExpansion, 0);
+  if(debug) copyBlock(block,SOR + 1);                                           // Equivalent to copyBlock(block,&SOR[1])
+
+  for(i = 1; i < Nr; i++) {
+    SubBytes(block);
+    if(debug) copyBlock(block, ASB + (i-1));
+    //if(debug) for(j = 0; j < BLOCK_LEN; j++) ASB[((i - 1) << 4) + j] = block->uint08_[j];
+
+    ShiftRows(block);
+    if(debug) copyBlock(block, ASR + (i-1));
+    //if(debug) for(j = 0; j < BLOCK_LEN; j++) ASR[((i - 1) << 4) + j] = block->uint08_[j];
+
+    MixColumns(block);
+    if(debug) copyBlock(block, AMC + (i-1));
+    //if(debug) for(j = 0; j < BLOCK_LEN; j++) AMC[((i - 1) << 4) + j] = block->uint08_[j];
+
+    AddRoundKey(block, keyExpansion, i);
+    if(debug) copyBlock(block, SOR + (i+1));
+    //if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[((i + 1) << 4) + j] = block->uint08_[j];
+  }
+  SubBytes(block);
+  if(debug) copyBlock(block, ASB + (i-1));
+  //if(debug) for(j = 0; j < BLOCK_LEN; j++) ASB[((i - 1) << 4) + j] = block->uint08_[j];
+
+  ShiftRows(block);
+  if(debug) copyBlock(block, ASR + (i-1));
+  //if(debug) for(j = 0; j < BLOCK_LEN; j++) ASR[((i - 1) << 4) + j] = block->uint08_[j];
+
+  AddRoundKey(block, keyExpansion, i);
+  if(debug) copyBlock(block, SOR + (i-1));
+  //if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[((i + 1) << 4) + j] = block->uint08_[j];
+
+  if(debug) {
+    printf(
+      "---------------------------------------- Cipher ----------------------------------------\n"
+      "----------------------------------------------------------------------------------------\n"
+      " Round   |    Start of   |     After     |     After     |     After     |   Round key  \n"
+      " Number  |     round     |    SubBytes   |   ShiftRows   |   MixColumns  |    value     \n"
+      "         |               |               |               |               |              \n"
+      "----------------------------------------------------------------------------------------\n"
+    );
+
+    for(i = 0; i < 4; i++) {
+      if(i == 1) printf(" input  ");
+      else printf("        ");
+      printf(" | ");
+      printWord(SOR[0].word_[i]);
+      //printBlockRow(SOR, i);
+      printf(" |               |               |               | ");
+      printWord(keyExpansion[0].word_[i]);
+      printf("\n");
+    }
+    printf("\n");
+
+    for(i = 1; i <= Nr; i++) {
+      for(j = 0; j < Nb; j++) {
+        if(j == 1) {
+          printf("    ");
+          if(i < 10) printf("%d   ", i);
+          else printf("%d  ", i);
         }
-        std::cout << '\n';
-
-        for(i = 1; i <= Nr; i++) {
-            for(j = 0; j < Nb; j++) {
-                if(j == 1) {
-                    std::cout << "    ";
-                    if(i < 10) std::cout << i  << "   ";
-                    else std::cout << i  << "  ";
-                }
-                else std::cout << "        " ;
-
-                std::cout << " | ";
-                printBlockRow(&SOR[(i << 4)], j);
-                std::cout << " | ";
-                printBlockRow(&ASB[((i - 1) << 4)], j);
-                std::cout << " | ";
-                printBlockRow(&ASR[((i - 1) << 4)], j);
-                std::cout << " | ";
-                if(i < Nr) printBlockRow(&AMC[((i - 1) << 4)], j);
-                else std::cout << "             ";
-                std::cout << " | ";
-                printWord(keyExpansion[i].word_[j]);
-                std::cout << '\n';
-            }
-            std::cout <<
-            "----------------------------------------------------------------------------------------\n";
-        }
-        for(i = 0; i < 4; i++) {
-            i == 1 ? std::cout << " "  << "output"  << " ": std::cout << "        " ;
-            std::cout << " | ";
-            printWord(block->word_[i]);
-            std::cout << " |               |               |               |               \n";
-        }
-        std::cout <<
-        "----------------------------------------------------------------------------------------\n";
-	}
-    if(SOR != NULL) delete[] SOR;
-    if(ASB != NULL) delete[] ASB;
-    if(ASR != NULL) delete[] ASR;
-    if(AMC != NULL) delete[] AMC;
-    debug = false;
+        else printf("        ");
+        printf(" | ");
+        printWord(SOR[i].word_[j]);
+        //printBlockRow(&SOR[(i << 4)], j);
+        printf(" | ");
+        printWord(ASB[i-1].word_[j]);
+        //printBlockRow(&ASB[((i - 1) << 4)], j);
+        printf(" | ");
+        printWord(ASR[i-1].word_[j]);
+        //printBlockRow(&ASR[((i - 1) << 4)], j);
+        printf(" | ");
+        if(i < Nr) printWord(AMC[i-1].word_[j]); //printBlockRow(&AMC[((i - 1) << 4)], j);
+        else printf("             ");
+        printf(" | ");
+        printWord(keyExpansion[i].word_[j]);
+        printf("\n");
+      }
+      printf(
+        "----------------------------------------------------------------------------------------\n"
+      );
+    }
+    for(i = 0; i < 4; i++) {
+      if(i == 1) printf(" output ");
+      else printf("        ");
+      printf(" | ");
+      printWord(block->word_[i]);
+      printf(" |               |               |               |               \n");
+    }
+    printf(
+      "----------------------------------------------------------------------------------------\n"
+    );
+  }
+  if(SOR != NULL) { free(SOR); SOR=NULL; }
+  if(ASB != NULL) { free(ASB); ASB=NULL; }
+  if(ASR != NULL) { free(ASR); ASR=NULL; }
+  if(AMC != NULL) { free(AMC); AMC=NULL; }
+  debug = false;
 }
 
 static void InvShiftRows(Block* b) {                                            // -Shift rows of the state array by different offset.
-    bool isLittleEndian = usingLittleEndian();                                  // isLittleEndian will determine the direction of the shift
-    // Shift of second row
-    uint8_t temp1 = b->word_[1].uint08_[WORD_LASTIND];                                          // As a byte array, the rotation must be performed to the left, but since integer
-    isLittleEndian ? b->word_[1].uint32_ <<= 8 : b->word_[1].uint32_ >>= 8; // types have endianess, the bit rotation must be perform according to it
-	b->word_[1].uint08_[0] = temp1;
-	// Shift of third row
-	short temp2 = b->word_[2].uint16_[WORD_LASTIND_SHORT];
-	isLittleEndian ? b->word_[2].uint32_ <<= 16 : b->word_[2].uint32_ >>= 16;
-	b->word_[2].uint08_[0] = temp2;
-	// Shift of fourth row
-    uint8_t temp3 = b->word_[3].uint08_[0];                               // Three shift to the left is equivalent to one shift to the right
-    isLittleEndian ? b->word_[3].uint32_ >>= 8 : b->word_[3].uint32_ <<= 8;
-    b->word_[3].uint08_[WORD_LASTIND] = temp3;
+  bool isLittleEndian = usingLittleEndian();                                  // isLittleEndian will determine the direction of the shift
+
+  // Shift of second row
+  uint8_t temp1 = b->word_[1].uint08_[WORD_LASTIND];                                          // As a byte array, the rotation must be performed to the left, but since integer
+  if(isLittleEndian) b->word_[1].uint32_ <<= 8;                               // types have endianess, the bit rotation must be perform according to it
+  else b->word_[1].uint32_ >>= 8;
+  b->word_[1].uint08_[0] = temp1;
+
+  // Shift of third row
+  short temp2 = b->word_[2].uint16_[WORD_LASTIND_SHORT];
+  if(isLittleEndian) b->word_[2].uint32_ <<= 16;
+  else b->word_[2].uint32_ >>= 16;
+  b->word_[2].uint08_[0] = temp2;
+
+  // Shift of fourth row
+  uint8_t temp3 = b->word_[3].uint08_[0];                               // Three shift to the left is equivalent to one shift to the right
+  if(isLittleEndian) b->word_[3].uint32_ >>= 8;
+  else b->word_[3].uint32_ <<= 8;
+  b->word_[3].uint08_[WORD_LASTIND] = temp3;
 }
 
 static void InvSubWord(Word* w) {
@@ -392,81 +429,84 @@ void decryptBlock(Block* block, const Block keyExpansion[], size_t Nr) {
 }
 
 static void build_KeyExpansion(const Word key[], size_t Nk, size_t Nr, Word keyExpansion[]){
-    Word tmp;                                                                   // (Nr+1)*16
-	const size_t NkBytes = Nk << 2;
-	const size_t keyExpLen = Nb*(Nr+1);
-	int i;
+  Word tmp;                                                                   // (Nr+1)*16
+  const size_t NkBytes = Nk << 2;
+  const size_t keyExpLen = Nb*(Nr+1);
+  int i;
 
-	for(i = 0; i < Nk; i++) keyExpansion[i] = key[i];                           // -The first Nk words of the key expansion are the key itself. // Nk * 4
+  for(i = 0; i < Nk; i++) keyExpansion[i] = key[i];                           // -The first Nk words of the key expansion are the key itself. // Nk * 4
 
-    bool debug = false;                                                         // -Show the construction of the key expansion.
-	if(debug) {
-	    std::cout <<
-	    "-------------------------------------------------- Key Expansion --------------------------------------------------\n"
-	    "-------------------------------------------------------------------------------------------------------------------\n"
-	    "    |               |     After     |     After     |               |   After XOR   |               |     w[i] =   \n"
-        " i  |     temp      |   RotWord()   |   SubWord()   |  Rcon[i/Nk]   |   with Rcon   |    w[i-Nk]    |   temp xor   \n"
-        "    |               |               |               |               |               |               |    w[i-Nk]   \n"
-        "-------------------------------------------------------------------------------------------------------------------\n";
-	}
+  bool debug = false;                                                         // -Show the construction of the key expansion.
+  if(debug) {
+    printf(
+      "-------------------------------------------------- Key Expansion --------------------------------------------------\n"
+      "-------------------------------------------------------------------------------------------------------------------\n"
+      "    |               |     After     |     After     |               |   After XOR   |               |     w[i] =   \n"
+      " i  |     temp      |   RotWord()   |   SubWord()   |  Rcon[i/Nk]   |   with Rcon   |    w[i-Nk]    |   temp xor   \n"
+      "    |               |               |               |               |               |               |    w[i-Nk]   \n"
+      "-------------------------------------------------------------------------------------------------------------------\n"
+    );
+  }
 
-	for(i = Nk; i < keyExpLen; i++) {
-		copyWord(&keyExpansion[i - 1], &tmp);                                     // -Guarding against modify things that we don't want to modify.
+  for(i = Nk; i < keyExpLen; i++) {
+    copyWord(&keyExpansion[i - 1], &tmp);                                     // -Guarding against modify things that we don't want to modify.
+    if(debug) {
+      printf(" %d",i);
+      if(i < 10) printf("  | ");
+      else printf(" | ");
+      printWord(tmp);
+    }
+    if((i % Nk) == 0) {                                                     // -i is a multiple of Nk, witch value is 8
+      RotWord(&tmp);
+      if(debug) {
+        printf(" | ");
+        printWord(tmp);
+      }
+      SubWord(&tmp);
+      if(debug) {
+        printf(" | ");
+        printWord(tmp);
+      }
+      if(debug) {
+        printf(" | ");
+        printWord(Rcon[i/Nk - 1]);
+      }
+      XORword(tmp, Rcon[i/Nk -1], &tmp);
+      if(debug) {
+        printf(" | ");
+        printWord(tmp);
+      }
+    } else {
+      if(Nk > 6 && (i % Nk) == 4) {
+        if(debug) printf(" | ------------- | ");
+        SubWord(&tmp);
         if(debug) {
-            std::cout << " " << i;
-            i < 10 ? std::cout << "  | " : std::cout << " | ";
-		    printWord(tmp);
+          printWord(tmp);
+          printf(" | ------------- | -------------");
         }
-		if((i % Nk) == 0) {                                                     // -i is a multiple of Nk, witch value is 8
-			RotWord(&tmp);
-			if(debug) {
-			    std::cout << " | ";
-			    printWord(tmp);
-			}
-			SubWord(&tmp);
-			if(debug) {
-			    std::cout << " | ";
-			    printWord(tmp);
-			}
-			if(debug) {
-			    std::cout << " | ";
-			    printWord(Rcon[i/Nk - 1]);
-			}
-			XORword(tmp, Rcon[i/Nk -1], tmp);
-			if(debug) {
-			    std::cout << " | ";
-			    printWord(tmp);
-			}
-		} else {
-		    if(Nk > 6 && (i % Nk) == 4) {
-		        if(debug) std::cout << " | ------------- | ";
-			    SubWord(&tmp);
-			    if(debug) {
-			        printWord(tmp);
-			        std::cout << " | ------------- | -------------";
-			    }
-		    } else {
-		        if(debug)
-		            std::cout << " |               |               |               |              ";
-		    }
-		}
-		if(debug) {
-			std::cout << " | ";
-			printWord(keyExpansion[i - Nk]);
-		}
-		XORword(&keyExpansion[i - Nk],&tmp,&keyExpansion[i]);
-		if(debug) {
-			std::cout << " | ";
-			printWord(keyExpansion[i]);
-		}
-		if(debug )std::cout << '\n';
-	}
-	if(debug) std::cout << "--------------------------------------------------"
-	"-----------------------------------------------------------------\n\n";
-	debug = false;
+      } else {
+        if(debug) printf(" |               |               |               |              ");
+      }
+    }
+    if(debug) {
+      printf(" | ");
+      printWord(keyExpansion[i - Nk]);
+    }
+    XORword(keyExpansion[i - Nk], tmp, &keyExpansion[i]);
+    if(debug) {
+      printf(" | ");
+      printWord(keyExpansion[i]);
+    }
+    if(debug) printf("\n");
+  }
+  if(debug)
+    printf(
+      "-------------------------------------------------------------------------------------------------------------------\n\n"
+    );
+  debug = false;
 }
 
-using namespace AES;
+/*using namespace AES;
 
 void Cipher::create_KeyExpansion() {
     char temp[4];                                                               // (Nr+1)*16
@@ -540,4 +580,4 @@ void Cipher::create_KeyExpansion() {
 	if(debug) std::cout << "--------------------------------------------------"
 	"-----------------------------------------------------------------\n\n";
 	debug = false;
-}
+}*/
