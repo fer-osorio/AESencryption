@@ -4,7 +4,6 @@
 #ifndef _INCLUDED_AES_
 #define _INCLUDED_AES_
 #define AES_BLK_SZ  16
-#define SBOX_SIZE  256
 
 namespace AES {
 
