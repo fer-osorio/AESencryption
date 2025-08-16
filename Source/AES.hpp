@@ -1,4 +1,5 @@
 #include<iostream>
+#include<vector>
 
 #ifndef _INCLUDED_AES_
 #define _INCLUDED_AES_
@@ -21,7 +22,7 @@ public:
 		PVS								// -Permutation Variable SBox
 	};
 private:
-	char*	key = NULL;
+	char*	keyBytes = NULL;
 	Len	lenBits;							// -Length in bits.
 	size_t	lenBytes;							// -Length in bytes.
 	OpMode	opMode_;
@@ -44,7 +45,7 @@ public:
 
 	OpMode getOpMode() const{ return this->opMode_; }
 	size_t getLenBytes() const {return this->lenBytes;}
-	//bool KeyIsNULL() {return this->key == NULL;}
+	//bool KeyIsNULL() {return this->keyBytes == NULL;}
 	void save(const char* const) const;					// -Saving information in a binary file.
 
 private:
@@ -55,7 +56,7 @@ private:
 		for(int i = 0; i < AES_BLK_SZ; i++) destination[i] = this->IV[i]; // -Warning: We are supposing we have at least 16 bytes of space in destination
 	}
 	void write_Key(char*const destination) const {				// -Writes key in destination. Warning: We're supposing we have enough space in
-		for(size_t i = 0; i < this->lenBytes; i++) destination[i] = this->key[i]; //  destination array.
+		for(size_t i = 0; i < this->lenBytes; i++) destination[i] = this->keyBytes[i]; //  destination array.
 	}
 };
 
@@ -99,7 +100,7 @@ public:
 	Key::OpMode getOpMode() const{ return this->key.getOpMode(); }
 
 	private:
-	void create_KeyExpansion(const char* const);				// -Creates key expansion
+	void create_KeyExpansion();						// -Creates key expansion
 
 	void encryptECB(char*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
 										//  size (in bytes) is  provided by the 'size' argument.
@@ -115,24 +116,6 @@ public:
 										//  The data size (in bytes) is  provided by the 'size' argument.
 	void decryptPVS(char*const data, size_t size)const;			// -Decrypts the message pointed by 'data' using the PVS operation mode.
 										//  The size of the message is provided by the 'size' argument.
-
-	void XORblocks(char b1[AES_BLK_SZ], char b2[AES_BLK_SZ], char r[AES_BLK_SZ]) const; // -Xor operation over 16 bytes array.
-	void printWord(const char word[4]);					// -Prints an array of 4 bytes.
-	void printState(const char state[AES_BLK_SZ]);				// -Prints an array of 16 bytes.
-	void CopyWord(const char source[4], char destination[4]) const;		// -Coping an array of 4 bytes.
-	void CopyBlock(const char source[AES_BLK_SZ], char destination[AES_BLK_SZ]) const; // -Coping an array of 16 bytes.
-	void XORword(const char w1[4], const char w2[4], char resDest[4]) const;// -XOR of arrays of 4 bytes.
-	void RotWord(char word[4]) const;					// -Rotation of bytes to the left.
-	void SubWord(char word[4]) const;					// -Apply SBox to each char of the word.
-	void SubBytes(char state[AES_BLK_SZ]) const;				// -Applies a substitution table (S-box) to each char.
-	void ShiftRows(char state[AES_BLK_SZ]) const;				// -Shift rows of the state array by different offset.
-	void MixColumns(char state[AES_BLK_SZ]) const;				// -Mixes the data within each column of the state array.
-	void AddRoundKey(char state[AES_BLK_SZ], int round) const;		// -Combines a round key with the state.
-	void InvSubBytes(char state[AES_BLK_SZ]) const;				// -Applies the inverse substitution table (InvSBox) to each char.
-	void InvShiftRows(char state[AES_BLK_SZ]) const;			// -Inverse function of shift rows.
-	void InvMixColumns(char state[AES_BLK_SZ]) const;			// -Inverse function of MixColumns.
-	void encryptBlock(char block[AES_BLK_SZ]) const;			// -Encrypts an array of 16 bytes.
-	void decryptBlock(char block[AES_BLK_SZ]) const;			// -Decrypts an array of 16 bytes.
 };
 };
 #endif
