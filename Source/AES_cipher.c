@@ -94,6 +94,13 @@ static void XORword(const Word b1, const Word b2, Word* result) {
   result->uint32_ = b1.uint32_ ^ b2.uint32_;
 }
 
+static uint8_t dotProductWord(const Word w1, const Word w2){                  // Classical dot product with vectors of dimension four with coefficients in
+  return  multiply[w1.uint08_[0]][w2.uint08_[0]] ^                          // GF(256)
+          multiply[w1.uint08_[1]][w2.uint08_[1]] ^
+          multiply[w1.uint08_[2]][w2.uint08_[2]] ^
+          multiply[w1.uint08_[3]][w2.uint08_[3]];
+}
+
 #define BLOCK_LEN 16
 #define Nb 4                                                                    // AES standard constant, length of blocks in words
 #define BLOCK_LEN_INT64 2
@@ -168,30 +175,16 @@ static void ShiftRows(Block* b) {                                               
   b->word_[1].uint08_[WORD_LASTIND] = temp1;
 
   // Shift of third row
-  short temp2 = b->word_[2].uint16_[0];
+  uint16_t temp2 = b->word_[2].uint16_[0];
   if(isLittleEndian) b->word_[2].uint32_ >>= 16;
   else b->word_[2].uint32_ <<= 16;
-  b->word_[2].uint08_[WORD_LASTIND_SHORT] = temp2;
+  b->word_[2].uint16_[WORD_LASTIND_SHORT] = temp2;
 
   // Shift of fourth row
   uint8_t temp3 = b->word_[3].uint08_[WORD_LASTIND];                               // Three shift to the left is equivalent to one shift to the right
   if(isLittleEndian) b->word_[3].uint32_ <<= 8;
   else b->word_[3].uint32_ >>= 8;
   b->word_[3].uint08_[0] = temp3;
-}
-
-static uint8_t dotProductWord(const Word* w1, const Word* w2){                  // Classical dot product with vectors of dimension four with coefficients in
-  return  multiply[w1->uint08_[0]][w2->uint08_[0]] ^                          // GF(256)
-          multiply[w1->uint08_[1]][w2->uint08_[1]] ^
-          multiply[w1->uint08_[2]][w2->uint08_[2]] ^
-          multiply[w1->uint08_[3]][w2->uint08_[3]];
-}
-
-static void wordTimesMatrixA(const Word* w, Word* result){
-  result->uint08_[0] = dotProductWord(w, &a.word_[0]);
-  result->uint08_[1] = dotProductWord(w, &a.word_[1]);
-  result->uint08_[2] = dotProductWord(w, &a.word_[2]);
-  result->uint08_[3] = dotProductWord(w, &a.word_[3]);
 }
 
 static void transposeBlock(const Block* b, Block* bTranspose){
@@ -233,27 +226,31 @@ static void transposeUpdateBlock(Block* b){
 static void MixColumns(Block* b) {                                              // -Mixes the data within each column of the state array.
   Block bT;
   transposeBlock(b,&bT);
-  wordTimesMatrixA(&bT.word_[0], &b->word_[0]);
-  wordTimesMatrixA(&bT.word_[1], &b->word_[1]);
-  wordTimesMatrixA(&bT.word_[2], &b->word_[2]);
-  wordTimesMatrixA(&bT.word_[3], &b->word_[3]);
+  // First column
+  b->uint08_[0] = dotProductWord(a.word_[0], bT.word_[0]);
+  b->uint08_[4] = dotProductWord(a.word_[1], bT.word_[0]);
+  b->uint08_[8] = dotProductWord(a.word_[2], bT.word_[0]);
+  b->uint08_[12]= dotProductWord(a.word_[3], bT.word_[0]);
+  // Second column
+  b->uint08_[1] = dotProductWord(a.word_[0], bT.word_[1]);
+  b->uint08_[5] = dotProductWord(a.word_[1], bT.word_[1]);
+  b->uint08_[9] = dotProductWord(a.word_[2], bT.word_[1]);
+  b->uint08_[13]= dotProductWord(a.word_[3], bT.word_[1]);
+  // Third column
+  b->uint08_[2] = dotProductWord(a.word_[0], bT.word_[2]);
+  b->uint08_[6] = dotProductWord(a.word_[1], bT.word_[2]);
+  b->uint08_[10]= dotProductWord(a.word_[2], bT.word_[2]);
+  b->uint08_[14]= dotProductWord(a.word_[3], bT.word_[2]);
+  // Third column
+  b->uint08_[3] = dotProductWord(a.word_[0], bT.word_[3]);
+  b->uint08_[7] = dotProductWord(a.word_[1], bT.word_[3]);
+  b->uint08_[11]= dotProductWord(a.word_[2], bT.word_[3]);
+  b->uint08_[15]= dotProductWord(a.word_[3], bT.word_[3]);
 }
 
 static void AddRoundKey(Block* b, const Block keyExpansion[], size_t round) {   // -Combines a round key with the state.
   XORblocks(b,keyExpansion+round,b);
 }
-
-/*auto printBlockRow = [] (const char blk[BLOCK_LEN], int row) -> void {
-	        unsigned int temp = 0;
-            std::cout << '[';
-	        for(int i = 0; i < BLOCK_LEN; i += 4) {
-	            temp = 0xFF & blk[row + i];
-		        if(temp < 16) std::cout << '0';
-		        printf("%X", temp);
-		        if(i != 12) std::cout << ",";
-	        }
-	        std::cout << ']';
-	    };*/
 
 static void build_KeyExpansion(const Word key[], size_t Nk, Word keyExpansion[], bool debug){
   Word tmp;                                                                   // (Nr+1)*16
@@ -464,10 +461,10 @@ static void InvShiftRows(Block* b) {                                            
   b->word_[1].uint08_[0] = temp1;
 
   // Shift of third row
-  short temp2 = b->word_[2].uint16_[WORD_LASTIND_SHORT];
+  uint16_t temp2 = b->word_[2].uint16_[WORD_LASTIND_SHORT];
   if(isLittleEndian) b->word_[2].uint32_ <<= 16;
   else b->word_[2].uint32_ >>= 16;
-  b->word_[2].uint08_[0] = temp2;
+  b->word_[2].uint16_[0] = temp2;
 
   // Shift of fourth row
   uint8_t temp3 = b->word_[3].uint08_[0];                               // Three shift to the left is equivalent to one shift to the right
@@ -490,20 +487,29 @@ static void InvSubBytes(Block* b) {                                             
     InvSubWord(&b->word_[3]);
 }
 
-static void wordTimesMatrixInvA(const Word* w, Word* result){
-    result->uint08_[0] = dotProductWord(w, &aInv.word_[0]);
-    result->uint08_[1] = dotProductWord(w, &aInv.word_[1]);
-    result->uint08_[2] = dotProductWord(w, &aInv.word_[2]);
-    result->uint08_[3] = dotProductWord(w, &aInv.word_[3]);
-}
-
 static void InvMixColumns(Block* b) {                                              // -Mixes the data within each column of the state array.
-    Block bT;
-    transposeBlock(b,&bT);
-    wordTimesMatrixInvA(&bT.word_[0], &b->word_[0]);
-    wordTimesMatrixInvA(&bT.word_[1], &b->word_[1]);
-    wordTimesMatrixInvA(&bT.word_[2], &b->word_[2]);
-    wordTimesMatrixInvA(&bT.word_[3], &b->word_[3]);
+  Block bT;
+  transposeBlock(b,&bT);
+  // First column
+  b->uint08_[0] = dotProductWord(aInv.word_[0], bT.word_[0]);
+  b->uint08_[4] = dotProductWord(aInv.word_[1], bT.word_[0]);
+  b->uint08_[8] = dotProductWord(aInv.word_[2], bT.word_[0]);
+  b->uint08_[12]= dotProductWord(aInv.word_[3], bT.word_[0]);
+  // Second column
+  b->uint08_[1] = dotProductWord(aInv.word_[0], bT.word_[1]);
+  b->uint08_[5] = dotProductWord(aInv.word_[1], bT.word_[1]);
+  b->uint08_[9] = dotProductWord(aInv.word_[2], bT.word_[1]);
+  b->uint08_[13]= dotProductWord(aInv.word_[3], bT.word_[1]);
+  // Third column
+  b->uint08_[2] = dotProductWord(aInv.word_[0], bT.word_[2]);
+  b->uint08_[6] = dotProductWord(aInv.word_[1], bT.word_[2]);
+  b->uint08_[10]= dotProductWord(aInv.word_[2], bT.word_[2]);
+  b->uint08_[14]= dotProductWord(aInv.word_[3], bT.word_[2]);
+  // Third column
+  b->uint08_[3] = dotProductWord(aInv.word_[0], bT.word_[3]);
+  b->uint08_[7] = dotProductWord(aInv.word_[1], bT.word_[3]);
+  b->uint08_[11]= dotProductWord(aInv.word_[2], bT.word_[3]);
+  b->uint08_[15]= dotProductWord(aInv.word_[3], bT.word_[3]);
 }
 
 void decryptBlock(Block* input, const Block keyExpansion[], size_t Nk, Block* output) {
@@ -522,92 +528,20 @@ void decryptBlock(Block* input, const Block keyExpansion[], size_t Nk, Block* ou
   transposeBlock(input, output);
 }
 
-/*using namespace AES;
-
-void Cipher::create_KeyExpansion() {
-    char temp[4];                                                               // (Nr+1)*16
-	int NkBytes = this->Nk << 2, i;                                                   // -The first Nk words of the key expansion are the key itself. // Nk * 4
-
-	if(this->keyExpansion == NULL) this->keyExpansion = new char[this->keyExpLen];
-	for(i = 0; i < NkBytes; i++) this->keyExpansion[i] = this->key.keyBytes[i];
-
-    bool debug = false;                                                         // -Show the construction of the key expansion.
-	if(debug) {
-	    std::cout <<
-	    "-------------------------------------------------- Key Expansion --------------------------------------------------\n"
-	    "-------------------------------------------------------------------------------------------------------------------\n"
-	    "    |               |     After     |     After     |               |   After XOR   |               |     w[i] =   \n"
-        " i  |     temp      |   RotWord()   |   SubWord()   |  Rcon[i/Nk]   |   with Rcon   |    w[i-Nk]    |   temp xor   \n"
-        "    |               |               |               |               |               |               |    w[i-Nk]   \n"
-        "-------------------------------------------------------------------------------------------------------------------\n";
-	}
-
-	for(i = this->Nk; i < this->keyExpLen; i++) {
-		CopyWord(&(this->keyExpansion[(i - 1) << 2]), temp);                          // -Guarding against modify things that we don't want to modify.
-        if(debug) {
-            std::cout << " " << i;
-            i < 10 ? std::cout << "  | " : std::cout << " | ";
-		    printWord(temp);
-        }
-		if((i % this->Nk) == 0) {                                                     // -i is a multiple of Nk, witch value is 8
-			RotWord(temp);
-			if(debug) {
-			    std::cout << " | ";
-			    printWord(temp);
-			}
-			SubWord(temp);
-			if(debug) {
-			    std::cout << " | ";
-			    printWord(temp);
-			}
-			if(debug) {
-			    std::cout << " | ";
-			    printWord(Rcon[i/this->Nk - 1]);
-			}
-			XORword(temp, Rcon[i/this->Nk -1], temp);
-			if(debug) {
-			    std::cout << " | ";
-			    printWord(temp);
-			}
-		} else {
-		    if(this->Nk > 6 && (i % this->Nk) == 4) {
-		        if(debug) std::cout << " | ------------- | ";
-			    SubWord(temp);
-			    if(debug) {
-			        printWord(temp);
-			        std::cout << " | ------------- | -------------";
-			    }
-		    } else {
-		        if(debug)
-		            std::cout << " |               |               |               |              ";
-		    }
-		}
-		if(debug) {
-			std::cout << " | ";
-			printWord(&(this->keyExpansion[(i - this->Nk) << 2]));
-		}
-		XORword(&(this->keyExpansion[(i - this->Nk) << 2]),temp, &(this->keyExpansion[i << 2]));
-		if(debug) {
-			std::cout << " | ";
-			printWord(&(this->keyExpansion[i << 2]));
-		}
-		if(debug )std::cout << '\n';
-	}
-	if(debug) std::cout << "--------------------------------------------------"
-	"-----------------------------------------------------------------\n\n";
-	debug = false;
-}*/
-
 #define Nk128 4               // Length in words of a 128 bits key
 #define Nk128_KEYEXPLEN 44    // Length in words of the Key Expansion of a 128 bits key; Nb*(Nr+1), Nr = Nk+6
 
 int main(int argc, char* argv[]){
   const Word key128[Nk128] = {0x2b,0x7e,0x15,0x16,0x28,0xae,0xd2,0xa6,0xab,0xf7,0x15,0x88,0x09,0xcf,0x4f,0x3c};
-  const Block input128 = {0x32,0x43,0xf6,0xa8,0x88,0x5a,0x30,0x8d,0x31,0x31,0x98,0xa2,0xe0,0x37,0x07,0x34};
-  Block output128 = {0};
+  const Block plaintext128 = {0x32,0x43,0xf6,0xa8,0x88,0x5a,0x30,0x8d,0x31,0x31,0x98,0xa2,0xe0,0x37,0x07,0x34};
+  Block ciphertext128 = {0}, deciphertext = {0};
   Word keyExpansion128[Nk128_KEYEXPLEN] = {0};
   build_KeyExpansion(key128, Nk128, keyExpansion128, true);
   printf("\n");
-  encryptBlock(&input128, (Block*)keyExpansion128, Nk128, &output128, true);
+  encryptBlock(&plaintext128, (Block*)keyExpansion128, Nk128, &ciphertext128, true);
+  decryptBlock(&ciphertext128, (Block*)keyExpansion128, Nk128, &deciphertext);
+  printf("\n");
+  const char* rowHeaders[4] = {"           ","Deciphered ","Text       ","           "};
+  printBlock(&deciphertext, rowHeaders);
   return EXIT_SUCCESS;
 }
