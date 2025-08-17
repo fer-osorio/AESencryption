@@ -55,6 +55,9 @@ const uint8_t invSBox[SBOX_SIZE] = {
   0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D
 };
 
+#define Nb 4                                                                    // AES standard constant, length of blocks in words
+typedef enum Nk_{Nk128 = 4, Nk192 = 6, Nk256 = 8} Nk;
+
 #define WORD_LEN 4
 #define WORD_LEN_SHORTS 2
 #define WORD_LASTIND 3                                                          // -Last index of a word
@@ -67,7 +70,6 @@ typedef union Word_ {
 } Word ;
 
 #define BLOCK_LEN 16
-#define Nb 4                                                                    // AES standard constant, length of blocks in words
 #define BLOCK_LEN_INT64 2
 typedef union Block_{
     uint8_t  uint08_[BLOCK_LEN];
@@ -76,34 +78,34 @@ typedef union Block_{
 } Block ;
 
 static const Word Rcon[10] = {						                            // -Notice that the value of the left most byte in polynomial form is 2^i.
-  {0x01, 0x00, 0x00, 0x00},
-  {0x02, 0x00, 0x00, 0x00},
-  {0x04, 0x00, 0x00, 0x00},
-  {0x08, 0x00, 0x00, 0x00},
-  {0x10, 0x00, 0x00, 0x00},
-  {0x20, 0x00, 0x00, 0x00},
-  {0x40, 0x00, 0x00, 0x00},
-  {0x80, 0x00, 0x00, 0x00},
-  {0x1B, 0x00, 0x00, 0x00},
-  {0x36, 0x00, 0x00, 0x00}
+  {{0x01, 0x00, 0x00, 0x00}},
+  {{0x02, 0x00, 0x00, 0x00}},
+  {{0x04, 0x00, 0x00, 0x00}},
+  {{0x08, 0x00, 0x00, 0x00}},
+  {{0x10, 0x00, 0x00, 0x00}},
+  {{0x20, 0x00, 0x00, 0x00}},
+  {{0x40, 0x00, 0x00, 0x00}},
+  {{0x80, 0x00, 0x00, 0x00}},
+  {{0x1B, 0x00, 0x00, 0x00}},
+  {{0x36, 0x00, 0x00, 0x00}}
 };
 
-static const Block a = {			                                            // -For MixColumns.
+static const Block a = {{                                                       // -For MixColumns.
   0x02, 0x03, 0x01, 0x01,
   0x01, 0x02, 0x03, 0x01,
   0x01, 0x01, 0x02, 0x03,
   0x03, 0x01, 0x01, 0x02
-};
+}};
 
-static const Block aInv = {   				                                    // -For InvMixColumns.
+static const Block aInv = {{                                                    // -For InvMixColumns.
   0x0E, 0x0B, 0x0D, 0x09,
   0x09, 0x0E, 0x0B, 0x0D,
   0x0D, 0x09, 0x0E, 0x0B,
   0x0B, 0x0D, 0x09, 0x0E
-};
+}};
 
-void encryptBlock(const Block* input, const Block keyExpansion[], size_t Nk, Block* output, bool debug);
-void decryptBlock(Block* input, const Block keyExpansion[], size_t Nk, Block* output);
+void encryptBlock(const Block* input, const Block keyExpansion[], Nk nk, Block* output, bool debug);
+void decryptBlock(Block* input, const Block keyExpansion[], Nk nk, Block* output);
 
 #ifdef __cplusplus
 }
