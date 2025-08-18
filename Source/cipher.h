@@ -62,9 +62,14 @@ static const Block aInv = {{                                                    
   0x0B, 0x0D, 0x09, 0x0E
 }};
 
-size_t keyExpansionLenght(Nk nk);
+/*
+ * Creates a Block instance from the bytes pointed by source. Basically it takes pieces of four bytes and creates the columns with them
+ * Consider: It will read 16 bytes starting from 'source', no caring about what those bytes represent.
+ * */
+void blockFromBytes(const uint8_t source[], Block* output);
 void printBlock(const Block* b, const char* rowHeaders[4]);
 void transposeBlock(const Block* source, Block* result);
+size_t keyExpansionLenght(Nk nk);
 void build_KeyExpansion(const Word key[], Nk nk, Word keyExpansion[], bool debug);
 void encryptBlock(const Block* input, const Block keyExpansion[], Nk nk, Block* output, bool debug);
 void decryptBlock(Block* input, const Block keyExpansion[], Nk nk, Block* output);

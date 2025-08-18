@@ -54,6 +54,29 @@ static uint8_t dotProductWord(const Word w1, const Word w2){                  //
           multiply[w1.uint08_[3]][w2.uint08_[3]];
 }
 
+void blockFromBytes(const uint8_t source[], Block* output){
+  // First column
+  output->uint08_[0] = source[0];
+  output->uint08_[4] = source[1];
+  output->uint08_[8] = source[2];
+  output->uint08_[12]= source[3];
+  // Second column
+  output->uint08_[1] = source[4];
+  output->uint08_[5] = source[5];
+  output->uint08_[9] = source[6];
+  output->uint08_[13]= source[7];
+  // Third column
+  output->uint08_[2] = source[8];
+  output->uint08_[6] = source[9];
+  output->uint08_[10]= source[10];
+  output->uint08_[14]= source[11];
+  // Third column
+  output->uint08_[3] = source[12];
+  output->uint08_[7] = source[13];
+  output->uint08_[11]= source[14];
+  output->uint08_[15]= source[15];
+}
+
 void printBlock(const Block* b, const char* rowHeaders[4]) {
   for(size_t i = 0; i < 4; i++) {
     if(rowHeaders != NULL) printf("%s",rowHeaders[i]);
