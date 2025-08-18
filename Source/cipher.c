@@ -43,7 +43,7 @@ static bool usingLittleEndian(){
 }
 
 static void printWord(Word w) {
-  uint32_t WL_1 = WORD_LEN-1, i;
+  uint32_t WL_1 = WORD_SIZE-1, i;
   printf("[");
   for(i = 0; i < WL_1; i++) printf("%.2X,", (uint32_t)w.uint08_[i]);
   printf("%.2X]", (uint32_t)w.uint08_[i]);
@@ -319,31 +319,24 @@ void encryptBlock(const Block* input, const Block keyExpansion[], Nk nk, Block* 
   for(i = 1; i < Nr; i++) {
     SubBytes(output);
     if(debug) copyBlock(output, ASB + (i-1));
-    //if(debug) for(j = 0; j < BLOCK_LEN; j++) ASB[((i - 1) << 4) + j] = output->uint08_[j];
 
     ShiftRows(output);
     if(debug) copyBlock(output, ASR + (i-1));
-    //if(debug) for(j = 0; j < BLOCK_LEN; j++) ASR[((i - 1) << 4) + j] = output->uint08_[j];
 
     MixColumns(output);
     if(debug) copyBlock(output, AMC + (i-1));
-    //if(debug) for(j = 0; j < BLOCK_LEN; j++) AMC[((i - 1) << 4) + j] = output->uint08_[j];
 
     AddRoundKey(output, keyExpansion, i);
     if(debug) copyBlock(output, SOR + (i+1));
-    //if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[((i + 1) << 4) + j] = output->uint08_[j];
   }
   SubBytes(output);
   if(debug) copyBlock(output, ASB + (i-1));
-  //if(debug) for(j = 0; j < BLOCK_LEN; j++) ASB[((i - 1) << 4) + j] = output->uint08_[j];
 
   ShiftRows(output);
   if(debug) copyBlock(output, ASR + (i-1));
-  //if(debug) for(j = 0; j < BLOCK_LEN; j++) ASR[((i - 1) << 4) + j] = output->uint08_[j];
 
   AddRoundKey(output, keyExpansion, i);
   if(debug) copyBlock(output, SOR + (i-1));
-  //if(debug) for(j = 0; j < BLOCK_LEN; j++) SOR[((i + 1) << 4) + j] = output->uint08_[j];
 
   if(debug) {
     printf(

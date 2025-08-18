@@ -16,23 +16,22 @@ extern "C" {
 #define Nb 4                                                                    // AES standard constant, length of blocks in words
 typedef enum Nk_{Nk128 = NK128, Nk192 = NK192, Nk256 = NK256} Nk;
 
-#define WORD_LEN 4
-#define WORD_LEN_SHORTS 2
+#define WORD_SIZE 4
+#define WORD_SIZE_SHORTS 2
 #define WORD_LASTIND 3                                                          // -Last index of a word
 #define WORD_LASTIND_SHORT 1                                                    // -Last index of a word using short's
-
 typedef union Word_ {
-  uint8_t  uint08_[WORD_LEN];
-  uint16_t uint16_[WORD_LEN_SHORTS];
+  uint8_t  uint08_[WORD_SIZE];
+  uint16_t uint16_[WORD_SIZE_SHORTS];
   uint32_t uint32_;
 } Word ;
 
-#define BLOCK_LEN 16
-#define BLOCK_LEN_INT64 2
+#define BLOCK_SIZE 16
+#define BLOCK_SIZE_INT64 2
 typedef union Block_{
-    uint8_t  uint08_[BLOCK_LEN];
+    uint8_t  uint08_[BLOCK_SIZE];
     Word     word_[Nb];
-    uint64_t uint64_[BLOCK_LEN_INT64];
+    uint64_t uint64_[BLOCK_SIZE_INT64];
 } Block ;
 
 /*
