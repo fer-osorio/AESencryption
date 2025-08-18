@@ -12,7 +12,7 @@ void encryptECB(const uint8_t*const input, size_t size, uint8_t*const output){
   for(i = 0; i < numBlocks_1; i++) {
     blockFromBytes(currentBlock, &bufferIn);
     encryptBlock(const Block *input, const Block *keyExpansion, Nk nk, Block *output, bool debug);
-    currentBlock += BLOCK_LEN;
+    currentBlock += BLOCK_SIZE;
     }
   if(rem != 0) {                                                              // -This part of the code is for encrypt input that its size is not multiple of 16.
       encryptBlock(currentBlock);                                         //  This is not specified in the NIST standard.
