@@ -1,10 +1,12 @@
 #include<stdio.h>
+#include"SBox.h"
+#include"GF256.h"
 #include"cipher.h"
 
 static size_t getNr(Nk nk){
   return nk+6;
 }
-static size_t keyExpansionLenght(Nk nk){
+size_t keyExpansionLenght(Nk nk){
   return Nb*(getNr(nk) + 1);
 }
 
@@ -52,7 +54,7 @@ static uint8_t dotProductWord(const Word w1, const Word w2){                  //
           multiply[w1.uint08_[3]][w2.uint08_[3]];
 }
 
-static void printBlock(const Block* b, const char* rowHeaders[4]) {
+void printBlock(const Block* b, const char* rowHeaders[4]) {
   for(size_t i = 0; i < 4; i++) {
     if(rowHeaders != NULL) printf("%s",rowHeaders[i]);
       printWord(b->word_[i]);
@@ -98,27 +100,27 @@ static void ShiftRows(Block* b) {                                               
   b->word_[3].uint08_[0] = temp3;
 }
 
-static void transposeBlock(const Block* b, Block* bTranspose){
+void transposeBlock(const Block* source, Block* result){
   // Transposing and coping first column
-  bTranspose->word_[0].uint08_[0] = b->word_[0].uint08_[0];
-  bTranspose->word_[0].uint08_[1] = b->word_[1].uint08_[0];
-  bTranspose->word_[0].uint08_[2] = b->word_[2].uint08_[0];
-  bTranspose->word_[0].uint08_[3] = b->word_[3].uint08_[0];
+  result->word_[0].uint08_[0] = source->word_[0].uint08_[0];
+  result->word_[0].uint08_[1] = source->word_[1].uint08_[0];
+  result->word_[0].uint08_[2] = source->word_[2].uint08_[0];
+  result->word_[0].uint08_[3] = source->word_[3].uint08_[0];
   // Transposing and coping second column
-  bTranspose->word_[1].uint08_[0] = b->word_[0].uint08_[1];
-  bTranspose->word_[1].uint08_[1] = b->word_[1].uint08_[1];
-  bTranspose->word_[1].uint08_[2] = b->word_[2].uint08_[1];
-  bTranspose->word_[1].uint08_[3] = b->word_[3].uint08_[1];
+  result->word_[1].uint08_[0] = source->word_[0].uint08_[1];
+  result->word_[1].uint08_[1] = source->word_[1].uint08_[1];
+  result->word_[1].uint08_[2] = source->word_[2].uint08_[1];
+  result->word_[1].uint08_[3] = source->word_[3].uint08_[1];
   // Transposing and coping third column
-  bTranspose->word_[2].uint08_[0] = b->word_[0].uint08_[2];
-  bTranspose->word_[2].uint08_[1] = b->word_[1].uint08_[2];
-  bTranspose->word_[2].uint08_[2] = b->word_[2].uint08_[2];
-  bTranspose->word_[2].uint08_[3] = b->word_[3].uint08_[2];
+  result->word_[2].uint08_[0] = source->word_[0].uint08_[2];
+  result->word_[2].uint08_[1] = source->word_[1].uint08_[2];
+  result->word_[2].uint08_[2] = source->word_[2].uint08_[2];
+  result->word_[2].uint08_[3] = source->word_[3].uint08_[2];
   // Transposing and coping fourth column
-  bTranspose->word_[3].uint08_[0] = b->word_[0].uint08_[3];
-  bTranspose->word_[3].uint08_[1] = b->word_[1].uint08_[3];
-  bTranspose->word_[3].uint08_[2] = b->word_[2].uint08_[3];
-  bTranspose->word_[3].uint08_[3] = b->word_[3].uint08_[3];
+  result->word_[3].uint08_[0] = source->word_[0].uint08_[3];
+  result->word_[3].uint08_[1] = source->word_[1].uint08_[3];
+  result->word_[3].uint08_[2] = source->word_[2].uint08_[3];
+  result->word_[3].uint08_[3] = source->word_[3].uint08_[3];
 }
 
 static void transposeUpdateBlock(Block* b){
@@ -163,7 +165,7 @@ static void AddRoundKey(Block* b, const Block keyExpansion[], size_t round) {   
   XORblocks(b,keyExpansion+round,b);
 }
 
-static void build_KeyExpansion(const Word key[], Nk nk, Word keyExpansion[], bool debug){
+void build_KeyExpansion(const Word key[], Nk nk, Word keyExpansion[], bool debug){
   Word tmp;
   const size_t keyExpLen = keyExpansionLenght(nk);
   size_t i;
@@ -436,25 +438,4 @@ void decryptBlock(Block* input, const Block keyExpansion[], Nk nk, Block* output
   InvShiftRows(output);
   InvSubBytes(output);
   AddRoundKey(output,keyExpansion, 0);
-}
-
-#define Nk128_KEYEXPLEN 44    // Length in words of the Key Expansion of a 128 bits key; Nb*(Nr+1), Nr = Nk+6
-
-int main(int argc, char* argv[]){
-  const Word key128[Nk128] = {{{0x2b,0x7e,0x15,0x16}},{{0x28,0xae,0xd2,0xa6}},{{0xab,0xf7,0x15,0x88}},{{0x09,0xcf,0x4f,0x3c}}};
-  Block plaintext128 = {{0x32,0x43,0xf6,0xa8,0x88,0x5a,0x30,0x8d,0x31,0x31,0x98,0xa2,0xe0,0x37,0x07,0x34}};
-  Block ciphertext128 = {0}, deciphertext = {0};
-  Word keyExpansion128[Nk128_KEYEXPLEN] = {0};
-  build_KeyExpansion(key128, Nk128, keyExpansion128, true);
-  printf("\n");
-  transposeUpdateBlock(&plaintext128);
-  const char* plaintextRowHeaders[4] = {"      ","Plain ","Text  ","      "};
-  printBlock(&plaintext128, plaintextRowHeaders);
-  encryptBlock(&plaintext128, (Block*)keyExpansion128, Nk128, &ciphertext128, true);
-  decryptBlock(&ciphertext128, (Block*)keyExpansion128, Nk128, &deciphertext);
-  printf("\n");
-  const char* rowHeaders[4] = {"           ","Deciphered ","Text       ","           "};
-  transposeUpdateBlock(&deciphertext);
-  printBlock(&deciphertext, rowHeaders);
-  return EXIT_SUCCESS;
 }
