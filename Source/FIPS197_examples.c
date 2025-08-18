@@ -29,7 +29,7 @@ const Word KEE_key256[Nk256] = {
 /******************************************************************************/
 
 /*******************************************************************************
- * Keys for example vectors
+ * Plain text for example vectors
  * ****************************************************************************/
 
 const Word EV_key128[Nk128] = {
@@ -54,12 +54,12 @@ const Word EV_key256[Nk256] = {
  * Plain text for example vectors
  * ****************************************************************************/
 
-Block EV_plainText00 = {{
+uint8_t EV_plainText00[16] = {
   0x00,0x11,0x22,0x33,
   0x44,0x55,0x66,0x77,
   0x88,0x99,0xaa,0xbb,
   0xcc,0xdd,0xee,0xff
-}};
+};
 
 /******************************************************************************/
 
@@ -80,14 +80,14 @@ void displayExpansionOfKey(Nk nk){
 
 void blockCipher(const Block* plaintext, Nk nk, const Word* key){
   Word* keyExpansion = (Word*)malloc(keyExpansionLenght(nk)*sizeof(Word));
-  Block cipherInput, cipherOutput = {0}, decipherOutput = {0};
+  Block cipherOutput = {0}, decipherOutput = {0};
   const char* cipherInputRowHeaders[4] = {"       ","Plain  ","Text   ","       "};
 
   printBlock(plaintext, cipherInputRowHeaders);
-  transposeBlock(plaintext, &cipherInput);
+  //transposeBlock(plaintext, &cipherInput);
   build_KeyExpansion(key, nk, keyExpansion, false);
 
-  encryptBlock(&cipherInput, (Block*)keyExpansion, nk, &cipherOutput, true);
+  encryptBlock(plaintext, (Block*)keyExpansion, nk, &cipherOutput, true);
   decryptBlock(&cipherOutput, (Block*)keyExpansion, nk, &decipherOutput);
 
   const char* decipherOutputRowHeaders[4] = {"            ","Deciphered  ","Text        ","            "};
@@ -96,7 +96,7 @@ void blockCipher(const Block* plaintext, Nk nk, const Word* key){
 }
 
 int main(int argc, char* argv[]){
-  Block plaintext128 = {{0x32,0x43,0xf6,0xa8,0x88,0x5a,0x30,0x8d,0x31,0x31,0x98,0xa2,0xe0,0x37,0x07,0x34}};
+  Block plainText00blk;
   printf(
     "KEE_key128 length: %lu words\n"
     "KEE_key192 length: %lu words\n"
@@ -106,10 +106,11 @@ int main(int argc, char* argv[]){
   displayExpansionOfKey(Nk128);
   displayExpansionOfKey(Nk192);
   displayExpansionOfKey(Nk256);
-  blockCipher(&plaintext128, Nk128, KEE_key128);
-  blockCipher(&EV_plainText00, Nk128, EV_key128);
-  blockCipher(&EV_plainText00, Nk192, EV_key192);
-  blockCipher(&EV_plainText00, Nk256, EV_key256);
+
+  blockFromBytes(EV_plainText00, &plainText00blk);
+  blockCipher(&plainText00blk, Nk128, EV_key128);
+  blockCipher(&plainText00blk, Nk192, EV_key192);
+  blockCipher(&plainText00blk, Nk256, EV_key256);
   return EXIT_SUCCESS;
 }
 
