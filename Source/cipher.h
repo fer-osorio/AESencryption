@@ -39,6 +39,12 @@ typedef union Block_{
  * Consider: It will read 16 bytes starting from 'source', no caring about what those bytes represent.
  * */
 void blockFromBytes(const uint8_t source[], Block* output);
+
+/*
+ * Writes 16 bytes using the content of 'source'. The writting is perform column to column, from top to bottom.
+ * Consider: It supposes there is enough space pointed by the 'output' pointer.
+ * */
+void bytesFromBlock(const Block* source, uint8_t output[]);
 void printBlock(const Block* b, const char* rowHeaders[4]);
 void transposeBlock(const Block* source, Block* result);
 size_t keyExpansionLenght(Nk nk);
