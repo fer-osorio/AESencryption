@@ -104,6 +104,29 @@ void blockFromBytes(const uint8_t source[], Block* output){
   output->uint08_[15]= source[15];
 }
 
+void bytesFromBlock(const Block* source, uint8_t output[]){
+  // First column
+  output[0] = source->uint08_[0];
+  output[4] = source->uint08_[1];
+  output[8] = source->uint08_[2];
+  output[12]= source->uint08_[3];
+  // Second column
+  output[1] = source->uint08_[4];
+  output[5] = source->uint08_[5];
+  output[9] = source->uint08_[6];
+  output[13]= source->uint08_[7];
+  // Third column
+  output[2] = source->uint08_[8];
+  output[6] = source->uint08_[9];
+  output[10]= source->uint08_[10];
+  output[14]= source->uint08_[11];
+  // Third column
+  output[3] = source->uint08_[12];
+  output[7] = source->uint08_[13];
+  output[11]= source->uint08_[14];
+  output[15]= source->uint08_[15];
+}
+
 void printBlock(const Block* b, const char* rowHeaders[4]) {
   for(size_t i = 0; i < 4; i++) {
     if(rowHeaders != NULL) printf("%s",rowHeaders[i]);
@@ -310,7 +333,7 @@ void encryptBlock(const Block* input, const Block keyExpansion[], Nk nk, Block* 
     ASR = (Block*)malloc(Nr*sizeof(Block));
   }
 
-  copyBlock(input, output);
+  if(input != output) copyBlock(input, output);
 
   if(debug) copyBlock(output,SOR);                                              // Equivalent to copyBlock(output,&SOR[0])
   AddRoundKey(output, keyExpansion, 0);
