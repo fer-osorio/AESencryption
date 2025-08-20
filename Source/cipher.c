@@ -535,7 +535,7 @@ static void InvMixColumns(Block* b) {                                           
   b->uint08_[15]= dotProductWord(aInv.word_[3], bT.word_[3]);
 }
 
-void decryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output, bool debug) {
+void decryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output) {
   size_t i = ke_p->Nr;
   copyBlock (input, output);
   AddRoundKey(output, ke_p->blocks, i);

@@ -58,7 +58,7 @@ void transposeBlock(const Block* source, Block* result);
 void XORblocks(const Block* b1,const Block* b2, Block* result);
 void KeyExpansionBuild(const Word key[], enum Nk_ Nk, KeyExpansion_ptr ke_p, bool debug);
 void encryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output, bool debug);
-void decryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output, bool debug);
+void decryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output);
 
 #ifdef __cplusplus
 }
