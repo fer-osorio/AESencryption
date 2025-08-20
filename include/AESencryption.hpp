@@ -1,9 +1,9 @@
-#ifndef _INCLUDED_AES_
-#define _INCLUDED_AES_
+#ifndef _INCLUDED_AESENCRYPTION_
+#define _INCLUDED_AESENCRYPTION_
 
 #include<iostream>
 
-namespace AES {
+namespace AESencryption {
 
 struct Key;
 std::ostream& operator << (std::ostream& ost, Key k);
