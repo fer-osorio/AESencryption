@@ -30,11 +30,21 @@ static const Block aInv = {{                                                    
   0x0B, 0x0D, 0x09, 0x0E
 }};
 
-static size_t getNr(Nk nk){
-  return nk+6;
+struct KeyExpansion{
+  enum Nk_ Nk;
+  size_t Nr;
+  size_t wordsSize;
+  size_t blockSize;
+  Block* blocks;
+};
+static size_t getNr(enum Nk_ Nk){
+  return Nk+6;
 }
-size_t keyExpansionLenght(Nk nk){
-  return Nb*(getNr(nk) + 1);
+static size_t KeyExpansionLenWords(enum Nk_ Nk){
+  return Nb*(getNr(Nk) + 1);
+}
+static size_t KeyExpansionLenBlocks(enum Nk_ Nk){
+  return KeyExpansionLenWords(Nk) / Nb;
 }
 
 static bool usingLittleEndian(){
@@ -238,12 +248,12 @@ static void AddRoundKey(Block* b, const Block keyExpansion[], size_t round) {   
   XORblocks(b,keyExpansion+round,b);
 }
 
-void build_KeyExpansion(const Word key[], Nk nk, Word keyExpansion[], bool debug){
+static void KeyExpansionBuildWords(const Word key[], enum Nk_ Nk, Word outputKeyExpansion[], bool debug){
   Word tmp;
-  const size_t keyExpLen = keyExpansionLenght(nk);
+  const size_t keyExpLen = KeyExpansionLenWords(Nk);
   size_t i;
 
-  for(i = 0; i < nk; i++) keyExpansion[i] = key[i];                             // -The first Nk words of the key expansion are the key itself.
+  for(i = 0; i < Nk; i++) outputKeyExpansion[i] = key[i];                             // -The first Nk words of the key expansion are the key itself.
 
   // -Show the construction of the key expansion.
   if(debug) {
@@ -257,15 +267,15 @@ void build_KeyExpansion(const Word key[], Nk nk, Word keyExpansion[], bool debug
     );
   }
 
-  for(i = nk; i < keyExpLen; i++) {
-    copyWord(&keyExpansion[i - 1], &tmp);                                       // -Guarding against modify things that we don't want to modify.
+  for(i = Nk; i < keyExpLen; i++) {
+    copyWord(&outputKeyExpansion[i - 1], &tmp);                                       // -Guarding against modify things that we don't want to modify.
     if(debug) {
       printf(" %lu",i);
       if(i < 10) printf("  | ");
       else printf(" | ");
       printWord(tmp);
     }
-    if((i % nk) == 0) {                                                         // -i is a multiple of Nk, witch value is 8
+    if((i % Nk) == 0) {                                                         // -i is a multiple of Nk, witch value is 8
       RotWord(&tmp);
       if(debug) {
         printf(" | ");
@@ -278,15 +288,15 @@ void build_KeyExpansion(const Word key[], Nk nk, Word keyExpansion[], bool debug
       }
       if(debug) {
         printf(" | ");
-        printWord(Rcon[i/nk - 1]);
+        printWord(Rcon[i/Nk - 1]);
       }
-      XORword(tmp, Rcon[i/nk -1], &tmp);
+      XORword(tmp, Rcon[i/Nk -1], &tmp);
       if(debug) {
         printf(" | ");
         printWord(tmp);
       }
     } else {
-      if(nk > 6 && (i % nk) == 4) {
+      if(Nk > 6 && (i % Nk) == 4) {
         if(debug) printf(" | ------------- | ");
         SubWord(&tmp);
         if(debug) {
@@ -299,12 +309,12 @@ void build_KeyExpansion(const Word key[], Nk nk, Word keyExpansion[], bool debug
     }
     if(debug) {
       printf(" | ");
-      printWord(keyExpansion[i - nk]);
+      printWord(outputKeyExpansion[i - Nk]);
     }
-    XORword(keyExpansion[i - nk], tmp, &keyExpansion[i]);
+    XORword(outputKeyExpansion[i - Nk], tmp, &outputKeyExpansion[i]);
     if(debug) {
       printf(" | ");
-      printWord(keyExpansion[i]);
+      printWord(outputKeyExpansion[i]);
     }
     if(debug) printf("\n");
   }
@@ -313,12 +323,51 @@ void build_KeyExpansion(const Word key[], Nk nk, Word keyExpansion[], bool debug
       "-------------------------------------------------------------------------------------------------------------------\n\n"
     );
   debug = false;
-  for(i = 0; i < keyExpLen; i+=Nb) transposeUpdateBlock((Block*)&keyExpansion[i]);
 }
 
-void encryptBlock(const Block* input, const Block keyExpansion[], Nk nk, Block* output, bool debug) {
+/*
+ * Builds a block using an array of four words.
+ * Seeing words as vectors rows of a matrix, the resulting block is the transposed of this matrix
+ * Considerations: Assuming that the pointer 'source' is pointing to a valid 4-words array
+ * */
+static void blockFromWords(const Word source[], Block* output){
+  // First row
+  output->uint08_[0] = source[0].uint08_[0];
+  output->uint08_[4] = source[0].uint08_[1];
+  output->uint08_[8] = source[0].uint08_[2];
+  output->uint08_[12]= source[0].uint08_[3];
+  // Second row
+  output->uint08_[1] = source[1].uint08_[0];
+  output->uint08_[5] = source[1].uint08_[1];
+  output->uint08_[9] = source[1].uint08_[2];
+  output->uint08_[13]= source[1].uint08_[3];
+  // Third row
+  output->uint08_[2] = source[2].uint08_[0];
+  output->uint08_[6] = source[2].uint08_[1];
+  output->uint08_[10]= source[2].uint08_[2];
+  output->uint08_[14]= source[2].uint08_[3];
+  // Fourth row
+  output->uint08_[3] = source[3].uint08_[0];
+  output->uint08_[7] = source[3].uint08_[1];
+  output->uint08_[11]= source[3].uint08_[2];
+  output->uint08_[15]= source[3].uint08_[3];
+}
+
+void KeyExpansionBuild(const Word key[], enum Nk_ Nk, KeyExpansion_ptr outputKeyExpansion, bool debug){
+  outputKeyExpansion->Nk = Nk;
+  outputKeyExpansion->Nr = getNr(Nk);
+  outputKeyExpansion->wordsSize = KeyExpansionLenWords(Nk);
+  outputKeyExpansion->blockSize = KeyExpansionLenBlocks(Nk);
+  Word* buffer = (Word*)malloc(outputKeyExpansion->wordsSize*sizeof(Word));
+  KeyExpansionBuildWords(key, Nk, buffer, false);
+  for(size_t i = 0, j = 0; i < outputKeyExpansion->wordsSize && j < outputKeyExpansion->blockSize; i += Nb, j++){
+    blockFromWords(buffer + i, outputKeyExpansion->blocks + j);
+  }
+  free(buffer);
+}
+
+void encryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output, bool debug) {
   size_t i, j;
-  size_t Nr = getNr(nk);
   // -Debugging purposes. Columns of the debugging table.
   Block* SOR;                                                                   // Start of round
   Block* ASB;                                                                   // After SubBytes
@@ -327,19 +376,19 @@ void encryptBlock(const Block* input, const Block keyExpansion[], Nk nk, Block* 
   SOR = ASB = ASR = AMC = NULL;
 
   if(debug) {
-    SOR = (Block*)malloc((Nr+2)*sizeof(Block));
-    AMC = (Block*)malloc((Nr - 1)*sizeof(Block));
-    ASB = (Block*)malloc(Nr*sizeof(Block));
-    ASR = (Block*)malloc(Nr*sizeof(Block));
+    SOR = (Block*)malloc((ke_p->Nr+2)*sizeof(Block));
+    AMC = (Block*)malloc((ke_p->Nr - 1)*sizeof(Block));
+    ASB = (Block*)malloc(ke_p->Nr*sizeof(Block));
+    ASR = (Block*)malloc(ke_p->Nr*sizeof(Block));
   }
 
   if(input != output) copyBlock(input, output);
 
   if(debug) copyBlock(output,SOR);                                              // Equivalent to copyBlock(output,&SOR[0])
-  AddRoundKey(output, keyExpansion, 0);
+  AddRoundKey(output, ke_p->blocks, 0);
   if(debug) copyBlock(output,SOR + 1);                                          // Equivalent to copyBlock(output,&SOR[1])
 
-  for(i = 1; i < Nr; i++) {
+  for(i = 1; i < ke_p->Nr; i++) {
     SubBytes(output);
     if(debug) copyBlock(output, ASB + (i-1));
 
@@ -349,7 +398,7 @@ void encryptBlock(const Block* input, const Block keyExpansion[], Nk nk, Block* 
     MixColumns(output);
     if(debug) copyBlock(output, AMC + (i-1));
 
-    AddRoundKey(output, keyExpansion, i);
+    AddRoundKey(output, ke_p->blocks, i);
     if(debug) copyBlock(output, SOR + (i+1));
   }
   SubBytes(output);
@@ -358,7 +407,7 @@ void encryptBlock(const Block* input, const Block keyExpansion[], Nk nk, Block* 
   ShiftRows(output);
   if(debug) copyBlock(output, ASR + (i-1));
 
-  AddRoundKey(output, keyExpansion, i);
+  AddRoundKey(output, ke_p->blocks, i);
   if(debug) copyBlock(output, SOR + (i-1));
 
   if(debug) {
@@ -376,14 +425,13 @@ void encryptBlock(const Block* input, const Block keyExpansion[], Nk nk, Block* 
       else printf("        ");
       printf(" | ");
       printWord(SOR[0].word_[i]);
-      //printBlockRow(SOR, i);
       printf(" |               |               |               | ");
-      printWord(keyExpansion[0].word_[i]);
+      printWord(ke_p->blocks[0].word_[i]);
       printf("\n");
     }
     printf("\n");
 
-    for(i = 1; i <= Nr; i++) {
+    for(i = 1; i <= ke_p->Nr; i++) {
       for(j = 0; j < Nb; j++) {
         if(j == 1) {
           printf("    ");
@@ -393,18 +441,15 @@ void encryptBlock(const Block* input, const Block keyExpansion[], Nk nk, Block* 
         else printf("        ");
         printf(" | ");
         printWord(SOR[i].word_[j]);
-        //printBlockRow(&SOR[(i << 4)], j);
         printf(" | ");
         printWord(ASB[i-1].word_[j]);
-        //printBlockRow(&ASB[((i - 1) << 4)], j);
         printf(" | ");
         printWord(ASR[i-1].word_[j]);
-        //printBlockRow(&ASR[((i - 1) << 4)], j);
         printf(" | ");
-        if(i < Nr) printWord(AMC[i-1].word_[j]); //printBlockRow(&AMC[((i - 1) << 4)], j);
+        if(i < ke_p->Nr) printWord(AMC[i-1].word_[j]);
         else printf("             ");
         printf(" | ");
-        printWord(keyExpansion[i].word_[j]);
+        printWord(ke_p->blocks[i].word_[j]);
         printf("\n");
       }
       printf(
@@ -490,18 +535,17 @@ static void InvMixColumns(Block* b) {                                           
   b->uint08_[15]= dotProductWord(aInv.word_[3], bT.word_[3]);
 }
 
-void decryptBlock(Block* input, const Block keyExpansion[], Nk nk, Block* output) {
-  size_t Nr = getNr (nk);
-  size_t i = Nr;
+void decryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output, bool debug) {
+  size_t i = ke_p->Nr;
   copyBlock (input, output);
-  AddRoundKey(output, keyExpansion, i);
+  AddRoundKey(output, ke_p->blocks, i);
   for(i--; i > 0; i--) {
     InvShiftRows(output);
     InvSubBytes(output);
-    AddRoundKey(output, keyExpansion, i);
+    AddRoundKey(output, ke_p->blocks, i);
     InvMixColumns(output);
   }
   InvShiftRows(output);
   InvSubBytes(output);
-  AddRoundKey(output,keyExpansion, 0);
+  AddRoundKey(output, ke_p->blocks, 0);
 }
