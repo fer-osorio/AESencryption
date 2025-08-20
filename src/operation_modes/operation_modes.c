@@ -23,7 +23,7 @@ struct EncryptionInputOutput EncryptionInputOutputBuild(uint8_t*const input, uin
  * Takes 16 bytes, converts to block, encrypts and writes on output.
  * If input == output, original data will be rewritten with encrypted data.
  * */
-static void encryptBlockBytes(const uint8_t*const input, KeyExpansion_ptr ke_p, uint8_t* output){
+static void encryptBlockBytes(const uint8_t*const input, const KeyExpansion_ptr ke_p, uint8_t* output){
   Block buffer;
   blockFromBytes(input, &buffer);
   encryptBlock(&buffer, ke_p, &buffer, false);
@@ -34,7 +34,7 @@ static void encryptBlockBytes(const uint8_t*const input, KeyExpansion_ptr ke_p, 
  * Takes 16 bytes, converts to block, decrypts and writes on output.
  * If input == output, original data will be rewritten with decrypted data.
  * */
-static void decryptBlockBytes(const uint8_t*const input, KeyExpansion_ptr ke_p, uint8_t* output){
+static void decryptBlockBytes(const uint8_t*const input, const KeyExpansion_ptr ke_p, uint8_t* output){
   Block buffer;
   blockFromBytes(input, &buffer);
   decryptBlock(&buffer, ke_p, &buffer);
@@ -51,7 +51,7 @@ static void movePointerForwardOneBlock(const uint8_t** ptr1, const uint8_t** ptr
   if(ptr3_nonConstant != NULL) *ptr3_nonConstant += BLOCK_SIZE;
 }
 
-void encryptECB(const uint8_t*const input, size_t size, KeyExpansion_ptr ke_p, uint8_t*const output){
+void encryptECB(const uint8_t*const input, size_t size, const KeyExpansion_ptr ke_p, uint8_t*const output){
   if(size == 0 || input == NULL) return;
   const uint8_t* inputCurrentPossition = input;
   uint8_t* outputCurrentPossition = output;
@@ -70,7 +70,7 @@ void encryptECB(const uint8_t*const input, size_t size, KeyExpansion_ptr ke_p, u
   }
 }
 
-void decryptECB(const uint8_t*const input, size_t size, KeyExpansion_ptr ke_p, uint8_t*const output){
+void decryptECB(const uint8_t*const input, size_t size, const KeyExpansion_ptr ke_p, uint8_t*const output){
   if(size == 0 || input == NULL) return;
   const uint8_t* inputCurrentPossition = input;
   uint8_t* outputCurrentPossition = output;
@@ -111,7 +111,7 @@ static void XORequalBlockWithBytes(Block* input, const uint8_t byteBlock[]){
   input->uint08_[15] ^= byteBlock[15];
 }
 
-static void encryptCBCsingleBlockBytes(const uint8_t*const input, KeyExpansion_ptr ke_p, const uint8_t* XORsource, uint8_t* output){
+static void encryptCBCsingleBlockBytes(const uint8_t*const input, const KeyExpansion_ptr ke_p, const uint8_t* XORsource, uint8_t* output){
   Block buffer;
   blockFromBytes(input, &buffer);
   XORequalBlockWithBytes(&buffer, XORsource);
@@ -119,7 +119,7 @@ static void encryptCBCsingleBlockBytes(const uint8_t*const input, KeyExpansion_p
   bytesFromBlock(&buffer, output);
 }
 
-void encryptCBC(const uint8_t*const input, size_t size, KeyExpansion_ptr ke_p, const uint8_t* IV, uint8_t*const output){
+void encryptCBC(const uint8_t*const input, size_t size, const KeyExpansion_ptr ke_p, const uint8_t* IV, uint8_t*const output){
   if(size == 0 || input == NULL) return;
   const uint8_t* inputCurrentPossition = input;
   const uint8_t* inputPreviousBlock;
