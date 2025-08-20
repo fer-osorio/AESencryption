@@ -47,6 +47,11 @@ void blockFromBytes(const uint8_t source[], Block* output);
 void bytesFromBlock(const Block* source, uint8_t output[]);
 void printBlock(const Block* b, const char* rowHeaders[4]);
 void transposeBlock(const Block* source, Block* result);
+/*
+ * Executes XOR operations with b1 and b2 as arguments, writes output on 'result'.
+ * If b1 == result (they point to the same block) b1 will be overwritten with the output; the same happens with b2 == result
+ * */
+void XORblocks(const Block* b1,const Block* b2, Block* result);
 size_t keyExpansionLenght(Nk nk);
 void build_KeyExpansion(const Word key[], Nk nk, Word keyExpansion[], bool debug);
 void encryptBlock(const Block* input, const Block keyExpansion[], Nk nk, Block* output, bool debug);

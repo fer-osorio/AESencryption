@@ -135,7 +135,7 @@ void printBlock(const Block* b, const char* rowHeaders[4]) {
     }
 }
 
-static void XORblocks(const Block* b1,const Block* b2, Block* result) {
+void XORblocks(const Block* b1,const Block* b2, Block* result) {
   result->uint64_[0] = b1->uint64_[0] ^ b2->uint64_[0];
   result->uint64_[1] = b1->uint64_[1] ^ b2->uint64_[1];
 }
