@@ -56,7 +56,18 @@ void transposeBlock(const Block* source, Block* result);
  * If b1 == result (they point to the same block) b1 will be overwritten with the output; the same happens with b2 == result
  * */
 void XORblocks(const Block* b1,const Block* b2, Block* result);
-void KeyExpansionBuild(const Word key[], enum Nk_ Nk, KeyExpansion_ptr ke_p, bool debug);
+
+/*
+ * Builds key expansion object and returns a pointer to it.
+ * Consider: Allocates memory using malloc.
+ * */
+KeyExpansion_ptr KeyExpansionBuildNew(const Word key[], enum Nk_ Nk, bool debug);
+
+/*
+ * Free the memory allocated for an KeyExpansion object pointed by *ke_pp.
+ * */
+void KeyExpansionDelete(KeyExpansion_ptr* ke_pp);
+
 void encryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output, bool debug);
 void decryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output);
 
