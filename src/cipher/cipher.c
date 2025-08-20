@@ -145,7 +145,7 @@ void printBlock(const Block* b, const char* rowHeaders[4]) {
     }
 }
 
-void XORblocks(const Block* b1,const Block* b2, Block* result) {
+static void XORblocks(const Block* b1,const Block* b2, Block* result) {
   result->uint64_[0] = b1->uint64_[0] ^ b2->uint64_[0];
   result->uint64_[1] = b1->uint64_[1] ^ b2->uint64_[1];
 }
@@ -183,7 +183,7 @@ static void ShiftRows(Block* b) {                                               
   b->word_[3].uint08_[0] = temp3;
 }
 
-void transposeBlock(const Block* source, Block* result){
+static void transposeBlock(const Block* source, Block* result){
   // Transposing and coping first column
   result->word_[0].uint08_[0] = source->word_[0].uint08_[0];
   result->word_[0].uint08_[1] = source->word_[1].uint08_[0];
