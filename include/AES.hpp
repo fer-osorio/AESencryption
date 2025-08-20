@@ -1,9 +1,7 @@
-#include<iostream>
-
 #ifndef _INCLUDED_AES_
 #define _INCLUDED_AES_
-#define AES_BLK_SZ  16
-#define SBOX_SIZE  256
+
+#include<iostream>
 
 namespace AES {
 
@@ -18,7 +16,6 @@ public:
 	enum struct OpMode {
 		ECB,								// -Electronic Code Book (not recommended).
 		CBC,								// -Cipher Block Chaining.
-		PVS								// -Permutation Variable SBox
 	};
 private:
 	char*	key = NULL;
@@ -64,25 +61,6 @@ private:
 	Key	key = Key();							// -The default values for a cipher object are the values for a key of 256 bits
 	int	Nk = 8, Nr = 14, keyExpLen = 240;
 	char*	keyExpansion = NULL;
-
-	struct PiRoundKey {							// -This will act as a AES round key but having a size bigger or equal than the
-	private:
-		char*	roundkey	= NULL;					//  data array. To obtain it, the process will be similar to multiply the key with
-	    	size_t 	size		= 0;					//  the number pi
-    		char dinamicSbox[SBOX_SIZE];
-    		char dinamicSboxInv[SBOX_SIZE];
-
-    	public:
-    		~PiRoundKey() { if(this->roundkey != NULL) delete[] this->roundkey; }
-    		PiRoundKey& operator = (const PiRoundKey&);
-    		char	operator[](const unsigned i) const{ return roundkey[i]; }
-    		size_t	getSize()const{ return this->size; }
-    		bool	roundKeyIsNULL() const{ return this->roundkey == NULL; }
-    		void	setPiRoundKey(const Key& K);
-    		void	subBytes(char state[AES_BLK_SZ]) const;
-    		void	invSubBytes(char state[AES_BLK_SZ]) const;
-	} piRoundkey ;
-
 public:
 	Cipher();								// -The default constructor will set the key expansion as zero in every element.
 	Cipher(const Key&);
@@ -111,28 +89,6 @@ public:
 										//  size (in bytes) is  provided by the 'size' argument.
 	void decryptCBC(char*const data, size_t size)const;			// -Decrypts the message pointed by 'data'. The message must had been encrypted
 										//  using the CBC mode operation.
-	void encryptPVS(char*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the PVS operation mode.
-										//  The data size (in bytes) is  provided by the 'size' argument.
-	void decryptPVS(char*const data, size_t size)const;			// -Decrypts the message pointed by 'data' using the PVS operation mode.
-										//  The size of the message is provided by the 'size' argument.
-
-	void XORblocks(char b1[AES_BLK_SZ], char b2[AES_BLK_SZ], char r[AES_BLK_SZ]) const; // -Xor operation over 16 bytes array.
-	void printWord(const char word[4]);					// -Prints an array of 4 bytes.
-	void printState(const char state[AES_BLK_SZ]);				// -Prints an array of 16 bytes.
-	void CopyWord(const char source[4], char destination[4]) const;		// -Coping an array of 4 bytes.
-	void CopyBlock(const char source[AES_BLK_SZ], char destination[AES_BLK_SZ]) const; // -Coping an array of 16 bytes.
-	void XORword(const char w1[4], const char w2[4], char resDest[4]) const;// -XOR of arrays of 4 bytes.
-	void RotWord(char word[4]) const;					// -Rotation of bytes to the left.
-	void SubWord(char word[4]) const;					// -Apply SBox to each char of the word.
-	void SubBytes(char state[AES_BLK_SZ]) const;				// -Applies a substitution table (S-box) to each char.
-	void ShiftRows(char state[AES_BLK_SZ]) const;				// -Shift rows of the state array by different offset.
-	void MixColumns(char state[AES_BLK_SZ]) const;				// -Mixes the data within each column of the state array.
-	void AddRoundKey(char state[AES_BLK_SZ], int round) const;		// -Combines a round key with the state.
-	void InvSubBytes(char state[AES_BLK_SZ]) const;				// -Applies the inverse substitution table (InvSBox) to each char.
-	void InvShiftRows(char state[AES_BLK_SZ]) const;			// -Inverse function of shift rows.
-	void InvMixColumns(char state[AES_BLK_SZ]) const;			// -Inverse function of MixColumns.
-	void encryptBlock(char block[AES_BLK_SZ]) const;			// -Encrypts an array of 16 bytes.
-	void decryptBlock(char block[AES_BLK_SZ]) const;			// -Decrypts an array of 16 bytes.
 };
 };
 #endif
