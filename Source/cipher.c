@@ -206,7 +206,7 @@ void transposeBlock(const Block* source, Block* result){
   result->word_[3].uint08_[3] = source->word_[3].uint08_[3];
 }
 
-static void transposeUpdateBlock(Block* b){
+/*static void transposeUpdateBlock(Block* b){
   uint8_t buff;
   // Transposing and coping first column
   buff = b->word_[0].uint08_[1]; b->word_[0].uint08_[1] = b->word_[1].uint08_[0]; b->word_[1].uint08_[0] = buff;
@@ -217,7 +217,7 @@ static void transposeUpdateBlock(Block* b){
   buff = b->word_[1].uint08_[3]; b->word_[1].uint08_[3] = b->word_[3].uint08_[1]; b->word_[3].uint08_[1] = buff;
   // Transposing and coping third column
   buff = b->word_[2].uint08_[3]; b->word_[2].uint08_[3] = b->word_[3].uint08_[2]; b->word_[3].uint08_[2] = buff;
-}
+}*/
 
 static void MixColumns(Block* b) {                                              // -Mixes the data within each column of the state array.
   Block bT;
@@ -353,17 +353,29 @@ static void blockFromWords(const Word source[], Block* output){
   output->uint08_[15]= source[3].uint08_[3];
 }
 
-void KeyExpansionBuild(const Word key[], enum Nk_ Nk, KeyExpansion_ptr outputKeyExpansion, bool debug){
+KeyExpansion_ptr KeyExpansionBuildNew(const Word key[], enum Nk_ Nk, bool debug){
+  KeyExpansion_ptr outputKeyExpansion = (struct KeyExpansion*)malloc(sizeof(struct KeyExpansion));
   outputKeyExpansion->Nk = Nk;
   outputKeyExpansion->Nr = getNr(Nk);
   outputKeyExpansion->wordsSize = KeyExpansionLenWords(Nk);
   outputKeyExpansion->blockSize = KeyExpansionLenBlocks(Nk);
   Word* buffer = (Word*)malloc(outputKeyExpansion->wordsSize*sizeof(Word));
-  KeyExpansionBuildWords(key, Nk, buffer, false);
+  KeyExpansionBuildWords(key, Nk, buffer, debug);
+  outputKeyExpansion->blocks = (Block*)malloc(outputKeyExpansion->blockSize*sizeof (Block));
   for(size_t i = 0, j = 0; i < outputKeyExpansion->wordsSize && j < outputKeyExpansion->blockSize; i += Nb, j++){
     blockFromWords(buffer + i, outputKeyExpansion->blocks + j);
   }
   free(buffer);
+  return outputKeyExpansion;
+}
+
+void KeyExpansionDelete(KeyExpansion_ptr* ke_pp){
+  KeyExpansion_ptr ke_p = *ke_pp;
+  if(ke_p != NULL){
+    free(ke_p->blocks);
+    free(ke_p);
+    *ke_pp = NULL;                                                              // Signaling that the memory is has been already free.
+  }
 }
 
 void encryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output, bool debug) {
