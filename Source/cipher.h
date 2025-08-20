@@ -14,7 +14,7 @@ extern "C" {
 #define NK256 8
 #define NKMAX 8
 #define Nb 4                                                                    // AES standard constant, length of blocks in words
-typedef enum Nk_{Nk128 = NK128, Nk192 = NK192, Nk256 = NK256} Nk;
+enum Nk_{Nk128 = NK128, Nk192 = NK192, Nk256 = NK256};
 
 #define WORD_SIZE 4
 #define WORD_SIZE_SHORTS 2
@@ -34,6 +34,9 @@ typedef union Block_{
     uint64_t uint64_[BLOCK_SIZE_INT64];
 } Block ;
 
+struct KeyExpansion;
+typedef struct KeyExpansion* KeyExpansion_ptr;
+
 /*
  * Creates a Block instance from the bytes pointed by source. Basically it takes pieces of four bytes and creates the columns with them
  * Consider: It will read 16 bytes starting from 'source', no caring about what those bytes represent.
@@ -47,15 +50,15 @@ void blockFromBytes(const uint8_t source[], Block* output);
 void bytesFromBlock(const Block* source, uint8_t output[]);
 void printBlock(const Block* b, const char* rowHeaders[4]);
 void transposeBlock(const Block* source, Block* result);
+
 /*
  * Executes XOR operations with b1 and b2 as arguments, writes output on 'result'.
  * If b1 == result (they point to the same block) b1 will be overwritten with the output; the same happens with b2 == result
  * */
 void XORblocks(const Block* b1,const Block* b2, Block* result);
-size_t keyExpansionLenght(Nk nk);
-void build_KeyExpansion(const Word key[], Nk nk, Word keyExpansion[], bool debug);
-void encryptBlock(const Block* input, const Block keyExpansion[], Nk nk, Block* output, bool debug);
-void decryptBlock(Block* input, const Block keyExpansion[], Nk nk, Block* output);
+void KeyExpansionBuild(const Word key[], enum Nk_ Nk, KeyExpansion_ptr ke_p, bool debug);
+void encryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output, bool debug);
+void decryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output, bool debug);
 
 #ifdef __cplusplus
 }
