@@ -63,36 +63,39 @@ uint8_t EV_plainText00[16] = {
 
 /******************************************************************************/
 
-void displayExpansionOfKey(Nk nk){
-  Word keyExpansion[KEYEXP_MAXLEN];
-  switch(nk){
+void displayExpansionOfKey(enum Nk_ Nk){
+  KeyExpansion_ptr ke_p;
+  switch(Nk){
     case Nk128:
-      build_KeyExpansion(KEE_key128, Nk128, keyExpansion, true);
+      ke_p = KeyExpansionBuildNew(KEE_key128, Nk128, true);
       break;
     case Nk192:
-      build_KeyExpansion(KEE_key192, Nk192, keyExpansion, true);
+      KeyExpansionBuildNew(KEE_key192, Nk192, true);
       break;
     case Nk256:
-      build_KeyExpansion(KEE_key256, Nk256, keyExpansion, true);
+      KeyExpansionBuildNew(KEE_key256, Nk256, true);
       break;
   }
+  KeyExpansionDelete(&ke_p);
 }
 
-void blockCipher(const Block* plaintext, Nk nk, const Word* key){
-  Word* keyExpansion = (Word*)malloc(keyExpansionLenght(nk)*sizeof(Word));
+void blockCipher(const Block* plaintext, enum Nk_ Nk, const Word* key){
+  //Word* keyExpansion = (Word*)malloc(keyExpansionLenght(Nk)*sizeof(Word));
+  KeyExpansion_ptr ke_p;
   Block cipherOutput = {0}, decipherOutput = {0};
   const char* cipherInputRowHeaders[4] = {"       ","Plain  ","Text   ","       "};
 
   printBlock(plaintext, cipherInputRowHeaders);
   //transposeBlock(plaintext, &cipherInput);
-  build_KeyExpansion(key, nk, keyExpansion, false);
+  ke_p = KeyExpansionBuildNew(key, Nk, false);
 
-  encryptBlock(plaintext, (Block*)keyExpansion, nk, &cipherOutput, true);
-  decryptBlock(&cipherOutput, (Block*)keyExpansion, nk, &decipherOutput);
+  encryptBlock(plaintext, ke_p,&cipherOutput, true);
+  decryptBlock(&cipherOutput, ke_p, &decipherOutput);
 
   const char* decipherOutputRowHeaders[4] = {"            ","Deciphered  ","Text        ","            "};
   printBlock(&decipherOutput, decipherOutputRowHeaders);
-  free(keyExpansion);
+
+  KeyExpansionDelete(&ke_p);
 }
 
 int main(int argc, char* argv[]){
