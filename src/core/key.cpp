@@ -4,8 +4,6 @@
 #include<exception>
 #include"../../include/AESencryption.hpp"
 
-#define MAX_KEY_LENGTH_BYTES 32
-
 using namespace AESencryption;
 
 /*********************************************************************** Helper functions ************************************************************************/
@@ -37,7 +35,7 @@ static int bytesToHexString(const uint8_t*const origin, char*const destination, 
 
 /************************************************************** Handling AES cryptographic keys ******************************************************************/
 
-Key::Key(): lenBits(Len::_256), lenBytes(32), opMode_(OpMode::CBC) {
+Key::Key(): lenBits(Len::_256), lenBytes(32), opMode_(OpMode::ECB) {
     this->key = new uint8_t[this->lenBytes];
     for(size_t i = 0; i < this->lenBytes; i++) this->key[i] = 0;
 }
@@ -59,17 +57,17 @@ Key::Key(const uint8_t* const _key, Len len, OpMode op_m): lenBits(len), lenByte
     if(_key != NULL) for(size_t i = 0; i < this->lenBytes; i++) this->key[i] = _key[i];
 }
 
-Key::Key(const Key& ak):lenBits(ak.lenBits), lenBytes(ak.lenBytes), opMode_(ak.opMode_) {
+Key::Key(const Key& k):lenBits(k.lenBits), lenBytes(k.lenBytes), opMode_(k.opMode_) {
     size_t i;
-    this->key = new uint8_t[ak.lenBytes];
-    for(i = 0; i < ak.lenBytes; i++) this->key[i] = ak.key[i];               // -Supposing Cipher object is well constructed, this is, ak.key != NULL
-    if(ak.opMode_ == OpMode::CBC) {                                              // -Without CBC, copying IV is pointless.
-        if((this->initializedIV = ak.initializedIV) == true)                    // -Copying and checking argument inside the 'if'
-            for(i = 0; i < BLOCK_SIZE; i++) this->IV[i] = ak.IV[i];
+    this->key = new uint8_t[k.lenBytes];
+    for(i = 0; i < k.lenBytes; i++) this->key[i] = k.key[i];               // -Supposing Cipher object is well constructed, this is, k.key != NULL
+    if(k.opMode_ == OpMode::CBC) {                                              // -Without CBC, copying IV is pointless.
+        if((this->initializedIV = k.initializedIV) == true)                    // -Copying and checking argument inside the 'if'
+            for(i = 0; i < BLOCK_SIZE; i++) this->IV.data[i] = k.IV.data[i];
     }
 }
 
-Key::Key(const uint8_t*const fname) : lenBits(Len::_128), lenBytes(BLOCK_SIZE), opMode_(OpMode::ECB) { // -Building from .key file
+Key::Key(const char*const fname) : lenBits(Len::_128), lenBytes(BLOCK_SIZE), opMode_(OpMode::ECB) { // -Building from .key file
     char aeskeyStr[] = "AESKEY";
     char AESKEY[7];
     char opMode[4];
@@ -89,20 +87,17 @@ Key::Key(const uint8_t*const fname) : lenBits(Len::_128), lenBytes(BLOCK_SIZE), 
                     std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname):" << opMode << ", not a recognized operation mode.\n";
                     throw std::runtime_error("Not a recognized operation mode");
                 }
-
-                file.read((char*)&keyLen, 2);                                      // -Reading key lenBits
+                file.read((char*)&keyLen, 2);                                   // -Reading key lenBits
                 if(keyLen == 128 || keyLen == 192 || keyLen == 256) this->lenBits = (Len)keyLen;
                 else {
                     std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname):" << keyLen << " is not a valid length in bits for key.\n";
                     throw std::runtime_error("Key length not allowed.");
                 }
-                this->lenBytes = keyLen >> 3;                                // -lenBytes = len / 8;
-
+                this->lenBytes = keyLen >> 3;                                   // -lenBytes = len / 8;
                 this->key = new uint8_t[this->lenBytes];                        // -Reading key
                 file.read((char*)this->key, (std::streamsize)this->lenBytes);
-
                 if(this->opMode_ == OpMode::CBC) {
-                    file.read((char*)(this->key.IV.data), BLOCK_SIZE);                     // -In CBC case, reading IV.
+                    file.read((char*)(this->IV.data), BLOCK_SIZE);              // -In CBC case, reading IV.
                     this->initializedIV = true;
                 }
            } else {
@@ -133,7 +128,7 @@ Key& Key::operator = (const Key& k) {
         this->opMode_ = k.opMode_;
         if(k.opMode_ == OpMode::CBC)                                             // -Without CBC, copying IV is pointless.
             if((this->initializedIV = k.initializedIV) == true)
-                for(i = 0; i < BLOCK_SIZE; i++) this->IV[i] = k.IV[i];
+                for(i = 0; i < BLOCK_SIZE; i++) this->IV.data[i] = k.IV.data[i];
     }
     return *this;
 }
@@ -144,7 +139,7 @@ bool Key::operator == (const Key& k) const{
     for(i = 0; i < this->lenBytes; i++) if(this->key[i] != k.key[i]) return false;
     if(this->opMode_ == k.opMode_) {
         if(this->opMode_ == OpMode::CBC)
-            for(i = 0; i < BLOCK_SIZE; i++) if(this->IV[i] != k.IV[i]) return false;
+            for(i = 0; i < BLOCK_SIZE; i++) if(this->IV.data[i] != k.IV.data[i]) return false;
     } else return false;
     return true;
 }
@@ -156,7 +151,7 @@ std::ostream& AESencryption::operator << (std::ostream& ost, Key k) {
 
     OpModeToString(k.opMode_, opModeStr);
     bytesToHexString(k.key, keyStr, (int)k.lenBytes);
-    bytesToHexString(k.IV, IVstring, BLOCK_SIZE);
+    bytesToHexString(k.IV.data, IVstring, BLOCK_SIZE);
 
     ost << "\tKey size: " << static_cast<int>(k.lenBits) << " bits, " << k.lenBytes << " bytes, Nk = " << (k.lenBytes >> 2) << " words" << '\n';
     ost << "\tKey: " << keyStr << '\n';
@@ -171,10 +166,10 @@ void Key::set_IV(const InitVector source) {
     this->initializedIV = true;
 }
 
-void Key::save(const char* const fname) const {
+void Key::save(const char*const fname) const {
     const char* aeskey = "AESKEY";                                              // File type.
     const char* op_mode= "ECB";
-    switch(this->opMode_) {                                              // -Operation mode.
+    switch(this->opMode_) {                                                     // -Operation mode.
         case OpMode::ECB:
             op_mode = "ECB";
             break;
@@ -187,9 +182,9 @@ void Key::save(const char* const fname) const {
     if(file.is_open()) {
         file.write(aeskey,  6);                                                 // -File type
         file.write(op_mode, 3);                                                 // -Operation mode
-        file.write((char*)&this->lenBits, 2);                                // -Key lenBits in bits
-        file.write(this->key, (std::streamsize)this->lenBytes);              // -Key
-        if(this->opMode_ == OpMode::CBC) file.write(this->IV, BLOCK_SIZE);       // -If CBC, writes initial vector
+        file.write((char*)&this->lenBits, 2);                                   // -Key lenBits in bits
+        file.write((char*)this->key, (std::streamsize)this->lenBytes);          // -Key
+        if(this->opMode_ == OpMode::CBC) file.write((char*)this->IV.data, BLOCK_SIZE); // -If CBC, writes initial vector
     } else {
         std::cerr << "In file Source/AES.cpp, function void Key::save(const char* const fname): Failed to write " << fname << " file.\n";
         throw std::runtime_error("File could not be written.");
