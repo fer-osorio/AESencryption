@@ -2,7 +2,7 @@
 #include<cstring>
 #include<random>
 #include<exception>
-#include"../../include/AES.hpp"
+#include"../../include/AESencryption.hpp"
 
 #define MAX_KEY_LENGTH_BYTES 32
 
