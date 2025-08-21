@@ -12,9 +12,9 @@ struct InitVector{
 	uint8_t data[BLOCK_SIZE];
 };
 
-struct Key;
+struct Key;									// -Declaring struct Key and class Cipher to use them as arguments in functions
+class Cipher;
 std::ostream& operator << (std::ostream& ost, Key k);
-class Cipher;									// -Declaring class name "Cipher". The intention is to use it in the next function
 std::ostream& operator << (std::ostream& st, const Cipher& c);			// -Declaration here so this function is inside the name space function.
 
 struct Key {
@@ -25,7 +25,7 @@ public:
 		CBC,								// -Cipher Block Chaining.
 	};
 private:
-	uint8_t*	key = NULL;
+	uint8_t*key = NULL;
 	Len	lenBits;							// -Length in bits.
 	size_t	lenBytes;							// -Length in bytes.
 	OpMode	opMode_;
@@ -36,11 +36,14 @@ private:
 		0, 0, 0, 0,
 		0, 0, 0, 0
 	};
-public:
-	Key();									// -Assigns lenBits of 256 bits and zero value for each byte of array uint8_t* key
+
+	friend Cipher;
+	// The following two private constructors can only be acceced by Cipher class, the intention is to have well-constructed keys for the user.
+	Key();
 	Key(Len, OpMode);
 	Key(const uint8_t* const _key, Len, OpMode);
-	Key(const uint8_t*const fname);						// -Building from binary file.
+public:
+	Key(const char*const fname);						// -Building from binary file.
 	Key(const Key&);
 	~Key();
 
@@ -50,25 +53,25 @@ public:
 
 	OpMode getOpMode() const{ return this->opMode_; }
 	size_t getLenBytes() const {return this->lenBytes;}
-	void save(const uint8_t* const) const;					// -Saving information in a binary file.
 
+	void save(const char*const fname) const;				// -Saving information in a binary file.
 private:
-	friend Cipher;
-	void set_IV(const InitVector source);				// -Sets initial vector by copying the array passed as argument
+	void set_IV(const InitVector source);					// -Sets initial vector by copying the array passed as argument
 	bool IVisInitialized() const { return this->initializedIV; }
-	void write_IV(uint8_t*const destination) const {				// -Writes IV in destination
+	void write_IV(uint8_t*const destination) const {			// -Writes IV in destination
 		for(int i = 0; i < BLOCK_SIZE; i++) destination[i] = this->IV.data[i]; // -Warning: We are supposing we have at least 16 bytes of space in destination
 	}
-	void write_Key(uint8_t*const destination) const {				// -Writes key in destination. Warning: We're supposing we have enough space in
+	void write_Key(uint8_t*const destination) const {			// -Writes key in destination. Warning: We're supposing we have enough space in
 		for(size_t i = 0; i < this->lenBytes; i++) destination[i] = this->key[i]; //  destination array.
 	}
 };
 
 class Cipher {
 private:
-	Key	key = Key();							// -The default values for a cipher object are the values for a key of 256 bits
-	int	Nk = 8, Nr = 14, keyExpLen = 240;
-	uint8_t*	keyExpansion = NULL;
+	// -The default values for a cipher object are the values for a key of 256 bits
+	Key key = Key();
+	int Nk = 8, Nr = 14, keyExpLen = 240;
+	uint8_t* keyExpansion = NULL;
 public:
 	Cipher();								// -The default constructor will set the key expansion as zero in every element.
 	Cipher(const Key&);
@@ -81,7 +84,7 @@ public:
 	void encrypt(uint8_t*const data, size_t size)const;			// -Encrypts using operation mode stored in Key object
 	void decrypt(uint8_t*const data, size_t size)const;			// -Decrypts using operation mode stored in Key object
 
-	void saveKey(const uint8_t*const fname)  const{this->key.save(fname);}
+	void saveKey(const char*const fname) const{ this->key.save(fname); }
 	Key::OpMode getOpMode() const{ return this->key.getOpMode(); }
 
 	private:
