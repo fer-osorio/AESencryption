@@ -2,8 +2,15 @@
 #define _INCLUDED_AESENCRYPTION_
 
 #include<iostream>
+#include<stdint.h>
+
+#define BLOCK_SIZE 16
 
 namespace AESencryption {
+
+struct InitVector{
+	uint8_t data[BLOCK_SIZE];
+};
 
 struct Key;
 std::ostream& operator << (std::ostream& ost, Key k);
@@ -18,20 +25,22 @@ public:
 		CBC,								// -Cipher Block Chaining.
 	};
 private:
-	char*	key = NULL;
+	uint8_t*	key = NULL;
 	Len	lenBits;							// -Length in bits.
 	size_t	lenBytes;							// -Length in bytes.
 	OpMode	opMode_;
 	bool initializedIV  = false;						// -Tells if the initial vector is already initialized or not
-	char IV[AES_BLK_SZ] =  {0, 0, 0, 0,					// -Initial vector for the CBC operation mode
-				0, 0, 0, 0,					// -This default value (just zeros) is left
-				0, 0, 0, 0,					//  for the case in which we do not use CBC
-			    	0, 0, 0, 0};
+	InitVector IV = {							// -Initial vector for the CBC operation mode
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0
+	};
 public:
-	Key();									// -Assigns lenBits of 256 bits and zero value for each byte of array char* key
+	Key();									// -Assigns lenBits of 256 bits and zero value for each byte of array uint8_t* key
 	Key(Len, OpMode);
-	Key(const char* const _key, Len, OpMode);
-	Key(const char*const fname);						// -Building from binary file.
+	Key(const uint8_t* const _key, Len, OpMode);
+	Key(const uint8_t*const fname);						// -Building from binary file.
 	Key(const Key&);
 	~Key();
 
@@ -41,17 +50,16 @@ public:
 
 	OpMode getOpMode() const{ return this->opMode_; }
 	size_t getLenBytes() const {return this->lenBytes;}
-	//bool KeyIsNULL() {return this->key == NULL;}
-	void save(const char* const) const;					// -Saving information in a binary file.
+	void save(const uint8_t* const) const;					// -Saving information in a binary file.
 
 private:
 	friend Cipher;
-	void set_IV(const char source[AES_BLK_SZ]);				// -Sets initial vector by copying the array passed as argument
+	void set_IV(const InitVector source);				// -Sets initial vector by copying the array passed as argument
 	bool IVisInitialized() const { return this->initializedIV; }
-	void write_IV(char*const destination) const {				// -Writes IV in destination
-		for(int i = 0; i < AES_BLK_SZ; i++) destination[i] = this->IV[i]; // -Warning: We are supposing we have at least 16 bytes of space in destination
+	void write_IV(uint8_t*const destination) const {				// -Writes IV in destination
+		for(int i = 0; i < BLOCK_SIZE; i++) destination[i] = this->IV.data[i]; // -Warning: We are supposing we have at least 16 bytes of space in destination
 	}
-	void write_Key(char*const destination) const {				// -Writes key in destination. Warning: We're supposing we have enough space in
+	void write_Key(uint8_t*const destination) const {				// -Writes key in destination. Warning: We're supposing we have enough space in
 		for(size_t i = 0; i < this->lenBytes; i++) destination[i] = this->key[i]; //  destination array.
 	}
 };
@@ -60,7 +68,7 @@ class Cipher {
 private:
 	Key	key = Key();							// -The default values for a cipher object are the values for a key of 256 bits
 	int	Nk = 8, Nr = 14, keyExpLen = 240;
-	char*	keyExpansion = NULL;
+	uint8_t*	keyExpansion = NULL;
 public:
 	Cipher();								// -The default constructor will set the key expansion as zero in every element.
 	Cipher(const Key&);
@@ -70,24 +78,24 @@ public:
 	Cipher& operator = (const Cipher& a);
 	friend std::ostream& operator << (std::ostream& st, const Cipher& c);
 
-	void encrypt(char*const data, size_t size)const;			// -Encrypts using operation mode stored in Key object
-	void decrypt(char*const data, size_t size)const;			// -Decrypts using operation mode stored in Key object
+	void encrypt(uint8_t*const data, size_t size)const;			// -Encrypts using operation mode stored in Key object
+	void decrypt(uint8_t*const data, size_t size)const;			// -Decrypts using operation mode stored in Key object
 
-	void saveKey(const char*const fname)  const{this->key.save(fname);}
+	void saveKey(const uint8_t*const fname)  const{this->key.save(fname);}
 	Key::OpMode getOpMode() const{ return this->key.getOpMode(); }
 
 	private:
-	void create_KeyExpansion(const char* const);				// -Creates key expansion
+	void create_KeyExpansion(const uint8_t* const);				// -Creates key expansion
 
-	void encryptECB(char*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
+	void encryptECB(uint8_t*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
 										//  size (in bytes) is  provided by the 'size' argument.
-	void decryptECB(char*const data, size_t size)const;			// -Decrypts the message pointed by 'data' using the ECB operation mode. The data
+	void decryptECB(uint8_t*const data, size_t size)const;			// -Decrypts the message pointed by 'data' using the ECB operation mode. The data
 										//  size (in bytes) is  provided by the 'size' argument.
-	void setAndWrite_IV(char destination[AES_BLK_SZ]) const;		// -Creates initial vector and writes it on destination array
+	void setAndWrite_IV(InitVector destination) const;			// -Creates initial vector and writes it on destination array
 
-	void encryptCBC(char*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the CBC operation mode. The data
+	void encryptCBC(uint8_t*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the CBC operation mode. The data
 										//  size (in bytes) is  provided by the 'size' argument.
-	void decryptCBC(char*const data, size_t size)const;			// -Decrypts the message pointed by 'data'. The message must had been encrypted
+	void decryptCBC(uint8_t*const data, size_t size)const;			// -Decrypts the message pointed by 'data'. The message must had been encrypted
 										//  using the CBC mode operation.
 };
 };
