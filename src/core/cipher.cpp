@@ -1,21 +1,20 @@
-Cipher::Cipher(): {
-    this->keyExpansion = new char[this->keyExpLen];
+#include"../../include/AESencryption.hpp"
+#include"../AES/AES.h"
+#include"../operation_modes/operation_modes.h"
+
+using namespace AESencryption;
+
+Cipher::Cipher() {
+    this->keyExpansion = new uint8_t[this->keyExpLen];
     for(int i = 0; i < this->keyExpLen; i++) this->keyExpansion[i] = 0;         // -Since the key constitutes of just zeros, key expansion is also just zeros
 }
 
 Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.getLenBytes() >> 2), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
     this->create_KeyExpansion(ak.key);
-    if(this->key.opMode_ == Key::OpMode::CBC) {
-        if(!this->key.IVisInitialized()) {                                      // -In case of CBC, setting initial vector.
-            char IVsource[AES_BLK_SZ];
-            this->setAndWrite_IV(IVsource);
-            this->key.set_IV(IVsource);
-        }
-    }
 }
 
 Cipher::Cipher(const Cipher& a) : key(a.key), Nk(a.Nk), Nr(a.Nr), keyExpLen(a.keyExpLen) {
-    this->keyExpansion = new char[(unsigned)a.keyExpLen];
+    this->keyExpansion = new uint8_t[(unsigned)a.keyExpLen];
     for(int i = 0; i < a.keyExpLen; i++) this->keyExpansion[i] = a.keyExpansion[i];
 }
 
@@ -32,14 +31,14 @@ Cipher& Cipher::operator = (const Cipher& a) {
             this->Nr = a.Nr;
             this->keyExpLen = a.keyExpLen;
             if(this->keyExpansion != NULL) delete[] keyExpansion;
-            this->keyExpansion = new char[(unsigned)a.keyExpLen];
+            this->keyExpansion = new uint8_t[(unsigned)a.keyExpLen];
         }
         for(int i = 0; i < a.keyExpLen; i++) this->keyExpansion[i] = a.keyExpansion[i];
     }
     return *this;
 }
 
-std::ostream& AES::operator << (std::ostream& ost, const Cipher& c) {
+/*std::ostream& AESencryption::operator << (std::ostream& ost, const Cipher& c) {
     char keyExpansionString[880];
     int rowsAmount = c.keyExpLen >> 5;                                          // -rowsAmount = c.keyExpLen / 32
     int i, j, k, l;
@@ -63,12 +62,12 @@ std::ostream& AES::operator << (std::ostream& ost, const Cipher& c) {
     ost << "\tKey Expansion size: " << c.keyExpLen << " bytes" << '\n';
     ost << "\tKey Expansion: " << keyExpansionString << '\n';
     return ost;
+}*/
+
+void Cipher::create_KeyExpansion(const uint8_t* const _key) {
 }
 
-void Cipher::create_KeyExpansion(const char* const _key) {
-}
-
-void Cipher::encryptECB(char*const data, size_t size) const{
+void Cipher::encryptECB(uint8_t*const data, size_t size) const{
     if(size == 0)    return;
     if(data == NULL) return;
 
