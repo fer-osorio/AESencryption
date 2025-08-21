@@ -1,4 +1,11 @@
-#include"../cipher/cipher.h"
+#ifndef OPERATION_MODES_H
+#define OPERATION_MODES_H
+
+#include"../AES/AES.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * Encrypts the data pointed by 'input' using ECB operation mode.
@@ -29,3 +36,9 @@ void encryptCBC(const uint8_t*const input, size_t size, const KeyExpansion_ptr k
  * IV argument carry a reference to the initial vector used for encryption.
  * */
 void decryptCBC(const uint8_t*const input, size_t size, const KeyExpansion_ptr ke_p, const Block* IV, uint8_t*const output);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
