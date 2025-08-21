@@ -48,6 +48,11 @@ void blockFromBytes(const uint8_t source[], Block* output);
  * Consider: It supposes there is enough space pointed by the 'output' pointer.
  * */
 void bytesFromBlock(const Block* source, uint8_t output[]);
+
+/*
+ * Prints block in matrix form.
+ * Row headers are the 'tags' the user wants to put to each row.
+ * */
 void printBlock(const Block* b, const char* rowHeaders[4]);
 
 /*
@@ -61,7 +66,16 @@ KeyExpansion_ptr KeyExpansionBuildNew(const Word key[], enum Nk_ Nk, bool debug)
  * */
 void KeyExpansionDelete(KeyExpansion_ptr* ke_pp);
 
+/*
+ * Encrypts input block using the key referenced by key_p, the resultant encrypted block is written in output
+ * If input == output (they point to the same memory location), the input block is overwritten with the encrypted data
+ * */
 void encryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output, bool debug);
+
+/*
+ * Decrypts input block using the key referenced by key_p, the resultant decrypted block is written in output
+ * If input == output (they point to the same memory location), the input block is overwritten with the encrypted data
+ * */
 void decryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output);
 
 #ifdef __cplusplus
