@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include"SBox.h"
 #include"GF256.h"
-#include"cipher.h"
+#include"AES.h"
 
 static const Word Rcon[10] = {						                            // -Notice that the value of the left most byte in polynomial form is 2^i.
   {{0x01, 0x00, 0x00, 0x00}},
