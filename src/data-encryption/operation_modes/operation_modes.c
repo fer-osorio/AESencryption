@@ -1,4 +1,5 @@
 #include"operation_modes.h"
+#include"../AES/AES.h"
 
 /*struct EncryptionInputOutput{
   const uint8_t*const input;
@@ -23,35 +24,34 @@ struct EncryptionInputOutput EncryptionInputOutputBuild(uint8_t*const input, uin
  * Takes 16 bytes, converts to block, encrypts and writes on output.
  * If input == output, original data will be rewritten with encrypted data.
  * */
-static void encryptBlockBytes(const uint8_t*const input, const KeyExpansion_ptr ke_p, uint8_t* output){
-  Block buffer;
-  blockFromBytes(input, &buffer);
-  encryptBlock(&buffer, ke_p, &buffer, false);
-  bytesFromBlock(&buffer, output);
+static void encryptBlockBytes(const uint8_t*const input, const KeyExpansion* ke_p, uint8_t* output){
+  Block* buffer;
+  blockFromBytes(input, buffer);
+  encryptBlock(buffer, ke_p, buffer, false);
+  bytesFromBlock(buffer, output);
 }
 
 /*
  * Takes 16 bytes, converts to block, decrypts and writes on output.
  * If input == output, original data will be rewritten with decrypted data.
  * */
-static void decryptBlockBytes(const uint8_t*const input, const KeyExpansion_ptr ke_p, uint8_t* output){
-  Block buffer;
-  blockFromBytes(input, &buffer);
-  decryptBlock(&buffer, ke_p, &buffer);
-  bytesFromBlock(&buffer, output);
+static void decryptBlockBytes(const uint8_t*const input, const KeyExpansion* ke_p, uint8_t* output){
+  Block* buffer;
+  blockFromBytes(input, buffer);
+  decryptBlock(buffer, ke_p, buffer);
+  bytesFromBlock(buffer, output);
 }
 
 /*
  * Moves forward an amount of BLOCK_SIZE bytes the pointers pointed by the non-null arguments
  * Notice: Last argument is a pointer to non-constant object
  * */
-static void movePointerForwardOneBlock(const uint8_t** ptr1, const uint8_t** ptr2, uint8_t** ptr3_nonConstant){
+static void movePointerForwardOneBlock(const uint8_t** ptr1, uint8_t** ptr2_nonConstant){
   if(ptr1 != NULL) *ptr1 += BLOCK_SIZE;
-  if(ptr2 != NULL) *ptr2 += BLOCK_SIZE;
-  if(ptr3_nonConstant != NULL) *ptr3_nonConstant += BLOCK_SIZE;
+  if(ptr2_nonConstant != NULL) *ptr2_nonConstant += BLOCK_SIZE;
 }
 
-void encryptECB(const uint8_t*const input, size_t size, const KeyExpansion_ptr ke_p, uint8_t*const output){
+static void encryptECB__(const uint8_t*const input, size_t size, const KeyExpansion* ke_p, uint8_t*const output){
   if(size == 0 || input == NULL) return;
   const uint8_t* inputCurrentPossition = input;
   uint8_t* outputCurrentPossition = output;
@@ -61,7 +61,7 @@ void encryptECB(const uint8_t*const input, size_t size, const KeyExpansion_ptr k
   if(numBlocks == 0) return;  // -Not handling the case size < 16
   encryptBlockBytes(inputCurrentPossition, ke_p, outputCurrentPossition);
   for(size_t i = 1; i < numBlocks; i++) {
-    movePointerForwardOneBlock(&inputCurrentPossition, NULL, &outputCurrentPossition);
+    movePointerForwardOneBlock(&inputCurrentPossition, &outputCurrentPossition);
     encryptBlockBytes(inputCurrentPossition, ke_p, outputCurrentPossition);
   }
   // -Handling the case where input size is not multiple of 16. This is not specified in the NIST standard.
@@ -70,7 +70,7 @@ void encryptECB(const uint8_t*const input, size_t size, const KeyExpansion_ptr k
   }
 }
 
-void decryptECB(const uint8_t*const input, size_t size, const KeyExpansion_ptr ke_p, uint8_t*const output){
+void decryptECB(const uint8_t*const input, size_t size, const KeyExpansion* ke_p, uint8_t*const output){
   if(size == 0 || input == NULL) return;
   const uint8_t* inputCurrentPossition = input;
   uint8_t* outputCurrentPossition = output;
@@ -81,7 +81,7 @@ void decryptECB(const uint8_t*const input, size_t size, const KeyExpansion_ptr k
   if(numBlocks == 0) return;  // -Not handling the case size < 16
   decryptBlockBytes(inputCurrentPossition, ke_p, outputCurrentPossition);
   for(size_t i = 1; i < numBlocks; i++) {
-    movePointerForwardOneBlock(&inputCurrentPossition, NULL, &outputCurrentPossition);
+    movePointerForwardOneBlock(&inputCurrentPossition, &outputCurrentPossition);
     decryptBlockBytes(inputCurrentPossition, ke_p, outputCurrentPossition);
   }
   if(rem != 0) {                                                                // -This part of the code is for encrypt input that its size is not multiple of 16.
@@ -111,15 +111,15 @@ static void XORequalBlockWithBytes(Block* input, const uint8_t byteBlock[]){
   input->uint08_[15] ^= byteBlock[15];
 }
 
-static void encryptCBCsingleBlockBytes(const uint8_t*const input, const KeyExpansion_ptr ke_p, const uint8_t* XORsource, uint8_t* output){
-  Block buffer;
-  blockFromBytes(input, &buffer);
-  XORequalBlockWithBytes(&buffer, XORsource);
-  encryptBlock(&buffer, ke_p, &buffer, false);
-  bytesFromBlock(&buffer, output);
+static void encryptCBCsingleBlockBytes(const uint8_t*const input, const KeyExpansion* ke_p, const uint8_t* XORsource, uint8_t* output){
+  Block* buffer;
+  blockFromBytes(input, buffer);
+  XORequalBlockWithBytes(buffer, XORsource);
+  encryptBlock(buffer, ke_p, buffer, false);
+  bytesFromBlock(buffer, output);
 }
 
-void encryptCBC(const uint8_t*const input, size_t size, const KeyExpansion_ptr ke_p, const uint8_t* IV, uint8_t*const output){
+void encryptCBC(const uint8_t*const input, size_t size, const KeyExpansion* ke_p, const uint8_t* IV, uint8_t*const output){
   if(size == 0 || input == NULL) return;
   const uint8_t* inputCurrentPossition = input;
   const uint8_t* inputPreviousBlock;
