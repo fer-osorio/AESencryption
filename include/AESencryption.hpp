@@ -25,7 +25,7 @@ public:
 		CBC,								// -Cipher Block Chaining.
 	};
 private:
-	uint8_t*key = NULL;
+	uint8_t*data = NULL;
 	Len	lenBits;							// -Length in bits.
 	size_t	lenBytes;							// -Length in bytes.
 	OpMode	opMode_;
@@ -62,7 +62,7 @@ private:
 		for(int i = 0; i < BLOCK_SIZE; i++) destination[i] = this->IV.data[i]; // -Warning: We are supposing we have at least 16 bytes of space in destination
 	}
 	void write_Key(uint8_t*const destination) const {			// -Writes key in destination. Warning: We're supposing we have enough space in
-		for(size_t i = 0; i < this->lenBytes; i++) destination[i] = this->key[i]; //  destination array.
+		for(size_t i = 0; i < this->lenBytes; i++) destination[i] = this->data[i]; //  destination array.
 	}
 };
 
@@ -88,7 +88,7 @@ public:
 	Key::OpMode getOpMode() const{ return this->key.getOpMode(); }
 
 	private:
-	void create_KeyExpansion(const uint8_t* const);				// -Creates key expansion
+	void buildKeyExpansion();						// -Creates key expansion
 
 	void encryptECB(uint8_t*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
 										//  size (in bytes) is  provided by the 'size' argument.
