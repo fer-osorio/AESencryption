@@ -3,6 +3,22 @@
 #include"GF256.h"
 #include"AES.h"
 
+#define WORD_SIZE_SHORTS 2
+#define WORD_LASTIND 3                                                          // -Last index of a word
+#define WORD_LASTIND_SHORT 1                                                    // -Last index of a word using short's
+typedef union Word_ {
+  uint8_t  uint08_[WORD_SIZE];
+  uint16_t uint16_[WORD_SIZE_SHORTS];
+  uint32_t uint32_;
+} Word ;
+
+#define BLOCK_SIZE_INT64 2
+typedef union Block_{
+    uint8_t  uint08_[BLOCK_SIZE];
+    Word     word_[Nb];
+    uint64_t uint64_[BLOCK_SIZE_INT64];
+} Block ;
+
 static const Word Rcon[10] = {						                            // -Notice that the value of the left most byte in polynomial form is 2^i.
   {{0x01, 0x00, 0x00, 0x00}},
   {{0x02, 0x00, 0x00, 0x00}},
@@ -30,7 +46,7 @@ static const Block aInv = {{                                                    
   0x0B, 0x0D, 0x09, 0x0E
 }};
 
-struct KeyExpansion{
+struct KeyExpansion_{
   enum Nk_ Nk;
   size_t Nr;
   size_t wordsSize;
@@ -248,12 +264,15 @@ static void AddRoundKey(Block* b, const Block keyExpansion[], size_t round) {   
   XORblocks(b,keyExpansion+round,b);
 }
 
-static void KeyExpansionBuildWords(const Word key[], enum Nk_ Nk, Word outputKeyExpansion[], bool debug){
+static void KeyExpansionBuildWords(const uint8_t* key, enum Nk_ Nk, Word outputKeyExpansion[], bool debug){
   Word tmp;
   const size_t keyExpLen = KeyExpansionLenWords(Nk);
   size_t i;
 
-  for(i = 0; i < Nk; i++) outputKeyExpansion[i] = key[i];                             // -The first Nk words of the key expansion are the key itself.
+  for(i = 0; i < Nk; i++) {
+    for(size_t j = 0, k = i*WORD_SIZE; j < WORD_SIZE; j++, k++)
+      outputKeyExpansion[i].uint08_[j] = key[k];                                // -The first Nk words of the key expansion are the key itself.
+  }
 
   // -Show the construction of the key expansion.
   if(debug) {
@@ -353,14 +372,34 @@ static void blockFromWords(const Word source[], Block* output){
   output->uint08_[15]= source[3].uint08_[3];
 }
 
-KeyExpansion_ptr KeyExpansionBuildNew(const Word key[], enum Nk_ Nk, bool debug){
-  KeyExpansion_ptr outputKeyExpansion = (struct KeyExpansion*)malloc(sizeof(struct KeyExpansion));
+static enum Nk_ uint32ToNk(uint32_t nk){                                        // Casting from unsigned integer to Nk value
+  switch (nk) {
+    case 128:
+      return Nk128;
+      break;
+    case 192:
+      return Nk192;
+      break;
+    case 256:
+      return Nk256;
+      break;
+    default:
+      return Nk128;
+  }
+}
+
+KeyExpansion* KeyExpansionBuildNew(const uint8_t* key, size_t nk, bool debug){
+  enum Nk_ Nk = uint32ToNk(nk);
+  KeyExpansion* outputKeyExpansion = (KeyExpansion*)malloc(sizeof(KeyExpansion));
+  // -Building KeyExpansion object
   outputKeyExpansion->Nk = Nk;
   outputKeyExpansion->Nr = getNr(Nk);
   outputKeyExpansion->wordsSize = KeyExpansionLenWords(Nk);
   outputKeyExpansion->blockSize = KeyExpansionLenBlocks(Nk);
   Word* buffer = (Word*)malloc(outputKeyExpansion->wordsSize*sizeof(Word));
+  // Writing key expansion on array of words
   KeyExpansionBuildWords(key, Nk, buffer, debug);
+  // Writting key expansion on the array of Blocks 'inside' KeyExpansion object.
   outputKeyExpansion->blocks = (Block*)malloc(outputKeyExpansion->blockSize*sizeof (Block));
   for(size_t i = 0, j = 0; i < outputKeyExpansion->wordsSize && j < outputKeyExpansion->blockSize; i += Nb, j++){
     blockFromWords(buffer + i, outputKeyExpansion->blocks + j);
@@ -369,8 +408,8 @@ KeyExpansion_ptr KeyExpansionBuildNew(const Word key[], enum Nk_ Nk, bool debug)
   return outputKeyExpansion;
 }
 
-void KeyExpansionDelete(KeyExpansion_ptr* ke_pp){
-  KeyExpansion_ptr ke_p = *ke_pp;
+void KeyExpansionDelete(KeyExpansion** ke_pp){
+  KeyExpansion* ke_p = *ke_pp;
   if(ke_p != NULL){
     free(ke_p->blocks);
     free(ke_p);
@@ -378,7 +417,13 @@ void KeyExpansionDelete(KeyExpansion_ptr* ke_pp){
   }
 }
 
-void encryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output, bool debug) {
+void KeyExpansionWriteBytes(const KeyExpansion* source, uint8_t* dest){
+  for(size_t i = 0, j = 0; i < source->blockSize; i++, j += BLOCK_SIZE){
+    bytesFromBlock(source->blocks + i, dest + j);
+  }
+}
+
+void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, bool debug) {
   size_t i, j;
   // -Debugging purposes. Columns of the debugging table.
   Block* SOR;                                                                   // Start of round
@@ -547,7 +592,7 @@ static void InvMixColumns(Block* b) {                                           
   b->uint08_[15]= dotProductWord(aInv.word_[3], bT.word_[3]);
 }
 
-void decryptBlock(const Block* input, const KeyExpansion_ptr ke_p, Block* output) {
+void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output) {
   size_t i = ke_p->Nr;
   copyBlock (input, output);
   AddRoundKey(output, ke_p->blocks, i);
