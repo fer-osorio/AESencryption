@@ -166,6 +166,25 @@ static void XORblocks(const Block* b1,const Block* b2, Block* result) {
   result->uint64_[1] = b1->uint64_[1] ^ b2->uint64_[1];
 }
 
+void XORequalBlockWithBytes(Block* input, const uint8_t byteBlock[]){
+  input->uint08_[0] ^= byteBlock[0];
+  input->uint08_[1] ^= byteBlock[4];
+  input->uint08_[2] ^= byteBlock[8];
+  input->uint08_[3] ^= byteBlock[12];
+  input->uint08_[4] ^= byteBlock[1];
+  input->uint08_[5] ^= byteBlock[5];
+  input->uint08_[6] ^= byteBlock[9];
+  input->uint08_[7] ^= byteBlock[13];
+  input->uint08_[8] ^= byteBlock[2];
+  input->uint08_[9] ^= byteBlock[6];
+  input->uint08_[10] ^= byteBlock[10];
+  input->uint08_[11] ^= byteBlock[14];
+  input->uint08_[12] ^= byteBlock[3];
+  input->uint08_[13] ^= byteBlock[7];
+  input->uint08_[14] ^= byteBlock[11];
+  input->uint08_[15] ^= byteBlock[15];
+}
+
 static void copyBlock(const Block* source, Block* destination) {
   destination->uint64_[0] = source->uint64_[0];
   destination->uint64_[1] = source->uint64_[1];
