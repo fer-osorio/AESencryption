@@ -1,6 +1,6 @@
 #include"../../include/AESencryption.hpp"
-#include"../AES/AES.h"
-#include"../operation_modes/operation_modes.h"
+#include"../data-encryption/AES/AES.h"
+//#include"../operation_modes/operation_modes.h"
 
 using namespace AESencryption;
 
@@ -9,8 +9,8 @@ Cipher::Cipher() {
     for(int i = 0; i < this->keyExpLen; i++) this->keyExpansion[i] = 0;         // -Since the key constitutes of just zeros, key expansion is also just zeros
 }
 
-Cipher::Cipher(const Key& ak) :key(ak), Nk((int)ak.getLenBytes() >> 2), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
-    this->create_KeyExpansion(ak.key);
+Cipher::Cipher(const Key& k) :key(k), Nk((int)k.getLenBytes() >> 2), Nr(Nk+6), keyExpLen((Nr+1)<<4) {
+    this->buildKeyExpansion();
 }
 
 Cipher::Cipher(const Cipher& a) : key(a.key), Nk(a.Nk), Nr(a.Nr), keyExpLen(a.keyExpLen) {
@@ -64,7 +64,11 @@ Cipher& Cipher::operator = (const Cipher& a) {
     return ost;
 }*/
 
-void Cipher::create_KeyExpansion(const uint8_t* const _key) {
+void Cipher::buildKeyExpansion() {
+    KeyExpansion* ke_p = KeyExpansionBuildNew(this->key.data, this->Nk, false);
+    if(this->keyExpansion == NULL) this->keyExpansion = new uint8_t[this->keyExpLen];
+    KeyExpansionWriteBytes(ke_p, this->keyExpansion);
+    KeyExpansionDelete(&ke_p);
 }
 
 void Cipher::encryptECB(uint8_t*const data, size_t size) const{
