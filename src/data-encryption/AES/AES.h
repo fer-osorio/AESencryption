@@ -44,12 +44,12 @@ void printBlock(const Block* b, const char* rowHeaders[4]);
  * Builds key expansion object and returns a pointer to it.
  * Consider: Allocates memory using malloc.
  * */
-KeyExpansion* KeyExpansionBuildNew(const uint8_t* key, size_t nk, bool debug);
+KeyExpansion KeyExpansionBuildNew(const uint8_t* key, size_t nk, bool debug);
 
 /*
  * Free the memory allocated for an KeyExpansion object pointed by *ke_pp.
  * */
-void KeyExpansionDelete(KeyExpansion** ke_pp);
+void KeyExpansionDelete(KeyExpansion* ke_p);
 
 /*
  * Write the bytes that forms the key expansion object on the location pointed by dest.

@@ -388,32 +388,32 @@ static enum Nk_ uint32ToNk(uint32_t nk){                                        
   }
 }
 
-KeyExpansion* KeyExpansionBuildNew(const uint8_t* key, size_t nk, bool debug){
+KeyExpansion KeyExpansionBuildNew(const uint8_t* key, size_t nk, bool debug){
   enum Nk_ Nk = uint32ToNk(nk);
-  KeyExpansion* outputKeyExpansion = (KeyExpansion*)malloc(sizeof(KeyExpansion));
+  KeyExpansion outputKeyExpansion;
   // -Building KeyExpansion object
-  outputKeyExpansion->Nk = Nk;
-  outputKeyExpansion->Nr = getNr(Nk);
-  outputKeyExpansion->wordsSize = KeyExpansionLenWords(Nk);
-  outputKeyExpansion->blockSize = KeyExpansionLenBlocks(Nk);
-  Word* buffer = (Word*)malloc(outputKeyExpansion->wordsSize*sizeof(Word));
+  outputKeyExpansion.Nk = Nk;
+  outputKeyExpansion.Nr = getNr(Nk);
+  outputKeyExpansion.wordsSize = KeyExpansionLenWords(Nk);
+  outputKeyExpansion.blockSize = KeyExpansionLenBlocks(Nk);
+  Word* buffer = (Word*)malloc(outputKeyExpansion.wordsSize*sizeof(Word));
   // Writing key expansion on array of words
   KeyExpansionBuildWords(key, Nk, buffer, debug);
   // Writting key expansion on the array of Blocks 'inside' KeyExpansion object.
-  outputKeyExpansion->blocks = (Block*)malloc(outputKeyExpansion->blockSize*sizeof (Block));
-  for(size_t i = 0, j = 0; i < outputKeyExpansion->wordsSize && j < outputKeyExpansion->blockSize; i += Nb, j++){
-    blockFromWords(buffer + i, outputKeyExpansion->blocks + j);
+  outputKeyExpansion.blocks = (Block*)malloc(outputKeyExpansion.blockSize*sizeof (Block));
+  for(size_t i = 0, j = 0; i < outputKeyExpansion.wordsSize && j < outputKeyExpansion.blockSize; i += Nb, j++){
+    blockFromWords(buffer + i, outputKeyExpansion.blocks + j);
   }
   free(buffer);
   return outputKeyExpansion;
 }
 
-void KeyExpansionDelete(KeyExpansion** ke_pp){
-  KeyExpansion* ke_p = *ke_pp;
+void KeyExpansionDelete(KeyExpansion* ke_p){
   if(ke_p != NULL){
-    free(ke_p->blocks);
-    free(ke_p);
-    *ke_pp = NULL;                                                              // Signaling that the memory is has been already free.
+    if(ke_p->blocks != NULL) {
+      free(ke_p->blocks);
+      ke_p->blocks = NULL;                                                      // Signaling that the memory is has been already free.
+    }
   }
 }
 
