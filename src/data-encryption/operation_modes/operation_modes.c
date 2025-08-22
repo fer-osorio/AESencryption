@@ -22,7 +22,7 @@ static void InputOutputHandlerMoveForwardOneBlock(struct InputOutputHandler* ioh
 }
 
 /*
- * Takes 16 bytes, converts to block, encrypts and writes on output.
+ * Takes BLOCK_SIZE bytes, converts to block, encrypts and writes on output.
  * If input == output, original data will be rewritten with encrypted data.
  * */
 static void encryptBlockBytes(const uint8_t*const input, const KeyExpansion* ke_p, uint8_t* output){
@@ -32,6 +32,9 @@ static void encryptBlockBytes(const uint8_t*const input, const KeyExpansion* ke_
   bytesFromBlock(buffer, output);
 }
 
+/*
+ * Implements encryptBlockBytes on InputOutputHandler object
+ * */
 static void InputOutputHandlerEncryptBlockBytes(const struct InputOutputHandler* ioh, const KeyExpansion* ke_p){
   encryptBlockBytes(ioh->inputCurrentPossition, ke_p, ioh->outputCurrentPossition);
 }
@@ -45,6 +48,13 @@ static void decryptBlockBytes(const uint8_t*const input, const KeyExpansion* ke_
   blockFromBytes(input, buffer);
   decryptBlock(buffer, ke_p, buffer);
   bytesFromBlock(buffer, output);
+}
+
+/*
+ * Implements decryptBlockBytes on InputOutputHandler object
+ * */
+static void InputOutputHandlerDecryptBlockBytes(const struct InputOutputHandler* ioh, const KeyExpansion* ke_p){
+  decryptBlockBytes(ioh->inputCurrentPossition, ke_p, ioh->outputCurrentPossition);
 }
 
 /*
@@ -72,21 +82,17 @@ static void encryptECB__(const KeyExpansion* ke_p, struct InputOutputHandler* io
 }
 
 static void decryptECB__(const KeyExpansion* ke_p, struct InputOutputHandler* ioh){
-  if(size == 0 || input == NULL) return;
-  const uint8_t* inputCurrentPossition = input;
-  uint8_t* outputCurrentPossition = output;
-  const size_t numBlocks = size / BLOCK_SIZE;
-  const size_t numBlocks_1 = numBlocks - 1;
-  const size_t rem = size % BLOCK_SIZE;
+  if(ioh->size == 0 || ioh->input == NULL) return;
+  if(ioh->sizeInBlocks == 0) return;  // -Not handling the case size < 16
 
-  if(numBlocks == 0) return;  // -Not handling the case size < 16
-  decryptBlockBytes(inputCurrentPossition, ke_p, outputCurrentPossition);
-  for(size_t i = 1; i < numBlocks; i++) {
-    movePointerForwardOneBlock(&inputCurrentPossition, &outputCurrentPossition);
-    decryptBlockBytes(inputCurrentPossition, ke_p, outputCurrentPossition);
+  InputOutputHandlerDecryptBlockBytes(ioh, ke_p);
+  for(size_t i = 1; i < ioh->sizeInBlocks; i++) {
+    InputOutputHandlerMoveForwardOneBlock(ioh);
+    InputOutputHandlerDecryptBlockBytes(ioh, ke_p);
   }
-  if(rem != 0) {                                                                // -This part of the code is for encrypt input that its size is not multiple of 16.
-    decryptBlockBytes(inputCurrentPossition + rem, ke_p, outputCurrentPossition + rem); //  This is not specified in the NIST standard.
+  // -Handling the case where input size is not multiple of 16. This is not specified in the NIST standard.
+  if(ioh->tailSize != 0) {
+    decryptBlockBytes(ioh->inputCurrentPossition + ioh->tailSize, ke_p, ioh->outputCurrentPossition + ioh->tailSize);
   }
 }
 
