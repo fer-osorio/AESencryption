@@ -41,6 +41,11 @@ void bytesFromBlock(const Block* source, uint8_t output[]);
 void printBlock(const Block* b, const char* rowHeaders[4]);
 
 /*
+ * This function has the same efect than apply the sequence: b = BlockFromBytes(byteBlock), then XORblocks(input, b, input)
+ * */
+void XORequalBlockWithBytes(Block* input, const uint8_t byteBlock[]);
+
+/*
  * Builds key expansion object and returns a pointer to it.
  * Consider: Allocates memory using malloc.
  * */
