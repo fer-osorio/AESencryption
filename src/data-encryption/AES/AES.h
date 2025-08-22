@@ -57,6 +57,12 @@ void KeyExpansionDelete(KeyExpansion* ke_p);
 void KeyExpansionWriteBytes(const KeyExpansion* source, uint8_t* dest);
 
 /*
+ * Creates KeyExpansion object using the bytes pointed by source.
+ * The amounth of bytes it uses is Nb*((Nk + 6) + 1), where Nb = 4.
+ * */
+KeyExpansion KeyExpansionFromBytes(const uint8_t source, size_t Nk);
+
+/*
  * Encrypts input block using the key referenced by key_p, the resultant encrypted block is written in output
  * If input == output (they point to the same memory location), the input block is overwritten with the encrypted data
  * */
