@@ -368,7 +368,7 @@ static KeyExpansion_ptr KeyExpansionAllocate(enum Nk_ Nk){
 }
 
 static enum Nk_ uint32ToNk(uint32_t nk){                                        // Casting from unsigned integer to Nk value
-  switch (nk) {
+  switch(nk) {
     case 128:
       return Nk128;
       break;
@@ -492,12 +492,13 @@ void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
 
   if(debug) {
     printf(
-      "---------------------------------------- Cipher ----------------------------------------\n"
+      "------------------------------------ Cipher. Nk = %d ------------------------------------\n"
       "----------------------------------------------------------------------------------------\n"
       " Round   |    Start of   |     After     |     After     |     After     |   Round key  \n"
       " Number  |     round     |    SubBytes   |   ShiftRows   |   MixColumns  |    value     \n"
       "         |               |               |               |               |              \n"
-      "----------------------------------------------------------------------------------------\n"
+      "----------------------------------------------------------------------------------------\n",
+      ke_p->Nk
     );
 
     for(i = 0; i < 4; i++) {
@@ -616,12 +617,12 @@ static void InvMixColumns(Block* b) {                                           
 }
 
 void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, bool debug) {
-  size_t i = ke_p->Nr, j;
+  size_t i, j;
   // -Debugging purposes. Columns of the debugging table.
   Block* SOR;                                                                   // Start of round
-  Block* AiSB;                                                                   // After SubBytes
-  Block* AiSR;                                                                   // After ShiftRows
-  Block* AARK;                                                                   // After MixColumns
+  Block* AiSB;                                                                  // After SubBytes
+  Block* AiSR;                                                                  // After ShiftRows
+  Block* AARK;                                                                  // After MixColumns
   SOR = AiSB = AiSR = AARK = NULL;
 
   if(debug) {
@@ -631,19 +632,19 @@ void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
     AiSR = (Block*)malloc(ke_p->Nr*sizeof(Block));
   }
 
-  copyBlock (input, output);
+  if(input != output) copyBlock(input, output);
 
-  if(debug) copyBlock(output,SOR + ke_p->Nr+1);                                 // Equivalent to copyBlock(output,&SOR[ke_p->Nr+1])
-  AddRoundKey(output, ke_p->blocks, i);
   if(debug) copyBlock(output,SOR + ke_p->Nr);                                   // Equivalent to copyBlock(output,&SOR[ke_p->Nr])
+  AddRoundKey(output, ke_p->blocks, ke_p->Nr);
+  if(debug) copyBlock(output,SOR + ke_p->Nr-1);                                 // Equivalent to copyBlock(output,&SOR[ke_p->Nr])
 
-  for(i--; i > 0; i--) {
+  for(i = ke_p->Nr - 1; i > 0; i--) {
     InvShiftRows(output);
-    if(debug) copyBlock(output, AiSR + (i-1));
+    if(debug) copyBlock(output, AiSR + i);
     InvSubBytes(output);
-    if(debug) copyBlock(output, AiSB + (i-1));
+    if(debug) copyBlock(output, AiSB + i);
     AddRoundKey(output, ke_p->blocks, i);
-    if(debug) copyBlock(output, AARK + (i+1));
+    if(debug) copyBlock(output, AARK + i);
     InvMixColumns(output);
     if(debug) copyBlock(output, SOR + (i-1));
   }
@@ -656,26 +657,27 @@ void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
 
   if(debug) {
     printf(
-      "---------------------------------------- Cipher ----------------------------------------\n"
+      "---------------------------------- Decipher. Nk = %d ------------------------------------\n"
       "----------------------------------------------------------------------------------------\n"
       " Round   |    Start of   |     After     |     After     |     After     |   Round key  \n"
       " Number  |     round     |  InvShiftRows |  InvSubBytes  |  AddRoundKey  |    value     \n"
       "         |               |               |               |               |              \n"
-      "----------------------------------------------------------------------------------------\n"
+      "----------------------------------------------------------------------------------------\n",
+      ke_p->Nk
     );
 
     for(i = 0; i < Nb; i++) {
       if(i == 1) printf(" input  ");
       else printf("        ");
       printf(" | ");
-      printWord(SOR[0].word_[i]);
+      printWord(SOR[ke_p->Nr].word_[i]);
       printf(" |               |               |               | ");
       printWord(ke_p->blocks[0].word_[i]);
       printf("\n");
     }
     printf("\n");
 
-    for(i = ke_p->Nr; i != (size_t)-1 ; i--) {
+    for(i = ke_p->Nr-1; i != (size_t)-1 ; i--) {
       for(j = 0; j < Nb; j++) {
         if(j == 1) {
           printf("    ");
@@ -686,12 +688,11 @@ void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
         printf(" | ");
         printWord(SOR[i].word_[j]);
         printf(" | ");
-        printWord(AiSR[i-1].word_[j]);
+        printWord(AiSR[i].word_[j]);
         printf(" | ");
-        printWord(AiSB[i-1].word_[j]);
+        printWord(AiSB[i].word_[j]);
         printf(" | ");
-        if(i < ke_p->Nr) printWord(AARK[i-1].word_[j]);
-        else printf("             ");
+        printWord(AARK[i].word_[j]);
         printf(" | ");
         printWord(ke_p->blocks[i].word_[j]);
         printf("\n");
@@ -712,4 +713,8 @@ void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
     );
     debug = false;
   }
+  if(SOR != NULL) { free(SOR); SOR=NULL; }
+  if(AiSB != NULL) { free(AiSB); AiSB=NULL; }
+  if(AiSR != NULL) { free(AiSR); AiSR=NULL; }
+  if(AARK != NULL) { free(AARK); AARK=NULL; }
 }
