@@ -10,42 +10,24 @@
  * Keys for key expansion examples
  * *****************************************************************************/
 
-const Word KEE_key128[Nk128] = {
-  {{0x2b,0x7e,0x15,0x16}},{{0x28,0xae,0xd2,0xa6}},
-  {{0xab,0xf7,0x15,0x88}},{{0x09,0xcf,0x4f,0x3c}}
-};
-const Word KEE_key192[Nk192] = {
-  {{0x8e,0x73,0xb0,0xf7}},{{0xda,0x0e,0x64,0x52}},
-  {{0xc8,0x10,0xf3,0x2b}},{{0x80,0x90,0x79,0xe5}},
-  {{0x62,0xf8,0xea,0xd2}},{{0x52,0x2c,0x6b,0x7b}}
-};
-const Word KEE_key256[Nk256] = {
-  {{0x60,0x3d,0xeb,0x10}},{{0x15,0xca,0x71,0xbe}},
-  {{0x2b,0x73,0xae,0xf0}},{{0x85,0x7d,0x77,0x81}},
-  {{0x1f,0x35,0x2c,0x07}},{{0x3b,0x61,0x08,0xd7}},
-  {{0x2d,0x98,0x10,0xa3}},{{0x09,0x14,0xdf,0xf4}}
-};
+#define Nk128bytes 16
+#define Nk192bytes 24
+#define Nk256bytes 32
 
-/******************************************************************************/
-
-/*******************************************************************************
- * Plain text for example vectors
- * ****************************************************************************/
-
-const Word EV_key128[Nk128] = {
-  {{0x00,0x01,0x02,0x03}},{{0x04,0x05,0x06,0x07}},
-  {{0x08,0x09,0x0a,0x0b}},{{0x0c,0x0d,0x0e,0x0f}}
+static const uint8_t KEE_key128[Nk128bytes] = {
+  0x2b,0x7e,0x15,0x16,0x28,0xae,0xd2,0xa6,
+  0xab,0xf7,0x15,0x88,0x09,0xcf,0x4f,0x3c
 };
-const Word EV_key192[Nk192] = {
-  {{0x00,0x01,0x02,0x03}},{{0x04,0x05,0x06,0x07}},
-  {{0x08,0x09,0x0a,0x0b}},{{0x0c,0x0d,0x0e,0x0f}},
-  {{0x10,0x11,0x12,0x13}},{{0x14,0x15,0x16,0x17}}
+static const uint8_t KEE_key192[Nk192bytes] = {
+  0x8e,0x73,0xb0,0xf7,0xda,0x0e,0x64,0x52,
+  0xc8,0x10,0xf3,0x2b,0x80,0x90,0x79,0xe5,
+  0x62,0xf8,0xea,0xd2,0x52,0x2c,0x6b,0x7b
 };
-const Word EV_key256[Nk256] = {
-  {{0x00,0x01,0x02,0x03}},{{0x04,0x05,0x06,0x07}},
-  {{0x08,0x09,0x0a,0x0b}},{{0x0c,0x0d,0x0e,0x0f}},
-  {{0x10,0x11,0x12,0x13}},{{0x14,0x15,0x16,0x17}},
-  {{0x18,0x19,0x1a,0x1b}},{{0x1c,0x1d,0x1e,0x1f}}
+static const uint8_t KEE_key256[Nk256bytes] = {
+  0x60,0x3d,0xeb,0x10,0x15,0xca,0x71,0xbe,
+  0x2b,0x73,0xae,0xf0,0x85,0x7d,0x77,0x81,
+  0x1f,0x35,0x2c,0x07,0x3b,0x61,0x08,0xd7,
+  0x2d,0x98,0x10,0xa3,0x09,0x14,0xdf,0xf4
 };
 
 /******************************************************************************/
@@ -54,7 +36,29 @@ const Word EV_key256[Nk256] = {
  * Plain text for example vectors
  * ****************************************************************************/
 
-uint8_t EV_plainText00[16] = {
+static const uint8_t EV_key128[Nk128bytes] = {
+  0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+  0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f
+};
+static const uint8_t EV_key192[Nk192bytes] = {
+  0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+  0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
+  0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17
+};
+static const uint8_t EV_key256[Nk256bytes] = {
+  0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+  0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
+  0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
+  0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f
+};
+
+/******************************************************************************/
+
+/*******************************************************************************
+ * Plain text for example vectors
+ * ****************************************************************************/
+
+static uint8_t EV_plainText00[BLOCK_SIZE] = {
   0x00,0x11,0x22,0x33,
   0x44,0x55,0x66,0x77,
   0x88,0x99,0xaa,0xbb,
@@ -63,8 +67,9 @@ uint8_t EV_plainText00[16] = {
 
 /******************************************************************************/
 
-void displayExpansionOfKey(enum Nk_ Nk){
+static void displayExpansionOfKey(enum Nk_ Nk){
   KeyExpansion_ptr ke_p;
+  printf("\n---------------------------------- Displaying key expansion proccess. Nk = %d. -------------------------------------\n", Nk);
   switch(Nk){
     case Nk128:
       ke_p = KeyExpansionBuildNew(KEE_key128, Nk128, true);
@@ -79,42 +84,37 @@ void displayExpansionOfKey(enum Nk_ Nk){
   KeyExpansionDelete(&ke_p);
 }
 
-void blockCipher(const Block* plaintext, enum Nk_ Nk, const Word* key){
-  //Word* keyExpansion = (Word*)malloc(keyExpansionLenght(Nk)*sizeof(Word));
-  KeyExpansion_ptr ke_p;
-  Block cipherOutput = {0}, decipherOutput = {0};
-  const char* cipherInputRowHeaders[4] = {"       ","Plain  ","Text   ","       "};
+static void blockCipher(const Block* plaintext, size_t nk, const uint8_t* key){
+  KeyExpansion_ptr ke_p = KeyExpansionBuildNew(key, nk, false);
+  const uint8_t BlockZero[BLOCK_SIZE] = {0};
+  Block_ptr cipherOutput = BlockFromBytes(BlockZero);
+  Block_ptr decipherOutput = BlockFromBytes(BlockZero);
 
-  printBlock(plaintext, cipherInputRowHeaders);
-  //transposeBlock(plaintext, &cipherInput);
-  ke_p = KeyExpansionBuildNew(key, Nk, false);
+  printf("\n--------------------------- Displaying encryption proccess. ----------------------------\n");
+  encryptBlock(plaintext, ke_p, cipherOutput, true);
 
-  encryptBlock(plaintext, ke_p,&cipherOutput, true);
-  decryptBlock(&cipherOutput, ke_p, &decipherOutput);
-
-  const char* decipherOutputRowHeaders[4] = {"            ","Deciphered  ","Text        ","            "};
-  printBlock(&decipherOutput, decipherOutputRowHeaders);
+  printf("\n--------------------------- Displaying decryption proccess. ----------------------------\n");
+  decryptBlock(cipherOutput, ke_p, decipherOutput, true);
 
   KeyExpansionDelete(&ke_p);
+  free(cipherOutput);
+  free(decipherOutput);
 }
 
 int main(int argc, char* argv[]){
-  Block plainText00blk;
-  printf(
-    "KEE_key128 length: %lu words\n"
-    "KEE_key192 length: %lu words\n"
-    "KEE_key256 length: %lu words\n",
-    sizeof(KEE_key128), sizeof(KEE_key192), sizeof(KEE_key256)
-  );
+  Block_ptr plainText00blk = BlockFromBytes(EV_plainText00);
+
   displayExpansionOfKey(Nk128);
   displayExpansionOfKey(Nk192);
   displayExpansionOfKey(Nk256);
 
-  blockFromBytes(EV_plainText00, &plainText00blk);
-  blockCipher(&plainText00blk, Nk128, EV_key128);
-  blockCipher(&plainText00blk, Nk192, EV_key192);
-  blockCipher(&plainText00blk, Nk256, EV_key256);
+  blockCipher(plainText00blk, 128, EV_key128);
+  blockCipher(plainText00blk, 192, EV_key192);
+  blockCipher(plainText00blk, 256, EV_key256);
+
+  free(plainText00blk);
+
   return EXIT_SUCCESS;
 }
 
-// gcc -o FIPS197_examples -Wall -ggdb -fno-omit-frame-pointer -O2 FIPS197_examples.c cipher.c
+// gcc -o FIPS197_examples -Wall -ggdb -fno-omit-frame-pointer -O2 FIPS197_examples.c AES.c
