@@ -1,6 +1,6 @@
 #include"../../include/AESencryption.hpp"
 #include"../data-encryption/AES/AES.h"
-//#include"../operation_modes/operation_modes.h"
+#include"../data-encryption/operation_modes/operation_modes.h"
 
 using namespace AESencryption;
 
@@ -71,7 +71,7 @@ void Cipher::buildKeyExpansion() {
     KeyExpansionDelete(&ke_p);
 }
 
-void Cipher::encryptECB(uint8_t*const data, size_t size) const{
+/*void Cipher::encryptECB(uint8_t*const data, size_t size) const{
     if(size == 0)    return;
     if(data == NULL) return;
 
@@ -111,7 +111,7 @@ void Cipher::decryptECB(char *const data, size_t size) const{
         return;
     }
     decryptBlock(currentDataBlock);
-}
+}*/
 
 void Cipher::setAndWrite_IV(char destination[AES_BLK_SZ]) const{                // -Simple method for setting the initial vector. The main idea is, when CBC is
     int_char ic; ic.int_ = time(NULL);                                         //  used, encryptBlock function encrypts a block of four consecutive 32 bits int's
@@ -122,7 +122,7 @@ void Cipher::setAndWrite_IV(char destination[AES_BLK_SZ]) const{                
     this->encryptBlock(destination);
 }
 
-void Cipher::encryptCBC(char*const data, size_t size) const{
+/*void Cipher::encryptCBC(char*const data, size_t size) const{
     if(size == 0)    return;
     if(data == NULL) return;
 
@@ -184,32 +184,30 @@ void Cipher::decryptCBC(char*const data, size_t size) const{
         decryptBlock(currentDataBlock);
         XORblocks(currentDataBlock, previousBlk, currentDataBlock);
     }
-}
+}*/
 
-void Cipher::encrypt(char*const data, size_t size) const{
-    if(size == 0)    return;
-    if(data == NULL) return;
+void Cipher::encrypt(const uint8_t*const data, size_t size, uint8_t*const output) const{
+    if(size == 0 || data == NULL) return;
     Key::OpMode opMode = this->key.getOpMode();
     switch(opMode) {
         case Key::OpMode::ECB:
-            this->encryptECB(data, size);
+            encryptECB(data, size, this->keyExpansion, this->Nk, output);
             break;
         case Key::OpMode::CBC:
-            this->encryptCBC(data, size);
+            encryptCBC(data, size, this->keyExpansion, this->Nk, this->key.IV.data, output);
             break;
     }
 }
 
-void Cipher::decrypt(char*const data, size_t size) const{
-    if(size == 0)    return;
-    if(data == NULL) return;
+void Cipher::decrypt(const uint8_t*const data, size_t size, uint8_t*const output) const{
+    if(size == 0 || data == NULL) return;
     Key::OpMode opMode = this->key.getOpMode();
     switch(opMode) {
         case Key::OpMode::ECB:
-            this->decryptECB(data, size);
+            decryptECB(data, size, this->keyExpansion, this->Nk, output);
             break;
         case Key::OpMode::CBC:
-            this->decryptCBC(data, size);
+            decryptCBC(data, size, this->keyExpansion, this->Nk, this->key.IV.data, output);
             break;
     }
 }
