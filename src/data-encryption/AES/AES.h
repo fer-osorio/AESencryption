@@ -77,7 +77,7 @@ void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
  * Decrypts input block using the key referenced by key_p, the resultant decrypted block is written in output
  * If input == output (they point to the same memory location), the input block is overwritten with the encrypted data
  * */
-void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output);
+void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, bool debug);
 
 #ifdef __cplusplus
 }
