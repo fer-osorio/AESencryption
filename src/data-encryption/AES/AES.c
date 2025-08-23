@@ -107,7 +107,7 @@ static uint8_t dotProductWord(const Word w1, const Word w2){                  //
           multiply[w1.uint08_[3]][w2.uint08_[3]];
 }
 
-void blockFromBytes(const uint8_t source[], Block* output){
+static void BlockWriteFromBytes(const uint8_t source[], Block* output){
   // First column
   output->uint08_[0] = source[0];
   output->uint08_[4] = source[1];
@@ -128,6 +128,12 @@ void blockFromBytes(const uint8_t source[], Block* output){
   output->uint08_[7] = source[13];
   output->uint08_[11]= source[14];
   output->uint08_[15]= source[15];
+}
+
+Block_ptr BlockFromBytes(const uint8_t source[]){
+  Block_ptr output = (Block*)malloc(sizeof(Block));
+  BlockWriteFromBytes(source, output);
+  return output;
 }
 
 void bytesFromBlock(const Block* source, uint8_t output[]){
@@ -166,7 +172,7 @@ static void XORblocks(const Block* b1,const Block* b2, Block* result) {
   result->uint64_[1] = b1->uint64_[1] ^ b2->uint64_[1];
 }
 
-void XORequalBlockWithBytes(Block* input, const uint8_t byteBlock[]){
+void BlockXORequalBytes(Block* input, const uint8_t byteBlock[]){
   input->uint08_[0] ^= byteBlock[0];
   input->uint08_[1] ^= byteBlock[4];
   input->uint08_[2] ^= byteBlock[8];
@@ -240,19 +246,6 @@ static void transposeBlock(const Block* source, Block* result){
   result->word_[3].uint08_[2] = source->word_[2].uint08_[3];
   result->word_[3].uint08_[3] = source->word_[3].uint08_[3];
 }
-
-/*static void transposeUpdateBlock(Block* b){
-  uint8_t buff;
-  // Transposing and coping first column
-  buff = b->word_[0].uint08_[1]; b->word_[0].uint08_[1] = b->word_[1].uint08_[0]; b->word_[1].uint08_[0] = buff;
-  buff = b->word_[0].uint08_[2]; b->word_[0].uint08_[2] = b->word_[2].uint08_[0]; b->word_[2].uint08_[0] = buff;
-  buff = b->word_[0].uint08_[3]; b->word_[0].uint08_[3] = b->word_[3].uint08_[0]; b->word_[3].uint08_[0] = buff;
-  // Transposing and coping second column
-  buff = b->word_[1].uint08_[2]; b->word_[1].uint08_[2] = b->word_[2].uint08_[1]; b->word_[2].uint08_[1] = buff;
-  buff = b->word_[1].uint08_[3]; b->word_[1].uint08_[3] = b->word_[3].uint08_[1]; b->word_[3].uint08_[1] = buff;
-  // Transposing and coping third column
-  buff = b->word_[2].uint08_[3]; b->word_[2].uint08_[3] = b->word_[3].uint08_[2]; b->word_[3].uint08_[2] = buff;
-}*/
 
 static void MixColumns(Block* b) {                                              // -Mixes the data within each column of the state array.
   Block bT;
@@ -363,12 +356,39 @@ static void KeyExpansionBuildWords(const uint8_t* key, enum Nk_ Nk, Word outputK
   debug = false;
 }
 
+static KeyExpansion_ptr KeyExpansionAllocate(enum Nk_ Nk){
+  KeyExpansion_ptr output = (KeyExpansion*)malloc(sizeof(KeyExpansion));
+  // -Building KeyExpansion object
+  output->Nk = Nk;
+  output->Nr = getNr(Nk);
+  output->wordsSize = KeyExpansionLenWords(Nk);
+  output->blockSize = KeyExpansionLenBlocks(Nk);
+  output->blocks = (Block*)malloc(output->blockSize*sizeof (Block));
+  return output;
+}
+
+static enum Nk_ uint32ToNk(uint32_t nk){                                        // Casting from unsigned integer to Nk value
+  switch (nk) {
+    case 128:
+      return Nk128;
+      break;
+    case 192:
+      return Nk192;
+      break;
+    case 256:
+      return Nk256;
+      break;
+    default:
+      return Nk128;
+  }
+}
+
 /*
  * Builds a block using an array of four words.
  * Seeing words as vectors rows of a matrix, the resulting block is the transposed of this matrix
  * Considerations: Assuming that the pointer 'source' is pointing to a valid 4-words array
  * */
-static void blockFromWords(const Word source[], Block* output){
+static void BlockFromWords(const Word source[], Block* output){
   // First row
   output->uint08_[0] = source[0].uint08_[0];
   output->uint08_[4] = source[0].uint08_[1];
@@ -391,48 +411,29 @@ static void blockFromWords(const Word source[], Block* output){
   output->uint08_[15]= source[3].uint08_[3];
 }
 
-static enum Nk_ uint32ToNk(uint32_t nk){                                        // Casting from unsigned integer to Nk value
-  switch (nk) {
-    case 128:
-      return Nk128;
-      break;
-    case 192:
-      return Nk192;
-      break;
-    case 256:
-      return Nk256;
-      break;
-    default:
-      return Nk128;
-  }
-}
-
-KeyExpansion KeyExpansionBuildNew(const uint8_t* key, size_t nk, bool debug){
+KeyExpansion_ptr KeyExpansionBuildNew(const uint8_t* key, size_t nk, bool debug){
   enum Nk_ Nk = uint32ToNk(nk);
-  KeyExpansion outputKeyExpansion;
-  // -Building KeyExpansion object
-  outputKeyExpansion.Nk = Nk;
-  outputKeyExpansion.Nr = getNr(Nk);
-  outputKeyExpansion.wordsSize = KeyExpansionLenWords(Nk);
-  outputKeyExpansion.blockSize = KeyExpansionLenBlocks(Nk);
-  Word* buffer = (Word*)malloc(outputKeyExpansion.wordsSize*sizeof(Word));
+  KeyExpansion_ptr output = KeyExpansionAllocate (Nk);
+  Word* buffer = (Word*)malloc(output->wordsSize*sizeof(Word));
   // Writing key expansion on array of words
   KeyExpansionBuildWords(key, Nk, buffer, debug);
   // Writting key expansion on the array of Blocks 'inside' KeyExpansion object.
-  outputKeyExpansion.blocks = (Block*)malloc(outputKeyExpansion.blockSize*sizeof (Block));
-  for(size_t i = 0, j = 0; i < outputKeyExpansion.wordsSize && j < outputKeyExpansion.blockSize; i += Nb, j++){
-    blockFromWords(buffer + i, outputKeyExpansion.blocks + j);
+  for(size_t i = 0, j = 0; i < output->wordsSize && j < output->blockSize; i += Nb, j++){
+    BlockFromWords(buffer + i, output->blocks + j);
   }
   free(buffer);
-  return outputKeyExpansion;
+  return output;
 }
 
-void KeyExpansionDelete(KeyExpansion* ke_p){
+void KeyExpansionDelete(KeyExpansion** ke_pp){
+  KeyExpansion* ke_p = *ke_pp;
   if(ke_p != NULL){
     if(ke_p->blocks != NULL) {
       free(ke_p->blocks);
-      ke_p->blocks = NULL;                                                      // Signaling that the memory is has been already free.
+      ke_p->blocks = NULL;                                                      // Signaling that the memory is has been freed.
     }
+    free(ke_p);
+    *ke_pp = NULL;                                                              // Signaling that the memory is has been freed.
   }
 }
 
@@ -440,6 +441,15 @@ void KeyExpansionWriteBytes(const KeyExpansion* source, uint8_t* dest){
   for(size_t i = 0, j = 0; i < source->blockSize; i++, j += BLOCK_SIZE){
     bytesFromBlock(source->blocks + i, dest + j);
   }
+}
+
+KeyExpansion_ptr KeyExpansionFromBytes(const uint8_t source[], size_t nk){
+  enum Nk_ Nk = uint32ToNk(nk);
+  KeyExpansion_ptr outputKeyExpansion = KeyExpansionAllocate(Nk);
+  for(size_t i = 0, j = 0; i < outputKeyExpansion->blockSize; i++, j += BLOCK_SIZE){
+    BlockWriteFromBytes(source + j,outputKeyExpansion->blocks + i);
+  }
+  return outputKeyExpansion;
 }
 
 void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, bool debug) {
