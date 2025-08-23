@@ -2,6 +2,9 @@
 #include"operation_modes.h"
 #include"../AES/AES.h"
 
+/*
+ * Handling pointers that represent the directions of input and output
+ * */
 struct InputOutputHandler{
   const uint8_t*const input;
   uint8_t*const output;
@@ -12,7 +15,7 @@ struct InputOutputHandler{
   uint8_t* outputCurrentPossition;
 };
 
-static struct InputOutputHandler InputOutputHandlerInitialize(uint8_t*const input, uint8_t*const output, const size_t size){
+static struct InputOutputHandler InputOutputHandlerInitialize(const uint8_t*const input, uint8_t*const output, const size_t size){
   struct InputOutputHandler ioh = {input, output, size, size / BLOCK_SIZE, size % BLOCK_SIZE, input, output};
   return ioh;
 }
@@ -65,6 +68,9 @@ static void InputOutputHandlerDecryptBlockBytes(const struct InputOutputHandler*
   decryptBlockBytes(ioh->inputCurrentPossition, ke_p, ioh->outputCurrentPossition);
 }
 
+/*
+ * Implementation of ECB encryption operation mode.
+ * */
 static void encryptECB__(const KeyExpansion* ke_p, struct InputOutputHandler* ioh){
   if(InputOutputHandlerIsSmallerThanBlock(ioh)) return;                         // -Not handling the case size < 16
   InputOutputHandlerEncryptBlockBytes(ioh, ke_p);
@@ -78,6 +84,19 @@ static void encryptECB__(const KeyExpansion* ke_p, struct InputOutputHandler* io
   }
 }
 
+/*
+ * Builds KeyExpansion and InputOutput objects, then implements ECB encryption operation mode.
+ * */
+void encryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t Nk, uint8_t*const output){
+  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, Nk);
+  struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
+  encryptECB__(ke_p, &ioh);
+  KeyExpansionDelete(&ke_p);
+}
+
+/*
+ * Implementation of ECB decryption operation mode.
+ * */
 static void decryptECB__(const KeyExpansion* ke_p, struct InputOutputHandler* ioh){
   if(InputOutputHandlerIsSmallerThanBlock(ioh)) return;                         // -Not handling the case size < 16
   InputOutputHandlerDecryptBlockBytes(ioh, ke_p);
@@ -89,6 +108,16 @@ static void decryptECB__(const KeyExpansion* ke_p, struct InputOutputHandler* io
   if(ioh->tailSize != 0) {
     decryptBlockBytes(ioh->inputCurrentPossition + ioh->tailSize, ke_p, ioh->outputCurrentPossition + ioh->tailSize);
   }
+}
+
+/*
+ * Builds KeyExpansion and InputOutput objects, then implements ECB decryption operation mode.
+ * */
+void decryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t Nk, uint8_t*const output){
+  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, Nk);
+  struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
+  decryptECB__(ke_p, &ioh);
+  KeyExpansionDelete(&ke_p);
 }
 
 /*
@@ -109,6 +138,9 @@ static void InputOutputHandlerXorEncryptBlockBytes(const struct InputOutputHandl
   xorEncryptBlockBytes(ioh->inputCurrentPossition, ke_p, XORsource, ioh->outputCurrentPossition);
 }
 
+/*
+ * Implementation of CBC encryption operation mode.
+ * */
 static void encryptCBC__(const KeyExpansion* ke_p, const uint8_t* IV, struct InputOutputHandler* ioh){
   if(InputOutputHandlerIsSmallerThanBlock(ioh)) return;                         // -Not handling the case size < 16
   const uint8_t* inputPreviousBlock;
@@ -125,6 +157,17 @@ static void encryptCBC__(const KeyExpansion* ke_p, const uint8_t* IV, struct Inp
       encryptBlockBytes(ioh->inputCurrentPossition + ioh->tailSize, ke_p, ioh->outputCurrentPossition + ioh->tailSize);
   }
 }
+
+/*
+ * Builds KeyExpansion and InputOutput objects, then implements CBC encryption operation mode.
+ * */
+void encryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t Nk, const uint8_t* IV, uint8_t*const output){
+  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, Nk);
+  struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
+  encryptCBC__(ke_p, IV, &ioh);
+  KeyExpansionDelete(&ke_p);
+}
+
 
 /*
  * Build Block with input, build Block with XORsource, xors both blocks and decrypt the result.
@@ -144,11 +187,14 @@ static void InputOutputHandlerDecryptXorBlockBytes(const struct InputOutputHandl
   decryptXorBlockBytes(ioh->inputCurrentPossition, ke_p, XORsource, ioh->outputCurrentPossition);
 }
 
+/*
+ * Implementation of CBC decryption operation mode.
+ * */
 static void decryptCBC__(const KeyExpansion* ke_p, const uint8_t* IV, struct InputOutputHandler* ioh) {
   if(InputOutputHandlerIsSmallerThanBlock(ioh)) return;                         // -Not handling the case size < 16
   uint8_t prevBlockCopy[BLOCK_SIZE];
   uint8_t currBlockCopy[BLOCK_SIZE];
-  memcpy(prevBlockCopy, ioh->inputCurrentPossition, BLOCK_SIZE);
+  memcpy(prevBlockCopy, ioh->inputCurrentPossition, BLOCK_SIZE);                // Saving previous block to xor it with the next one
   InputOutputHandlerDecryptXorBlockBytes(ioh, IV, ke_p);                        // -Decryption of the first block.
   for(size_t i = 1; i < ioh->sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
     InputOutputHandlerMoveForwardOneBlock(ioh);
@@ -162,4 +208,14 @@ static void decryptCBC__(const KeyExpansion* ke_p, const uint8_t* IV, struct Inp
     size_t k = ioh->sizeInBlocks*BLOCK_SIZE, i;
     for(i = 0; i < ioh->tailSize; i++,k++) ioh->output[k] ^= prevBlockCopy[i];
   }
+}
+
+/*
+ * Builds KeyExpansion and InputOutput objects, then implements CBC decryption operation mode.
+ * */
+void decryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t Nk, const uint8_t* IV, uint8_t*const output){
+  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, Nk);
+  struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
+  decryptCBC__(ke_p, IV, &ioh);
+  KeyExpansionDelete(&ke_p);
 }
