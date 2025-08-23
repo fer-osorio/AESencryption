@@ -81,8 +81,8 @@ public:
 	Cipher& operator = (const Cipher& a);
 	friend std::ostream& operator << (std::ostream& st, const Cipher& c);
 
-	void encrypt(uint8_t*const data, size_t size)const;			// -Encrypts using operation mode stored in Key object
-	void decrypt(uint8_t*const data, size_t size)const;			// -Decrypts using operation mode stored in Key object
+	void encrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;	// -Encrypts using operation mode stored in Key object
+	void decrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;	// -Decrypts using operation mode stored in Key object
 
 	void saveKey(const char*const fname) const{ this->key.save(fname); }
 	Key::OpMode getOpMode() const{ return this->key.getOpMode(); }
@@ -90,15 +90,15 @@ public:
 	private:
 	void buildKeyExpansion();						// -Creates key expansion
 
-	void encryptECB(uint8_t*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
+	/*void encryptECB(uint8_t*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
 										//  size (in bytes) is  provided by the 'size' argument.
-	void decryptECB(uint8_t*const data, size_t size)const;			// -Decrypts the message pointed by 'data' using the ECB operation mode. The data
+	void decryptECB(uint8_t*const data, size_t size)const;*/			// -Decrypts the message pointed by 'data' using the ECB operation mode. The data
 										//  size (in bytes) is  provided by the 'size' argument.
 	void setAndWrite_IV(InitVector destination) const;			// -Creates initial vector and writes it on destination array
 
-	void encryptCBC(uint8_t*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the CBC operation mode. The data
+	/*void encryptCBC(uint8_t*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the CBC operation mode. The data
 										//  size (in bytes) is  provided by the 'size' argument.
-	void decryptCBC(uint8_t*const data, size_t size)const;			// -Decrypts the message pointed by 'data'. The message must had been encrypted
+	void decryptCBC(uint8_t*const data, size_t size)const;*/			// -Decrypts the message pointed by 'data'. The message must had been encrypted
 										//  using the CBC mode operation.
 };
 };
