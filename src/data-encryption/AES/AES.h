@@ -28,6 +28,7 @@ typedef KeyExpansion* KeyExpansion_ptr;
 /*
  * Creates a Block instance from the bytes pointed by source. Basically it takes pieces of four bytes and creates the columns with them
  * Consider: It will read 16 bytes starting from 'source', no caring about what those bytes represent.
+ * Consider: Allocates memory using malloc.
  * */
 Block_ptr BlockFromBytes(const uint8_t source[]);
 
@@ -67,6 +68,7 @@ void KeyExpansionWriteBytes(const KeyExpansion* source, uint8_t* dest);
 /*
  * Creates KeyExpansion object using the bytes pointed by source.
  * The amounth of bytes it uses is Nb*((Nk + 6) + 1), where Nb = 4.
+ * Consider: Allocates memory using malloc.
  * */
 KeyExpansion_ptr KeyExpansionFromBytes(const uint8_t source[], size_t nk);
 
