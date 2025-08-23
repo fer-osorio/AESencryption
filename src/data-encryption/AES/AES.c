@@ -463,26 +463,20 @@ void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
   if(debug) copyBlock(output,SOR);                                              // Equivalent to copyBlock(output,&SOR[0])
   AddRoundKey(output, ke_p->blocks, 0);
   if(debug) copyBlock(output,SOR + 1);                                          // Equivalent to copyBlock(output,&SOR[1])
-
   for(i = 1; i < ke_p->Nr; i++) {
     SubBytes(output);
     if(debug) copyBlock(output, ASB + (i-1));
-
     ShiftRows(output);
     if(debug) copyBlock(output, ASR + (i-1));
-
     MixColumns(output);
     if(debug) copyBlock(output, AMC + (i-1));
-
     AddRoundKey(output, ke_p->blocks, i);
     if(debug) copyBlock(output, SOR + (i+1));
   }
   SubBytes(output);
   if(debug) copyBlock(output, ASB + (i-1));
-
   ShiftRows(output);
   if(debug) copyBlock(output, ASR + (i-1));
-
   AddRoundKey(output, ke_p->blocks, i);
   if(debug) copyBlock(output, SOR + (i-1));
 
@@ -542,12 +536,12 @@ void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
     printf(
       "----------------------------------------------------------------------------------------\n"
     );
+    debug = false;
   }
   if(SOR != NULL) { free(SOR); SOR=NULL; }
   if(ASB != NULL) { free(ASB); ASB=NULL; }
   if(ASR != NULL) { free(ASR); ASR=NULL; }
   if(AMC != NULL) { free(AMC); AMC=NULL; }
-  debug = false;
 }
 
 static void InvShiftRows(Block* b) {                                            // -Shift rows of the state array by different offset.
@@ -611,17 +605,101 @@ static void InvMixColumns(Block* b) {                                           
   b->uint08_[15]= dotProductWord(aInv.word_[3], bT.word_[3]);
 }
 
-void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output) {
-  size_t i = ke_p->Nr;
+void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, bool debug) {
+  size_t i = ke_p->Nr, j;
+  // -Debugging purposes. Columns of the debugging table.
+  Block* SOR;                                                                   // Start of round
+  Block* AiSB;                                                                   // After SubBytes
+  Block* AiSR;                                                                   // After ShiftRows
+  Block* AARK;                                                                   // After MixColumns
+  SOR = AiSB = AiSR = AARK = NULL;
+
+  if(debug) {
+    SOR = (Block*)malloc((ke_p->Nr+1)*sizeof(Block));
+    AARK = (Block*)malloc(ke_p->Nr*sizeof(Block));
+    AiSB = (Block*)malloc(ke_p->Nr*sizeof(Block));
+    AiSR = (Block*)malloc(ke_p->Nr*sizeof(Block));
+  }
+
   copyBlock (input, output);
+
+  if(debug) copyBlock(output,SOR + ke_p->Nr+1);                                 // Equivalent to copyBlock(output,&SOR[ke_p->Nr+1])
   AddRoundKey(output, ke_p->blocks, i);
+  if(debug) copyBlock(output,SOR + ke_p->Nr);                                   // Equivalent to copyBlock(output,&SOR[ke_p->Nr])
+
   for(i--; i > 0; i--) {
     InvShiftRows(output);
+    if(debug) copyBlock(output, AiSR + (i-1));
     InvSubBytes(output);
+    if(debug) copyBlock(output, AiSB + (i-1));
     AddRoundKey(output, ke_p->blocks, i);
+    if(debug) copyBlock(output, AARK + (i+1));
     InvMixColumns(output);
+    if(debug) copyBlock(output, SOR + (i-1));
   }
   InvShiftRows(output);
+  if(debug) copyBlock(output, AiSR);
   InvSubBytes(output);
+  if(debug) copyBlock(output, AiSB);
   AddRoundKey(output, ke_p->blocks, 0);
+  if(debug) copyBlock(output, AARK);
+
+  if(debug) {
+    printf(
+      "---------------------------------------- Cipher ----------------------------------------\n"
+      "----------------------------------------------------------------------------------------\n"
+      " Round   |    Start of   |     After     |     After     |     After     |   Round key  \n"
+      " Number  |     round     |  InvShiftRows |  InvSubBytes  |  AddRoundKey  |    value     \n"
+      "         |               |               |               |               |              \n"
+      "----------------------------------------------------------------------------------------\n"
+    );
+
+    for(i = 0; i < Nb; i++) {
+      if(i == 1) printf(" input  ");
+      else printf("        ");
+      printf(" | ");
+      printWord(SOR[0].word_[i]);
+      printf(" |               |               |               | ");
+      printWord(ke_p->blocks[0].word_[i]);
+      printf("\n");
+    }
+    printf("\n");
+
+    for(i = ke_p->Nr; i != (size_t)-1 ; i--) {
+      for(j = 0; j < Nb; j++) {
+        if(j == 1) {
+          printf("    ");
+          if(i < 10) printf("%lu   ", i);
+          else printf("%lu  ", i);
+        }
+        else printf("        ");
+        printf(" | ");
+        printWord(SOR[i].word_[j]);
+        printf(" | ");
+        printWord(AiSR[i-1].word_[j]);
+        printf(" | ");
+        printWord(AiSB[i-1].word_[j]);
+        printf(" | ");
+        if(i < ke_p->Nr) printWord(AARK[i-1].word_[j]);
+        else printf("             ");
+        printf(" | ");
+        printWord(ke_p->blocks[i].word_[j]);
+        printf("\n");
+      }
+      printf(
+        "----------------------------------------------------------------------------------------\n"
+      );
+    }
+    for(i = 0; i < 4; i++) {
+      if(i == 1) printf(" output ");
+      else printf("        ");
+      printf(" | ");
+      printWord(output->word_[i]);
+      printf(" |               |               |               |               \n");
+    }
+    printf(
+      "----------------------------------------------------------------------------------------\n"
+    );
+    debug = false;
+  }
 }
