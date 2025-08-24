@@ -159,7 +159,7 @@ static void encryptCBC__(const KeyExpansion* ke_p, const uint8_t* IV, struct Inp
   }
 }
 
-void setIniitialVector(uint8_t*const IVlocation){
+void setInitialVector(uint8_t*const IVlocation){
   const Block_ptr rb = BlockAllocateRandom(time(NULL));
   bytesFromBlock(rb, IVlocation);
   free(rb);

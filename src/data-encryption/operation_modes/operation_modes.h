@@ -25,7 +25,7 @@ void decryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpans
 /*
  * Writes random values on the BLOCK_SIZE bytes pointed by IVlocation. Intended for Initial Vector initialization.
  * */
-void setIniitialVector(uint8_t*const IVlocation);
+void setInitialVector(uint8_t*const IVlocation);
 
 /*
  * Encrypts the data pointed by 'input' using CBC operation mode.
