@@ -39,6 +39,13 @@ Block_ptr BlockFromBytes(const uint8_t source[]);
 void bytesFromBlock(const Block* source, uint8_t output[]);
 
 /*
+ * Allocates memory for a block filled with random values.
+ * Consider: Not intended for the generation of secure random values for cryptographic application.
+ * Consider Allocate memory using malloc.
+ * */
+Block_ptr BlockAllocateRandom(unsigned int seed);
+
+/*
  * Prints block in matrix form.
  * Row headers are the 'tags' the user wants to put to each row.
  * */
