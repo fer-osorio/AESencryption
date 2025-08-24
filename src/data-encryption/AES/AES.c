@@ -159,6 +159,13 @@ void bytesFromBlock(const Block* source, uint8_t output[]){
   output[15]= source->uint08_[15];
 }
 
+Block_ptr BlockAllocateRandom(unsigned int seed){
+  Block_ptr output = (Block*)malloc(sizeof(Block));
+  srand(seed);
+  for(size_t i = 0; i < Nb; i++) output->word_[i].uint32_ = rand();
+  return output;
+}
+
 void printBlock(const Block* b, const char* rowHeaders[4]) {
   for(size_t i = 0; i < 4; i++) {
     if(rowHeaders != NULL) printf("%s",rowHeaders[i]);
