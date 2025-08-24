@@ -89,17 +89,7 @@ public:
 
 	private:
 	void buildKeyExpansion();						// -Creates key expansion
-
-	/*void encryptECB(uint8_t*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the ECB operation mode. The data
-										//  size (in bytes) is  provided by the 'size' argument.
-	void decryptECB(uint8_t*const data, size_t size)const;*/			// -Decrypts the message pointed by 'data' using the ECB operation mode. The data
-										//  size (in bytes) is  provided by the 'size' argument.
-	void setAndWrite_IV(InitVector destination) const;			// -Creates initial vector and writes it on destination array
-
-	/*void encryptCBC(uint8_t*const data, size_t size)const;			// -Encrypts the message pointed by 'data' using the CBC operation mode. The data
-										//  size (in bytes) is  provided by the 'size' argument.
-	void decryptCBC(uint8_t*const data, size_t size)const;*/			// -Decrypts the message pointed by 'data'. The message must had been encrypted
-										//  using the CBC mode operation.
+	void formInitialVector();						// -Creates initial vector and writes it on destination array
 };
 };
 #endif
