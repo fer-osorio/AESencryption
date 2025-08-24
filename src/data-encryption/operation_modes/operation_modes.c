@@ -1,4 +1,5 @@
 #include<string.h>
+#include<time.h>
 #include"operation_modes.h"
 #include"../AES/AES.h"
 
@@ -156,6 +157,12 @@ static void encryptCBC__(const KeyExpansion* ke_p, const uint8_t* IV, struct Inp
       for(i = 0; i < ioh->tailSize; i++,k++) ioh->output[k] ^= inputPreviousBlock[i];
       encryptBlockBytes(ioh->inputCurrentPossition + ioh->tailSize, ke_p, ioh->outputCurrentPossition + ioh->tailSize);
   }
+}
+
+void setIniitialVector(uint8_t*const IVlocation){
+  const Block_ptr rb = BlockAllocateRandom(time(NULL));
+  bytesFromBlock(rb, IVlocation);
+  free(rb);
 }
 
 /*
