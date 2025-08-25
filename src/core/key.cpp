@@ -3,6 +3,7 @@
 #include<random>
 #include<exception>
 #include"../../include/AESencryption.hpp"
+#include"../utils/print_bytes/print_bytes.hpp"
 
 using namespace AESencryption;
 
@@ -143,20 +144,25 @@ bool Key::operator == (const Key& k) const{
     return true;
 }
 
-std::ostream& AESencryption::operator << (std::ostream& ost, Key k) {
-    char keyStr[65];
-    char opModeStr[4];
-    char IVstring[33];
+static const char* opModeToString(Key::OpMode mode) {
+    switch (mode) {
+        case Key::OpMode::ECB: return "ECB";
+        case Key::OpMode::CBC: return "CBC";
+        default: return "Unknown";
+    }
+}
 
-    OpModeToString(k.opMode_, opModeStr);
-    bytesToHexString(k.data, keyStr, (int)k.lenBytes);
-    bytesToHexString(k.IV.data, IVstring, BLOCK_SIZE);
-
-    ost << "\tKey size: " << static_cast<int>(k.lenBits) << " bits, " << k.lenBytes << " bytes, Nk = " << (k.lenBytes >> 2) << " words" << '\n';
-    ost << "\tKey: " << keyStr << '\n';
-    ost << "\tOperation mode: " << opModeStr << '\n';
-    ost << "\tIV (in case of CBC): "<< IVstring << '\n';
-
+std::ostream& AESencryption::operator<<(std::ostream& ost, const Key& k) {
+    ost << "\tKey size: " << static_cast<int>(k.lenBits) << " bits, " << k.lenBytes << " bytes, Nk = " << (k.lenBytes >> 2) << " words\n";
+    ost << "\tKey: ";
+    print_bytes_as_hex(ost, k.data, k.lenBytes);
+    ost << '\n';
+    ost << "\tOperation mode: " << opModeToString(k.opMode_) << '\n';
+    if (k.opMode_ == Key::OpMode::CBC && k.initializedIV) {                     // Only print the IV if the mode is CBC and the IV is initialized
+        ost << "\tIV (for CBC): ";
+        print_bytes_as_hex(ost, k.IV.data, 16); // IV is typically 16 bytes for AES
+        ost << '\n';
+    }
     return ost;
 }
 
