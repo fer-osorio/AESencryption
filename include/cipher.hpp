@@ -9,7 +9,7 @@ std::ostream& operator << (std::ostream& st, const Cipher& c);			// -Declaration
 
 class Cipher {
 private:
-	// -The default values for a cipher object are the values for a key of 256 bits
+	// -The default values for a cipher object are the values for a key of 128 bits
 	Key key = Key();
 	size_t Nk = AESconstants::Nk128;
 	size_t Nr = AESconstants::Nr128;
