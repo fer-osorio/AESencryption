@@ -7,16 +7,22 @@
 
 using namespace AESencryption;
 
-Key::Key(): lenBits(LenBits::_256), lenBytes(32), opMode_(OpMode::ECB) {
+static size_t fromLenBitsToLenBytes(Key::LenBits lenbits){
+    return size_t(lenbits)/8;
+}
+
+Key::Key()
+    : lenBits(LenBits::_256), lenBytes(fromLenBitsToLenBytes(lenBits)), opMode_(OpMode::ECB) {
     this->data = new uint8_t[this->lenBytes];
     for(size_t i = 0; i < this->lenBytes; i++) this->data[i] = 0;
 }
 
-Key::Key(LenBits len, OpMode op_m): lenBits(len), lenBytes((size_t)len >> 3), opMode_(op_m){
+Key::Key(LenBits lenbits, OpMode op_m)
+    : lenBits(lenbits), lenBytes(fromLenBitsToLenBytes(lenbits)), opMode_(op_m){
     std::random_device dev; std::mt19937 seed(dev());
     std::uniform_int_distribution<std::mt19937::result_type> distribution;      // -Random number with uniform distribution
     size_t i;
-    union { int integer; char chars[4]; } buff;                              // -Anonymous union. Casting from 32 bits integer to four chars
+    union { int integer; char chars[4]; } buff;                                 // -Anonymous union. Casting from 32 bits integer to four chars
     this->data = new uint8_t[this->lenBytes];
     for(i = 0; i < this->lenBytes; i += 4) {                                    // -I am supposing everything is fine and lenBytes is a multiple of four
         buff.integer = distribution(seed);                                      // -Taking a random 32 bits integer to divide it into four bytes
@@ -24,12 +30,14 @@ Key::Key(LenBits len, OpMode op_m): lenBits(len), lenBytes((size_t)len >> 3), op
     }
 }
 
-Key::Key(const uint8_t* const _key, LenBits len, OpMode op_m): lenBits(len), lenBytes((size_t)len >> 3), opMode_(op_m){
+Key::Key(const uint8_t* const _key, LenBits lenbits, OpMode op_m)
+    : lenBits(lenbits), lenBytes(fromLenBitsToLenBytes(lenbits)), opMode_(op_m){
     this->data = new uint8_t[this->lenBytes];
     if(_key != NULL) for(size_t i = 0; i < this->lenBytes; i++) this->data[i] = _key[i];
 }
 
-Key::Key(const Key& k):lenBits(k.lenBits), lenBytes(k.lenBytes), opMode_(k.opMode_) {
+Key::Key(const Key& k)
+    :lenBits(k.lenBits), lenBytes(k.lenBytes), opMode_(k.opMode_) {
     size_t i;
     this->data = new uint8_t[k.lenBytes];
     for(i = 0; i < k.lenBytes; i++) this->data[i] = k.data[i];                  // -Supposing Cipher object is well constructed, this is, k.data != NULL
@@ -38,7 +46,8 @@ Key::Key(const Key& k):lenBits(k.lenBits), lenBytes(k.lenBytes), opMode_(k.opMod
     }
 }
 
-Key::Key(const char*const fname) : lenBits(LenBits::_128), lenBytes(AESconstants::BLOCK_SIZE), opMode_(OpMode::ECB) { // -Building from .data file
+Key::Key(const char*const fname)
+    : lenBits(LenBits::_128), lenBytes(AESconstants::BLOCK_SIZE), opMode_(OpMode::ECB) {
     char aeskeyStr[] = "AESKEY";
     char AESKEY[7];
     char opMode[4];
@@ -59,13 +68,14 @@ Key::Key(const char*const fname) : lenBits(LenBits::_128), lenBytes(AESconstants
                     throw std::runtime_error("Not a recognized operation mode");
                 }
                 file.read((char*)&keyLen, 2);                                   // -Reading key lenBits
-                if(keyLen == 128 || keyLen == 192 || keyLen == 256) this->lenBits = (LenBits)keyLen;
+                if(keyLen == uint16_t(LenBits::_128) || keyLen == uint16_t(LenBits::_192) || keyLen == uint16_t(LenBits::_256))
+                    this->lenBits = (LenBits)keyLen;
                 else {
                     std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname):" << keyLen << " is not a valid length in bits for key.\n";
                     throw std::runtime_error("Key length not allowed.");
                 }
-                this->lenBytes = keyLen >> 3;                                   // -lenBytes = len / 8;
-                this->data = new uint8_t[this->lenBytes];                        // -Reading key
+                this->lenBytes = fromLenBitsToLenBytes(this->lenBits);          // -lenBytes = lenbits / 8;
+                this->data = new uint8_t[this->lenBytes];                       // -Reading key
                 file.read((char*)this->data, (std::streamsize)this->lenBytes);
                 if(this->opMode_ == OpMode::CBC) {
                     file.read((char*)(this->IV.data), AESconstants::BLOCK_SIZE);              // -In CBC case, reading IV.
@@ -138,7 +148,9 @@ std::ostream& AESencryption::operator<<(std::ostream& ost, const Key& k) {
 }
 
 void Key::set_IV(const InitVector source) {
-    if(!this->initializedIV) for(int i = 0; i < AESconstants::BLOCK_SIZE; i++) this->IV.data[i] = source.data[i];
+    if(!this->initializedIV)
+        for(int i = 0; i < AESconstants::BLOCK_SIZE; i++)
+            this->IV.data[i] = source.data[i];
     this->initializedIV = true;
 }
 
@@ -159,7 +171,7 @@ void Key::save(const char*const fname) const {
         file.write(aeskey,  6);                                                 // -File type
         file.write(op_mode, 3);                                                 // -Operation mode
         file.write((char*)&this->lenBits, 2);                                   // -Key lenBits in bits
-        file.write((char*)this->data, (std::streamsize)this->lenBytes);          // -Key
+        file.write((char*)this->data, (std::streamsize)this->lenBytes);         // -Key
         if(this->opMode_ == OpMode::CBC) file.write((char*)this->IV.data, AESconstants::BLOCK_SIZE); // -If CBC, writes initial vector
     } else {
         std::cerr << "In file Source/AES.cpp, function void Key::save(const char* const fname): Failed to write " << fname << " file.\n";
