@@ -1,6 +1,7 @@
 #include"../../include/AESencryption.hpp"
 #include"../data-encryption/AES/AES.h"
 #include"../data-encryption/operation_modes/operation_modes.h"
+#include"../utils/print_bytes/print_bytes.hpp"
 
 using namespace AESencryption;
 
@@ -38,31 +39,29 @@ Cipher& Cipher::operator = (const Cipher& a) {
     return *this;
 }
 
-/*std::ostream& AESencryption::operator << (std::ostream& ost, const Cipher& c) {
-    char keyExpansionString[880];
-    int rowsAmount = c.keyExpLen >> 5;                                          // -rowsAmount = c.keyExpLen / 32
-    int i, j, k, l;
-    for(i = 0, j = 0, k = 0; i < rowsAmount; i++, j+=32, k+=64) {               // -Rows with 32 columns
-        keyExpansionString[k++] = '\n';
-        keyExpansionString[k++] = '\t';
-        keyExpansionString[k++] = '\t';
-        bytesToHexString(&c.keyExpansion[j], &keyExpansionString[k], 32);       // -Writing 32 bites pointed by &c.keyExpansion[j] in hexadecimal over 65 chars
-    }                                                                           //  over &keyExpansionString[k]
-    if((l = c.keyExpLen & 31) > 0) {                                            // -l = c.keyExpLen % 31
-        keyExpansionString[k++] = '\n';
-        keyExpansionString[k++] = '\t';
-        keyExpansionString[k++] = '\t';
-        bytesToHexString(&c.keyExpansion[j], &keyExpansionString[k], l);
-        keyExpansionString[k+(l<<1)] = 0;                                       // -k+(l<<1) = k + l*2
-    }
-    else keyExpansionString[k] = 0;
+std::ostream& AESencryption::operator<<(std::ostream& ost, const Cipher& c) {
     ost << "AES::Cipher object information:\n";
     ost << c.key;
-    ost << "\tNr: " << c.Nr << " rounds" << '\n';
-    ost << "\tKey Expansion size: " << c.keyExpLen << " bytes" << '\n';
-    ost << "\tKey Expansion: " << keyExpansionString << '\n';
+    ost << "\tNr: " << c.Nr << " rounds\n";
+    ost << "\tKey Expansion size: " << c.keyExpLen << " bytes\n";
+    ost << "\tKey Expansion:";
+
+    const size_t bytes_per_row = 32;
+    size_t bytes_to_print;
+    if (c.keyExpansion) {
+        for(size_t i = 0; i < c.keyExpLen; i += bytes_per_row) {
+            ost << "\n\t\t"; // Start each new line of the expansion
+            // Determine how many bytes to print in this row (handles the last partial row). Here, we are supposing KeyLenExp is a multiple of 32,
+            // which is true for AES standard.
+            bytes_to_print = (i + bytes_per_row > c.keyExpLen) ? (c.keyExpLen - i) : bytes_per_row;
+            print_bytes_as_hex(ost, &c.keyExpansion[i], bytes_to_print);
+        }
+    } else {
+        ost << " (null)";
+    }
+    ost << '\n';
     return ost;
-}*/
+}
 
 void Cipher::buildKeyExpansion() {
     KeyExpansion* ke_p = KeyExpansionBuildNew(this->key.data, this->Nk, false);
