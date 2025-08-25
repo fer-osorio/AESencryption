@@ -11,7 +11,9 @@ class Cipher {
 private:
 	// -The default values for a cipher object are the values for a key of 256 bits
 	Key key = Key();
-	int Nk = 8, Nr = 14, keyExpLen = 240;
+	size_t Nk = AESconstants::Nk128;
+	size_t Nr = AESconstants::Nr128;
+	size_t keyExpansionLength = AESconstants::keyExpansionLength128;
 	uint8_t* keyExpansion = NULL;
 public:
 	Cipher();								// -The default constructor will set the key expansion as zero in every element.
