@@ -14,7 +14,7 @@ struct InitVector{
 
 struct Key;									// -Declaring struct Key and class Cipher to use them as arguments in functions
 class Cipher;
-std::ostream& operator << (std::ostream& ost, Key k);
+std::ostream& operator << (std::ostream& ost, const Key& k);
 std::ostream& operator << (std::ostream& st, const Cipher& c);			// -Declaration here so this function is inside the name space function.
 
 struct Key {
