@@ -71,8 +71,9 @@ void Cipher::buildKeyExpansion() {
     KeyExpansionDelete(&ke_p);
 }
 
-void Cipher::formInitialVector(){                                                // -Simple method for setting the initial vector.
+void Cipher::formInitialVector(){                                               // -Simple method for setting the initial vector.
     setInitialVector(this->key.IV.data);
+    this->key.initializedIV = true;
 }
 
 void Cipher::encrypt(const uint8_t*const data, size_t size, uint8_t*const output) const{
