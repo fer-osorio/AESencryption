@@ -2,7 +2,7 @@
 #include<cstring>
 #include<random>
 #include<exception>
-#include"../../include/AESencryption.hpp"
+#include"../../include/key.hpp"
 #include"../utils/print_bytes/print_bytes.hpp"
 
 using namespace AESencryption;
@@ -36,12 +36,12 @@ static int bytesToHexString(const uint8_t*const origin, char*const destination, 
 
 /************************************************************** Handling AES cryptographic keys ******************************************************************/
 
-Key::Key(): lenBits(Len::_256), lenBytes(32), opMode_(OpMode::ECB) {
+Key::Key(): lenBits(LenBits::_256), lenBytes(32), opMode_(OpMode::ECB) {
     this->data = new uint8_t[this->lenBytes];
     for(size_t i = 0; i < this->lenBytes; i++) this->data[i] = 0;
 }
 
-Key::Key(Len len, OpMode op_m): lenBits(len), lenBytes((size_t)len >> 3), opMode_(op_m){
+Key::Key(LenBits len, OpMode op_m): lenBits(len), lenBytes((size_t)len >> 3), opMode_(op_m){
     std::random_device dev; std::mt19937 seed(dev());
     std::uniform_int_distribution<std::mt19937::result_type> distribution;      // -Random number with uniform distribution
     size_t i;
@@ -53,7 +53,7 @@ Key::Key(Len len, OpMode op_m): lenBits(len), lenBytes((size_t)len >> 3), opMode
     }
 }
 
-Key::Key(const uint8_t* const _key, Len len, OpMode op_m): lenBits(len), lenBytes((size_t)len >> 3), opMode_(op_m){
+Key::Key(const uint8_t* const _key, LenBits len, OpMode op_m): lenBits(len), lenBytes((size_t)len >> 3), opMode_(op_m){
     this->data = new uint8_t[this->lenBytes];
     if(_key != NULL) for(size_t i = 0; i < this->lenBytes; i++) this->data[i] = _key[i];
 }
@@ -63,11 +63,11 @@ Key::Key(const Key& k):lenBits(k.lenBits), lenBytes(k.lenBytes), opMode_(k.opMod
     this->data = new uint8_t[k.lenBytes];
     for(i = 0; i < k.lenBytes; i++) this->data[i] = k.data[i];                  // -Supposing Cipher object is well constructed, this is, k.data != NULL
     if(k.opMode_ == OpMode::CBC) {                                              // -Without CBC, copying IV is pointless.
-        for(i = 0; i < BLOCK_SIZE; i++) this->IV.data[i] = k.IV.data[i];
+        for(i = 0; i < AESconstants::BLOCK_SIZE; i++) this->IV.data[i] = k.IV.data[i];
     }
 }
 
-Key::Key(const char*const fname) : lenBits(Len::_128), lenBytes(BLOCK_SIZE), opMode_(OpMode::ECB) { // -Building from .data file
+Key::Key(const char*const fname) : lenBits(LenBits::_128), lenBytes(AESconstants::BLOCK_SIZE), opMode_(OpMode::ECB) { // -Building from .data file
     char aeskeyStr[] = "AESKEY";
     char AESKEY[7];
     char opMode[4];
@@ -88,7 +88,7 @@ Key::Key(const char*const fname) : lenBits(Len::_128), lenBytes(BLOCK_SIZE), opM
                     throw std::runtime_error("Not a recognized operation mode");
                 }
                 file.read((char*)&keyLen, 2);                                   // -Reading key lenBits
-                if(keyLen == 128 || keyLen == 192 || keyLen == 256) this->lenBits = (Len)keyLen;
+                if(keyLen == 128 || keyLen == 192 || keyLen == 256) this->lenBits = (LenBits)keyLen;
                 else {
                     std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname):" << keyLen << " is not a valid length in bits for key.\n";
                     throw std::runtime_error("Key length not allowed.");
@@ -97,7 +97,7 @@ Key::Key(const char*const fname) : lenBits(Len::_128), lenBytes(BLOCK_SIZE), opM
                 this->data = new uint8_t[this->lenBytes];                        // -Reading key
                 file.read((char*)this->data, (std::streamsize)this->lenBytes);
                 if(this->opMode_ == OpMode::CBC) {
-                    file.read((char*)(this->IV.data), BLOCK_SIZE);              // -In CBC case, reading IV.
+                    file.read((char*)(this->IV.data), AESconstants::BLOCK_SIZE);              // -In CBC case, reading IV.
                     this->initializedIV = true;
                 }
            } else {
@@ -128,7 +128,7 @@ Key& Key::operator = (const Key& k) {
         this->opMode_ = k.opMode_;
         if(k.opMode_ == OpMode::CBC)                                             // -Without CBC, copying IV is pointless.
             if((this->initializedIV = k.initializedIV) == true)
-                for(i = 0; i < BLOCK_SIZE; i++) this->IV.data[i] = k.IV.data[i];
+                for(i = 0; i < AESconstants::BLOCK_SIZE; i++) this->IV.data[i] = k.IV.data[i];
     }
     return *this;
 }
@@ -139,7 +139,7 @@ bool Key::operator == (const Key& k) const{
     for(i = 0; i < this->lenBytes; i++) if(this->data[i] != k.data[i]) return false;
     if(this->opMode_ == k.opMode_) {
         if(this->opMode_ == OpMode::CBC)
-            for(i = 0; i < BLOCK_SIZE; i++) if(this->IV.data[i] != k.IV.data[i]) return false;
+            for(i = 0; i < AESconstants::BLOCK_SIZE; i++) if(this->IV.data[i] != k.IV.data[i]) return false;
     } else return false;
     return true;
 }
@@ -167,7 +167,7 @@ std::ostream& AESencryption::operator<<(std::ostream& ost, const Key& k) {
 }
 
 void Key::set_IV(const InitVector source) {
-    if(!this->initializedIV) for(int i = 0; i < BLOCK_SIZE; i++) this->IV.data[i] = source.data[i];
+    if(!this->initializedIV) for(int i = 0; i < AESconstants::BLOCK_SIZE; i++) this->IV.data[i] = source.data[i];
     this->initializedIV = true;
 }
 
@@ -189,7 +189,7 @@ void Key::save(const char*const fname) const {
         file.write(op_mode, 3);                                                 // -Operation mode
         file.write((char*)&this->lenBits, 2);                                   // -Key lenBits in bits
         file.write((char*)this->data, (std::streamsize)this->lenBytes);          // -Key
-        if(this->opMode_ == OpMode::CBC) file.write((char*)this->IV.data, BLOCK_SIZE); // -If CBC, writes initial vector
+        if(this->opMode_ == OpMode::CBC) file.write((char*)this->IV.data, AESconstants::BLOCK_SIZE); // -If CBC, writes initial vector
     } else {
         std::cerr << "In file Source/AES.cpp, function void Key::save(const char* const fname): Failed to write " << fname << " file.\n";
         throw std::runtime_error("File could not be written.");
