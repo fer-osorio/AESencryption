@@ -7,35 +7,6 @@
 
 using namespace AESencryption;
 
-/*********************************************************************** Helper functions ************************************************************************/
-
-static void OpModeToString(Key::OpMode opm, char*const destination) {  // -Assuming destination is a pointer to an array of at least four elements.
-    switch(opm) {
-        case Key::OpMode::ECB: strcpy(destination, "ECB");
-            break;
-        case Key::OpMode::CBC: strcpy(destination, "CBC");
-            break;
-    }
-}
-
-static int bytesToHexString(const uint8_t*const origin, char*const destination, const int len) { // -From an array of bytes creates a string witch is the
-    if(len <= 0) return -1;                                                     //  representation in hexadecimal of that byte array
-    char buff;                                                                  // -The resulting string is written on the "destination" pointer. We assume this
-    int  i, j;
-    for(i = 0, j = 0; i < len; i++) {                                           //  pointer points to an array with lenBits at least 2*len+1
-        buff = (char)origin[i] >> 4;                                            // -Taking the four most significant bits
-        if(buff<10) destination[j++] = buff + 48;                               // -To hexadecimal digit
-        else        destination[j++] = buff + 55;                               //  ...
-        buff = origin[i] & 15;                                                  // -Taking the four least significant byte
-        if(buff<10) destination[j++] = buff + 48;                               // -To hexadecimal digit
-        else        destination[j++] = buff + 55;                               //  ...
-    }
-    destination[j] = 0;                                                         // -End of string
-    return 0;
-}
-
-/************************************************************** Handling AES cryptographic keys ******************************************************************/
-
 Key::Key(): lenBits(LenBits::_256), lenBytes(32), opMode_(OpMode::ECB) {
     this->data = new uint8_t[this->lenBytes];
     for(size_t i = 0; i < this->lenBytes; i++) this->data[i] = 0;
