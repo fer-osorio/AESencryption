@@ -1,16 +1,15 @@
 #ifndef KEY_HPP
 #define KEY_HPP
 
+#include"constants.hpp"
 #include<iostream>
 #include<stddef.h>
 #include<stdint.h>
 
-#define BLOCK_SIZE 16
-
 namespace AESencryption {
 
 struct InitVector{
-	uint8_t data[BLOCK_SIZE];
+	uint8_t data[AESconstants::BLOCK_SIZE];
 };
 
 struct Key;									// -Declaring struct Key and class Cipher to use them as arguments in functions
@@ -20,14 +19,14 @@ class Cipher;									// Declare cipher class, so we can make it a friend of Key
 
 struct Key {
 public:
-	enum struct Len {_128 = 128,_192 = 192,_256 = 256};			// -Allowed AES key lengths
+	enum struct LenBits {_128 = 128,_192 = 192,_256 = 256};			// -Allowed AES key lengths
 	enum struct OpMode {
 		ECB,								// -Electronic Code Book (not recommended).
 		CBC,								// -Cipher Block Chaining.
 	};
 private:
 	uint8_t*data = NULL;
-	Len	lenBits;							// -Length in bits.
+	LenBits	lenBits;							// -Length in bits.
 	size_t	lenBytes;							// -Length in bytes.
 	OpMode	opMode_;
 	bool initializedIV  = false;						// -Tells if the initial vector is already initialized or not
@@ -41,8 +40,8 @@ private:
 	friend Cipher;
 	// The following two private constructors can only be acceced by Cipher class, the intention is to have well-constructed keys for the user.
 	Key();
-	Key(Len, OpMode);
-	Key(const uint8_t* const _key, Len, OpMode);
+	Key(LenBits, OpMode);
+	Key(const uint8_t* const _key, LenBits, OpMode);
 public:
 	Key(const char*const fname);						// -Building from binary file.
 	Key(const Key&);
@@ -60,7 +59,8 @@ private:
 	void set_IV(const InitVector source);					// -Sets initial vector by copying the array passed as argument
 	bool IVisInitialized() const { return this->initializedIV; }
 	void write_IV(uint8_t*const destination) const {			// -Writes IV in destination
-		for(int i = 0; i < BLOCK_SIZE; i++) destination[i] = this->IV.data[i]; // -Warning: We are supposing we have at least 16 bytes of space in destination
+		for(int i = 0; i < AESconstants::BLOCK_SIZE; i++)
+			destination[i] = this->IV.data[i];			// -Warning: We are supposing we have at least 16 bytes of space in destination
 	}
 	void write_Key(uint8_t*const destination) const {			// -Writes key in destination. Warning: We're supposing we have enough space in
 		for(size_t i = 0; i < this->lenBytes; i++) destination[i] = this->data[i]; //  destination array.
