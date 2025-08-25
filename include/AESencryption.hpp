@@ -49,7 +49,7 @@ public:
 
 	Key& operator =  (const Key&);
 	bool operator == (const Key&) const;
-	friend std::ostream& operator << (std::ostream& ost, Key k);
+	friend std::ostream& operator << (std::ostream& ost, const Key& k);
 
 	OpMode getOpMode() const{ return this->opMode_; }
 	size_t getLenBytes() const {return this->lenBytes;}
