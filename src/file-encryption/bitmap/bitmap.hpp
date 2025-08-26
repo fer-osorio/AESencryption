@@ -1,24 +1,19 @@
 // -Set of structures representing files. The intention is to handle files for its encryption
-#include<cstdint>
-#include"AES.hpp"
-#include <iomanip>
-
 #ifndef _INCLUDED_FILE_
 #define _INCLUDED_FILE_
-#define NAME_MAX_LEN 4096
-#define RGB_COMPONENTS_AMOUNT	3
-#define DIRECTIONS_AMOUNT	3
 
-namespace File {
+#include"../../../include/cipher.hpp"
+
+//#define NAME_MAX_LEN 4096
 
 class Bitmap;									// -The intention is to use the name Bitmap in the next function
 std::ostream& operator << (std::ostream& st, const Bitmap& bmp);		// -What we want is to make this function visible inside the name space scope
 struct BitmapStatistics;
 class Bitmap {									// -Handling bitmap format images.
-	public: enum ColorID{ Red, Green, Blue};
-	public: enum Direction{ horizontal, vertical, diagonal };
-	public: static const char*const RGBlabels[RGB_COMPONENTS_AMOUNT];
-	public: static const char*const DirectionLabels[DIRECTIONS_AMOUNT];
+	public: enum ColorID{ Red, Green, Blue, Color_amount};
+	public: enum Direction{ horizontal, vertical, diagonal, direction_amount };
+	public: static const char*const RGBlabels[Color_amount];
+	public: static const char*const DirectionLabels[direction_amount];
 	private:
 	struct RGB {
 		uint8_t red;
@@ -75,14 +70,14 @@ class Bitmap {									// -Handling bitmap format images.
 	size_t PixelAmount() const{ return this->pixelAmount; }
 	size_t dataSize() const{ return this->ih.SizeOfBitmap; }
 
-	friend void encrypt(Bitmap& bmp, AES::Cipher& e, bool save = true, const char* newName = NULL) {// -Encrypts using the operation mode defined in Key object
+	friend void encrypt(Bitmap& bmp, AESencryption::Cipher& e, bool save = true, const char* newName = NULL) {// -Encrypts using the operation mode defined in Key object
 		e.encrypt(bmp.data, bmp.ih.SizeOfBitmap);			// -The reason of the existence of these friend functions is to be capable of
     		if(save){							//  encrypt and decrypt many files with the same Cipher object while maintaining
     			if(newName != NULL) bmp.save(newName); 			//  attributes of bmp object private
     			else bmp.save(bmp.name);
     		}
 	}
-	friend void decrypt(Bitmap& bmp, AES::Cipher& e, bool save = true, const char* newName = NULL) {	// -Decrypts using the operation mode defined in Key object
+	friend void decrypt(Bitmap& bmp, AESencryption::Cipher& e, bool save = true, const char* newName = NULL) {	// -Decrypts using the operation mode defined in Key object
 		e.decrypt(bmp.data, bmp.ih.SizeOfBitmap);
     		if(save) {
     			if(newName != NULL) bmp.save(newName);
@@ -93,7 +88,7 @@ class Bitmap {									// -Handling bitmap format images.
 	friend BitmapStatistics;
 };
 
-std::ostream& operator << (std::ostream& os, const BitmapStatistics& bmSt);
+/*std::ostream& operator << (std::ostream& os, const BitmapStatistics& bmSt);
 struct BitmapStatistics{
 	private:
 	const  Bitmap* 	  pbmp		= NULL;
@@ -131,6 +126,5 @@ struct BitmapStatistics{
 
 	friend std::ostream& operator << (std::ostream& os, const BitmapStatistics& bmSt);
 	void writeBmpName(char destination[]) const{ this->pbmp->writeBmpName(destination); }
-};
-};
+};*/
 #endif
