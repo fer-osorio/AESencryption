@@ -5,16 +5,28 @@
 
 using namespace AESencryption;
 
+static size_t getNkfromLenbit(Key::LenBits lb){
+    return size_t(lb)/32;
+}
+static size_t getNrFromNk(size_t Nk){
+    return Nk+6;
+}
+static size_t getKeyExpansionByteLenFromNr(size_t Nr){
+    return (Nr+1)*Nb*4;
+}
+
 Cipher::Cipher() {
     this->keyExpansion = new uint8_t[this->keyExpansionLength];
     for(int i = 0; i < this->keyExpansionLength; i++) this->keyExpansion[i] = 0;         // -Since the key constitutes of just zeros, key expansion is also just zeros
 }
 
-Cipher::Cipher(const Key& k) :key(k), Nk(k.getLenBytes() / 4), Nr(Nk+6), keyExpansionLength((Nr+1)<<4) {
+Cipher::Cipher(const Key& k)
+    :key(k), Nk(getNkfromLenbit(k.lenBits)), Nr(getNrFromNk(Nk)), keyExpansionLength(getKeyExpansionByteLenFromNr(Nr)) {
     this->buildKeyExpansion();
 }
 
-Cipher::Cipher(const Cipher& a) : key(a.key), Nk(a.Nk), Nr(a.Nr), keyExpansionLength(a.keyExpansionLength) {
+Cipher::Cipher(const Cipher& a)
+    : key(a.key), Nk(a.Nk), Nr(a.Nr), keyExpansionLength(a.keyExpansionLength) {
     this->keyExpansion = new uint8_t[(unsigned)a.keyExpansionLength];
     for(int i = 0; i < a.keyExpansionLength; i++) this->keyExpansion[i] = a.keyExpansion[i];
 }
