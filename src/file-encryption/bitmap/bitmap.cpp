@@ -1,4 +1,4 @@
-#include"File.hpp"
+#include"bitmap.hpp"
 #include<fstream>
 #include<cstring>
 #include<cmath>
@@ -9,12 +9,10 @@ static void cerrMessageBeforeThrow(const char callerFunction[], const char messa
     std::cerr << "In file Source/File.cpp, function " << callerFunction << ": " << message << '\n';
 }
 
-using namespace File;
-
 /******************************************************************* BMP images (.bmp files) **********************************************************************/
 
-const char*const Bitmap::RGBlabels[RGB_COMPONENTS_AMOUNT] = {"Red", "Green", "Blue"};
-const char*const Bitmap::DirectionLabels[DIRECTIONS_AMOUNT] = {"Horizontal", "Vertical", "Diagonal"};
+const char*const Bitmap::RGBlabels[Color_amount] = {"Red", "Green", "Blue"};
+const char*const Bitmap::DirectionLabels[direction_amount] = {"Horizontal", "Vertical", "Diagonal"};
 
 Bitmap::Bitmap(const char* fname) {
     const char thisFuncName[] = "Bitmap::Bitmap(const char* fname)";
@@ -174,7 +172,7 @@ Bitmap& Bitmap::operator = (const Bitmap &bmp) {
     return *this;
 }
 
-std::ostream& File::operator << (std::ostream &stream, const Bitmap &bmp) {
+std::ostream& operator << (std::ostream &stream, const Bitmap &bmp) {
     stream << "File Header: ";
     stream << "\n\tbm: " << bmp.fh.bm[0] << bmp.fh.bm[1];
     stream << "\n\tsize: " << bmp.fh.size;
@@ -246,7 +244,7 @@ uint8_t Bitmap::getPixelColor(int i, int j, ColorID CId)  const{
     return this->img[i][j].red;                                                 // -Just to prevent a compiler warning from appearing
 }
 
-void File::Bitmap::writeBmpName(char *destination) const{
+void Bitmap::writeBmpName(char *destination) const{
     int i = -1;
     while(this->name[++i] != 0) destination[i] = this->name[i];
     destination[i] = 0;
@@ -256,7 +254,7 @@ void File::Bitmap::writeBmpName(char *destination) const{
                                                                         BitmapStatistics
 ******************************************************************************************************************************************************************/
 
-BitmapStatistics::BitmapStatistics(const BitmapStatistics& bmpSts): pbmp(bmpSts.pbmp){
+/*BitmapStatistics::BitmapStatistics(const BitmapStatistics& bmpSts): pbmp(bmpSts.pbmp){
     int i, j;
     if(bmpSts.pbmp == NULL) return;
     this->histogramStablished = bmpSts.histogramStablished;
@@ -554,4 +552,4 @@ std::ostream& File::operator << (std::ostream& os, const BitmapStatistics& bmSt)
     os << "Diagonal     :\t"; for(i = 0; i < RGB_COMPONENTS_AMOUNT; i++) fixedLengthNumber(os, bmSt.Correlation[i][2], 7) << "\t"; os << '\n';
 
     return os;
-}
+}*/
