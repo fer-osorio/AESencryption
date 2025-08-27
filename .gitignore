@@ -31,12 +31,6 @@
 *.out
 *.app
 
-# Testing
-test*
-testing*
-Test*
-Testing*
-
 
 # Cryptographic keys
 *key
