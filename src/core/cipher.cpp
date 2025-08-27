@@ -1,6 +1,6 @@
 #include"../../include/cipher.hpp"
-#include"../data-encryption/AES/AES.h"
-#include"../data-encryption/operation_modes/operation_modes.h"
+#include"../../data-encryption/include//AES.h"
+#include"../../data-encryption/include/operation_modes.h"
 #include"../utils/print_bytes/print_bytes.hpp"
 
 using namespace AESencryption;

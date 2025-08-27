@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include"SBox.h"
 #include"GF256.h"
-#include"AES.h"
+#include"../include/AES.h"
 
 #define WORD_SIZE_SHORTS 2
 #define WORD_LASTIND 3                                                          // -Last index of a word
