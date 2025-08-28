@@ -25,9 +25,6 @@ public:
 	Cipher& operator = (const Cipher& a);
 	friend std::ostream& operator << (std::ostream& st, const Cipher& c);
 
-	void encrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;	// -Encrypts using operation mode stored in Key object
-	void decrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;	// -Decrypts using operation mode stored in Key object
-
 	void encryption(std::vector<uint8_t>& data) const override;
 	void decryption(std::vector<uint8_t>& data) const override;
 
@@ -37,6 +34,8 @@ public:
 	private:
 	void buildKeyExpansion();						// -Creates key expansion
 	void formInitialVector();						// -Creates initial vector and writes it on destination array
+	void encrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;	// -Encrypts using operation mode stored in Key object
+	void decrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;	// -Decrypts using operation mode stored in Key object
 };
 };
 #endif
