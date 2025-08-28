@@ -2,12 +2,13 @@
 #define CIPHER_HPP
 
 #include"key.hpp"
+#include"encryptor.hpp"
 
 namespace AESencryption {
 
 std::ostream& operator << (std::ostream& st, const Cipher& c);			// -Declaration here so this function is inside the name space function.
 
-class Cipher {
+class Cipher : public Encryptor {
 private:
 	// -The default values for a cipher object are the values for a key of 128 bits
 	Key key = Key();
@@ -26,6 +27,9 @@ public:
 
 	void encrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;	// -Encrypts using operation mode stored in Key object
 	void decrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;	// -Decrypts using operation mode stored in Key object
+
+	void encryption(std::vector<uint8_t>& data) const override;
+	void decryption(std::vector<uint8_t>& data) const override;
 
 	void saveKey(const char*const fname) const{ this->key.save(fname); }
 	Key::OpMode getOpMode() const{ return this->key.getOpMode(); }
