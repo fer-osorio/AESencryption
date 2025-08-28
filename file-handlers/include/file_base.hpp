@@ -8,13 +8,9 @@
 #include<stdexcept>  // For exceptions
 
 // Forward declaration of the Encryptor interface.
-// This avoids a circular dependency if the Encryptor needs to know about FileBase.
 class Encryptor;
 
-/**
- * @struct DataRandomness
- * @brief A structure to hold various statistics about file data.
- */
+// Forward declaration of the DataRandomness interface.
 struct DataRandomness;
 
 /**
@@ -70,7 +66,7 @@ public:
 	* @param algorithm An object that conforms to the Encryptor interface.
 	* * This method modifies the internal data buffer.
 	*/
-	void apply_transformation(const Encryptor& algorithm);
+	void apply_encryption(const Encryptor& c);
 
 	/**
 	* @brief Calculates various statistics on the current data buffer.
@@ -82,13 +78,9 @@ public:
 
 	// --- Accessors (Getters) ---
 
-	const std::filesystem::path& get_path() const { return file_path; }
-	const std::vector<uint8_t>& get_data() const { return data; }
-	size_t get_size() const { return data.size(); }
-
-protected:
-	// Helper method for derived classes to calculate common statistics.
-	static double calculate_shannon_entropy(const std::vector<uint8_t>& buffer);
+	const std::filesystem::path& get_path() const;
+	const std::vector<uint8_t>& get_data() const;
+	size_t get_size() const;
 };
 
 #endif // FILE_BASE_HPP
