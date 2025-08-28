@@ -1,4 +1,4 @@
-#include"../../../include/cipher.hpp"
+#include"../../include/cipher.hpp"
 #include<iostream>
 
 class TXT {									// -Handling .txt files
