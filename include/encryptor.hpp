@@ -14,12 +14,20 @@ public:
     virtual ~Encryptor() = default;
 
     /**
-     * @brief Processes a block of data in-place.
+     * @brief Encrypts a block of data in-place.
      * @param data The data to be transformed. This vector will be modified.
      * * The 'const' on the method means the Encryptor object itself is not modified,
      * but the data it points to is.
      */
-    virtual void process(std::vector<uint8_t>& data) const = 0; // Pure virtual function
+    virtual void encryption(std::vector<uint8_t>& data) const = 0; // Pure virtual function
+
+    /**
+     * @brief Decrypts a block of data in-place.
+     * @param data The data to be transformed. This vector will be modified.
+     * * The 'const' on the method means the Encryptor object itself is not modified,
+     * but the data it points to is.
+     */
+    virtual void decryption(std::vector<uint8_t>& data) const = 0; // Pure virtual function
 };
 
 #endif // ENCRYPTOR_HPP
