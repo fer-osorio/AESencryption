@@ -112,3 +112,11 @@ void Cipher::decrypt(const uint8_t*const data, size_t size, uint8_t*const output
             break;
     }
 }
+
+void Cipher::encryption(std::vector<uint8_t>& data) const{
+    encrypt(data.data(), data.size(), data.data());
+}
+
+void Cipher::decryption(std::vector<uint8_t>& data) const{
+    decrypt(data.data(), data.size(), data.data());
+}
