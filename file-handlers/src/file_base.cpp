@@ -1,33 +1,53 @@
-// file_base.cpp
 #include"../include/file_base.hpp"
 #include"../../include/cipher.hpp" // Include the full definition here
+#include"../../metrics-analysis/include/data_randomness.hpp"
 #include<fstream>
 #include<cmath>
 
 // Constructor implementation
 FileBase::FileBase(const std::filesystem::path& path) : file_path(path) {}
 
-bool FileBase::load() {
-    std::ifstream file(this->file_path, std::ios::binary | std::ios::ate);
+bool FileBase::load(bool asBinary) {
+    std::ifstream file;
+    if(asBinary) file.open(this->file_path, std::ios::binary | std::ios::ate);
+    else {
+        this->isTextFile = true;
+        file.open(this->file_path, std::ios::ate);
+    }
     if (!file.is_open()) {
         // In a real application, you might throw an exception or log an error.
         return false;
     }
-
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
-
     this->data.resize(size);
     if (file.read(reinterpret_cast<char*>(this->data.data()), size)) {
         return true;
     }
-
     this->data.clear(); // Clear data on failure
+    return false;
+}
+
+bool FileBase::save(const std::filesystem::path& output_path) const{
+    std::ofstream file;
+    if(this->isTextFile) file.open(this->file_path);
+    else file.open(this->file_path, std::ios::binary);
+    if(!file.is_open()) {
+        return false;
+    }
+    if(file.write(reinterpret_cast<const char*>(this->data.data()), this->data.size())){
+        file.close();
+        return true;
+    }
     return false;
 }
 
 void FileBase::apply_encryption(const Encryptor& c){
     c.encryption(this->data);
+}
+
+DataRandomness FileBase::calculate_statistics() const{
+    return DataRandomness(reinterpret_cast<const std::vector<std::byte>&>(this->data));
 }
 
 const std::filesystem::path& FileBase::get_path() const{
