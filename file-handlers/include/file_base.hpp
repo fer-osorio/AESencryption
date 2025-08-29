@@ -26,7 +26,6 @@ protected:
 	// It correctly handles different OS path separators ('/' vs '\').
 	std::filesystem::path file_path;
 	std::vector<uint8_t> data;
-	bool isTextFile = false;
 
 public:
 	/**
@@ -48,7 +47,7 @@ public:
 	* * Marked as 'virtual' so derived classes can provide specialized
 	* loading mechanisms (e.g., text vs. binary mode).
 	*/
-	virtual bool load(bool asBinary);
+	virtual bool load();
 
 	/**
 	* @brief Saves the current data buffer to a specified path.
