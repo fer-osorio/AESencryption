@@ -1,5 +1,5 @@
 #include"../include/file_base.hpp"
-#include"../../include/cipher.hpp" // Include the full definition here
+#include"../../include/encryptor.hpp" // Include the full definition here
 #include"../../metrics-analysis/include/data_randomness.hpp"
 #include<fstream>
 #include<cmath>
