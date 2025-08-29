@@ -1,23 +1,15 @@
-#include"bitmap.hpp"
+#include"../include/bitmap.hpp"
 #include<fstream>
 #include<cstring>
 #include<cmath>
 #include<exception>
 
-static void cerrMessageBeforeThrow(const char callerFunction[], const char message[]) {
-    if(callerFunction == NULL) return;
-    std::cerr << "In file Source/File.cpp, function " << callerFunction << ": " << message << '\n';
-}
-
-/******************************************************************* BMP images (.bmp files) **********************************************************************/
-
 const char*const Bitmap::RGBlabels[Color_amount] = {"Red", "Green", "Blue"};
 const char*const Bitmap::DirectionLabels[direction_amount] = {"Horizontal", "Vertical", "Diagonal"};
 
-Bitmap::Bitmap(const char* fname) {
-    const char thisFuncName[] = "Bitmap::Bitmap(const char* fname)";
+Bitmap::Bitmap(const std::filesystem::path& path) : FileBase(path){
     std::ifstream file;
-    file.open(fname, std::ios::binary);
+    file.open(path, std::ios::binary);
     int i, j, sz = 0;
     if(file.is_open()) {
         file.read((char*)fh.bm, 2);
@@ -50,22 +42,12 @@ Bitmap::Bitmap(const char* fname) {
             this->ih.size = sizeof(ImageHeader);
             this->fh.offset = 14 + this->ih.size;
             this->fh.size = ih.SizeOfBitmap + fh.offset;
-
-            this->img = new RGB*[this->ih.Height];                              // -Building pixel matrix
-            for(i = this->ih.Height - 1, j = 0; i >= 0; i--, j++) {
-                this->img[j] = (RGB*)&this->data[3 * i * this->ih.Width];
-            }
-            while(fname[sz++] != 0) {}                                          // -Getting name size.
-            this->name = new char[sz];
-            for(i = 0; i < sz; i++) this->name[i] = fname[i];                   // -Copying name
             file.close();
         } else {
             file.close();
-            cerrMessageBeforeThrow(thisFuncName, "Not a valid bitmap file.");
             throw std::runtime_error("Not a valid bitmap file.");
         }
     } else {
-        cerrMessageBeforeThrow(thisFuncName, "File could not be opened.");
         throw std::runtime_error("File could not be opened.");
     }
 }
@@ -82,25 +64,7 @@ Bitmap::Bitmap(const Bitmap& bmp) {
     this->pixelAmount = bmp.pixelAmount;
     this->bytesPerPixel = bmp.bytesPerPixel;
 
-    int i, j;                                                                   // -Initializing data.
-    this->data = new char[bmp.ih.SizeOfBitmap];
-    for(i = 0; i < (int)bmp.ih.SizeOfBitmap; i++) this->data[i] = bmp.data[i];
-
-    this->img = new RGB*[bmp.ih.Height];
-    for(i = this->ih.Height - 1, j = 0; i >= 0; i--, j++) {                     // -Building pixel array over this image
-        this->img[j] = (RGB*)&this->data[3 * i * ih.Width];
-    }
-
-    size_t sz = 0;                                                              // Initializing name
-    while(bmp.name[sz++] != 0) {}                                               // -Getting name size.
-    name = new char[sz];
-    for(i = 0; i < (int)sz; i++) name[i] = bmp.name[i];
-}
-
-Bitmap::~Bitmap() {
-    if(data != NULL) { delete[] data; data = NULL; }
-    if(img  != NULL) { delete[] img;   img = NULL; }
-    if(name != NULL) { delete[] name; name = NULL; }
+    //this->data = bmp.data;
 }
 
 void Bitmap::save(const char *fname) const{
