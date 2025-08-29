@@ -7,15 +7,10 @@
 // Constructor implementation
 FileBase::FileBase(const std::filesystem::path& path) : file_path(path) {}
 
-bool FileBase::load(bool asBinary) {
+bool FileBase::load() {
     std::ifstream file;
-    if(asBinary) file.open(this->file_path, std::ios::binary | std::ios::ate);
-    else {
-        this->isTextFile = true;
-        file.open(this->file_path, std::ios::ate);
-    }
+    file.open(this->file_path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
-        // In a real application, you might throw an exception or log an error.
         return false;
     }
     std::streamsize size = file.tellg();
@@ -30,8 +25,7 @@ bool FileBase::load(bool asBinary) {
 
 bool FileBase::save(const std::filesystem::path& output_path) const{
     std::ofstream file;
-    if(this->isTextFile) file.open(this->file_path);
-    else file.open(this->file_path, std::ios::binary);
+    file.open(this->file_path, std::ios::binary);
     if(!file.is_open()) {
         return false;
     }
