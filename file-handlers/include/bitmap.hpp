@@ -10,16 +10,19 @@
 class Bitmap;									// -The intention is to use the name Bitmap in the next function
 std::ostream& operator << (std::ostream& st, const Bitmap& bmp);		// -What we want is to make this function visible inside the name space scope
 class Bitmap : FileBase {							// -Handling bitmap format images.
-	public: enum RGB{ Red, Green, Blue, Color_amount};
-	public: enum Direction{ horizontal, vertical, diagonal, direction_amount };
-	public: static const char*const RGBlabels[Color_amount];
-	public: static const char*const DirectionLabels[direction_amount];
-	private:
+public:
+	enum RGB{ Red, Green, Blue, Color_amount};
+	enum Direction{ horizontal, vertical, diagonal, direction_amount };
+	static const char*const RGBlabels[Color_amount];
+	static const char*const DirectionLabels[direction_amount];
+private:
 	struct RGBcolor {
 		uint8_t red;
 		uint8_t green;
 		uint8_t blue;
 	};
+
+	#pragma pack(push,1)							// BMP format requires no padding
 	struct FileHeader {
 		char     bm[2];							// [B, M] for bmp files
 		unsigned size;  						// File size
@@ -41,14 +44,14 @@ class Bitmap : FileBase {							// -Handling bitmap format images.
 		uint32_t ColorsUsed;						// Colors in the color palette, 0 to default
 		uint32_t ColorsImportant;					// Zero when every color is important
 	} ih = {0,0,0,0,0,0,0,0,0,0,0};
+	#pragma pack(pop)
 
 	size_t pixelAmount = 0;
 	size_t bytesPerPixel = 3;
 
-	uint8_t getPixelComponentValue(int i, int j, RGB c) const;
-
-	public:
-	Bitmap(const std::filesystem::path& path);
+public:
+	explicit Bitmap(const std::filesystem::path& path);
+	Bitmap(const Bitmap& bmp);
 
 	bool load() override;
 	bool save(const std::filesystem::path& output_path) const override;
@@ -61,6 +64,8 @@ class Bitmap : FileBase {							// -Handling bitmap format images.
 
 	size_t PixelAmount() const{ return this->pixelAmount; }
 	size_t dataSize() const{ return this->ih.SizeOfBitmap; }
+private:
+	uint8_t getPixelComponentValue(int i, int j, RGB c) const;
 };
 
 /*std::ostream& operator << (std::ostream& os, const BitmapStatistics& bmSt);
