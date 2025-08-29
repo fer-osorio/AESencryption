@@ -2,20 +2,20 @@
 #ifndef _INCLUDED_FILE_
 #define _INCLUDED_FILE_
 
+#include"file_base.hpp"
 #include"../../include/cipher.hpp"
 
 //#define NAME_MAX_LEN 4096
 
 class Bitmap;									// -The intention is to use the name Bitmap in the next function
 std::ostream& operator << (std::ostream& st, const Bitmap& bmp);		// -What we want is to make this function visible inside the name space scope
-struct BitmapStatistics;
-class Bitmap {									// -Handling bitmap format images.
-	public: enum ColorID{ Red, Green, Blue, Color_amount};
+class Bitmap : FileBase {							// -Handling bitmap format images.
+	public: enum RGB{ Red, Green, Blue, Color_amount};
 	public: enum Direction{ horizontal, vertical, diagonal, direction_amount };
 	public: static const char*const RGBlabels[Color_amount];
 	public: static const char*const DirectionLabels[direction_amount];
 	private:
-	struct RGB {
+	struct RGBcolor {
 		uint8_t red;
 		uint8_t green;
 		uint8_t blue;
@@ -45,47 +45,22 @@ class Bitmap {									// -Handling bitmap format images.
 	size_t pixelAmount = 0;
 	size_t bytesPerPixel = 3;
 
-	char* data = NULL;
-	RGB** img  = NULL;
-	char* name = NULL;
-
-	uint8_t getPixelColor(int i, int j, ColorID CId) const;
-
+	uint8_t getPixelComponentValue(int i, int j, RGB c) const;
 
 	public:
-	Bitmap() {} 								// -Just for type declaration
-	Bitmap(const char* fname);
-	Bitmap(const Bitmap& bmp);
-	~Bitmap();
+	Bitmap(const std::filesystem::path& path);
 
-	void save(const char* fname) const;					// -Saves in memory
+	bool load() override;
+	bool save(const std::filesystem::path& output_path) const override;
+
 	Bitmap& operator = (const Bitmap& bmp);
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
 
 	bool operator == (const Bitmap& bmp) const;
 	bool operator != (const Bitmap& bmp) const;
 
-	void writeBmpName(char destination[]) const;
-
 	size_t PixelAmount() const{ return this->pixelAmount; }
 	size_t dataSize() const{ return this->ih.SizeOfBitmap; }
-
-	friend void encrypt(Bitmap& bmp, AESencryption::Cipher& e, bool save = true, const char* newName = NULL) {// -Encrypts using the operation mode defined in Key object
-		e.encrypt(bmp.data, bmp.ih.SizeOfBitmap);			// -The reason of the existence of these friend functions is to be capable of
-    		if(save){							//  encrypt and decrypt many files with the same Cipher object while maintaining
-    			if(newName != NULL) bmp.save(newName); 			//  attributes of bmp object private
-    			else bmp.save(bmp.name);
-    		}
-	}
-	friend void decrypt(Bitmap& bmp, AESencryption::Cipher& e, bool save = true, const char* newName = NULL) {	// -Decrypts using the operation mode defined in Key object
-		e.decrypt(bmp.data, bmp.ih.SizeOfBitmap);
-    		if(save) {
-    			if(newName != NULL) bmp.save(newName);
-    			else bmp.save(bmp.name);
-    		}
-	}
-
-	friend BitmapStatistics;
 };
 
 /*std::ostream& operator << (std::ostream& os, const BitmapStatistics& bmSt);
@@ -103,12 +78,12 @@ struct BitmapStatistics{
 	double Entropy    [RGB_COMPONENTS_AMOUNT]  = { 0.0};
 	double XiSquare   [RGB_COMPONENTS_AMOUNT]  = { 0.0};
 
-	double average(    const Bitmap::ColorID) const;			// -Average value of color in a range of pixels. Horizontal calculation
-	double covariance( const Bitmap::ColorID, Bitmap::Direction dr, size_t offset) const;
-	double variance(   const Bitmap::ColorID, Bitmap::Direction dr) const;
-	double correlation(const Bitmap::ColorID, Bitmap::Direction dr, size_t offset) const;
-	double entropy(const Bitmap::ColorID) const;
-	double xiSquare(const Bitmap::ColorID)const;
+	double average(    const Bitmap::RGB) const;			// -Average value of color in a range of pixels. Horizontal calculation
+	double covariance( const Bitmap::RGB, Bitmap::Direction dr, size_t offset) const;
+	double variance(   const Bitmap::RGB, Bitmap::Direction dr) const;
+	double correlation(const Bitmap::RGB, Bitmap::Direction dr, size_t offset) const;
+	double entropy(const Bitmap::RGB) const;
+	double xiSquare(const Bitmap::RGB)const;
 
 	void sethistogram();
 
@@ -118,11 +93,11 @@ struct BitmapStatistics{
 	BitmapStatistics(const Bitmap* pbmp_);
 	BitmapStatistics& operator = (const BitmapStatistics&);
 
-	double retreaveCorrelation(const Bitmap::ColorID CID, Bitmap::Direction dr, double* xAxis_dest = NULL, double* yAxis_dest = NULL) const;
-	double retreaveEntropy(const Bitmap::ColorID CID) const{ return this->Entropy[CID]; }
-	double retreaveXiSquare(const Bitmap::ColorID CID) const{ return this->XiSquare[CID]; }
+	double retreaveCorrelation(const Bitmap::RGB CID, Bitmap::Direction dr, double* xAxis_dest = NULL, double* yAxis_dest = NULL) const;
+	double retreaveEntropy(const Bitmap::RGB CID) const{ return this->Entropy[CID]; }
+	double retreaveXiSquare(const Bitmap::RGB CID) const{ return this->XiSquare[CID]; }
 	size_t pixelAmount() const{ return this->pbmp->PixelAmount(); }
-	void   writeHistogram(Bitmap::ColorID CID, double destination[]) const{ for(int i = 0; i < 256; i++) destination[i] = this->histogram[CID][i]; }
+	void   writeHistogram(Bitmap::RGB CID, double destination[]) const{ for(int i = 0; i < 256; i++) destination[i] = this->histogram[CID][i]; }
 
 	friend std::ostream& operator << (std::ostream& os, const BitmapStatistics& bmSt);
 	void writeBmpName(char destination[]) const{ this->pbmp->writeBmpName(destination); }
