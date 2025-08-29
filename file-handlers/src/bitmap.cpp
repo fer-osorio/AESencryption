@@ -21,27 +21,19 @@ Bitmap::Bitmap(const std::filesystem::path& path) : FileBase(path){
             file.read((char*)&fh.offset, 4);
 
             // -Image Header.
-            file.read((char*)&ih.size, 4);
-            file.read((char*)&ih.Width, 4);
-            file.read((char*)&ih.Height, 4);
-            file.read((char*)&ih.Planes, 2);
-            file.read((char*)&ih.BitsPerPixel, 2);
-            file.read((char*)&ih.Compression, 4);
-            file.read((char*)&ih.SizeOfBitmap, 4);
-            file.read((char*)&ih.HorzResolution, 4);
-            file.read((char*)&ih.VertResolution, 4);
-            file.read((char*)&ih.ColorsUsed, 4);
-            file.read((char*)&ih.ColorsImportant, 4);
-
+            file.read((char*)&this->ih.size, 4);
+            file.read((char*)&this->ih.Width, 4);
+            file.read((char*)&this->ih.Height, 4);
+            file.read((char*)&this->ih.Planes, 2);
+            file.read((char*)&this->ih.BitsPerPixel, 2);
+            file.read((char*)&this->ih.Compression, 4);
+            file.read((char*)&this->ih.SizeOfBitmap, 4);
+            file.read((char*)&this->ih.HorzResolution, 4);
+            file.read((char*)&this->ih.VertResolution, 4);
+            file.read((char*)&this->ih.ColorsUsed, 4);
+            file.read((char*)&this->ih.ColorsImportant, 4);
             this->pixelAmount = (size_t)this->ih.Height * (size_t)this->ih.Width;
-            this->bytesPerPixel = this->ih.BitsPerPixel >> 3;                   // -this->ih.BitsPerPixel >> 3 == this->ih.BitsPerPixel / 8
-
-            this->data = new char[ih.SizeOfBitmap];
-            file.seekg(this->fh.offset);
-            file.read(this->data, ih.SizeOfBitmap);                             // -Initializing bitmap data
-            this->ih.size = sizeof(ImageHeader);
-            this->fh.offset = 14 + this->ih.size;
-            this->fh.size = ih.SizeOfBitmap + fh.offset;
+            this->bytesPerPixel = this->ih.BitsPerPixel / 8;
             file.close();
         } else {
             file.close();
@@ -52,7 +44,22 @@ Bitmap::Bitmap(const std::filesystem::path& path) : FileBase(path){
     }
 }
 
-Bitmap::Bitmap(const Bitmap& bmp) {
+bool Bitmap::load(){
+    std::ifstream file;
+    file.open(this->file_path, std::ios::binary);
+    if (!file.is_open()) {
+        return false;
+    }
+    file.seekg(this->fh.offset);
+    this->data.resize(ih.SizeOfBitmap);
+    if(file.read(reinterpret_cast<char*>(this->data.data()), ih.SizeOfBitmap)){ // -Initializing bitmap data
+        return true;
+    }
+    this->data.clear();                                                         // Clear data on failure
+    return false;
+}
+
+Bitmap::Bitmap(const Bitmap& bmp) : FileBase(bmp){
     this->fh.bm[0] = bmp.fh.bm[0];                                              // -Initializing file header.
     this->fh.bm[1] = bmp.fh.bm[1];                                              // ...
     this->fh.size = bmp.fh.size;                                                // ...
@@ -64,43 +71,43 @@ Bitmap::Bitmap(const Bitmap& bmp) {
     this->pixelAmount = bmp.pixelAmount;
     this->bytesPerPixel = bmp.bytesPerPixel;
 
-    //this->data = bmp.data;
+    this->data = bmp.data;
 }
 
-void Bitmap::save(const char *fname) const{
+bool Bitmap::save(const std::filesystem::path& output_path) const{
     std::ofstream file;
-    file.open(fname, std::ios::binary);
-    const char thisFuncName[] = "void Bitmap::save(const char *fname)";
+    file.open(output_path, std::ios::binary);
     if(file.is_open()) {
-        if(fh.bm[0] == 'B' && fh.bm[1] == 'M') {
-            file.write((char*)fh.bm, 2);                                        // -File Header.
-            file.write((char*)&fh.size, 4);                                     // ...
-            file.write((char*)&fh.reserved1, 2);                                // ...
-            file.write((char*)&fh.reserved2, 2);                                // ...
-            file.write((char*)&fh.offset, 4);                                   // ...
+        if(this->fh.bm[0] == 'B' && this->fh.bm[1] == 'M') {
+            uint32_t updatedOffset = sizeof(FileHeader) + sizeof(ImageHeader);
+            uint32_t updatedFileSize = this->ih.SizeOfBitmap + updatedOffset;
+            file.write((char*)this->fh.bm, 2);                                        // -File Header.
+            file.write((char*)&updatedFileSize, 4);                             // ...
+            file.write((char*)&this->fh.reserved1, 2);                                // ...
+            file.write((char*)&this->fh.reserved2, 2);                                // ...
+            file.write((char*)&updatedOffset, 4);                               // ...
 
-            file.write((char*)&ih.size, 4);                                     // -Image Header.
-            file.write((char*)&ih.Width, 4);                                    // ...
-            file.write((char*)&ih.Height, 4);                                   // ...
-            file.write((char*)&ih.Planes, 2);                                   // ...
-            file.write((char*)&ih.BitsPerPixel, 2);                             // ...
-            file.write((char*)&ih.Compression, 4);                              // ...
-            file.write((char*)&ih.SizeOfBitmap, 4);                             // ...
-            file.write((char*)&ih.HorzResolution, 4);                           // ...
-            file.write((char*)&ih.VertResolution, 4);                           // ...
-            file.write((char*)&ih.ColorsUsed, 4);                               // ...
-            file.write((char*)&ih.ColorsImportant, 4);                          // ...
-            file.write((char*)data, ih.SizeOfBitmap);                           // ...
+            file.write((char*)&this->ih.size, 4);                                     // -Image Header.
+            file.write((char*)&this->ih.Width, 4);                                    // ...
+            file.write((char*)&this->ih.Height, 4);                                   // ...
+            file.write((char*)&this->ih.Planes, 2);                                   // ...
+            file.write((char*)&this->ih.BitsPerPixel, 2);                             // ...
+            file.write((char*)&this->ih.Compression, 4);                              // ...
+            file.write((char*)&this->ih.SizeOfBitmap, 4);                             // ...
+            file.write((char*)&this->ih.HorzResolution, 4);                           // ...
+            file.write((char*)&this->ih.VertResolution, 4);                           // ...
+            file.write((char*)&this->ih.ColorsUsed, 4);                               // ...
+            file.write((char*)&this->ih.ColorsImportant, 4);                          // ...
+            file.write((char*)this->data.data(), ih.SizeOfBitmap);                           // ...
             file.close();
         } else {
             file.close();
-            cerrMessageBeforeThrow(thisFuncName, "Not a valid bitmap file");
             throw std::runtime_error("Not a valid bitmap file.");
         }
     } else {
-        cerrMessageBeforeThrow(thisFuncName, "File could not be written");
         throw std::runtime_error("File could not be written.");
     }
+    return true;
 }
 
 Bitmap& Bitmap::operator = (const Bitmap &bmp) {
@@ -115,23 +122,6 @@ Bitmap& Bitmap::operator = (const Bitmap &bmp) {
         this->ih = bmp.ih;                                                      // -Copying image header. Using the default member to member copy.
         this->pixelAmount = bmp.pixelAmount;
         this->bytesPerPixel = bmp.bytesPerPixel;
-
-        int i, j;                                                               // -Copying data.
-        if(this->data != NULL) delete[] this->data;
-        this->data = new char[bmp.ih.SizeOfBitmap];
-        for(i = 0; i < (int)bmp.ih.SizeOfBitmap; i++) this->data[i] = bmp.data[i];
-
-        if(this->img != NULL) delete[] this->img;                               // -Copying pixel matrix
-        this->img = new RGB*[bmp.ih.Height];
-        for(i = this->ih.Height - 1, j = 0; i >= 0; i--, j++) {                 // -Building pixel array over this image
-            this->img[j] = (RGB*)&this->data[3 * i * ih.Width];
-        }
-
-        size_t sz = 0;
-        while(bmp.name[sz++] != 0) {}                                           // -Getting name size.
-        if(this->name != NULL) delete[] this->name;
-        this->name = new char[sz];
-        for(i = 0; i < (int)sz; i++) this->name[i] = bmp.name[i];               // -Copying name
     }
     return *this;
 }
