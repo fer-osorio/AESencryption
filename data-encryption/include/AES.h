@@ -30,7 +30,7 @@ typedef KeyExpansion* KeyExpansion_ptr;
  * Consider: It will read 16 bytes starting from 'source', no caring about what those bytes represent.
  * Consider: Allocates memory using malloc.
  * */
-Block_ptr BlockFromBytes(const uint8_t source[]);
+Block_ptr BlockMemoryAllocationFromBytes(const uint8_t source[]);
 
 /*
  * Writes 16 bytes using the content of 'source'. The writting is perform column to column, from top to bottom.
@@ -43,7 +43,7 @@ void bytesFromBlock(const Block* source, uint8_t output[]);
  * Consider: Not intended for the generation of secure random values for cryptographic application.
  * Consider Allocate memory using malloc.
  * */
-Block_ptr BlockAllocateRandom(unsigned int seed);
+Block_ptr BlockMemoryAllocationRandom(unsigned int seed);
 
 /*
  * Prints block in matrix form.
@@ -60,7 +60,7 @@ void BlockXORequalBytes(Block* input, const uint8_t byteBlock[]);
  * Builds key expansion object and returns a pointer to it.
  * Consider: Allocates memory using malloc.
  * */
-KeyExpansion_ptr KeyExpansionBuildNew(const uint8_t* key, size_t nk, bool debug);
+KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t nk, bool debug);
 
 /*
  * Free the memory allocated for an KeyExpansion object pointed by *ke_pp.
