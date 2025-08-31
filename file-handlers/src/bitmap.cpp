@@ -4,21 +4,21 @@
 #include<cmath>
 #include<exception>
 
-const char*const Bitmap::RGBlabels[Color_amount] = {"Red", "Green", "Blue"};
-const char*const Bitmap::DirectionLabels[direction_amount] = {"Horizontal", "Vertical", "Diagonal"};
+const char*const Bitmap::RGBlabels[(unsigned)RGB::Color_amount] = {"Red", "Green", "Blue"};
+const char*const Bitmap::DirectionLabels[(unsigned)Direction::direction_amount] = {"Horizontal", "Vertical", "Diagonal"};
 
 Bitmap::Bitmap(const std::filesystem::path& path) : FileBase(path){
     std::ifstream file;
     file.open(path, std::ios::binary);
     int i, j, sz = 0;
     if(file.is_open()) {
-        file.read((char*)fh.bm, 2);
-        if(fh.bm[0] == 'B' && fh.bm[1] == 'M') {
+        file.read((char*)this->fh.bm, 2);
+        if(this->fh.bm[0] == 'B' && this->fh.bm[1] == 'M') {
             // -File Header.
-            file.read((char*)&fh.size, 4);
-            file.read((char*)&fh.reserved1, 2);
-            file.read((char*)&fh.reserved2, 2);
-            file.read((char*)&fh.offset, 4);
+            file.read((char*)&this->fh.size, 4);
+            file.read((char*)&this->fh.reserved1, 2);
+            file.read((char*)&this->fh.reserved2, 2);
+            file.read((char*)&this->fh.offset, 4);
 
             // -Image Header.
             file.read((char*)&this->ih.size, 4);
@@ -34,6 +34,7 @@ Bitmap::Bitmap(const std::filesystem::path& path) : FileBase(path){
             file.read((char*)&this->ih.ColorsImportant, 4);
             this->pixelAmount = (size_t)this->ih.Height * (size_t)this->ih.Width;
             this->bytesPerPixel = this->ih.BitsPerPixel / 8;
+            this->widthInBytes = this->ih.Width*this->bytesPerPixel;
             file.close();
         } else {
             file.close();
@@ -68,8 +69,10 @@ Bitmap::Bitmap(const Bitmap& bmp) : FileBase(bmp){
     this->fh.offset = bmp.fh.offset;                                            // ...
 
     this->ih = bmp.ih;                                                          // -Initializing image header. Using the default member to member copy.
+
     this->pixelAmount = bmp.pixelAmount;
     this->bytesPerPixel = bmp.bytesPerPixel;
+    this->widthInBytes = bmp.widthInBytes;
 
     this->data = bmp.data;
 }
@@ -122,12 +125,15 @@ Bitmap& Bitmap::operator = (const Bitmap &bmp) {
         this->ih = bmp.ih;                                                      // -Copying image header. Using the default member to member copy.
         this->pixelAmount = bmp.pixelAmount;
         this->bytesPerPixel = bmp.bytesPerPixel;
+        this->widthInBytes = bmp.widthInBytes;
     }
     return *this;
 }
 
 std::ostream& operator << (std::ostream &stream, const Bitmap &bmp) {
-    stream << "File Header: ";
+    stream << "File path:";
+    stream << "\n\t" << bmp.file_path;
+    stream << "\nFile Header: ";
     stream << "\n\tbm: " << bmp.fh.bm[0] << bmp.fh.bm[1];
     stream << "\n\tsize: " << bmp.fh.size;
     stream << "\n\treserved1: " << bmp.fh.reserved1;
@@ -172,36 +178,17 @@ bool Bitmap::operator == (const Bitmap &bmp) const{
 
     if(!equal) return false;
 
-    for(size_t i = 0; i < bmp.ih.SizeOfBitmap; i++)
-        if(this->data[i] != bmp.data[i]) return false;
-
-    return true;
+    return this->data == bmp.data;
 }
 
 bool Bitmap::operator != (const Bitmap &bmp) const{
     return !this->operator==(bmp);
 }
 
-uint8_t Bitmap::getPixelColor(int i, int j, ColorID CId)  const{
+uint8_t Bitmap::getPixelComponentValue(size_t i, size_t j, RGB c)  const{
     if(i > this->ih.Height) i %= this->ih.Height;
-    if(i < 0) (i = i % this->ih.Height) < 0 ? i += this->ih.Height: i;
     if(j > this->ih.Width) j %= this->ih.Width;
-    if(j < 0) (j = j % this->ih.Width)  < 0 ? j += this->ih.Width : j;
-    switch(CId){
-        case Red:
-            return this->img[i][j].red;
-        case Green:
-            return this->img[i][j].green;
-        case Blue:
-            return this->img[i][j].blue;
-    }
-    return this->img[i][j].red;                                                 // -Just to prevent a compiler warning from appearing
-}
-
-void Bitmap::writeBmpName(char *destination) const{
-    int i = -1;
-    while(this->name[++i] != 0) destination[i] = this->name[i];
-    destination[i] = 0;
+    return this->data[i*this->widthInBytes + j*this->bytesPerPixel + (unsigned)c]; // -Just to prevent a compiler warning from appearing
 }
 
 /******************************************************************************************************************************************************************
