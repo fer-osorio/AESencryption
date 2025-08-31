@@ -13,7 +13,7 @@ extern "C" {
 #define NK192 6
 #define NK256 8
 #define Nb 4                                                                    // AES standard constant, length of blocks in words
-enum Nk_{Nk128 = NK128, Nk192 = NK192, Nk256 = NK256};
+enum Nk_{Unknown, Nk128 = NK128, Nk192 = NK192, Nk256 = NK256};
 
 #define WORD_SIZE 4
 #define BLOCK_SIZE 16
