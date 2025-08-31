@@ -33,14 +33,14 @@ public:
 };
 
 // Utility macros for cleaner test writing
-#define TEST_SUITE(name) TestFramework::TestSuite suite("name"); std::cout << "Running " << "name" << "..." << std::endl;
-#define ASSERT_TRUE(condition, name) suite.assert_true(condition, name)
-#define ASSERT_EQUAL(expected, actual, name) suite.assert_equal(expected, actual, name)
-#define ASSERT_BYTES_EQUAL(expected, actual, len, name) suite.assert_bytes_equal(expected, actual, len, name)
-#define ASSERT_NOT_NULL(ptr, name) suite.assert_not_null(ptr, name)
-#define RUN_TEST(func, name) suite.run_test(func, name)
-#define PRINT_RESULTS() suite.print_results()
-#define SUITE_PASSED() suite.all_passed()
+#define TEST_SUITE(name) TestFramework::TestSuite suite(name); std::cout << "Running " << name << "..." << std::endl;
+#define ASSERT_TRUE(condition, name) suite.assertTrue(condition, name)
+#define ASSERT_EQUAL(expected, actual, name) suite.assertEqual(expected, actual, name)
+#define ASSERT_BYTES_EQUAL(expected, actual, len, name) suite.assertBytesEqual(expected, actual, len, name)
+#define ASSERT_NOT_NULL(ptr, name) suite.assertNotNull(ptr, name)
+#define RUN_TEST(func, name) suite.runTest(func, name)
+#define PRINT_RESULTS() suite.printResults()
+#define SUITE_PASSED() suite.allPassed()
 
 }
 
