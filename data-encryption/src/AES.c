@@ -390,7 +390,7 @@ static enum Nk_ uint32ToNk(uint32_t nk){                                        
       return Nk256;
       break;
     default:
-      return Nk128;
+      return Unknown;
   }
 }
 
@@ -424,6 +424,7 @@ static void BlockFromWords(const Word source[], Block* output){
 
 KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t nk, bool debug){
   enum Nk_ Nk = uint32ToNk(nk);
+  if(Nk == Unknown) return NULL;
 
   KeyExpansion_ptr output = KeyExpansionMemoryAllocation(Nk);
   if(output == NULL) return NULL;
@@ -461,6 +462,7 @@ void KeyExpansionWriteBytes(const KeyExpansion* source, uint8_t* dest){
 
 KeyExpansion_ptr KeyExpansionFromBytes(const uint8_t source[], size_t nk){
   enum Nk_ Nk = uint32ToNk(nk);
+  if(Nk == Unknown) return NULL;
   KeyExpansion_ptr output = KeyExpansionMemoryAllocation(Nk);
   if(output == NULL) return NULL;
   for(size_t i = 0, j = 0; i < output->blockSize; i++, j += BLOCK_SIZE){
