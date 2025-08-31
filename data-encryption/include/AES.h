@@ -80,6 +80,11 @@ void KeyExpansionWriteBytes(const KeyExpansion* source, uint8_t* dest);
 KeyExpansion_ptr KeyExpansionFromBytes(const uint8_t source[], size_t nk);
 
 /*
+ * Returns a pointer of type char* to the first element of the key expansion
+ * */
+const uint8_t* KeyExpansionReturnBytePointerToData(const KeyExpansion*const ke_p);
+
+/*
  * Encrypts input block using the key referenced by key_p, the resultant encrypted block is written in output
  * If input == output (they point to the same memory location), the input block is overwritten with the encrypted data
  * */
