@@ -51,7 +51,7 @@ struct KeyExpansion_{
   size_t Nr;
   size_t wordsSize;
   size_t blockSize;
-  Block* blocks;
+  Block* dataBlocks;
 };
 static size_t getNr(enum Nk_ Nk){
   return Nk+6;
@@ -373,8 +373,8 @@ static KeyExpansion_ptr KeyExpansionMemoryAllocation(enum Nk_ Nk){
   output->Nr = getNr(Nk);
   output->wordsSize = KeyExpansionLenWords(Nk);
   output->blockSize = KeyExpansionLenBlocks(Nk);
-  output->blocks = (Block*)malloc(output->blockSize*sizeof (Block));
-  if(output->blocks == NULL) return NULL;
+  output->dataBlocks = (Block*)malloc(output->blockSize*sizeof (Block));
+  if(output->dataBlocks == NULL) return NULL;
   return output;
 }
 
@@ -436,7 +436,7 @@ KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t nk
   KeyExpansionBuildWords(key, Nk, buffer, debug);
   // Writting key expansion on the array of Blocks 'inside' KeyExpansion object.
   for(size_t i = 0, j = 0; i < output->wordsSize && j < output->blockSize; i += Nb, j++){
-    BlockFromWords(buffer + i, output->blocks + j);
+    BlockFromWords(buffer + i, output->dataBlocks + j);
   }
   free(buffer);
   return output;
@@ -445,9 +445,9 @@ KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t nk
 void KeyExpansionDelete(KeyExpansion** ke_pp){
   KeyExpansion* ke_p = *ke_pp;
   if(ke_p != NULL){
-    if(ke_p->blocks != NULL) {
-      free(ke_p->blocks);
-      ke_p->blocks = NULL;                                                      // Signaling that the memory is has been freed.
+    if(ke_p->dataBlocks != NULL) {
+      free(ke_p->dataBlocks);
+      ke_p->dataBlocks = NULL;                                                      // Signaling that the memory is has been freed.
     }
     free(ke_p);
     *ke_pp = NULL;                                                              // Signaling that the memory is has been freed.
@@ -456,7 +456,7 @@ void KeyExpansionDelete(KeyExpansion** ke_pp){
 
 void KeyExpansionWriteBytes(const KeyExpansion* source, uint8_t* dest){
   for(size_t i = 0, j = 0; i < source->blockSize; i++, j += BLOCK_SIZE){
-    bytesFromBlock(source->blocks + i, dest + j);
+    bytesFromBlock(source->dataBlocks + i, dest + j);
   }
 }
 
@@ -466,9 +466,13 @@ KeyExpansion_ptr KeyExpansionFromBytes(const uint8_t source[], size_t nk){
   KeyExpansion_ptr output = KeyExpansionMemoryAllocation(Nk);
   if(output == NULL) return NULL;
   for(size_t i = 0, j = 0; i < output->blockSize; i++, j += BLOCK_SIZE){
-    BlockWriteFromBytes(source + j,output->blocks + i);
+    BlockWriteFromBytes(source + j,output->dataBlocks + i);
   }
   return output;
+}
+
+const uint8_t* KeyExpansionReturnBytePointerToData(const KeyExpansion*const ke_p){
+  return (uint8_t*)ke_p->dataBlocks;
 }
 
 void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, bool debug) {
@@ -490,7 +494,7 @@ void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
   if(input != output) copyBlock(input, output);
 
   if(debug) copyBlock(output,SOR);                                              // Equivalent to copyBlock(output,&SOR[0])
-  AddRoundKey(output, ke_p->blocks, 0);
+  AddRoundKey(output, ke_p->dataBlocks, 0);
   if(debug) copyBlock(output,SOR + 1);                                          // Equivalent to copyBlock(output,&SOR[1])
   for(i = 1; i < ke_p->Nr; i++) {
     SubBytes(output);
@@ -499,14 +503,14 @@ void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
     if(debug) copyBlock(output, ASR + (i-1));
     MixColumns(output);
     if(debug) copyBlock(output, AMC + (i-1));
-    AddRoundKey(output, ke_p->blocks, i);
+    AddRoundKey(output, ke_p->dataBlocks, i);
     if(debug) copyBlock(output, SOR + (i+1));
   }
   SubBytes(output);
   if(debug) copyBlock(output, ASB + (i-1));
   ShiftRows(output);
   if(debug) copyBlock(output, ASR + (i-1));
-  AddRoundKey(output, ke_p->blocks, i);
+  AddRoundKey(output, ke_p->dataBlocks, i);
   if(debug) copyBlock(output, SOR + (i-1));
 
   if(debug) {
@@ -526,7 +530,7 @@ void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
       printf(" | ");
       printWord(SOR[0].word_[i]);
       printf(" |               |               |               | ");
-      printWord(ke_p->blocks[0].word_[i]);
+      printWord(ke_p->dataBlocks[0].word_[i]);
       printf("\n");
     }
     printf("\n");
@@ -549,7 +553,7 @@ void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
         if(i < ke_p->Nr) printWord(AMC[i-1].word_[j]);
         else printf("             ");
         printf(" | ");
-        printWord(ke_p->blocks[i].word_[j]);
+        printWord(ke_p->dataBlocks[i].word_[j]);
         printf("\n");
       }
       printf(
@@ -654,7 +658,7 @@ void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
   if(input != output) copyBlock(input, output);
 
   if(debug) copyBlock(output,SOR + ke_p->Nr);                                   // Equivalent to copyBlock(output,&SOR[ke_p->Nr])
-  AddRoundKey(output, ke_p->blocks, ke_p->Nr);
+  AddRoundKey(output, ke_p->dataBlocks, ke_p->Nr);
   if(debug) copyBlock(output,SOR + ke_p->Nr-1);                                 // Equivalent to copyBlock(output,&SOR[ke_p->Nr])
 
   for(i = ke_p->Nr - 1; i > 0; i--) {
@@ -662,7 +666,7 @@ void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
     if(debug) copyBlock(output, AiSR + i);
     InvSubBytes(output);
     if(debug) copyBlock(output, AiSB + i);
-    AddRoundKey(output, ke_p->blocks, i);
+    AddRoundKey(output, ke_p->dataBlocks, i);
     if(debug) copyBlock(output, AARK + i);
     InvMixColumns(output);
     if(debug) copyBlock(output, SOR + (i-1));
@@ -671,7 +675,7 @@ void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
   if(debug) copyBlock(output, AiSR);
   InvSubBytes(output);
   if(debug) copyBlock(output, AiSB);
-  AddRoundKey(output, ke_p->blocks, 0);
+  AddRoundKey(output, ke_p->dataBlocks, 0);
   if(debug) copyBlock(output, AARK);
 
   if(debug) {
@@ -691,7 +695,7 @@ void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
       printf(" | ");
       printWord(SOR[ke_p->Nr].word_[i]);
       printf(" |               |               |               | ");
-      printWord(ke_p->blocks[0].word_[i]);
+      printWord(ke_p->dataBlocks[0].word_[i]);
       printf("\n");
     }
     printf("\n");
@@ -713,7 +717,7 @@ void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
         printf(" | ");
         printWord(AARK[i].word_[j]);
         printf(" | ");
-        printWord(ke_p->blocks[i].word_[j]);
+        printWord(ke_p->dataBlocks[i].word_[j]);
         printf("\n");
       }
       printf(
