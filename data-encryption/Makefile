@@ -10,6 +10,7 @@ OBJDIR = ../obj/data-encryption
 INCDIR = include
 
 SOURCES = $(wildcard $(SRCDIR)/*.c)
+# Substitution reference syntax: $(variable:pattern=replacement)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
 TARGET = ../lib/libaesenc.a
