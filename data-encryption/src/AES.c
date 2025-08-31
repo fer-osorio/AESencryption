@@ -422,7 +422,7 @@ static void BlockFromWords(const Word source[], Block* output){
   output->uint08_[15]= source[3].uint08_[3];
 }
 
-KeyExpansion_ptr KeyExpansionBuildNew(const uint8_t* key, size_t nk, bool debug){
+KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t nk, bool debug){
   enum Nk_ Nk = uint32ToNk(nk);
 
   KeyExpansion_ptr output = KeyExpansionMemoryAllocation(Nk);
