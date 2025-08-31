@@ -38,7 +38,7 @@ static bool InputOutputHandlerIsSmallerThanBlock(const struct InputOutputHandler
  * If input == output, original data will be rewritten with encrypted data.
  * */
 static void encryptBlockBytes(const uint8_t*const input, const KeyExpansion* ke_p, uint8_t* output){
-  Block* buffer = BlockFromBytes(input);
+  Block* buffer = BlockMemoryAllocationFromBytes(input);
   encryptBlock(buffer, ke_p, buffer, false);
   bytesFromBlock(buffer, output);
   free(buffer);
@@ -56,7 +56,7 @@ static void InputOutputHandlerEncryptBlockBytes(const struct InputOutputHandler*
  * If input == output, original data will be rewritten with decrypted data.
  * */
 static void decryptBlockBytes(const uint8_t*const input, const KeyExpansion* ke_p, uint8_t* output){
-  Block* buffer = BlockFromBytes(input);
+  Block* buffer = BlockMemoryAllocationFromBytes(input);
   decryptBlock(buffer, ke_p, buffer, false);
   bytesFromBlock(buffer, output);
   free(buffer);
@@ -125,7 +125,7 @@ void decryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpans
  * Build Block with input, build Block with XORsource, xors both blocks and encrypt the result.
  * */
 static void xorEncryptBlockBytes(const uint8_t*const input, const KeyExpansion* ke_p, const uint8_t* XORsource, uint8_t* output){
-  Block* buffer = BlockFromBytes(input);
+  Block* buffer = BlockMemoryAllocationFromBytes(input);
   BlockXORequalBytes(buffer, XORsource);
   encryptBlock(buffer, ke_p, buffer, false);
   bytesFromBlock(buffer, output);
@@ -160,7 +160,7 @@ static void encryptCBC__(const KeyExpansion* ke_p, const uint8_t* IV, struct Inp
 }
 
 void setInitialVector(uint8_t*const IVlocation){
-  const Block_ptr rb = BlockAllocateRandom(time(NULL));
+  const Block_ptr rb = BlockMemoryAllocationRandom(time(NULL));
   bytesFromBlock(rb, IVlocation);
   free(rb);
 }
@@ -180,7 +180,7 @@ void encryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpans
  * Build Block with input, build Block with XORsource, xors both blocks and decrypt the result.
  * */
 static void decryptXorBlockBytes(const uint8_t*const input, const KeyExpansion* ke_p, const uint8_t* XORsource, uint8_t* output){
-  Block* buffer = BlockFromBytes(input);
+  Block* buffer = BlockMemoryAllocationFromBytes(input);
   decryptBlock(buffer, ke_p, buffer, false);
   BlockXORequalBytes(buffer, XORsource);
   bytesFromBlock(buffer, output);
