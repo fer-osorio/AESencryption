@@ -130,8 +130,9 @@ static void BlockWriteFromBytes(const uint8_t source[], Block* output){
   output->uint08_[15]= source[15];
 }
 
-Block_ptr BlockFromBytes(const uint8_t source[]){
+Block_ptr BlockMemoryAllocationFromBytes(const uint8_t source[]){
   Block_ptr output = (Block*)malloc(sizeof(Block));
+  if(output == NULL) return NULL;
   BlockWriteFromBytes(source, output);
   return output;
 }
@@ -159,8 +160,9 @@ void bytesFromBlock(const Block* source, uint8_t output[]){
   output[15]= source->uint08_[15];
 }
 
-Block_ptr BlockAllocateRandom(unsigned int seed){
+Block_ptr BlockMemoryAllocationRandom(unsigned int seed){
   Block_ptr output = (Block*)malloc(sizeof(Block));
+  if(output == NULL) return NULL;
   srand(seed);
   for(size_t i = 0; i < Nb; i++) output->word_[i].uint32_ = rand();
   return output;
@@ -363,14 +365,16 @@ static void KeyExpansionBuildWords(const uint8_t* key, enum Nk_ Nk, Word outputK
   debug = false;
 }
 
-static KeyExpansion_ptr KeyExpansionAllocate(enum Nk_ Nk){
+static KeyExpansion_ptr KeyExpansionMemoryAllocation(enum Nk_ Nk){
   KeyExpansion_ptr output = (KeyExpansion*)malloc(sizeof(KeyExpansion));
+  if(output == NULL) return NULL;
   // -Building KeyExpansion object
   output->Nk = Nk;
   output->Nr = getNr(Nk);
   output->wordsSize = KeyExpansionLenWords(Nk);
   output->blockSize = KeyExpansionLenBlocks(Nk);
   output->blocks = (Block*)malloc(output->blockSize*sizeof (Block));
+  if(output->blocks == NULL) return NULL;
   return output;
 }
 
@@ -420,8 +424,13 @@ static void BlockFromWords(const Word source[], Block* output){
 
 KeyExpansion_ptr KeyExpansionBuildNew(const uint8_t* key, size_t nk, bool debug){
   enum Nk_ Nk = uint32ToNk(nk);
-  KeyExpansion_ptr output = KeyExpansionAllocate (Nk);
+
+  KeyExpansion_ptr output = KeyExpansionMemoryAllocation(Nk);
+  if(output == NULL) return NULL;
+
   Word* buffer = (Word*)malloc(output->wordsSize*sizeof(Word));
+  if(buffer == NULL) return NULL;
+
   // Writing key expansion on array of words
   KeyExpansionBuildWords(key, Nk, buffer, debug);
   // Writting key expansion on the array of Blocks 'inside' KeyExpansion object.
@@ -452,11 +461,12 @@ void KeyExpansionWriteBytes(const KeyExpansion* source, uint8_t* dest){
 
 KeyExpansion_ptr KeyExpansionFromBytes(const uint8_t source[], size_t nk){
   enum Nk_ Nk = uint32ToNk(nk);
-  KeyExpansion_ptr outputKeyExpansion = KeyExpansionAllocate(Nk);
-  for(size_t i = 0, j = 0; i < outputKeyExpansion->blockSize; i++, j += BLOCK_SIZE){
-    BlockWriteFromBytes(source + j,outputKeyExpansion->blocks + i);
+  KeyExpansion_ptr output = KeyExpansionMemoryAllocation(Nk);
+  if(output == NULL) return NULL;
+  for(size_t i = 0, j = 0; i < output->blockSize; i++, j += BLOCK_SIZE){
+    BlockWriteFromBytes(source + j,output->blocks + i);
   }
-  return outputKeyExpansion;
+  return output;
 }
 
 void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, bool debug) {
