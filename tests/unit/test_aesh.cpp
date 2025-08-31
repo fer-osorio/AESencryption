@@ -27,20 +27,19 @@ namespace TestVectors {
 // Test functions
 void test_aes_key_expansion() {
     TEST_SUITE("AES Key Expansion Tests");
-
-    uint8_t expanded_key[AESconstants::keyExpansionLength128 * 4];
+    uint8_t KeyExpansionFirstRound[16];
+    KeyExpansion_ptr ke_p = KeyExpansionMemoryAllocationBuild(TestVectors::key_128, Nk128, false);
 
     // Test key expansion for 128-bit key
-    ASSERT_TRUE(aes_key_expansion(TestVectors::key_128, 128, expanded_key) == 0,
-                "AES-128 key expansion should succeed");
+    ASSERT_TRUE(ke_p == NULL, "AES-128 key expansion should succeed");
 
     // Verify first round key (should be original key)
-    ASSERT_BYTES_EQUAL(TestVectors::key_128, expanded_key, 16,
-                       "First round key should match original key");
+    ASSERT_BYTES_EQUAL(TestVectors::key_128, KeyExpansionReturnBytePointerToData(ke_p), 16, "First round key should match original key");
 
+    KeyExpansionDelete(&ke_p);
+    ke_p = KeyExpansionMemoryAllocationBuild(TestVectors::key_128, 32, false);
     // Test invalid key length
-    ASSERT_TRUE(aes_key_expansion(TestVectors::key_128, 64, expanded_key) != 0,
-                "Invalid key length should return error");
+    ASSERT_TRUE(ke_p != NULL, "Invalid key length should return null pointer");
 
     PRINT_RESULTS();
 }
