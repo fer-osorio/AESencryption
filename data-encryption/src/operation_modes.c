@@ -144,7 +144,7 @@ static void InputOutputHandlerXorEncryptBlockBytes(const struct InputOutputHandl
  * */
 static void encryptCBC__(const KeyExpansion* ke_p, const uint8_t* IV, struct InputOutputHandler* ioh){
   if(InputOutputHandlerIsSmallerThanBlock(ioh)) return;                         // -Not handling the case size < 16
-  const uint8_t* inputPreviousBlock;
+  const uint8_t* inputPreviousBlock = NULL;
   InputOutputHandlerXorEncryptBlockBytes(ioh, IV, ke_p);                        // -Encryption of the first block.
   for(size_t i = 1; i < ioh->sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
     inputPreviousBlock = ioh->inputCurrentPossition;
