@@ -17,13 +17,13 @@ public:
 	TestSuite(const std::string& name);
 
 	// Test assertion macros
-	void assertTrue(bool condition, const std::string& testName);
-	void assertEqual(int expected, int actual, const std::string& testName);
-	void assertBytesEqual(const uint8_t* expected, const uint8_t* actual, size_t len, const std::string& testName);
-	void assertNotNull(const void* ptr, const std::string& testName);
+	bool assertTrue(bool condition, const std::string& testName);
+	bool assertEqual(int expected, int actual, const std::string& testName);
+	bool assertBytesEqual(const uint8_t* expected, const uint8_t* actual, size_t len, const std::string& testName);
+	bool assertNotNull(const void* ptr, const std::string& testName);
 
 	// Run a test function and catch exceptions
-	void runTest(std::function<bool ()> testFunc, const std::string& testName);
+	bool runTest(std::function<bool ()> testFunc, const std::string& testName);
 
 	// Print final results
 	void printResults();
