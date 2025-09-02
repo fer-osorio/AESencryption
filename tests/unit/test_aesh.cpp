@@ -25,85 +25,94 @@ namespace TestVectors {
 }
 
 // Test functions
-void test_KeyExpansionMemoryAllocationBuild() {
+bool test_KeyExpansionMemoryAllocationBuild() {
     TEST_SUITE("AES Key Expansion Tests");
     KeyExpansion_ptr ke_p = KeyExpansionMemoryAllocationBuild(TestVectors::key_128, Nk128, false);
+    bool success = true;
 
     // Test key expansion for 128-bit key
     // Wrapped in a if statement to guard agains access to null pointer.
-    if(ASSERT_TRUE(ke_p == NULL, "AES-128 key expansion should succeed")) return;
+    if(!ASSERT_TRUE(ke_p == NULL, "AES-128 key expansion should succeed")) return false;
 
     // Verify first round key (should be original key)
-    ASSERT_BYTES_EQUAL(TestVectors::key_128, KeyExpansionReturnBytePointerToData(ke_p), 16, "First round key should match original key");
+    success = success && ASSERT_BYTES_EQUAL(TestVectors::key_128, KeyExpansionReturnBytePointerToData(ke_p), 16, "First round key should match original key");
 
     KeyExpansionDelete(&ke_p);
     ke_p = KeyExpansionMemoryAllocationBuild(TestVectors::key_128, 32, false);
     // Test invalid key length
-    ASSERT_TRUE(ke_p != NULL, "Invalid key length should return null pointer");
+    success = success && ASSERT_TRUE(ke_p != NULL, "Invalid key length should return null pointer");
     KeyExpansionDelete(&ke_p);
 
     PRINT_RESULTS();
+    return true;
 }
 
-void test_encryptBlock() {
+bool test_encryptBlock() {
     TEST_SUITE("AES Block Encryption Tests");
     // Prepare key expansion
     KeyExpansion_ptr ke_p = KeyExpansionMemoryAllocationBuild(TestVectors::key_128, Nk128, false);
     Block* input = BlockMemoryAllocationFromBytes(TestVectors::plaintext);
     uint8_t BuffBlock[BLOCK_SIZE] = {0};
     Block* output = BlockMemoryAllocationFromBytes(BuffBlock);
+    bool success = true;
 
     // Test single block encryption
     //ASSERT_TRUE(encryptBlock(input, ke_p, output, true) == false, "AES block encryption should succeed");
     encryptBlock(input, ke_p, output, true);
     bytesFromBlock(output, BuffBlock);
 
-    ASSERT_BYTES_EQUAL(TestVectors::expected_ciphertext_128, BuffBlock, BLOCK_SIZE, "Encrypted block should match test vector");
+    success = success && ASSERT_BYTES_EQUAL(TestVectors::expected_ciphertext_128, BuffBlock, BLOCK_SIZE, "Encrypted block should match test vector");
 
     // Test null pointer handling
-    //ASSERT_TRUE(aes_encrypt_block(nullptr, output, expanded_key, 10) != 0, "Null input should return error");
+    //ASSERT_TRUE(aes_encrypt_block(nullptr, output, expanded_key, 10) != false, "Null input should return error");
     BlockDelete(&input);
     BlockDelete(&output);
 
     PRINT_RESULTS();
+    return success;
 }
 
-void test_decryptBlock() {
+bool test_decryptBlock() {
     TEST_SUITE("AES Block Decryption Tests");
-
-    uint8_t expanded_key[AESconstants::keyExpansionLength128 * 4];
-    uint8_t decrypted[AESconstants::BLOCK_SIZE];
-
     // Prepare key expansion
-    aes_key_expansion(TestVectors::key_128, 128, expanded_key);
+    KeyExpansion_ptr ke_p = KeyExpansionMemoryAllocationBuild(TestVectors::key_128, Nk128, false);
+    Block* input = BlockMemoryAllocationFromBytes(TestVectors::expected_ciphertext_128);
+    uint8_t BuffBlock[BLOCK_SIZE] = {0};
+    Block* output = BlockMemoryAllocationFromBytes(BuffBlock);
+    bool success = true;
 
-    // Test decryption
-    ASSERT_TRUE(aes_decrypt_block(TestVectors::expected_ciphertext_128, decrypted,
-                                  expanded_key, 10) == 0,
-                "AES block decryption should succeed");
+    // Test single block encryption
+    //ASSERT_TRUE(encryptBlock(input, ke_p, output, true) == false, "AES block encryption should succeed");
+    decryptBlock(input, ke_p, output, true);
+    bytesFromBlock(output, BuffBlock);
 
-    ASSERT_BYTES_EQUAL(TestVectors::plaintext, decrypted, AESconstants::BLOCK_SIZE,
-                       "Decrypted block should match original plaintext");
+    success = success && ASSERT_BYTES_EQUAL(TestVectors::plaintext, BuffBlock, BLOCK_SIZE, "Decrypted block should match original plaintext");
 
-    PRINT_RESULTS();
+    // Test null pointer handling
+    //ASSERT_TRUE(aes_encrypt_block(nullptr, output, expanded_key, 10) != false, "Null input should return error");
+    BlockDelete(&input);
+    BlockDelete(&output);
 }
 
-void test_encryptionDecryptionRoundtrip() {
+bool test_encryptionDecryptionRoundtrip() {
     TEST_SUITE("AES Roundtrip Tests");
-
-    uint8_t expanded_key[AESconstants::keyExpansionLength128 * 4];
-    uint8_t encrypted[AESconstants::BLOCK_SIZE];
-    uint8_t decrypted[AESconstants::BLOCK_SIZE];
-
     // Prepare key expansion
-    aes_key_expansion(TestVectors::key_128, 128, expanded_key);
+    KeyExpansion_ptr ke_p = KeyExpansionMemoryAllocationBuild(TestVectors::key_128, Nk128, false);
+    Block* input = BlockMemoryAllocationFromBytes(TestVectors::plaintext);
+    uint8_t BuffBlock[BLOCK_SIZE] = {0};
+    Block* encrypted = BlockMemoryAllocationFromBytes(BuffBlock);
+    Block* decrypted = BlockMemoryAllocationFromBytes(BuffBlock);
+    bool success = true;
 
-    // Encrypt then decrypt
-    aes_encrypt_block(TestVectors::plaintext, encrypted, expanded_key, 10);
-    aes_decrypt_block(encrypted, decrypted, expanded_key, 10);
+    encryptBlock(input, ke_p, encrypted, true);
+    decryptBlock(encrypted, ke_p, decrypted, true);
+    bytesFromBlock(decrypted, BuffBlock);
 
-    ASSERT_BYTES_EQUAL(TestVectors::plaintext, decrypted, AESconstants::BLOCK_SIZE,
-                       "Roundtrip encryption/decryption should preserve data");
+    success = success && ASSERT_BYTES_EQUAL(TestVectors::plaintext, BuffBlock, BLOCK_SIZE, "Roundtrip encryption/decryption should preserve data");
+
+    BlockDelete(&input);
+    BlockDelete(&encrypted);
+    BlockDelete(&decrypted);
 
     PRINT_RESULTS();
 }
@@ -111,7 +120,10 @@ void test_encryptionDecryptionRoundtrip() {
 int main() {
     std::cout << "=== AES Core Implementation Tests ===" << std::endl;
 
-    test_KeyExpansionMemoryAllocationBuild();
+    if(test_KeyExpansionMemoryAllocationBuild()) {
+        std::cout << "\n=== Fail to create a valid Key Expansion object. Stop. ===" << std::endl;
+        return 0;
+    }
     test_encryptBlock();
     test_decryptBlock();
     test_encryptionDecryptionRoundtrip();
