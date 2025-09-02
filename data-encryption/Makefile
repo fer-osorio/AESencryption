@@ -1,32 +1,31 @@
-CC = gcc
-WARNINGS= -Wall
-DEBUG	= -ggdb -fno-omit-frame-pointer
-OPTIMIZE= -O2
-CFLAGS = $(WARNINGS) $(DEBUG) $(OPTIMIZE) -Wextra -std=c11 -fPIC
+include ../config.mk
+
+PROJECT_ROOT = ..
+
 INCLUDES = -Iinclude
 
 SRCDIR = src
-OBJDIR = ../obj/data-encryption
+OBJDIR = $(PROJECT_ROOT)/obj/data-encryption
 INCDIR = include
 
 SOURCES = $(wildcard $(SRCDIR)/*.c)
 # Substitution reference syntax: $(variable:pattern=replacement)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
-TARGET = ../lib/libaesenc.a
+TARGET = $(PROJECT_ROOT)/lib/libaesenc.a
 
 .PHONY: all clean
 
 all: $(TARGET)
 
-$(TARGET): $(OBJECTS) | ../lib
+$(TARGET): $(OBJECTS) | $(PROJECT_ROOT)/lib
 	ar rcs $@ $^
 	ranlib $@
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-$(OBJDIR) ../lib:
+$(OBJDIR) $(PROJECT_ROOT)/lib:
 	mkdir -p $@
 
 clean:
