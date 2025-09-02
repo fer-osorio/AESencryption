@@ -33,6 +33,11 @@ typedef KeyExpansion* KeyExpansion_ptr;
 Block_ptr BlockMemoryAllocationFromBytes(const uint8_t source[]);
 
 /*
+ * Free the memory allocated for the object pointed by *blk_pp
+ * */
+void BlockDelete(Block** blk_pp);
+
+/*
  * Writes 16 bytes using the content of 'source'. The writting is perform column to column, from top to bottom.
  * Consider: It supposes there is enough space pointed by the 'output' pointer.
  * */

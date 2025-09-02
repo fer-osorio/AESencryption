@@ -137,6 +137,12 @@ Block_ptr BlockMemoryAllocationFromBytes(const uint8_t source[]){
   return output;
 }
 
+void BlockDelete(Block** blk_pp){
+  Block* blk_p = *blk_pp;
+  if(blk_p != NULL) free(blk_p);
+  *blk_pp = NULL;
+}
+
 void bytesFromBlock(const Block* source, uint8_t output[]){
   // First column
   output[0] = source->uint08_[0];
