@@ -17,6 +17,6 @@ C_STANDARD= -std=c11
 CFLAGS = $(C_WARNINGS) $(C_DEBUG) $(C_OPTIMIZE) $(C_STANDARD)
 
 # Include paths
-COMMON_INCLUDES = -I$(PROJECT_ROOT)/include
-C_INCLUDES = $(COMMON_INCLUDES) -I$(PROJECT_ROOT)/data-encryption/include
-CXX_INCLUDES = $(COMMON_INCLUDES) -I$(PROJECT_ROOT)/file-handlers/include
+#COMMON_INCLUDES = -I$(PROJECT_ROOT)/include
+#C_INCLUDES = $(COMMON_INCLUDES) -I$(PROJECT_ROOT)/data-encryption/include
+#CXX_INCLUDES = $(COMMON_INCLUDES) -I$(PROJECT_ROOT)/file-handlers/include
