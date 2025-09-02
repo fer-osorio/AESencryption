@@ -25,7 +25,7 @@ namespace TestVectors {
 }
 
 // Test functions
-void test_aes_key_expansion() {
+void test_KeyExpansionMemoryAllocationBuild() {
     TEST_SUITE("AES Key Expansion Tests");
     KeyExpansion_ptr ke_p = KeyExpansionMemoryAllocationBuild(TestVectors::key_128, Nk128, false);
 
@@ -45,7 +45,7 @@ void test_aes_key_expansion() {
     PRINT_RESULTS();
 }
 
-void test_aes_encrypt_block() {
+void test_encryptBlock() {
     TEST_SUITE("AES Block Encryption Tests");
     // Prepare key expansion
     KeyExpansion_ptr ke_p = KeyExpansionMemoryAllocationBuild(TestVectors::key_128, Nk128, false);
@@ -68,7 +68,7 @@ void test_aes_encrypt_block() {
     PRINT_RESULTS();
 }
 
-void test_aes_decrypt_block() {
+void test_decryptBlock() {
     TEST_SUITE("AES Block Decryption Tests");
 
     uint8_t expanded_key[AESconstants::keyExpansionLength128 * 4];
@@ -88,7 +88,7 @@ void test_aes_decrypt_block() {
     PRINT_RESULTS();
 }
 
-void test_encryption_decryption_roundtrip() {
+void test_encryptionDecryptionRoundtrip() {
     TEST_SUITE("AES Roundtrip Tests");
 
     uint8_t expanded_key[AESconstants::keyExpansionLength128 * 4];
@@ -111,10 +111,10 @@ void test_encryption_decryption_roundtrip() {
 int main() {
     std::cout << "=== AES Core Implementation Tests ===" << std::endl;
 
-    test_aes_key_expansion();
-    test_aes_encrypt_block();
-    test_aes_decrypt_block();
-    test_encryption_decryption_roundtrip();
+    test_KeyExpansionMemoryAllocationBuild();
+    test_encryptBlock();
+    test_decryptBlock();
+    test_encryptionDecryptionRoundtrip();
 
     std::cout << "\n=== All AES Core Tests Complete ===" << std::endl;
     return 0;
