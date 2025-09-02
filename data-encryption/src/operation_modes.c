@@ -41,7 +41,7 @@ static void encryptBlockBytes(const uint8_t*const input, const KeyExpansion* ke_
   Block* buffer = BlockMemoryAllocationFromBytes(input);
   encryptBlock(buffer, ke_p, buffer, false);
   bytesFromBlock(buffer, output);
-  free(buffer);
+  BlockDelete(&buffer);
 }
 
 /*
@@ -59,7 +59,7 @@ static void decryptBlockBytes(const uint8_t*const input, const KeyExpansion* ke_
   Block* buffer = BlockMemoryAllocationFromBytes(input);
   decryptBlock(buffer, ke_p, buffer, false);
   bytesFromBlock(buffer, output);
-  free(buffer);
+  BlockDelete(&buffer);
 }
 
 /*
@@ -129,7 +129,7 @@ static void xorEncryptBlockBytes(const uint8_t*const input, const KeyExpansion* 
   BlockXORequalBytes(buffer, XORsource);
   encryptBlock(buffer, ke_p, buffer, false);
   bytesFromBlock(buffer, output);
-  free(buffer);
+  BlockDelete(&buffer);
 }
 
 /*
@@ -160,9 +160,9 @@ static void encryptCBC__(const KeyExpansion* ke_p, const uint8_t* IV, struct Inp
 }
 
 void setInitialVector(uint8_t*const IVlocation){
-  const Block_ptr rb = BlockMemoryAllocationRandom(time(NULL));
+  Block_ptr rb = BlockMemoryAllocationRandom(time(NULL));
   bytesFromBlock(rb, IVlocation);
-  free(rb);
+  BlockDelete(&rb);
 }
 
 /*
@@ -184,7 +184,7 @@ static void decryptXorBlockBytes(const uint8_t*const input, const KeyExpansion* 
   decryptBlock(buffer, ke_p, buffer, false);
   BlockXORequalBytes(buffer, XORsource);
   bytesFromBlock(buffer, output);
-  free(buffer);
+  BlockDelete(&buffer);
 }
 
 /*
