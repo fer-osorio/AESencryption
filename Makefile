@@ -1,4 +1,4 @@
-.PHONY: all clean test install core file-handlers tools examples
+.PHONY: all clean test data-encryption core file-handlers tools examples
 
 # Default target
 all: core file-handlers tools examples
