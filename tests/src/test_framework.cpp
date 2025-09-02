@@ -5,37 +5,41 @@ using namespace TestFramework;
 
 TestSuite::TestSuite(const std::string& name) : suiteName(name) {}
 
-void TestSuite::assertTrue(bool condition, const std::string& testName){
+bool TestSuite::assertTrue(bool condition, const std::string& testName){
     this->testsRun++;
     if(condition) {
         this->testsPassed++;
         std::cout << "  ✓ " << testName << std::endl;
+        return true;
     } else {
         this->failedTests.push_back(testName);
         std::cout << "  ✗ " << testName << " - FAILED" << std::endl;
+        return false;
     }
 }
 
-void TestSuite::assertEqual(int expected, int actual, const std::string& testName){
+bool TestSuite::assertEqual(int expected, int actual, const std::string& testName){
     this->testsRun++;
     if(expected == actual) {
         this->testsPassed++;
         std::cout << "  ✓ " << testName << std::endl;
+        return true;
     } else {
         this->failedTests.push_back(testName + " (expected: " + std::to_string(expected) + ", got: " + std::to_string(actual) + ")");
         std::cout << "  ✗ " << testName << " - FAILED (expected: " << expected << ", got: " << actual << ")" << std::endl;
+        return false;
     }
 }
 
-void TestSuite::assertBytesEqual(const uint8_t* expected, const uint8_t* actual, size_t len, const std::string& testName){
+bool TestSuite::assertBytesEqual(const uint8_t* expected, const uint8_t* actual, size_t len, const std::string& testName){
     this->testsRun++;
     if(memcmp(expected, actual, len) == 0) {
         this->testsPassed++;
         std::cout << "  ✓ " << testName << std::endl;
+        return true;
     } else {
         this->failedTests.push_back(testName + " (byte arrays differ)");
         std::cout << "  ✗ " << testName << " - FAILED (byte arrays differ)" << std::endl;
-
         // Show first differing bytes for debugging
         for(size_t i = 0; i < len; i++) {
             if(expected[i] != actual[i]) {
@@ -45,22 +49,25 @@ void TestSuite::assertBytesEqual(const uint8_t* expected, const uint8_t* actual,
                 break;
             }
         }
+        return false;
     }
 }
 
-void TestSuite::assertNotNull(const void* ptr, const std::string& testName){
+bool TestSuite::assertNotNull(const void* ptr, const std::string& testName){
     this->testsRun++;
     if(ptr != nullptr) {
         this->testsPassed++;
         std::cout << "  ✓ " << testName << std::endl;
+        return true;
     } else {
         this->failedTests.push_back(testName + " (pointer is null)");
         std::cout << "  ✗ " << testName << " - FAILED (pointer is null)" << std::endl;
+        return false;
     }
 }
 
-void TestSuite::runTest(std::function<bool ()> testFunc, const std::string& testName){
-    bool success;
+bool TestSuite::runTest(std::function<bool ()> testFunc, const std::string& testName){
+    bool success = false;
     this->testsRun++;
     try {
         success = testFunc();
@@ -72,9 +79,11 @@ void TestSuite::runTest(std::function<bool ()> testFunc, const std::string& test
     if(success == true) {
         this->testsPassed++;
         std::cout << "  ✓ " << testName << std::endl;
+        return true;
     } else {
         this->failedTests.push_back(testName + " (function exit with non success status)");
         std::cout << "  ✗ " << testName << " - FAILED (function exit with non success status)" << std::endl;
+        return false;
     }
 }
 
