@@ -1,5 +1,6 @@
 # common.mk - Shared Makefile rules and functions
 # Include this file in other Makefiles with: include ../common.mk
+include config.mk
 
 # Project root detection
 PROJECT_ROOT := $(shell while [ ! -f common.mk ] && [ "$$(pwd)" != "/" ]; do cd ..; done; pwd)
@@ -13,32 +14,6 @@ COLOR_PURPLE  = \033[0;35m
 COLOR_CYAN    = \033[0;36m
 COLOR_NC      = \033[0m # No Color
 
-# Build configuration
-BUILD_TYPE ?= debug
-
-# Base flags
-BASE_CFLAGS = -Wall -Wextra -Wpedantic -Wformat=2 -Wcast-align -Wcast-qual \
-              -Wdisabled-optimization -Winit-self -Wlogical-op -Wmissing-declarations \
-              -Wmissing-include-dirs -Wredundant-decls -Wshadow -Wstrict-overflow=5 \
-              -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option
-
-BASE_CXXFLAGS = $(BASE_CFLAGS) -Wctor-dtor-privacy -Wnoexcept -Wnon-virtual-dtor \
-                -Wstrict-null-sentinel -Wold-style-cast -Woverloaded-virtual -Wsign-promo
-
-# Build type specific flags
-ifeq ($(BUILD_TYPE),debug)
-    CFLAGS = $(BASE_CFLAGS) -g -O0 -DDEBUG -fsanitize=address -fsanitize=undefined
-    CXXFLAGS = $(BASE_CXXFLAGS) -g -O0 -DDEBUG -fsanitize=address -fsanitize=undefined
-    LDFLAGS = -fsanitize=address -fsanitize=undefined
-else ifeq ($(BUILD_TYPE),test)
-    CFLAGS = $(BASE_CFLAGS) -g -O0 --coverage -DTEST_BUILD
-    CXXFLAGS = $(BASE_CXXFLAGS) -g -O0 --coverage -DTEST_BUILD
-    LDFLAGS = --coverage
-else ifeq ($(BUILD_TYPE),profile)
-    CFLAGS = $(BASE_CFLAGS) -g -O2 -pg -DNDEBUG
-    CXXFLAGS = $(BASE_CXXFLAGS) -g -O2 -pg -DNDEBUG
-    LDFLAGS = -pg
-
 # Standard directories
 SRCDIR ?= src
 INCDIR ?= include
@@ -51,10 +26,6 @@ COMMON_INCLUDES = -I$(PROJECT_ROOT)/include \
                   -I$(PROJECT_ROOT)/data-encryption/include \
                   -I$(PROJECT_ROOT)/file-handlers/include \
                   -I$(PROJECT_ROOT)/metrics-analysis/include
-
-# Library flags
-STATIC_LIB_FLAGS = rcs
-SHARED_LIB_FLAGS = -shared -fPIC
 
 # Utility functions
 define print_success
