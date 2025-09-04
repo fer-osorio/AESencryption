@@ -11,67 +11,55 @@ AUTHOR = $(USER)
 CXX = g++
 CC = gcc
 
-# C++ Compiler configuration
-# Warning flags for comprehensive error checking
-CXX_WARNINGS = -Wall -Weffc++ -Wextra -Wsign-conversion -pedantic-errors \
-               -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization \
-               -Wlogical-op -Wmissing-declarations -Wnoexcept -Wnon-virtual-dtor \
-               -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow \
-               -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=5 -Wundef
+# Compiler configuration
+# Base flags
+BASE_CFLAGS = -Wall -Wextra -Wpedantic -Wformat=2 -Wcast-align -Wcast-qual \
+              -Wdisabled-optimization -Winit-self -Wlogical-op -Wmissing-declarations \
+              -Wmissing-include-dirs -Wredundant-decls -Wshadow -Wstrict-overflow=5 \
+              -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option
 
-# Debug flags optimized for research and development
-CXX_DEBUG = -ggdb3 -fno-omit-frame-pointer -fno-inline-functions-called-once \
-            -fno-optimize-sibling-calls
-
-# Optimization for research
-CXX_OPTIMIZE = -O2
+BASE_CXXFLAGS = $(BASE_CFLAGS) -Wctor-dtor-privacy -Wnoexcept -Wnon-virtual-dtor \
+                -Wstrict-null-sentinel -Wold-style-cast -Woverloaded-virtual -Wsign-promo
 
 # Language standard
 CXX_STANDARD = -std=c++17
 
-# C Compiler configuration
-# Warning flags for C code
-C_WARNINGS = -Wall -Wextra -Wpedantic -Wformat=2 -Wcast-align -Wcast-qual \
-             -Wdisabled-optimization -Winit-self -Wlogical-op -Wmissing-declarations \
-             -Wmissing-include-dirs -Wredundant-decls -Wshadow -Wstrict-overflow=5 \
-             -Wundef -Wwrite-strings -Wpointer-arith
-
-# Debug flags for C code
-C_DEBUG = -ggdb3 -fno-omit-frame-pointer -fno-inline-functions-called-once
-
-# Optimization for C code (research-focused)
-C_OPTIMIZE = -O2
-
 # Language standard for C
 C_STANDARD = -std=c11
 
-# Research-specific compilation options
-# Enable additional debugging features useful for cryptographic research
-RESEARCH_FLAGS = -DRESEARCH_BUILD -DENABLE_DETAILED_LOGGING -DENABLE_TIMING_ANALYSIS
-
 # Memory debugging options (can be enabled for specific builds)
-MEMORY_DEBUG_FLAGS = -fsanitize=address -fsanitize=undefined -fstack-protector-strong
+MEMORY_DEBUG_FLAGS = -fsanitize=address -fsanitize=leak -fsanitize=undefined -fstack-protector-strong
+
+# Debug flags
+DEBUG = -ggdb3 $(MEMORY_DEBUG_FLAGS) -fno-omit-frame-pointer -fno-inline-functions-called-once
 
 # Profiling support
 PROFILING_FLAGS = -pg -fno-omit-frame-pointer
 
+# Optimization
+NO_OPTIMIZE = -O0
+OPTIMIZE = -O2
+
 # Coverage analysis support
 COVERAGE_FLAGS = --coverage -fprofile-arcs -ftest-coverage
 
-# Default build type for research (debug-oriented)
+# Default build type (debug-oriented)
 BUILD_TYPE ?= debug
 
-# Static library creation flags
-AR_FLAGS = rcs
+# Build type specific flags
+ifeq ($(BUILD_TYPE),debug)
+    CFLAGS   = $(BASE_CFLAGS) $(DEBUG) $(NO_OPTIMIZE)
+    CXXFLAGS = $(BASE_CXXFLAGS) $(DEBUG) $(NO_OPTIMIZE)
+    LDFLAGS  = $(MEMORY_DEBUG_FLAGS)
+else ifeq ($(BUILD_TYPE),test)
+    CFLAGS = $(BASE_CFLAGS) -g $(NO_OPTIMIZE) $(COVERAGE_FLAGS)
+    CXXFLAGS = $(BASE_CXXFLAGS) -g $(NO_OPTIMIZE) $(COVERAGE_FLAGS)
+    LDFLAGS = $(COVERAGE_FLAGS)
+else ifeq ($(BUILD_TYPE),profile)
+    CFLAGS = $(BASE_CFLAGS) -g $(OPTIMIZE) $(PROFILING_FLAGS)
+    CXXFLAGS = $(BASE_CXXFLAGS) -g $(OPTIMIZE) $(PROFILING_FLAGS)
+    LDFLAGS = $(PROFILING_FLAGS)
 
-# Archiver tool
-AR = ar
-
-# Additional research tools
-VALGRIND = valgrind
-VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose
-
-# Code analysis tools
-CPPCHECK = cppcheck
-CPPCHECK_FLAGS = --enable=all --std=c++17 --verbose --check-config
-
+# Library flags
+STATIC_LIB_FLAGS = rcs
+SHARED_LIB_FLAGS = -shared -fPIC
