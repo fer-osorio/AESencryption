@@ -16,10 +16,6 @@ COLOR_NC      = \033[0m # No Color
 # Build configuration
 BUILD_TYPE ?= debug
 
-# Common compiler settings
-CC = gcc
-CXX = g++
-
 # Base flags
 BASE_CFLAGS = -Wall -Wextra -Wpedantic -Wformat=2 -Wcast-align -Wcast-qual \
               -Wdisabled-optimization -Winit-self -Wlogical-op -Wmissing-declarations \
@@ -55,10 +51,6 @@ COMMON_INCLUDES = -I$(PROJECT_ROOT)/include \
                   -I$(PROJECT_ROOT)/data-encryption/include \
                   -I$(PROJECT_ROOT)/file-handlers/include \
                   -I$(PROJECT_ROOT)/metrics-analysis/include
-
-# Standard language flags
-C_STD = -std=c11
-CXX_STD = -std=c++17
 
 # Library flags
 STATIC_LIB_FLAGS = rcs
@@ -106,7 +98,7 @@ define compile_c_rule
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 	$(call make_c_depend)
 	$(call print_building,"C object: $$@")
-	@$(CC) $(CFLAGS) $(C_STD) $(COMMON_INCLUDES) $(INCLUDES) -c $$< -o $$@
+	@$(CC) $(CFLAGS) $(C_STANDARD) $(COMMON_INCLUDES) $(INCLUDES) -c $$< -o $$@
 	$(call print_success,"Compiled: $$@")
 endef
 
@@ -114,7 +106,7 @@ define compile_cxx_rule
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
 	$(call make_cxx_depend)
 	$(call print_building,"C++ object: $$@")
-	@$(CXX) $(CXXFLAGS) $(CXX_STD) $(COMMON_INCLUDES) $(INCLUDES) -c $$< -o $$@
+	@$(CXX) $(CXXFLAGS) $(CXX_STANDARD) $(COMMON_INCLUDES) $(INCLUDES) -c $$< -o $$@
 	$(call print_success,"Compiled: $$@")
 endef
 
