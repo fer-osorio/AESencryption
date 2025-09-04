@@ -29,9 +29,6 @@ CXX_OPTIMIZE = -O2
 # Language standard
 CXX_STANDARD = -std=c++17
 
-# Combined C++ flags
-CXX_FLAGS = $(CXX_WARNINGS) $(CXX_DEBUG) $(CXX_OPTIMIZE) $(CXX_STANDARD)
-
 # C Compiler configuration
 # Warning flags for C code
 C_WARNINGS = -Wall -Wextra -Wpedantic -Wformat=2 -Wcast-align -Wcast-qual \
@@ -47,9 +44,6 @@ C_OPTIMIZE = -O2
 
 # Language standard for C
 C_STANDARD = -std=c11
-
-# Combined C flags
-C_FLAGS = $(C_WARNINGS) $(C_DEBUG) $(C_OPTIMIZE) $(C_STANDARD)
 
 # Research-specific compilation options
 # Enable additional debugging features useful for cryptographic research
