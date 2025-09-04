@@ -3,7 +3,17 @@
 include config.mk
 
 # Project root detection
-PROJECT_ROOT := $(shell while [ ! -f common.mk ] && [ "$$(pwd)" != "/" ]; do cd ..; done; pwd)
+# Usage: PROJECT_ROOT := $(call find-project-root)
+define find-project-root
+$(shell \
+    start_dir=$$(pwd); \
+    while [ ! -f .git/config ] && [ ! -f common.mk ] && [ "$$(pwd)" != "/" ]; do cd ..; done; \
+    if [ ! -f .git/config ] || [ ! -f common.mk ] ; then \
+        echo "ERROR: Could not find project root from $$start_dir" >&2; \
+        echo "/tmp"; \
+    else \
+        pwd; \
+endef
 
 # Color codes for output
 COLOR_RED     = \033[0;31m
