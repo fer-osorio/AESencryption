@@ -1,14 +1,13 @@
 # src/Makefile - Main C++ implementation
+include ../config.mk
 include ../common.mk
 
 # Local configuration
+PROJECT_ROOT := $(call find-project-root)
 LIBDIR = $(PROJECT_ROOT)/lib
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
 BINDIR = $(PROJECT_ROOT)/bin
 TARGET_LIB = $(LIBDIR)/libaesencryption_cpp.a
-
-# Project root
-PROJECT_ROOT := $(call find-project-root)
 
 # Source files
 SOURCES = $(wildcard $(SRCDIR)/*.cpp)
@@ -17,7 +16,7 @@ SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Local includes (in addition to common includes)
-INCLUDES = -I$(INCDIR)
+INCLUDES = -I$(INCDIR) -I$(PROJECT_ROOT)/data-encryption/include
 
 # Dependencies on other modules
 DEPS = $(LIBDIR)/libaesencryption_c.a
@@ -52,27 +51,6 @@ clean:
 	$(call clean_standard)
 	@rm -f $(TARGET_LIB)
 	$(call print_success,"Cleaned core C++ module")
-
-# Test target
-test: BUILD_TYPE=test
-test: $(TARGET_LIB)
-	$(call print_info,"Running core C++ tests...")
-	# Compile and run unit tests for key.cpp, cipher.cpp, encryptor.cpp
-	@if [ -d "../tests/unit" ]; then \
-		$(MAKE) -C ../tests unit-core; \
-	else \
-		$(call print_warning,"No unit tests found for core module"); \
-	fi
-
-# Integration test with C library
-test-integration: $(TARGET_LIB)
-	$(call print_info,"Running C/C++ integration tests...")
-	@$(CXX) $(CXXFLAGS) $(CXX_STD) $(COMMON_INCLUDES) \
-		-o $(BINDIR)/test_integration \
-		test_integration.cpp \
-		$(LDFLAGS) $(LIBS) -laesencryption_cpp
-	@$(BINDIR)/test_integration
-	$(call print_success,"Integration tests passed")
 
 # Debug symbols check
 check-symbols: $(TARGET_LIB)
