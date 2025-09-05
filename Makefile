@@ -1,3 +1,5 @@
+include common.mk
+
 .PHONY: all clean test data-encryption core file-handlers tools examples
 
 # Default target
@@ -33,3 +35,5 @@ clean:
 install:
 	echo "Installing is not supported"
 
+help:
+	$(call show_help)
