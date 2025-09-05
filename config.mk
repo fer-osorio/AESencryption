@@ -58,6 +58,7 @@ else ifeq ($(BUILD_TYPE),profile)
     CFLAGS = $(BASE_CFLAGS) -g $(OPTIMIZE) $(PROFILING_FLAGS)
     CXXFLAGS = $(BASE_CXXFLAGS) -g $(OPTIMIZE) $(PROFILING_FLAGS)
     LDFLAGS = $(PROFILING_FLAGS)
+endif
 
 # Library flags
 STATIC_LIB_FLAGS = rcs
