@@ -12,7 +12,7 @@ SOURCES = $(wildcard $(SRCDIR)/*.c)
 # Substitution reference syntax: $(variable:pattern=replacement)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
-TARGET = $(PROJECT_ROOT)/lib/libaesenc.a
+TARGET = $(PROJECT_ROOT)/lib/libaesencryption_c.a
 
 .PHONY: all clean
 
