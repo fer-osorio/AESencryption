@@ -3,8 +3,7 @@
 # Include this file in common.mk and other Makefiles that need these settings
 
 # Project information
-PROJECT_NAME = aes-encryption-research
-VERSION = 1.0.0
+PROJECT_NAME = aes-encryption
 AUTHOR = $(USER)
 
 # Compiler selection
@@ -63,3 +62,4 @@ else ifeq ($(BUILD_TYPE),profile)
 # Library flags
 STATIC_LIB_FLAGS = rcs
 SHARED_LIB_FLAGS = -shared -fPIC
+
