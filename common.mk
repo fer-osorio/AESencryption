@@ -27,9 +27,6 @@ COLOR_NC      = \033[0m # No Color
 # Standard directories
 SRCDIR ?= src
 INCDIR ?= include
-OBJDIR ?= $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
-LIBDIR ?= $(PROJECT_ROOT)/lib
-BINDIR ?= $(PROJECT_ROOT)/bin
 
 # Common include paths
 COMMON_INCLUDES = -I$(PROJECT_ROOT)/include \
