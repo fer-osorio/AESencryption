@@ -1,32 +1,76 @@
+# data-encryption/Makefile - Pure C AES implementation
+include ../common.mk
 include ../config.mk
 
-PROJECT_ROOT = ..
+# Module configuration
+MODULE_NAME = data-encryption
+PROJECT_ROOT := $(call find-project-root)
+LIBDIR = $(PROJECT_ROOT)/lib
+TARGET_LIB = $(LIBDIR)/libaesencryption_c.a
 
-INCLUDES = -Iinclude
-
+# Local source directory and object directory
 SRCDIR = src
 OBJDIR = $(PROJECT_ROOT)/obj/data-encryption
-INCDIR = include
 
+# Local includes (private headers)
+INCDIR = include
+INCLUDES = -I$(INCDIR)
+
+# Source files and objects
 SOURCES = $(wildcard $(SRCDIR)/*.c)
-# Substitution reference syntax: $(variable:pattern=replacement)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
-TARGET = $(PROJECT_ROOT)/lib/libaesencryption_c.a
+# Default target
+all: $(TARGET_LIB)
 
-.PHONY: all clean
+# Static library creation
+$(TARGET_LIB): $(OBJECTS) | $(OBJDIR) $(LIBDIR)
+	$(call create_static_lib,$@,$(OBJECTS))
 
-all: $(TARGET)
-
-$(TARGET): $(OBJECTS) | $(PROJECT_ROOT)/lib
-	ar rcs $@ $^
-	ranlib $@
-
+# Compilation rule for C files
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+	$(call compile_c_rule,$<,$@,$(INCLUDES))
 
-$(OBJDIR) $(PROJECT_ROOT)/lib:
-	mkdir -p $@
+# Directory creation
+$(OBJDIR) $(LIBDIR):
+	$(call create_dir,$@)
 
+# Clean target
 clean:
-	rm -rf $(OBJDIR) $(TARGET)
+	$(call clean_standard)
+	@rm -f $(TARGET_LIB)
+	$(call print_success,"Cleaned $(MODULE_NAME) module")
+
+# Static analysis of C code
+analyze: $(TARGET_LIB)
+	$(call print_info,"Running static analysis on C code...")
+	@if command -v $(CPPCHECK) >/dev/null 2>&1; then \
+		$(CPPCHECK) $(CPPCHECK_FLAGS) --language=c $(SRCDIR)/; \
+		$(call print_success,"Static analysis completed"); \
+	else \
+		$(call print_warning,"$(CPPCHECK) not found, skipping analysis"); \
+	fi
+
+# Memory testing with Valgrind
+test-memory: BUILD_TYPE=debug
+test-memory: test
+	$(call print_info,"Running memory tests...")
+	@if command -v $(VALGRIND) >/dev/null 2>&1 && [ -f "$(BINDIR)/test_aes" ]; then \
+		$(VALGRIND) $(VALGRIND_FLAGS) $(BINDIR)/test_aes; \
+		$(call print_success,"Memory tests completed"); \
+	else \
+		$(call print_warning,"Valgrind not available or test not built"); \
+	fi
+
+# Show library information
+info: $(TARGET_LIB)
+	$(call print_info,"Library information for $(TARGET_LIB):")
+	@file $(TARGET_LIB)
+	@echo "Symbols:"
+	@nm $(TARGET_LIB) | grep -E "(T|t)" | head -10
+
+# Dependency inclusion
+$(eval $(include_deps))
+
+# Additional phony targets
+.PHONY: test analyze test-memory info
