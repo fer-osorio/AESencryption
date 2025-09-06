@@ -1,5 +1,6 @@
 # file-handlers/Makefile
 include ../common.mk
+include ../config.mk
 
 # Local configuration
 MODULE_NAME = file-handlers
@@ -39,7 +40,6 @@ check-deps:
 	if [ -n "$$missing_deps" ]; then \
 		$(call print_error,"Missing dependencies:$$missing_deps"); \
 		$(call print_info,"Build required modules first:"); \
-		$(call print_info,"  make -C ../data-encryption"); \
 		$(call print_info,"  make -C ../src"); \
 		exit 1; \
 	fi
