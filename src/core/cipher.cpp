@@ -1,7 +1,7 @@
 #include"../../include/cipher.hpp"
 #include"../../data-encryption/include//AES.h"
 #include"../../data-encryption/include/operation_modes.h"
-#include"../utils/print_bytes/print_bytes.hpp"
+#include"../utils/include/print_bytes.hpp"
 
 using namespace AESencryption;
 
@@ -76,7 +76,7 @@ std::ostream& AESencryption::operator<<(std::ostream& ost, const Cipher& c) {
 }
 
 void Cipher::buildKeyExpansion() {
-    KeyExpansion* ke_p = KeyExpansionBuildNew(this->key.data, this->Nk, false);
+    KeyExpansion* ke_p = KeyExpansionMemoryAllocationBuild(this->key.data, this->Nk, false);
     if(this->keyExpansion == NULL) this->keyExpansion = new uint8_t[this->keyExpansionLength];
     KeyExpansionWriteBytes(ke_p, this->keyExpansion);
     KeyExpansionDelete(&ke_p);
