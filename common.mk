@@ -66,10 +66,10 @@ endef
 
 # Generic compilation rules
 define compile_c_rule
-$(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
-	$(call print_building,"C object:\\n\\t\\t$$@")
-	@$(CC) $(CFLAGS) $(C_STANDARD) $(INCLUDES)  -MMD -MP -c $$< -o $$@
-	$(call print_success,"Compiled:\\n\\t\\t$$@")
+	$(call print_building,"C object:\\n\\t\\t$(2)")
+	$(call create_dir,$(dir $(2)))
+	@$(CC) $(CFLAGS) $(C_STANDARD) $(INCLUDES)  -MMD -MP -c $(1) -o $(2)
+	$(call print_success,"Compiled:\\n\\t\\t$(2)")
 endef
 
 # Standard compilation rule for cpp files
