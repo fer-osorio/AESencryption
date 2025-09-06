@@ -57,8 +57,11 @@ endef
 
 # Directory creation function
 define create_dir
-	@mkdir -p $(1)
-	$(call print_info,"Created directory: $(1)")
+$(shell \
+    if [ ! -d $(1) ]; then \
+        mkdir $(1) \
+        @echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC) Created directory: $(1)" \
+    fi)
 endef
 
 # Generic compilation rules
@@ -69,11 +72,13 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 	$(call print_success,"Compiled:\\n\\t\\t$$@")
 endef
 
-define compile_cxx_rule
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
-	$(call print_building,"C++ object:\\n\\t\\t$$@")
-	@$(CXX) $(CXXFLAGS) $(CXX_STANDARD) $(INCLUDES) -MMD -MP -c $$< -o $$@
-	$(call print_success,"Compiled:\\n\\t\\t$$@")
+# Standard compilation rule for cpp files
+# Usage $(call compile_cpp_rule,source_file,object_file,additional_flags)
+define compile_cpp_rule
+	$(call print_building,"C++ object:\\n\\t\\t$(2)")
+	$(call create_dir,$(dir $(2)))
+	@$(CXX) $(CXXFLAGS) $(CXX_STANDARD) $(INCLUDES) $(3) -MMD -MP -c $(1) -o $(2)
+	$(call print_success,"Compiled:\\n\\t\\t$(2)")
 endef
 
 # Static library creation
