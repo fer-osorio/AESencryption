@@ -73,7 +73,7 @@ static void printWord(Word w) {
   printf("[");
   for(i = 0; i < WL_1; i++) printf("%.2X,", (uint32_t)w.uint08_[i]);
   printf("%.2X]", (uint32_t)w.uint08_[i]);
-};
+}
 
 static void copyWord(const Word* orgin, Word* dest){
   dest->uint32_ = orgin->uint32_;
