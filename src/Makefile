@@ -3,20 +3,22 @@ include ../common.mk
 include ../config.mk
 
 # Local configuration
+MODULE_NAME = src
 PROJECT_ROOT := $(call find-project-root)
 LIBDIR = $(PROJECT_ROOT)/lib
+TARGET_LIB = $(LIBDIR)/libaesencryption_cpp.a
+
+# Local source directory and object directory
 SRCDIR = ./core
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
-BINDIR = $(PROJECT_ROOT)/bin
-TARGET_LIB = $(LIBDIR)/libaesencryption_cpp.a
+
+# Local includes
+INCLUDES = -I./utils/include -I$(PROJECT_ROOT)/data-encryption/include -I$(PROJECT_ROOT)/include
 
 # Source files
 SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 # Object files
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
-
-# Local includes (in addition to common includes)
-INCLUDES = -I./utils/include -I$(PROJECT_ROOT)/data-encryption/include -I$(PROJECT_ROOT)/include
 
 # Dependencies on other modules
 DEPS = $(LIBDIR)/libaesencryption_c.a
@@ -42,9 +44,6 @@ $(TARGET_LIB): check-deps $(OBJECTS) | $(OBJDIR) $(LIBDIR)
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
 	$(call compile_cpp_rule,$<,$@,$(INCLUDES))
 
-# Compilation rule for C++ files
-# $(eval $(call compile_cpp_rule,$(SOURCES),$(OBJECTS),$(OBJDIR),))
-
 # Directory creation
 $(OBJDIR) $(LIBDIR):
 	$(call create_dir,$@)
@@ -53,7 +52,7 @@ $(OBJDIR) $(LIBDIR):
 clean:
 	$(call clean_standard)
 	@rm -f $(TARGET_LIB)
-	$(call print_success,"Cleaned core C++ module")
+	$(call print_success,"Cleaned core C++ module: $(MODULE_NAME)")
 
 # Debug symbols check
 check-symbols: $(TARGET_LIB)
