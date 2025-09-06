@@ -12,7 +12,7 @@ $(shell \
         echo "/tmp"; \
     else \
         pwd; \
-    fi;)
+    fi)
 endef
 
 # Color codes for output
@@ -59,8 +59,8 @@ endef
 define create_dir
 $(shell \
     if [ ! -d $(1) ]; then \
-        mkdir $(1) \
-        @echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC) Created directory: $(1)" \
+        mkdir $(1); \
+        echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC) Created directory: $(1)" >&2; \
     fi)
 endef
 
