@@ -58,13 +58,12 @@ public:
 private:
 	void set_IV(const InitVector source);					// -Sets initial vector by copying the array passed as argument
 	bool IVisInitialized() const { return this->initializedIV; }
-	void write_IV(uint8_t*const destination) const {			// -Writes IV in destination
-		for(int i = 0; i < AESconstants::BLOCK_SIZE; i++)
-			destination[i] = this->IV.data[i];			// -Warning: We are supposing we have at least 16 bytes of space in destination
-	}
-	void write_Key(uint8_t*const destination) const {			// -Writes key in destination. Warning: We're supposing we have enough space in
-		for(size_t i = 0; i < this->lenBytes; i++) destination[i] = this->data[i]; //  destination array.
-	}
+	// -Writes IV in destination
+	// -Warning: We are supposing we have at least 16 bytes of space in destination
+	void write_IV(uint8_t*const destination) const;
+	// -Writes key in destination. Warning: We're supposing we have enough space in
+	//  destination array.
+	void write_Key(uint8_t*const destination) const;
 };
 };
 #endif
