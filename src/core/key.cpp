@@ -178,3 +178,11 @@ void Key::save(const char*const fname) const {
         throw std::runtime_error("File could not be written.");
     }
 }
+
+void Key::write_IV(uint8_t*const destination) const {			// -Writes IV in destination
+	for(size_t i = 0; i < AESconstants::BLOCK_SIZE; i++)
+		destination[i] = this->IV.data[i];			// -Warning: We are supposing we have at least 16 bytes of space in destination
+}
+void Key::write_Key(uint8_t*const destination) const {			// -Writes key in destination. Warning: We're supposing we have enough space in
+	for(size_t i = 0; i < this->lenBytes; i++) destination[i] = this->data[i]; //  destination array.
+}
