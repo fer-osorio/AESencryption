@@ -1,22 +1,22 @@
 # src/Makefile - Main C++ implementation
-include ../config.mk
 include ../common.mk
+include ../config.mk
 
 # Local configuration
 PROJECT_ROOT := $(call find-project-root)
 LIBDIR = $(PROJECT_ROOT)/lib
+SRCDIR = ./core
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
 BINDIR = $(PROJECT_ROOT)/bin
 TARGET_LIB = $(LIBDIR)/libaesencryption_cpp.a
 
 # Source files
 SOURCES = $(wildcard $(SRCDIR)/*.cpp)
-
 # Object files
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Local includes (in addition to common includes)
-INCLUDES = -I$(INCDIR) -I$(PROJECT_ROOT)/data-encryption/include
+INCLUDES = -I./utils/$(INCDIR) -I$(PROJECT_ROOT)/data-encryption/include -I$(PROJECT_ROOT)/include
 
 # Dependencies on other modules
 DEPS = $(LIBDIR)/libaesencryption_c.a
@@ -36,11 +36,14 @@ check-deps:
 	fi
 
 # Library target
-$(TARGET_LIB): check-deps $(OBJECTS) | $(LIBDIR)
+$(TARGET_LIB): check-deps $(OBJECTS) | $(OBJDIR) $(LIBDIR)
 	$(call create_static_lib,$@,$(OBJECTS))
 
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
+	$(call compile_cpp_rule,$<,$@,$(INCLUDES))
+
 # Compilation rule for C++ files
-$(eval $(compile_cxx_rule))
+# $(eval $(call compile_cpp_rule,$(SOURCES),$(OBJECTS),$(OBJDIR),))
 
 # Directory creation
 $(OBJDIR) $(LIBDIR):
