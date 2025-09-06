@@ -16,7 +16,7 @@ SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Local includes (in addition to common includes)
-INCLUDES = -I./utils/$(INCDIR) -I$(PROJECT_ROOT)/data-encryption/include -I$(PROJECT_ROOT)/include
+INCLUDES = -I./utils/include -I$(PROJECT_ROOT)/data-encryption/include -I$(PROJECT_ROOT)/include
 
 # Dependencies on other modules
 DEPS = $(LIBDIR)/libaesencryption_c.a
