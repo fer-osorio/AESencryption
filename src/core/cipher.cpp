@@ -17,7 +17,7 @@ static size_t getKeyExpansionByteLenFromNr(size_t Nr){
 
 Cipher::Cipher() {
     this->keyExpansion = new uint8_t[this->keyExpansionLength];
-    for(int i = 0; i < this->keyExpansionLength; i++) this->keyExpansion[i] = 0;         // -Since the key constitutes of just zeros, key expansion is also just zeros
+    for(size_t i = 0; i < this->keyExpansionLength; i++) this->keyExpansion[i] = 0;         // -Since the key constitutes of just zeros, key expansion is also just zeros
 }
 
 Cipher::Cipher(const Key& k)
@@ -27,8 +27,8 @@ Cipher::Cipher(const Key& k)
 
 Cipher::Cipher(const Cipher& a)
     : key(a.key), Nk(a.Nk), Nr(a.Nr), keyExpansionLength(a.keyExpansionLength) {
-    this->keyExpansion = new uint8_t[(unsigned)a.keyExpansionLength];
-    for(int i = 0; i < a.keyExpansionLength; i++) this->keyExpansion[i] = a.keyExpansion[i];
+    this->keyExpansion = new uint8_t[static_cast<size_t>(a.keyExpansionLength)];
+    for(size_t i = 0; i < a.keyExpansionLength; i++) this->keyExpansion[i] = a.keyExpansion[i];
 }
 
 Cipher::~Cipher() {
@@ -44,9 +44,9 @@ Cipher& Cipher::operator = (const Cipher& a) {
             this->Nr = a.Nr;
             this->keyExpansionLength = a.keyExpansionLength;
             if(this->keyExpansion != NULL) delete[] keyExpansion;
-            this->keyExpansion = new uint8_t[(unsigned)a.keyExpansionLength];
+            this->keyExpansion = new uint8_t[static_cast<size_t>(a.keyExpansionLength)];
         }
-        for(int i = 0; i < a.keyExpansionLength; i++) this->keyExpansion[i] = a.keyExpansion[i];
+        for(size_t i = 0; i < a.keyExpansionLength; i++) this->keyExpansion[i] = a.keyExpansion[i];
     }
     return *this;
 }
