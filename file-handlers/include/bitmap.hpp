@@ -13,8 +13,8 @@ class Bitmap : FileBase {							// -Handling bitmap format images.
 public:
 	enum struct RGB{ Red, Green, Blue, Color_amount};
 	enum struct Direction{ horizontal, vertical, diagonal, direction_amount };
-	static const char*const RGBlabels[(unsigned)RGB::Color_amount];
-	static const char*const DirectionLabels[(unsigned)Direction::direction_amount];
+	static const char*const RGBlabels[static_cast<unsigned>(RGB::Color_amount)];
+	static const char*const DirectionLabels[static_cast<unsigned>(Direction::direction_amount)];
 private:
 	struct RGBcolor {
 		uint8_t red;
