@@ -8,7 +8,7 @@ DataRandomness::~DataRandomness(){
 
 void DataRandomness::calculate_entropy() {						                // -Using Shannon entropy model
 	double temp_entropy = 0.0, probability;
-	for (const uint32_t& freq : byteValueFrequence) {
+	for(const size_t& freq : byteValueFrequence) {
 		if (freq > 0) {
 			probability = static_cast<double>(freq) / this->data_size;
 			temp_entropy -= probability * std::log2(probability);
@@ -19,7 +19,7 @@ void DataRandomness::calculate_entropy() {						                // -Using Shanno
 
 void DataRandomness::calculate_ChiSquare() {
 	double temp_ChiSquare = 0.0;
-	for (const uint32_t& freq : byteValueFrequence){
+	for (const size_t& freq : byteValueFrequence){
 		temp_ChiSquare += static_cast<double>(freq*freq);
 	}
 	temp_ChiSquare *= 256.0/this->data_size;
