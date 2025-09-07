@@ -1,6 +1,6 @@
 include common.mk
 
-.PHONY: all clean test data-encryption core file-handlers tools examples
+.PHONY: all clean test data-encryption core file-handlers tools metrics-analysis
 
 # Default target
 all: core file-handlers tools examples
@@ -15,14 +15,14 @@ data-encryption:
 file-handlers: core
 	@$(MAKE) -C file-handlers
 
-tools: core file-handlers
-	@$(MAKE) -C tools
-
-examples: core file-handlers
-	@$(MAKE) -C examples
+metrics-analysis:
+	@$(MAKE) -C metrics-analysis
 
 test: core file-handlers
 	@$(MAKE) -C tests
+
+tools: core file-handlers
+	@$(MAKE) -C tools
 
 clean:
 	@$(MAKE) -C data-encryption clean
