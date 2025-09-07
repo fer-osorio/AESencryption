@@ -18,7 +18,7 @@ OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Local includes (in addition to common includes)
 INCDIR = include
-INCLUDES = -I$(INCDIR) -I../../include -I../../metrics-analysis/include
+INCLUDES = -I./$(INCDIR) -I../$(INCDIR) -I../metrics-analysis/$(INCDIR)
 
 # Dependencies on other modules
 DEPS =$(LIBDIR)/libaesencryption_cpp.a
