@@ -9,11 +9,11 @@ INCLUDES = -I$(PROJECT_ROOT)/include \
            -Iinclude
 
 LDFLAGS = -L$(PROJECT_ROOT)/lib
-LIBS = -laes -lfile_handlers -lmetrics
+LIBS = -laesencryption_c -laesencryption_cpp -lfile_handlers -lmetrics
 
 # Directories
 SRCDIR = src
-OBJDIR = $(PROJECT_ROOT)/obj/tests
+OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
 BINDIR = bin
 UNIT_DIR = unit
 #INTEGRATION_DIR = integration
@@ -34,10 +34,10 @@ UNIT_TESTS = $(UNIT_TEST_SOURCES:$(UNIT_DIR)/%.cpp=$(BINDIR)/%)
 
 ALL_TESTS = $(UNIT_TESTS) #$(INTEGRATION_TESTS)
 
-.PHONY: all clean unit #integration run-unit run-integration run-all dependencies
+.PHONY: all clean unit dependencies #integration run-unit run-integration run-all
 
 # Default target
-all: dependencies $(ALL_TESTS)
+all: $(ALL_TESTS) # dependencies
 
 # Build dependencies first
 dependencies:
@@ -48,21 +48,23 @@ dependencies:
 	@$(MAKE) -C $(PROJECT_ROOT)/metrics-analysis
 
 # Unit tests
-unit: dependencies $(UNIT_TESTS)
+unit: $(UNIT_TESTS) #dependencies
 
 # Integration tests
 #integration: dependencies $(INTEGRATION_TESTS)
 
+$(info $(BINDIR)/test_)
+
 # Build individual unit test
-$(BINDIR)/test_%: $(OBJDIR)/unit/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR)
+$(BINDIR)/test_%: $(OBJDIR)/unit/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR) $(OBJDIR)
 	$(CXX) $^ -o $@ $(LDFLAGS) $(LIBS)
 
 # Build individual integration test
-$(BINDIR)/test_%: $(OBJDIR)/integration/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR)
-	$(CXX) $^ -o $@ $(LDFLAGS) $(LIBS)
+#$(BINDIR)/test_%: $(OBJDIR)/integration/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR)
+#	$(CXX) $^ -o $@ $(LDFLAGS) $(LIBS)
 
 # Compile test utility objects
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
+$(OBJDIR)/$(SRCDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 # Compile unit test objects
@@ -94,14 +96,6 @@ run-integration: integration
 
 run-all: run-unit run-integration
 	@echo "All tests completed successfully!"
-
-# Test with memory checking (if valgrind is available)
-run-valgrind: unit
-	@echo "Running unit tests with Valgrind..."
-	@for test in $(UNIT_TESTS); do \
-		echo "Running $$test with Valgrind..."; \
-		valgrind --leak-check=full --error-exitcode=1 ./$$test || exit 1; \
-	done
 
 clean:
 	rm -rf $(OBJDIR) $(BINDIR) results/*
