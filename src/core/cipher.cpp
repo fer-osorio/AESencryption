@@ -177,6 +177,7 @@ Cipher::OperationMode Cipher::buildOperationMode(const OperationMode::Identifier
             return OperationMode::buildInCBCmode(IVbuff);
             break;
     }
+    return OperationMode(optModeID);
 }
 
 void Cipher::buildKeyExpansion() {
