@@ -6,7 +6,7 @@ include ../config.mk
 MODULE_NAME = metrics-analysis
 PROJECT_ROOT := $(call find-project-root)
 LIBDIR = $(PROJECT_ROOT)/lib
-TARGET_LIB = $(LIBDIR)/libmetrics.a
+TARGET_LIB = $(LIBDIR)/libmetricsanalysis.a
 
 # Local source directory and object directory
 SRCDIR = ./src

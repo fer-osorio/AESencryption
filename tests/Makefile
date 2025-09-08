@@ -2,11 +2,6 @@ include ../config.mk
 
 # Project structure paths
 PROJECT_ROOT = ..
-INCLUDES = -I$(PROJECT_ROOT)/include \
-           -I$(PROJECT_ROOT)/data-encryption/include \
-           -I$(PROJECT_ROOT)/file-handlers/include \
-           -I$(PROJECT_ROOT)/metrics-analysis/include \
-           -Iinclude
 
 LDFLAGS = -L$(PROJECT_ROOT)/lib
 LIBS = -laesencryption_c -laesencryption_cpp -lfile_handlers -lmetrics
