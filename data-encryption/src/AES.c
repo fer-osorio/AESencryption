@@ -1,7 +1,8 @@
+#include"../include/constants.h"
+#include"../include/AES.h"
 #include<stdio.h>
 #include"SBox.h"
 #include"GF256.h"
-#include"../include/AES.h"
 
 #define WORD_SIZE_SHORTS 2
 #define WORD_LASTIND 3                                                          // -Last index of a word
@@ -15,7 +16,7 @@ typedef union Word_ {
 #define BLOCK_SIZE_INT64 2
 typedef union Block_{
     uint8_t  uint08_[BLOCK_SIZE];
-    Word     word_[Nb];
+    Word     word_[NB];
     uint64_t uint64_[BLOCK_SIZE_INT64];
 } Block ;
 
@@ -57,10 +58,10 @@ static size_t getNr(enum Nk_ Nk){
   return Nk+6;
 }
 static size_t KeyExpansionLenWords(enum Nk_ Nk){
-  return Nb*(getNr(Nk) + 1);
+  return NB*(getNr(Nk) + 1);
 }
 static size_t KeyExpansionLenBlocks(enum Nk_ Nk){
-  return KeyExpansionLenWords(Nk) / Nb;
+  return KeyExpansionLenWords(Nk) / NB;
 }
 
 static bool usingLittleEndian(){
@@ -170,7 +171,7 @@ Block_ptr BlockMemoryAllocationRandom(unsigned int seed){
   Block_ptr output = (Block*)malloc(sizeof(Block));
   if(output == NULL) return NULL;
   srand(seed);
-  for(size_t i = 0; i < Nb; i++) output->word_[i].uint32_ = rand();
+  for(size_t i = 0; i < NB; i++) output->word_[i].uint32_ = rand();
   return output;
 }
 
@@ -441,7 +442,7 @@ KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t nk
   // Writing key expansion on array of words
   KeyExpansionBuildWords(key, Nk, buffer, debug);
   // Writting key expansion on the array of Blocks 'inside' KeyExpansion object.
-  for(size_t i = 0, j = 0; i < output->wordsSize && j < output->blockSize; i += Nb, j++){
+  for(size_t i = 0, j = 0; i < output->wordsSize && j < output->blockSize; i += NB, j++){
     BlockFromWords(buffer + i, output->dataBlocks + j);
   }
   free(buffer);
@@ -542,7 +543,7 @@ void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
     printf("\n");
 
     for(i = 1; i <= ke_p->Nr; i++) {
-      for(j = 0; j < Nb; j++) {
+      for(j = 0; j < NB; j++) {
         if(j == 1) {
           printf("    ");
           if(i < 10) printf("%lu   ", i);
@@ -695,7 +696,7 @@ void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
       ke_p->Nk
     );
 
-    for(i = 0; i < Nb; i++) {
+    for(i = 0; i < NB; i++) {
       if(i == 1) printf(" input  ");
       else printf("        ");
       printf(" | ");
@@ -707,7 +708,7 @@ void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
     printf("\n");
 
     for(i = ke_p->Nr-1; i != (size_t)-1 ; i--) {
-      for(j = 0; j < Nb; j++) {
+      for(j = 0; j < NB; j++) {
         if(j == 1) {
           printf("    ");
           if(i < 10) printf("%lu   ", i);
