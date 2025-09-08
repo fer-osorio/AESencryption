@@ -19,17 +19,19 @@ public:
 			CBC,							// -Cipher Block Chaining.
 		};
 	private:
-		Identifier ID_;
+		Identifier ID_ = Identifier::ECB;
 		InitVector* IV_ = NULL;						// -Initial vector in case of CBC operation mode
-
 	public:
+		OperationMode();
 		OperationMode(Identifier);
 		OperationMode(const OperationMode&);
 		OperationMode& operator=(const OperationMode&);
 		~OperationMode();
+
+		static OperationMode buildInCBCmode(const InitVector& IVsource);
+
 		Identifier getOperationModeID() const;
 		const uint8_t* getIVpointerData() const;
-
 	};
 	struct Config{
 	private:
@@ -38,7 +40,8 @@ public:
 		size_t Nr;
 		size_t keyExpansionLengthBytes;
 	public:
-		Config(OperationMode::Identifier opModeID, size_t Nk);
+		Config();
+		Config(OperationMode optMode, size_t Nk);
 		OperationMode::Identifier getOperationModeID() const;
 		size_t getNk() const;
 		size_t getNr() const;
@@ -67,10 +70,7 @@ public:
 	OperationMode getOptModeID() const;
 
 	private:
-	/*
-	void set_IV(const InitVector source);					// -Sets initial vector by copying the array passed as argument
-	bool IVisInitialized() const { return this->initializedIV; }
-	*/
+	OperationMode buildOperationMode(const OperationMode::Identifier);
 	void buildKeyExpansion();						// -Creates key expansion
 	void formInitialVector();						// -Creates initial vector and writes it on destination array
 	void encrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;	// -Encrypts using operation mode stored in Key object
