@@ -3,7 +3,6 @@
 #define _INCLUDED_FILE_
 
 #include"file_base.hpp"
-#include"../../include/cipher.hpp"
 
 //#define NAME_MAX_LEN 4096
 
