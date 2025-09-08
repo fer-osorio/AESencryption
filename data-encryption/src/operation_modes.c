@@ -1,7 +1,8 @@
+#include"../include/constants.h"
+#include"../include/AES.h"
+#include"../include/operation_modes.h"
 #include<string.h>
 #include<time.h>
-#include"../include/operation_modes.h"
-#include"../include/AES.h"
 
 /*
  * Handling pointers that represent the directions of input and output
