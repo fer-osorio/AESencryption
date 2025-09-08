@@ -4,7 +4,8 @@ include ../config.mk
 PROJECT_ROOT = ..
 
 LDFLAGS = -L$(PROJECT_ROOT)/lib
-LIBS = -laesencryption_c -laesencryption_cpp -lfile_handlers -lmetrics
+LIBS = -laesencryption_c  -laesencryption_cpp  -lfilehandlers  -lmetricsanalysis
+
 
 # Directories
 SRCDIR = src
@@ -59,11 +60,11 @@ $(BINDIR)/test_%: $(OBJDIR)/unit/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR) $(OB
 #	$(CXX) $^ -o $@ $(LDFLAGS) $(LIBS)
 
 # Compile test utility objects
-$(OBJDIR)/$(SRCDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
+$(OBJDIR)/$(SRCDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)/$(SRCDIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 # Compile unit test objects
-$(OBJDIR)/unit/%.o: $(UNIT_DIR)/%.cpp | $(OBJDIR)/unit
+$(OBJDIR)/$(UNIT_DIR)/%.o: $(UNIT_DIR)/%.cpp | $(OBJDIR)/$(UNIT_DIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 # Compile integration test objects
@@ -71,7 +72,7 @@ $(OBJDIR)/integration/%.o: $(INTEGRATION_DIR)/%.cpp | $(OBJDIR)/integration
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 # Create directories
-$(OBJDIR) $(BINDIR) $(OBJDIR)/unit $(OBJDIR)/integration:
+$(OBJDIR) $(BINDIR) $(OBJDIR)/$(SRCDIR) $(OBJDIR)/$(UNIT_DIR) $(OBJDIR)/integration:
 	mkdir -p $@
 
 # Run tests
