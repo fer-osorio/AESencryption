@@ -2,7 +2,7 @@
 
 #include"../include/test_framework.hpp"
 #include"../../data-encryption/include/AES.h"
-#include"../../include/constants.hpp"
+#include"../../data-encryption/include/constants.h"
 #include<cstring>
 
 // Test vectors from NIST SP 800-38A
@@ -92,6 +92,9 @@ bool test_decryptBlock() {
     //ASSERT_TRUE(aes_encrypt_block(nullptr, output, expanded_key, 10) != false, "Null input should return error");
     BlockDelete(&input);
     BlockDelete(&output);
+
+    PRINT_RESULTS();
+    return success;
 }
 
 bool test_encryptionDecryptionRoundtrip() {
@@ -115,6 +118,7 @@ bool test_encryptionDecryptionRoundtrip() {
     BlockDelete(&decrypted);
 
     PRINT_RESULTS();
+    return success;
 }
 
 int main() {
