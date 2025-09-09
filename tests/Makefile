@@ -14,6 +14,8 @@ BINDIR = bin
 UNIT_DIR = unit
 #INTEGRATION_DIR = integration
 
+INCLUDES = -I./include -I../data-encryption/include
+
 # Source files
 TEST_UTILS_SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 UNIT_TEST_SOURCES = $(wildcard $(UNIT_DIR)/*.cpp)
@@ -53,7 +55,7 @@ $(info $(BINDIR)/test_)
 
 # Build individual unit test
 $(BINDIR)/test_%: $(OBJDIR)/unit/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR) $(OBJDIR)
-	$(CXX) $^ -o $@ $(LDFLAGS) $(LIBS)
+	$(CXX) $^ -o $@ $(LDFLAGS) $(LIBS) -fsanitize=address -fsanitize=undefined
 
 # Build individual integration test
 #$(BINDIR)/test_%: $(OBJDIR)/integration/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR)
