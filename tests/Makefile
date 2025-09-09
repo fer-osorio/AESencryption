@@ -15,29 +15,36 @@ INTEGRATION_DIR = integration
 
 # Local includes and libraries
 INCLUDES = -I./include -I../data-encryption/include
-LDFLAGS = -L$(PROJECT_ROOT)/lib
+LDFLAGS += -L$(PROJECT_ROOT)/lib
 LIBS = -laesencryption_c  -laesencryption_cpp  -lfilehandlers  -lmetricsanalysis
 
 # Define required dependencies (library files)
 REQUIRED_DEPS = \
-	$(PROJECT_ROOT)/lib/libaesencryption_c.a \
-	$(PROJECT_ROOT)/lib/libaesencryption_cpp.a \
-	$(PROJECT_ROOT)/lib/libfilehandlers.a \
-	$(PROJECT_ROOT)/lib/libmetricsanalysis.a
+    $(PROJECT_ROOT)/lib/libaesencryption_c.a \
+    $(PROJECT_ROOT)/lib/libaesencryption_cpp.a \
+    $(PROJECT_ROOT)/lib/libfilehandlers.a \
+    $(PROJECT_ROOT)/lib/libmetricsanalysis.a
 
 # Source files
 TEST_UTILS_SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 UNIT_TEST_SOURCES = $(wildcard $(UNIT_DIR)/*.cpp)
 INTEGRATION_TEST_SOURCES = $(wildcard $(INTEGRATION_DIR)/*.cpp)
+SOURCES = $(TEST_UTILS_SOURCES) $(UNIT_TEST_SOURCES) $(INTEGRATION_TEST_SOURCES)
 
 # Object files
 TEST_UTILS_OBJECTS = $(TEST_UTILS_SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/$(SRCDIR)/%.o)
-UNIT_TEST_OBJECTS = $(UNIT_TEST_SOURCES:$(UNIT_DIR)/%.cpp=$(OBJDIR)/unit/%.o)
-INTEGRATION_TEST_OBJECTS = $(INTEGRATION_TEST_SOURCES:$(INTEGRATION_DIR)/%.cpp=$(OBJDIR)/integration/%.o)
+UNIT_TEST_OBJECTS = $(UNIT_TEST_SOURCES:$(UNIT_DIR)/%.cpp=$(OBJDIR)/$(UNIT_DIR)/%.o)
+INTEGRATION_TEST_OBJECTS = $(INTEGRATION_TEST_SOURCES:$(INTEGRATION_DIR)/%.cpp=$(OBJDIR)/$(INTEGRATION_DIR)/%.o)
+OBJECTS = $(TEST_UTILS_OBJECTS) $(UNIT_TEST_OBJECTS) $(INTEGRATION_TEST_OBJECTS)
 
 # Test executables
-UNIT_TESTS = $(UNIT_TEST_SOURCES:$(UNIT_DIR)/%.cpp=$(BINDIR)/%)
-INTEGRATION_TESTS = $(INTEGRATION_TEST_SOURCES:$(INTEGRATION_DIR)/%.cpp=$(BINDIR)/%)
+UNIT_TESTS = $(UNIT_TEST_SOURCES:$(UNIT_DIR)/%.cpp=$(BINDIR)/$(UNIT_DIR)/%)
+INTEGRATION_TESTS = $(INTEGRATION_TEST_SOURCES:$(INTEGRATION_DIR)/%.cpp=$(BINDIR)/$(INTEGRATION_DIR)/%)
+
+#$(info LDFLAGS: $(LDFLAGS))
+#$(info SOURCES: $(SOURCES))
+#$(info OBJECTS: $(OBJECTS))
+#$(info REQUIRED_DEPS: $(REQUIRED_DEPS))
 
 ALL_TESTS = $(UNIT_TESTS) #$(INTEGRATION_TESTS)
 
@@ -56,16 +63,16 @@ check-deps:
 		fi; \
 	done; \
 	if [ -n "$$missing_deps" ]; then \
-		$(call print_error,"Missing dependencies:$$missing_deps"); \
-		$(call print_info,"Build required modules first:"); \
-		$(call print_info,"  make -C $(PROJECT_ROOT)/data-encryption"); \
-		$(call print_info,"  make -C $(PROJECT_ROOT)/src"); \
-		$(call print_info,"  make -C $(PROJECT_ROOT)/file-handlers"); \
-		$(call print_info,"  make -C $(PROJECT_ROOT)/metrics-analysis"); \
-		$(call print_warning,"Run 'make dependencies' if you want to build them automatically"); \
+		echo -e "$(COLOR_RED)[ERROR]$(COLOR_NC) Missing dependencies:$$missing_deps"; \
+		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC) Build required modules first:"; \
+		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/data-encryption"; \
+		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/src"; \
+		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/file-handlers"; \
+		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/metrics-analysis"; \
+		echo -e "$(COLOR_YELLOW)[WARNING]$(COLOR_NC) Run 'make dependencies' if you want to build them automatically"; \
 		exit 1; \
 	else \
-		$(call print_success,"All dependencies found"); \
+		echo -e "$(COLOR_GREEN)[SUCCESS]$(COLOR_NC) All dependencies found"; \
 	fi
 
 # Build dependencies (optional - for convenience)
@@ -84,33 +91,31 @@ unit: check-deps $(UNIT_TESTS)
 integration: check-deps $(INTEGRATION_TESTS)
 
 # Build individual unit test
-$(BINDIR)/test_%: $(OBJDIR)/$(UNIT_DIR)/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR)
-	$(call create_dir,$(BINDIR))
+$(BINDIR)/$(UNIT_DIR)/test_%: $(OBJDIR)/$(UNIT_DIR)/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR)/$(UNIT_DIR) $(OBJDIR)
 	$(call print_building,"Unit test executable: $@")
-	@$(CXX) $^ -o $@ $(LDFLAGS) $(LIBS) -fsanitize=address -fsanitize=undefined
+	@$(CXX) $^ -o $@ $(LDFLAGS) $(LIBS)
 	$(call print_success,"Built unit test: $@")
 
 # Build individual integration test
-$(BINDIR)/integration_test_%: $(OBJDIR)/integration/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR)
-	$(call create_dir,$(BINDIR))
+$(BINDIR)/$(INTEGRATION_DIR)/test_%: $(OBJDIR)/$(INTEGRATION_DIR)/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR)/$(INTEGRATION_DIR) $(OBJDIR)
 	$(call print_building,"Integration test executable: $@")
 	@$(CXX) $^ -o $@ $(LDFLAGS) $(LIBS)
 	$(call print_success,"Built integration test: $@")
 
 # Compile test utility objects using common.mk function
-$(OBJDIR)/$(SRCDIR)/%.o: $(SRCDIR)/%.cpp
+$(OBJDIR)/$(SRCDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)/$(SRCDIR)
 	$(call compile_cpp_rule,$<,$@)
 
 # Compile unit test objects using common.mk function
-$(OBJDIR)/$(UNIT_DIR)/%.o: $(UNIT_DIR)/%.cpp
+$(OBJDIR)/$(UNIT_DIR)/%.o: $(UNIT_DIR)/%.cpp | $(OBJDIR)/$(UNIT_DIR)
 	$(call compile_cpp_rule,$<,$@)
 
 # Compile integration test objects using common.mk function
-$(OBJDIR)/integration/%.o: $(INTEGRATION_DIR)/%.cpp
+$(OBJDIR)/$(INTEGRATION_DIR)/%.o: $(INTEGRATION_DIR)/%.cpp | $(OBJDIR)/$(INTEGRATION_DIR)
 	$(call compile_cpp_rule,$<,$@)
 
 # Create directories (now handled by common.mk functions, but kept for explicit dependencies)
-$(OBJDIR) $(BINDIR) $(OBJDIR)/$(SRCDIR) $(OBJDIR)/$(UNIT_DIR) $(OBJDIR)/integration:
+$(OBJDIR) $(BINDIR)/$(INTEGRATION_DIR) $(BINDIR)/$(UNIT_DIR) $(OBJDIR)/$(SRCDIR) $(OBJDIR)/$(UNIT_DIR) $(OBJDIR)/$(INTEGRATION_DIR):
 	$(call create_dir,$@)
 
 # Run tests with improved output
@@ -205,12 +210,12 @@ help:
 	@echo -e "  help          - Show this help"
 	@echo -e ""
 	@echo -e "$(COLOR_BLUE)Usage examples:$(COLOR_NC)"
-	@echo -e "  make                    # Build all tests (checks deps first)"
-	@echo -e "  make check-deps         # Only check dependencies"
-	@echo -e "  make dependencies       # Build missing dependencies"
+	@echo -e "  make                   # Build all tests (checks deps first)"
+	@echo -e "  make check-deps        # Only check dependencies"
+	@echo -e "  make dependencies      # Build missing dependencies"
 	@echo -e "  make run-unit          # Build and run unit tests"
 	@echo -e "  make clean all         # Clean and rebuild"
 	@echo -e "  make debug-vars        # Show variables for debugging"
 
-# Include dependency files (using common.mk function)
-$(call include_deps)
+# Include dependency files
+$(eval $(call include_deps))
