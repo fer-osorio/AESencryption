@@ -24,6 +24,26 @@ namespace TestVectors {
     };
 }
 
+bool test_KeyExpansionMemoryAllocationBuild();
+bool test_encryptBlock();
+bool test_decryptBlock();
+bool test_encryptionDecryptionRoundtrip();
+
+int main() {
+    std::cout << "=== AES Core Implementation Tests ===" << std::endl;
+
+    if(test_KeyExpansionMemoryAllocationBuild() == false) {
+        std::cout << "\n=== Fail to create a valid Key Expansion object. Stop. ===" << std::endl;
+        return 0;
+    }
+    test_encryptBlock();
+    test_decryptBlock();
+    test_encryptionDecryptionRoundtrip();
+
+    std::cout << "\n=== All AES Core Tests Complete ===" << std::endl;
+    return 0;
+}
+
 // Test functions
 bool test_KeyExpansionMemoryAllocationBuild() {
     TEST_SUITE("AES Key Expansion Tests");
@@ -32,7 +52,7 @@ bool test_KeyExpansionMemoryAllocationBuild() {
 
     // Test key expansion for 128-bit key
     // Wrapped in a if statement to guard agains access to null pointer.
-    if(!ASSERT_TRUE(ke_p == NULL, "AES-128 key expansion should succeed")) return false;
+    if(!ASSERT_TRUE(ke_p != NULL, "AES-128 key expansion should succeed")) return false;
 
     // Verify first round key (should be original key)
     success = success && ASSERT_BYTES_EQUAL(TestVectors::key_128, KeyExpansionReturnBytePointerToData(ke_p), 16, "First round key should match original key");
@@ -119,19 +139,4 @@ bool test_encryptionDecryptionRoundtrip() {
 
     PRINT_RESULTS();
     return success;
-}
-
-int main() {
-    std::cout << "=== AES Core Implementation Tests ===" << std::endl;
-
-    if(test_KeyExpansionMemoryAllocationBuild()) {
-        std::cout << "\n=== Fail to create a valid Key Expansion object. Stop. ===" << std::endl;
-        return 0;
-    }
-    test_encryptBlock();
-    test_decryptBlock();
-    test_encryptionDecryptionRoundtrip();
-
-    std::cout << "\n=== All AES Core Tests Complete ===" << std::endl;
-    return 0;
 }
