@@ -10,12 +10,11 @@ bool TestSuite::assertTrue(bool condition, const std::string& testName){
     if(condition) {
         this->testsPassed++;
         std::cout << "  ✓ " << testName << std::endl;
-        return true;
     } else {
         this->failedTests.push_back(testName);
         std::cout << "  ✗ " << testName << " - FAILED" << std::endl;
-        return false;
     }
+    return condition;
 }
 
 bool TestSuite::assertEqual(int expected, int actual, const std::string& testName){
