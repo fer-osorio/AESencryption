@@ -9,7 +9,7 @@ all: data-encryption core file-handlers metrics-analysis tests #tools
 tests: file-handlers core data-encryption metrics-analysis
 	@$(MAKE) -C tests
 
-file-handlers: core
+file-handlers: core metrics-analysis
 	@$(MAKE) -C file-handlers
 
 core: data-encryption
