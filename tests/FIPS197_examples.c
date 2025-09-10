@@ -1,5 +1,5 @@
 // -This program shows the examples defined in FIPS-197
-
+#include"../data-encryption/include/constants.h"
 #include"../data-encryption/include/AES.h"
 #include<stdlib.h>
 #include<stdio.h>
@@ -72,23 +72,25 @@ static void displayExpansionOfKey(enum Nk_ Nk){
   printf("\n---------------------------------- Displaying key expansion proccess. Nk = %d. -------------------------------------\n", Nk);
   switch(Nk){
     case Nk128:
-      ke_p = KeyExpansionBuildNew(KEE_key128, Nk128, true);
+      ke_p = KeyExpansionMemoryAllocationBuild(KEE_key128, Nk128, true);
       break;
     case Nk192:
-      KeyExpansionBuildNew(KEE_key192, Nk192, true);
+      KeyExpansionMemoryAllocationBuild(KEE_key192, Nk192, true);
       break;
     case Nk256:
-      KeyExpansionBuildNew(KEE_key256, Nk256, true);
+      KeyExpansionMemoryAllocationBuild(KEE_key256, Nk256, true);
+      break;
+    default:
       break;
   }
   KeyExpansionDelete(&ke_p);
 }
 
 static void blockCipher(const Block* plaintext, size_t nk, const uint8_t* key){
-  KeyExpansion_ptr ke_p = KeyExpansionBuildNew(key, nk, false);
+  KeyExpansion_ptr ke_p = KeyExpansionMemoryAllocationBuild(key, nk, false);
   const uint8_t BlockZero[BLOCK_SIZE] = {0};
-  Block_ptr cipherOutput = BlockFromBytes(BlockZero);
-  Block_ptr decipherOutput = BlockFromBytes(BlockZero);
+  Block_ptr cipherOutput = BlockMemoryAllocationFromBytes(BlockZero);
+  Block_ptr decipherOutput = BlockMemoryAllocationFromBytes(BlockZero);
 
   printf("\n--------------------------- Displaying encryption proccess. ----------------------------\n");
   encryptBlock(plaintext, ke_p, cipherOutput, true);
@@ -102,19 +104,19 @@ static void blockCipher(const Block* plaintext, size_t nk, const uint8_t* key){
 }
 
 int main(int argc, char* argv[]){
-  Block_ptr plainText00blk = BlockFromBytes(EV_plainText00);
+  Block_ptr plainText00blk = BlockMemoryAllocationFromBytes(EV_plainText00);
 
   displayExpansionOfKey(Nk128);
   displayExpansionOfKey(Nk192);
   displayExpansionOfKey(Nk256);
 
-  blockCipher(plainText00blk, 128, EV_key128);
-  blockCipher(plainText00blk, 192, EV_key192);
-  blockCipher(plainText00blk, 256, EV_key256);
+  blockCipher(plainText00blk, Nk128, EV_key128);
+  blockCipher(plainText00blk, Nk192, EV_key192);
+  blockCipher(plainText00blk, Nk256, EV_key256);
 
   free(plainText00blk);
 
   return EXIT_SUCCESS;
 }
 
-// gcc -o FIPS197_examples -Wall -ggdb -fno-omit-frame-pointer -O2 FIPS197_examples.c AES.c
+// gcc -o FIPS197_examples -Wall -ggdb -fno-omit-frame-pointer -O2 FIPS197_examples.c ../data-encryption/src/AES.c
