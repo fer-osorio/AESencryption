@@ -14,17 +14,17 @@ class Cipher;									// Declare cipher class, so we can make it a friend of Key
 
 struct Key {
 public:
-	enum struct LenBits {_128 = 128,_192 = 192,_256 = 256};			// -Allowed AES key lengths
+	enum struct LengthBits {_128 = 128,_192 = 192,_256 = 256};			// -Allowed AES key lengths
 private:
 	uint8_t*data = NULL;
-	LenBits	lenBits;							// -Length in bits.
+	LengthBits	lenBits;							// -Length in bits.
 	size_t	lenBytes;							// -Length in bytes.
 
 	friend Cipher;
 	// The following two private constructors can only be acceced by Cipher class, the intention is to have well-constructed keys for the user.
 	Key();
-	Key(LenBits);
-	Key(const uint8_t* const _key, LenBits);
+	Key(LengthBits);
+	Key(const uint8_t* const _key, LengthBits);
 public:
 	Key(const char*const fname);						// -Building from binary file.
 	Key(const Key&);
