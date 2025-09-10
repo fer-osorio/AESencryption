@@ -12,9 +12,15 @@
 // =============================================================================
 // AES-128 Key Expansion (Nk=4, Nr=10)
 // =============================================================================
-// Original key: {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c}
 
-unsigned char aes128_expanded_key[176] = {
+namespace KeyExpansionExample {
+
+const unsigned char aes128_key[] = {
+	0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
+	0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
+};
+
+const unsigned char aes128_key_expanded[176] = {
     // w[0] to w[3] - Original key
     0x2b, 0x7e, 0x15, 0x16,  // w[0]
     0x28, 0xae, 0xd2, 0xa6,  // w[1]
@@ -85,10 +91,13 @@ unsigned char aes128_expanded_key[176] = {
 // =============================================================================
 // AES-192 Key Expansion (Nk=6, Nr=12)
 // =============================================================================
-// Original key: {0x8e, 0x73, 0xb0, 0xf7, 0xda, 0x0e, 0x64, 0x52, 0xc8, 0x10, 0xf3, 0x2b,
-//                0x80, 0x90, 0x79, 0xe5, 0x62, 0xf8, 0xea, 0xd2, 0x52, 0x2c, 0x6b, 0x7b}
+const unsigned char aes192_key[] = {
+	0x8e, 0x73, 0xb0, 0xf7, 0xda, 0x0e, 0x64, 0x52,
+	0xc8, 0x10, 0xf3, 0x2b, 0x80, 0x90, 0x79, 0xe5,
+	0x62, 0xf8, 0xea, 0xd2, 0x52, 0x2c, 0x6b, 0x7b
+};
 
-unsigned char aes192_expanded_key[208] = {
+const unsigned char aes192_key_expanded[208] = {
     // w[0] to w[5] - Original key
     0x8e, 0x73, 0xb0, 0xf7,  // w[0]
     0xda, 0x0e, 0x64, 0x52,  // w[1]
@@ -163,10 +172,14 @@ unsigned char aes192_expanded_key[208] = {
 // =============================================================================
 // AES-256 Key Expansion (Nk=8, Nr=14)
 // =============================================================================
-// Original key: {0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe, 0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
-//                0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7, 0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4}
+const unsigned char aes256_key[] = {
+	0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe,
+	0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
+	0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7,
+	0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4
+};
 
-unsigned char aes256_expanded_key[240] = {
+const unsigned char aes256_key_expanded[240] = {
     // w[0] to w[7] - Original key
     0x60, 0x3d, 0xeb, 0x10,  // w[0]
     0x15, 0xca, 0x71, 0xbe,  // w[1]
@@ -245,28 +258,29 @@ unsigned char aes256_expanded_key[240] = {
 };
 
 // For AES-128 (11 rounds: initial + 10 encryption rounds)
-unsigned char* get_aes128_round_key(int round) {
-    return aes128_expanded_key + round*16;
+const unsigned char* get_aes128_round_key(int round) {
+    return aes128_key_expanded + round*16;
 }
 
 // For AES-192 (13 rounds: initial + 12 encryption rounds)
-unsigned char* get_aes192_round_key(int round) {
-    return aes192_expanded_key + round*16;
+const unsigned char* get_aes192_round_key(int round) {
+    return aes192_key_expanded + round*16;
 }
 
 // For AES-256 (15 rounds: initial + 14 encryption rounds)
-unsigned char* get_aes256_round_key(int round) {
-    return aes256_expanded_key + round*16;
+const unsigned char* get_aes256_round_key(int round) {
+    return aes256_key_expanded + round*16;
 }
 
 // Verification function example
-/*int verify_key_expansion(unsigned char* your_expanded_key, unsigned char* reference_key, int total_bytes) {
+/*int verify_key_expansion(const unsigned char* your_key_expanded, const unsigned char* reference_key, int total_bytes) {
     for (int i = 0; i < total_bytes; i++) {
-        if (your_expanded_key[i] != reference_key[i]) {
+        if (your_key_expanded[i] != reference_key[i]) {
             printf("Mismatch at byte %d: got 0x%02x, expected 0x%02x\n",
-                   i, your_expanded_key[i], reference_key[i]);
+                   i, your_key_expanded[i], reference_key[i]);
             return 0;  // Failed
         }
     }
     return 1;  // Success
 }*/
+};
