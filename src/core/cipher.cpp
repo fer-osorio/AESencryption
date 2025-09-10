@@ -12,7 +12,7 @@ struct AESencryption::InitVector{
 
 using namespace AESencryption;
 
-static size_t getNkfromLenbit(Key::LenBits lb){
+static size_t getNkfromLenbit(Key::LengthBits lb){
     return size_t(lb)/32;
 }
 static size_t getNrFromNk(size_t Nk){
@@ -72,10 +72,10 @@ Cipher::OperationMode Cipher::OperationMode::buildInCBCmode(const InitVector& IV
     return optMode;
 }
 
-Cipher::Config::Config(): _Nk(NK128), Nr(NR128), keyExpansionLengthBytes(KEY_EXPANSION_LENGTH_128_BYTES) {}
+Cipher::Config::Config(): Nk_(NK128), Nr(NR128), keyExpansionLengthBytes(KEY_EXPANSION_LENGTH_128_BYTES) {}
 
 Cipher::Config::Config(OperationMode optMode, size_t Nk)
-    :operationMode(optMode), _Nk(Nk), Nr(getNrFromNk(Nk)), keyExpansionLengthBytes(getKeyExpansionByteLenFromNr(this->Nr)){
+    :operationMode(optMode), Nk_(Nk), Nr(getNrFromNk(Nk)), keyExpansionLengthBytes(getKeyExpansionByteLenFromNr(this->Nr)){
 }
 
 Cipher::OperationMode::Identifier Cipher::Config::getOperationModeID() const{
@@ -83,7 +83,7 @@ Cipher::OperationMode::Identifier Cipher::Config::getOperationModeID() const{
 }
 
 size_t Cipher::Config::getNk() const{
-    return this->_Nk;
+    return this->Nk_;
 }
 
 size_t Cipher::Config::getNr() const{
