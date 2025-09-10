@@ -258,7 +258,7 @@ const unsigned char aes256_key_expanded[240] = {
 };
 
 // For AES-128 (11 rounds: initial + 10 encryption rounds)
-const unsigned char* get_aes128_round_key(int round) {
+/*const unsigned char* get_aes128_round_key(int round) {
     return aes128_key_expanded + round*16;
 }
 
@@ -270,7 +270,7 @@ const unsigned char* get_aes192_round_key(int round) {
 // For AES-256 (15 rounds: initial + 14 encryption rounds)
 const unsigned char* get_aes256_round_key(int round) {
     return aes256_key_expanded + round*16;
-}
+}*/
 
 // Verification function example
 /*int verify_key_expansion(const unsigned char* your_key_expanded, const unsigned char* reference_key, int total_bytes) {
