@@ -63,7 +63,16 @@ public:
 	Cipher& operator = (const Cipher& a);
 	friend std::ostream& operator << (std::ostream& st, const Cipher& c);
 
+	/*
+	 * Encrypts data contatined in data vector using the key in cipher this object
+	 * Interface with Encryptor object
+	 * */
 	void encryption(std::vector<uint8_t>& data) const override;
+
+	/*
+	 * Decrypts data contatined in data vector using the key in cipher this object
+	 * Interface with Encryptor object
+	 * */
 	void decryption(std::vector<uint8_t>& data) const override;
 
 	void saveKey(const char*const fname) const;
@@ -73,8 +82,18 @@ public:
 	OperationMode buildOperationMode(const OperationMode::Identifier);
 	void buildKeyExpansion();						// -Creates key expansion
 	void formInitialVector();						// -Creates initial vector and writes it on destination array
-	void encrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;	// -Encrypts using operation mode stored in Key object
-	void decrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;	// -Decrypts using operation mode stored in Key object
+
+	/*
+	 * Encrypts using operation mode stored in Cipher object
+	 * Consider: Comunicates with AES.h
+	 * */
+	void encrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;
+
+	/*
+	 * Decrypts using operation mode stored in Cipher object
+	 * Consider: Comunicates with AES.h
+	 * */
+	void decrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;
 };
 };
 #endif
