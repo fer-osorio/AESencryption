@@ -8,17 +8,17 @@
 
 using namespace AESencryption;
 
-static size_t fromLenBitsToLenBytes(Key::LenBits lenbits){
+static size_t fromLenBitsToLenBytes(Key::LengthBits lenbits){
     return size_t(lenbits)/8;
 }
 
 Key::Key()
-    : lenBits(LenBits::_256), lenBytes(fromLenBitsToLenBytes(lenBits)) {
+    : lenBits(LengthBits::_256), lenBytes(fromLenBitsToLenBytes(lenBits)) {
     this->data = new uint8_t[this->lenBytes];
     for(size_t i = 0; i < this->lenBytes; i++) this->data[i] = 0;
 }
 
-Key::Key(LenBits lenbits)
+Key::Key(LengthBits lenbits)
     : lenBits(lenbits), lenBytes(fromLenBitsToLenBytes(lenbits)){
     size_t i;
     union { int integer; char chars[4]; } buff;                                 // -Anonymous union. Casting from 32 bits integer to four chars
@@ -31,7 +31,7 @@ Key::Key(LenBits lenbits)
     }
 }
 
-Key::Key(const uint8_t* const _key, LenBits lenbits)
+Key::Key(const uint8_t* const _key, LengthBits lenbits)
     : lenBits(lenbits), lenBytes(fromLenBitsToLenBytes(lenbits)){
     this->data = new uint8_t[this->lenBytes];
     if(_key != NULL) for(size_t i = 0; i < this->lenBytes; i++) this->data[i] = _key[i];
@@ -45,7 +45,7 @@ Key::Key(const Key& k)
 }
 
 Key::Key(const char*const fname)
-    : lenBits(LenBits::_128), lenBytes(BLOCK_SIZE) {
+    : lenBits(LengthBits::_128), lenBytes(BLOCK_SIZE) {
     char aeskeyStr[] = "AESKEY";
     char AESKEY[7];
     //char opMode[4];
@@ -66,8 +66,8 @@ Key::Key(const char*const fname)
                     throw std::runtime_error("Not a recognized operation mode");
                 }*/
                 file.read(reinterpret_cast<char*>(&keyLen), 2);                                   // -Reading key lenBits
-                if(keyLen == uint16_t(LenBits::_128) || keyLen == uint16_t(LenBits::_192) || keyLen == uint16_t(LenBits::_256))
-                    this->lenBits = static_cast<LenBits>(keyLen);
+                if(keyLen == uint16_t(LengthBits::_128) || keyLen == uint16_t(LengthBits::_192) || keyLen == uint16_t(LengthBits::_256))
+                    this->lenBits = static_cast<LengthBits>(keyLen);
                 else {
                     std::cerr << "In file Source/AES.cpp, function Key::Key(const char*const fname):" << keyLen << " is not a valid length in bits for key.\n";
                     throw std::runtime_error("Key length not allowed.");
