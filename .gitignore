@@ -31,8 +31,11 @@
 *.out
 *.app
 
-
 # Cryptographic keys
 *key
 *.aeskey
 *.aes
+
+# Directories for binaries
+bin/*
+*/bin/*
