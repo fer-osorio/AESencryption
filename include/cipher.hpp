@@ -36,7 +36,7 @@ public:
 	struct Config{
 	private:
 		OperationMode operationMode;
-		size_t _Nk;
+		size_t Nk_;
 		size_t Nr;
 		size_t keyExpansionLengthBytes;
 	public:
