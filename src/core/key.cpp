@@ -123,6 +123,14 @@ bool Key::operator == (const Key& k) const{
     return true;
 }
 
+Key::LengthBits Key::getLenBits() const{
+    return this->lenBits;
+}
+
+size_t Key::getLenBytes() const{
+    return this->lenBytes;
+}
+
 /*static const char* opModeToString(Key::OpMode mode) {
     switch (mode) {
         case Key::OpMode::ECB: return "ECB";
