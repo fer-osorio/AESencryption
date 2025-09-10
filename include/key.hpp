@@ -16,9 +16,9 @@ struct Key {
 public:
 	enum struct LengthBits {_128 = 128,_192 = 192,_256 = 256};			// -Allowed AES key lengths
 private:
-	uint8_t*data = NULL;
-	LengthBits	lenBits;							// -Length in bits.
-	size_t	lenBytes;							// -Length in bytes.
+	uint8_t* data = NULL;
+	LengthBits lenBits;							// -Length in bits.
+	size_t lenBytes;							// -Length in bytes.
 
 	friend Cipher;
 	// The following two private constructors can only be acceced by Cipher class, the intention is to have well-constructed keys for the user.
@@ -34,7 +34,8 @@ public:
 	bool operator == (const Key&) const;
 	friend std::ostream& operator << (std::ostream& ost, const Key& k);
 
-	size_t getLenBytes() const {return this->lenBytes;}
+	LengthBits getLenBits() const;
+	size_t getLenBytes() const;
 
 	void save(const char*const fname) const;				// -Saving information in a binary file.
 private:
