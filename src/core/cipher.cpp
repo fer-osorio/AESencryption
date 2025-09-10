@@ -173,7 +173,7 @@ Cipher::OperationMode Cipher::buildOperationMode(const OperationMode::Identifier
             tt.data64[0] = std::chrono::high_resolution_clock::now().time_since_epoch().count();
             tt.data64[1] = tt.data64[0]++;
             if(this->keyExpansion != NULL)
-                encryptECB(tt.data08, BLOCK_SIZE, this->keyExpansion, this->config.getNk(), IVbuff.data);
+                encryptECB(tt.data08, BLOCK_SIZE, this->keyExpansion, static_cast<size_t>(this->key.getLenBits()), IVbuff.data);
             return OperationMode::buildInCBCmode(IVbuff);
             break;
     }
@@ -181,7 +181,7 @@ Cipher::OperationMode Cipher::buildOperationMode(const OperationMode::Identifier
 }
 
 void Cipher::buildKeyExpansion() {
-    KeyExpansion* ke_p = KeyExpansionMemoryAllocationBuild(this->key.data, this->config.getNk(), false);
+    KeyExpansion* ke_p = KeyExpansionMemoryAllocationBuild(this->key.data, static_cast<size_t>(this->key.getLenBits()), false);
     if(this->keyExpansion == NULL) this->keyExpansion = new uint8_t[this->config.getKeyExpansionLengthBytes()];
     KeyExpansionWriteBytes(ke_p, this->keyExpansion);
     KeyExpansionDelete(&ke_p);
@@ -189,28 +189,28 @@ void Cipher::buildKeyExpansion() {
 
 void Cipher::encrypt(const uint8_t*const data, size_t size, uint8_t*const output) const{
     if(size == 0 || data == NULL) return;
-    size_t thisNk = this->config.getNk();
+    size_t thisKeylenbits = static_cast<size_t>(this->key.getLenBits());
     OperationMode::Identifier optMode = this->config.getOperationModeID();
     switch(optMode) {
         case OperationMode::Identifier::ECB:
-            encryptECB(data, size, this->keyExpansion, thisNk, output);
+            encryptECB(data, size, this->keyExpansion, thisKeylenbits, output);
             break;
         case OperationMode::Identifier::CBC:
-            encryptCBC(data, size, this->keyExpansion, thisNk, this->config.getIVpointerData(), output);
+            encryptCBC(data, size, this->keyExpansion, thisKeylenbits, this->config.getIVpointerData(), output);
             break;
     }
 }
 
 void Cipher::decrypt(const uint8_t*const data, size_t size, uint8_t*const output) const{
     if(size == 0 || data == NULL) return;
-    size_t thisNk = this->config.getNk();
+    size_t thisKeylenbits = static_cast<size_t>(this->key.getLenBits());
     OperationMode::Identifier optMode = this->config.getOperationModeID();
     switch(optMode) {
         case OperationMode::Identifier::ECB:
-            decryptECB(data, size, this->keyExpansion, thisNk, output);
+            decryptECB(data, size, this->keyExpansion, thisKeylenbits, output);
             break;
         case OperationMode::Identifier::CBC:
-            decryptCBC(data, size, this->keyExpansion, thisNk, this->config.getIVpointerData(), output);
+            decryptCBC(data, size, this->keyExpansion, thisKeylenbits, this->config.getIVpointerData(), output);
             break;
     }
 }
