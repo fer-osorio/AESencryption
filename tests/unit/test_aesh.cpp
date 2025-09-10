@@ -47,24 +47,26 @@ int main() {
 // Test functions
 bool test_KeyExpansionMemoryAllocationBuild() {
     TEST_SUITE("AES Key Expansion Tests");
-    KeyExpansion_ptr ke_p = KeyExpansionMemoryAllocationBuild(TestVectors::key_128, Nk128, false);
+    KeyExpansion_ptr ke_p = KeyExpansionMemoryAllocationBuild(TestVectors::key_128, Nk128, true);
     bool success = true;
 
     // Test key expansion for 128-bit key
     // Wrapped in a if statement to guard agains access to null pointer.
-    if(!ASSERT_TRUE(ke_p != NULL, "AES-128 key expansion should succeed")) return false;
+    if(!ASSERT_NOT_NULL(ke_p, "AES-128 key expansion should succeed")) return false;
 
     // Verify first round key (should be original key)
     success = success && ASSERT_BYTES_EQUAL(TestVectors::key_128, KeyExpansionReturnBytePointerToData(ke_p), 16, "First round key should match original key");
 
     KeyExpansionDelete(&ke_p);
+
+    // Try to build new key with invalid key length
     ke_p = KeyExpansionMemoryAllocationBuild(TestVectors::key_128, 32, false);
     // Test invalid key length
-    success = success && ASSERT_TRUE(ke_p != NULL, "Invalid key length should return null pointer");
+    success = ASSERT_TRUE(ke_p == NULL, "Invalid key length should return null pointer") && success;
     KeyExpansionDelete(&ke_p);
 
     PRINT_RESULTS();
-    return true;
+    return success;
 }
 
 bool test_encryptBlock() {
