@@ -48,19 +48,19 @@ static const Block aInv = {{                                                    
 }};
 
 struct KeyExpansion_{
-  enum Nk_ Nk;
+  enum Nk_t Nk;
   size_t Nr;
   size_t wordsSize;
   size_t blockSize;
   Block* dataBlocks;
 };
-static size_t getNr(enum Nk_ Nk){
+static size_t getNr(enum Nk_t Nk){
   return Nk+6;
 }
-static size_t KeyExpansionLenWords(enum Nk_ Nk){
+static size_t KeyExpansionLenWords(enum Nk_t Nk){
   return NB*(getNr(Nk) + 1);
 }
-static size_t KeyExpansionLenBlocks(enum Nk_ Nk){
+static size_t KeyExpansionLenBlocks(enum Nk_t Nk){
   return KeyExpansionLenWords(Nk) / NB;
 }
 
@@ -292,7 +292,7 @@ static void AddRoundKey(Block* b, const Block keyExpansion[], size_t round) {   
   XORblocks(b,keyExpansion+round,b);
 }
 
-static void KeyExpansionBuildWords(const uint8_t* key, enum Nk_ Nk, Word outputKeyExpansion[], bool debug){
+static void KeyExpansionBuildWords(const uint8_t* key, enum Nk_t Nk, Word outputKeyExpansion[], bool debug){
   Word tmp;
   const size_t keyExpLen = KeyExpansionLenWords(Nk);
   size_t i;
@@ -372,7 +372,7 @@ static void KeyExpansionBuildWords(const uint8_t* key, enum Nk_ Nk, Word outputK
   debug = false;
 }
 
-static KeyExpansion_ptr KeyExpansionMemoryAllocation(enum Nk_ Nk){
+static KeyExpansion_ptr KeyExpansionMemoryAllocation(enum Nk_t Nk){
   KeyExpansion_ptr output = (KeyExpansion*)malloc(sizeof(KeyExpansion));
   if(output == NULL) return NULL;
   // -Building KeyExpansion object
@@ -385,7 +385,7 @@ static KeyExpansion_ptr KeyExpansionMemoryAllocation(enum Nk_ Nk){
   return output;
 }
 
-static enum Nk_ uint32_t_toNk(uint32_t nk){                                        // Casting from unsigned integer to Nk value
+static enum Nk_t uint32_t_toNk(uint32_t nk){                                        // Casting from unsigned integer to Nk value
   switch(nk) {
     case NK128:
       return Nk128;
@@ -430,7 +430,7 @@ static void BlockFromWords(const Word source[], Block* output){
 }
 
 KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t nk, bool debug){
-  enum Nk_ Nk = uint32_t_toNk(nk);
+  enum Nk_t Nk = uint32_t_toNk(nk);
   if(Nk == Unknown) {
     //printf("KeyExpansionMemoryAllocationBuild: Nk == Unknown\n");
     //printf("KeyExpansionMemoryAllocationBuild: nk == %lu\n", nk);
@@ -472,7 +472,7 @@ void KeyExpansionWriteBytes(const KeyExpansion* source, uint8_t* dest){
 }
 
 KeyExpansion_ptr KeyExpansionFromBytes(const uint8_t source[], size_t nk){
-  enum Nk_ Nk = uint32_t_toNk(nk);
+  enum Nk_t Nk = uint32_t_toNk(nk);
   if(Nk == Unknown) return NULL;
   KeyExpansion_ptr output = KeyExpansionMemoryAllocation(Nk);
   if(output == NULL) return NULL;
