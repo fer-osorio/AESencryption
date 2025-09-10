@@ -89,8 +89,8 @@ static void encryptECB__(const KeyExpansion* ke_p, struct InputOutputHandler* io
 /*
  * Builds KeyExpansion and InputOutput objects, then implements ECB encryption operation mode.
  * */
-void encryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t Nk, uint8_t*const output){
-  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, Nk);
+void encryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
+  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   encryptECB__(ke_p, &ioh);
   KeyExpansionDelete(&ke_p);
@@ -115,8 +115,8 @@ static void decryptECB__(const KeyExpansion* ke_p, struct InputOutputHandler* io
 /*
  * Builds KeyExpansion and InputOutput objects, then implements ECB decryption operation mode.
  * */
-void decryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t Nk, uint8_t*const output){
-  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, Nk);
+void decryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
+  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   decryptECB__(ke_p, &ioh);
   KeyExpansionDelete(&ke_p);
@@ -160,17 +160,11 @@ static void encryptCBC__(const KeyExpansion* ke_p, const uint8_t* IV, struct Inp
   }
 }
 
-void setInitialVector(uint8_t*const IVlocation){
-  Block_ptr rb = BlockMemoryAllocationRandom(time(NULL));
-  bytesFromBlock(rb, IVlocation);
-  BlockDelete(&rb);
-}
-
 /*
  * Builds KeyExpansion and InputOutput objects, then implements CBC encryption operation mode.
  * */
-void encryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t Nk, const uint8_t* IV, uint8_t*const output){
-  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, Nk);
+void encryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
+  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   encryptCBC__(ke_p, IV, &ioh);
   KeyExpansionDelete(&ke_p);
@@ -221,8 +215,8 @@ static void decryptCBC__(const KeyExpansion* ke_p, const uint8_t* IV, struct Inp
 /*
  * Builds KeyExpansion and InputOutput objects, then implements CBC decryption operation mode.
  * */
-void decryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t Nk, const uint8_t* IV, uint8_t*const output){
-  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, Nk);
+void decryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
+  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   decryptCBC__(ke_p, IV, &ioh);
   KeyExpansionDelete(&ke_p);
