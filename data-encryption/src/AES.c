@@ -385,15 +385,15 @@ static KeyExpansion_ptr KeyExpansionMemoryAllocation(enum Nk_ Nk){
   return output;
 }
 
-static enum Nk_ uint32ToNk(uint32_t nk){                                        // Casting from unsigned integer to Nk value
+static enum Nk_ uint32_t_toNk(uint32_t nk){                                        // Casting from unsigned integer to Nk value
   switch(nk) {
-    case 128:
+    case NK128:
       return Nk128;
       break;
-    case 192:
+    case NK192:
       return Nk192;
       break;
-    case 256:
+    case NK256:
       return Nk256;
       break;
     default:
@@ -430,8 +430,12 @@ static void BlockFromWords(const Word source[], Block* output){
 }
 
 KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t nk, bool debug){
-  enum Nk_ Nk = uint32ToNk(nk);
-  if(Nk == Unknown) return NULL;
+  enum Nk_ Nk = uint32_t_toNk(nk);
+  if(Nk == Unknown) {
+    //printf("KeyExpansionMemoryAllocationBuild: Nk == Unknown\n");
+    //printf("KeyExpansionMemoryAllocationBuild: nk == %lu\n", nk);
+    return NULL;
+  }
 
   KeyExpansion_ptr output = KeyExpansionMemoryAllocation(Nk);
   if(output == NULL) return NULL;
@@ -468,7 +472,7 @@ void KeyExpansionWriteBytes(const KeyExpansion* source, uint8_t* dest){
 }
 
 KeyExpansion_ptr KeyExpansionFromBytes(const uint8_t source[], size_t nk){
-  enum Nk_ Nk = uint32ToNk(nk);
+  enum Nk_ Nk = uint32_t_toNk(nk);
   if(Nk == Unknown) return NULL;
   KeyExpansion_ptr output = KeyExpansionMemoryAllocation(Nk);
   if(output == NULL) return NULL;
