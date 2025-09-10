@@ -72,7 +72,7 @@ Cipher::OperationMode Cipher::OperationMode::buildInCBCmode(const InitVector& IV
     return optMode;
 }
 
-Cipher::Config::Config(): _Nk(NK128), Nr(NR128), keyExpansionLengthBytes(KEY_EXPANSION_LENGTH_128) {}
+Cipher::Config::Config(): _Nk(NK128), Nr(NR128), keyExpansionLengthBytes(KEY_EXPANSION_LENGTH_128_BYTES) {}
 
 Cipher::Config::Config(OperationMode optMode, size_t Nk)
     :operationMode(optMode), _Nk(Nk), Nr(getNrFromNk(Nk)), keyExpansionLengthBytes(getKeyExpansionByteLenFromNr(this->Nr)){
