@@ -56,7 +56,7 @@ void BlockXORequalBytes(Block* input, const uint8_t byteBlock[]);
  * Builds key expansion object and returns a pointer to it.
  * Consider: Allocates memory using malloc.
  * */
-KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t nk, bool debug);
+KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t keylenbits, bool debug);
 
 /*
  * Free the memory allocated for an KeyExpansion object pointed by *ke_pp.
@@ -70,10 +70,10 @@ void KeyExpansionWriteBytes(const KeyExpansion* source, uint8_t* dest);
 
 /*
  * Creates KeyExpansion object using the bytes pointed by source.
- * The amounth of bytes it uses is Nb*((Nk + 6) + 1), where Nb = 4.
+ * The amounth of bytes it uses is Nb*((Nk + 6) + 1), where Nb = 4 and Nk = keylenbits/2^5.
  * Consider: Allocates memory using malloc.
  * */
-KeyExpansion_ptr KeyExpansionFromBytes(const uint8_t source[], size_t nk);
+KeyExpansion_ptr KeyExpansionFromBytes(const uint8_t source[], size_t keylenbits);
 
 /*
  * Returns a pointer of type char* to the first element of the key expansion
