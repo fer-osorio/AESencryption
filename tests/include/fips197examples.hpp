@@ -13,31 +13,64 @@
 // AES-128 Key Expansion (Nk=4, Nr=10)
 // =============================================================================
 
-namespace Example {
+namespace FIPS197examples {
 
-namespace Key{
+enum struct Classification{
+	UnknownClass, KeyExpansion, Encryption
+};
 
-const unsigned char aes128_key[] = {
+enum struct Keylen {
+	UnknownKeylen, keylen128 = 128, keylen192 = 192, keylen256 = 256
+};
+
+struct Example{
+private:
+	Classification exampClass;
+	Keylen keylen;
+	const unsigned char* inputkey;
+	const unsigned char* output;
+public:
+	static Example getExample(Classification, Keylen);
+};
+
+
+namespace KeyExpansion_ns{
+
+
+const unsigned char key128[] = {
 	0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
 	0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
 };
-const unsigned char aes192_key[] = {
+const unsigned char key192[] = {
 	0x8e, 0x73, 0xb0, 0xf7, 0xda, 0x0e, 0x64, 0x52,
 	0xc8, 0x10, 0xf3, 0x2b, 0x80, 0x90, 0x79, 0xe5,
 	0x62, 0xf8, 0xea, 0xd2, 0x52, 0x2c, 0x6b, 0x7b
 };
-const unsigned char aes256_key[] = {
+const unsigned char key256[] = {
 	0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe,
 	0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
 	0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7,
 	0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4
 };
 
+static const unsigned char* retrieveKey(Keylen kl){
+	switch(kl){
+		case Keylen::keylen128:
+			return key128;
+			break;
+		case Keylen::keylen192:
+			return key192;
+			break;
+		case Keylen::keylen256:
+			return key256;
+			break;
+		case Keylen::UnknownKeylen:
+			return 0;
+			break;
+	}
 }
 
-namespace ExpandedKey{
-
-const unsigned char aes128_key_expanded[176] = {
+const unsigned char key128_expanded[176] = {
     // w[0] to w[3] - Original key
     0x2b, 0x7e, 0x15, 0x16,  // w[0]
     0x28, 0xae, 0xd2, 0xa6,  // w[1]
@@ -109,7 +142,7 @@ const unsigned char aes128_key_expanded[176] = {
 // AES-192 Key Expansion (Nk=6, Nr=12)
 // =============================================================================
 
-const unsigned char aes192_key_expanded[208] = {
+const unsigned char key192_expanded[208] = {
     // w[0] to w[5] - Original key
     0x8e, 0x73, 0xb0, 0xf7,  // w[0]
     0xda, 0x0e, 0x64, 0x52,  // w[1]
@@ -185,7 +218,7 @@ const unsigned char aes192_key_expanded[208] = {
 // AES-256 Key Expansion (Nk=8, Nr=14)
 // =============================================================================
 
-const unsigned char aes256_key_expanded[240] = {
+const unsigned char key256_expanded[240] = {
     // w[0] to w[7] - Original key
     0x60, 0x3d, 0xeb, 0x10,  // w[0]
     0x15, 0xca, 0x71, 0xbe,  // w[1]
@@ -263,9 +296,26 @@ const unsigned char aes256_key_expanded[240] = {
     0x70, 0x6c, 0x63, 0x1e   // w[59]
 };
 
+static const unsigned char* retrieveKeyExpansion(Keylen kl){
+	switch(kl){
+		case Keylen::keylen128:
+			return key128_expanded;
+			break;
+		case Keylen::keylen192:
+			return key192_expanded;
+			break;
+		case Keylen::keylen256:
+			return key256_expanded;
+			break;
+		case Keylen::UnknownKeylen:
+			return 0;
+			break;
+	}
 }
 
-namespace Vector{
+}
+
+namespace Encryption_ns{
 
 const unsigned char key128[] = {
 	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
@@ -282,6 +332,23 @@ const unsigned char key256[] = {
 	0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
 	0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f
 };
+
+static const unsigned char* retrieveKey(Keylen kl){
+	switch(kl){
+		case Keylen::keylen128:
+			return key128;
+			break;
+		case Keylen::keylen192:
+			return key192;
+			break;
+		case Keylen::keylen256:
+			return key256;
+			break;
+		case Keylen::UnknownKeylen:
+			return 0;
+			break;
+	}
+}
 
 /******************************************************************************/
 
@@ -310,32 +377,52 @@ const unsigned char cipherTextKey192[16] = {
 	0xec,0x0d,0x71,0x91
 };
 
-}
+const unsigned char cipherTextKey256[16] = {
+	0x8e,0xa2,0xb7,0xca,
+	0x51,0x67,0x45,0xbf,
+	0xea,0xfc,0x49,0x90,
+	0x4b,0x49,0x60,0x89
+};
+
+static const unsigned char* retrieveCipherText(Keylen kl){
+	switch(kl){
+		case Keylen::keylen128:
+			return cipherTextKey128;
+			break;
+		case Keylen::keylen192:
+			return cipherTextKey192;
+			break;
+		case Keylen::keylen256:
+			return cipherTextKey256;
+			break;
+		case Keylen::UnknownKeylen:
+			return 0;
+			break;
+	}
 }
 
-// For AES-128 (11 rounds: initial + 10 encryption rounds)
-/*const unsigned char* get_aes128_round_key(int round) {
-    return aes128_key_expanded + round*16;
+
 }
 
-// For AES-192 (13 rounds: initial + 12 encryption rounds)
-const unsigned char* get_aes192_round_key(int round) {
-    return aes192_key_expanded + round*16;
+Example Example::getExample(Classification clss, Keylen kl){
+	Example e;
+	e.exampClass = clss;
+	e.keylen = kl;
+	switch(clss){
+		case Classification::KeyExpansion:
+			e.inputkey = KeyExpansion_ns::retrieveKey(kl);
+			e.output = KeyExpansion_ns::retrieveKey(kl);
+			break;
+		case Classification::Encryption:
+			e.inputkey = Encryption_ns::retrieveKey(kl);
+			e.output = Encryption_ns::retrieveCipherText(kl);
+			break;
+		case Classification::UnknownClass:
+			e.inputkey = 0;
+			e.output = 0;
+			break;
+	}
+	return e;
 }
 
-// For AES-256 (15 rounds: initial + 14 encryption rounds)
-const unsigned char* get_aes256_round_key(int round) {
-    return aes256_key_expanded + round*16;
-}*/
-
-// Verification function example
-/*int verify_key_expansion(const unsigned char* your_key_expanded, const unsigned char* reference_key, int total_bytes) {
-    for (int i = 0; i < total_bytes; i++) {
-        if (your_key_expanded[i] != reference_key[i]) {
-            printf("Mismatch at byte %d: got 0x%02x, expected 0x%02x\n",
-                   i, your_key_expanded[i], reference_key[i]);
-            return 0;  // Failed
-        }
-    }
-    return 1;  // Success
-}*/
+}
