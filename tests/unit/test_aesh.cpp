@@ -11,8 +11,24 @@ bool test_decryptBlock(FIPS197examples::KeylengthBits kl, bool debugHard);
 bool test_encryptionDecryptionRoundtrip(FIPS197examples::KeylengthBits kl, bool debugHard);
 
 int main() {
-    std::cout << "=== AES Core Implementation Tests ===" << std::endl;
+    std::cout << "=== AES Core Implementation Tests ===\n" << std::endl;
 
+    std::cout <<"\n**************************************************\n"
+                "\n**************** AES key 128 bits ****************\n"
+                "\n**************************************************\n" << std::endl;
+    if(test_KeyExpansionMemoryAllocationBuild(FIPS197examples::KeylengthBits::keylen128, false) == false) {
+        std::cout << "\n=== Fail to create a valid Key Expansion object. Stop. ===" << std::endl;
+        return 0;
+    }
+    test_encryptBlock(FIPS197examples::KeylengthBits::keylen128, false);
+    test_decryptBlock(FIPS197examples::KeylengthBits::keylen128, false);
+    test_encryptionDecryptionRoundtrip(FIPS197examples::KeylengthBits::keylen128, false);
+
+    std::cout << std::endl;
+
+    std::cout <<"\n**************************************************\n"
+                "\n**************** AES key 192 bits ****************\n"
+                "\n**************************************************\n" << std::endl;
     if(test_KeyExpansionMemoryAllocationBuild(FIPS197examples::KeylengthBits::keylen192, false) == false) {
         std::cout << "\n=== Fail to create a valid Key Expansion object. Stop. ===" << std::endl;
         return 0;
@@ -21,7 +37,20 @@ int main() {
     test_decryptBlock(FIPS197examples::KeylengthBits::keylen192, false);
     test_encryptionDecryptionRoundtrip(FIPS197examples::KeylengthBits::keylen192, false);
 
-    std::cout << "\n=== All AES Core Tests Complete ===" << std::endl;
+    std::cout << std::endl;
+
+    std::cout <<"\n**************************************************\n"
+                "\n**************** AES key 256 bits ****************\n"
+                "\n**************************************************\n" << std::endl;
+    if(test_KeyExpansionMemoryAllocationBuild(FIPS197examples::KeylengthBits::keylen256, false) == false) {
+        std::cout << "\n=== Fail to create a valid Key Expansion object. Stop. ===" << std::endl;
+        return 0;
+    }
+    test_encryptBlock(FIPS197examples::KeylengthBits::keylen256, false);
+    test_decryptBlock(FIPS197examples::KeylengthBits::keylen256, false);
+    test_encryptionDecryptionRoundtrip(FIPS197examples::KeylengthBits::keylen256, false);
+
+    std::cout << "\n\n=== All AES Core Tests Complete ===" << std::endl;
     return 0;
 }
 
@@ -82,14 +111,14 @@ bool test_encryptBlock(FIPS197examples::KeylengthBits kl, bool debugHard) {
     Block_t* output = BlockMemoryAllocationFromBytes(BuffBlock);
 
     // Test single block encryption
-    //ASSERT_TRUE(encryptBlock(input, ke_p, output, true) == false, "AES block encryption should succeed");
+    ASSERT_TRUE(encryptBlock(input, ke_p, output, debugHard) == NoException, "AES block encryption should succeed");
     encryptBlock(input, ke_p, output, debugHard);
     bytesFromBlock(output, BuffBlock);
 
     success = ASSERT_BYTES_EQUAL(reference.getExpectedOutput(), BuffBlock, BLOCK_SIZE, "Encrypted block should match test vector") && success;
 
     // Test null pointer handling
-    //ASSERT_TRUE(aes_encrypt_block(nullptr, output, expanded_key, 10) != false, "Null input should return error");
+    ASSERT_TRUE(encryptBlock(NULL, ke_p, output, debugHard) != NoException, "Null input should return error");
     BlockDelete(&output);
     BlockDelete(&input);
     KeyExpansionDelete(&ke_p);
@@ -114,14 +143,14 @@ bool test_decryptBlock(FIPS197examples::KeylengthBits kl, bool debugHard) {
     Block_t* output = BlockMemoryAllocationFromBytes(BuffBlock);
 
     // Test single block encryption
-    //ASSERT_TRUE(encryptBlock(input, ke_p, output, true) == false, "AES block encryption should succeed");
+    ASSERT_TRUE(decryptBlock(input, ke_p, output, debugHard) == NoException, "AES block encryption should succeed");
     decryptBlock(input, ke_p, output, debugHard);
     bytesFromBlock(output, BuffBlock);
 
     success = ASSERT_BYTES_EQUAL(reference.getExpectedOutput(), BuffBlock, BLOCK_SIZE, "Decrypted block should match original plaintext") && success;
 
     // Test null pointer handling
-    //ASSERT_TRUE(aes_encrypt_block(nullptr, output, expanded_key, 10) != false, "Null input should return error");
+    ASSERT_TRUE(decryptBlock(NULL, ke_p, output, debugHard) != NoException, "Null input should return error");
     BlockDelete(&output);
     BlockDelete(&input);
     KeyExpansionDelete(&ke_p);
