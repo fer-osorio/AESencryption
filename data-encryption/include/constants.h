@@ -96,19 +96,19 @@ enum KeyExpansionLengthWords_t{
   KeyExpansionLengthWords192 = KEY_EXPANSION_LENGTH_192_BYTES,
   KeyExpansionLengthWords256 = KEY_EXPANSION_LENGTH_256_BYTES
 };
-enum KeyExpansionLengthWords_t getKeyExpansionLengthWordsfromKeylenBits(enum KeylenBits_t klb){
-  switch(klb){
-    case Keylenbits128:
+enum KeyExpansionLengthWords_t getKeyExpansionLengthWordsfromNk(enum Nk_t Nk){
+  switch(Nk){
+    case Nk128:
       return KeyExpansionLengthWords128;
       break;
-    case Keylenbits192:
+    case Nk192:
       return KeyExpansionLengthWords192;
       break;
-    case Keylenbits256:
+    case Nk256:
       return KeyExpansionLengthWords256;
       break;
       break;
-    case UnknownKeylenBits:
+    case UnknownNk:
       return UnknowKeyExpansionLengthWords;
       break;
   }
