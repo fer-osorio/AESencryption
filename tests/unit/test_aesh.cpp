@@ -34,14 +34,15 @@ bool test_KeyExpansionMemoryAllocationBuild(FIPS197examples::KeylengthBits kl, b
     FIPS197examples::KeyExpansion_ns::Example reference(kl);
     // Casting key length
     size_t keylenbits = static_cast<size_t>(reference.getKeylenBits());
-    // Buildgin key|
-    KeyExpansion_ptr ke_p = KeyExpansionMemoryAllocationBuild(reference.getKey(), keylenbits, debugHard);
+    // Buildgin key
+    ptrKeyExpansion_t ke_p = KeyExpansionMemoryAllocationBuild(reference.getKey(), keylenbits, debugHard);
 
     // Test key expansion for 128-bit key
     // Wrapped in a if statement to guard agains access to null pointer.
     if(!ASSERT_NOT_NULL(ke_p, "AES-128 key expansion should succeed")) return false;
 
-    std::vector<uint8_t> KeyExpansionBytes(keylenbits/8);
+    size_t keyexpansionlen = getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(kl));
+    std::vector<uint8_t> KeyExpansionBytes(keyexpansionlen);
 
     // Verify first round key (should be original key)
     KeyExpansionWriteBytes(ke_p, KeyExpansionBytes.data());
@@ -49,7 +50,7 @@ bool test_KeyExpansionMemoryAllocationBuild(FIPS197examples::KeylengthBits kl, b
         ASSERT_BYTES_EQUAL(
             reference.getExpectedKeyExpansion(),
             KeyExpansionBytes.data(),
-            KEY_EXPANSION_LENGTH_128_BYTES,
+            keyexpansionlen,
             "Expanded key should match referece expanded key"
         );
 
@@ -66,7 +67,7 @@ bool test_KeyExpansionMemoryAllocationBuild(FIPS197examples::KeylengthBits kl, b
 }
 
 bool test_encryptBlock(FIPS197examples::KeylengthBits kl, bool debugHard) {
-    TEST_SUITE("AES Block Encryption Tests");
+    TEST_SUITE("AES Block_t Encryption Tests");
 
     bool success = true;
     // Building reference for out test
@@ -74,11 +75,11 @@ bool test_encryptBlock(FIPS197examples::KeylengthBits kl, bool debugHard) {
     // Casting key length
     size_t keylenbits = static_cast<size_t>(reference.getKeylenBits());
     // Buildgin key
-    KeyExpansion_ptr ke_p = KeyExpansionMemoryAllocationBuild(reference.getKey(), keylenbits, debugHard);
+    ptrKeyExpansion_t ke_p = KeyExpansionMemoryAllocationBuild(reference.getKey(), keylenbits, debugHard);
     // Building input block
-    Block* input = BlockMemoryAllocationFromBytes(reference.getInput());
+    Block_t* input = BlockMemoryAllocationFromBytes(reference.getInput());
     uint8_t BuffBlock[BLOCK_SIZE] = {0};
-    Block* output = BlockMemoryAllocationFromBytes(BuffBlock);
+    Block_t* output = BlockMemoryAllocationFromBytes(BuffBlock);
 
     // Test single block encryption
     //ASSERT_TRUE(encryptBlock(input, ke_p, output, true) == false, "AES block encryption should succeed");
@@ -98,7 +99,7 @@ bool test_encryptBlock(FIPS197examples::KeylengthBits kl, bool debugHard) {
 }
 
 bool test_decryptBlock(FIPS197examples::KeylengthBits kl, bool debugHard) {
-    TEST_SUITE("AES Block Decryption Tests");
+    TEST_SUITE("AES Block_t Decryption Tests");
 
     bool success = true;
     // Building reference for out test
@@ -106,11 +107,11 @@ bool test_decryptBlock(FIPS197examples::KeylengthBits kl, bool debugHard) {
     // Casting key length
     size_t keylenbits = static_cast<size_t>(reference.getKeylenBits());
     // Buildgin key
-    KeyExpansion_ptr ke_p = KeyExpansionMemoryAllocationBuild(reference.getKey(), keylenbits, debugHard);
+    ptrKeyExpansion_t ke_p = KeyExpansionMemoryAllocationBuild(reference.getKey(), keylenbits, debugHard);
     // Building input block
-    Block* input = BlockMemoryAllocationFromBytes(reference.getInput());
+    Block_t* input = BlockMemoryAllocationFromBytes(reference.getInput());
     uint8_t BuffBlock[BLOCK_SIZE] = {0};
-    Block* output = BlockMemoryAllocationFromBytes(BuffBlock);
+    Block_t* output = BlockMemoryAllocationFromBytes(BuffBlock);
 
     // Test single block encryption
     //ASSERT_TRUE(encryptBlock(input, ke_p, output, true) == false, "AES block encryption should succeed");
@@ -138,12 +139,12 @@ bool test_encryptionDecryptionRoundtrip(FIPS197examples::KeylengthBits kl, bool 
     // Casting key length
     size_t keylenbits = static_cast<size_t>(reference.getKeylenBits());
     // Buildgin key
-    KeyExpansion_ptr ke_p = KeyExpansionMemoryAllocationBuild(reference.getKey(), keylenbits, debugHard);
+    ptrKeyExpansion_t ke_p = KeyExpansionMemoryAllocationBuild(reference.getKey(), keylenbits, debugHard);
     // Building input block
-    Block* input = BlockMemoryAllocationFromBytes(reference.getInput());
+    Block_t* input = BlockMemoryAllocationFromBytes(reference.getInput());
     uint8_t BuffBlock[BLOCK_SIZE] = {0};
-    Block* encrypted = BlockMemoryAllocationFromBytes(BuffBlock);
-    Block* decrypted = BlockMemoryAllocationFromBytes(BuffBlock);
+    Block_t* encrypted = BlockMemoryAllocationFromBytes(BuffBlock);
+    Block_t* decrypted = BlockMemoryAllocationFromBytes(BuffBlock);
 
     encryptBlock(input, ke_p, encrypted, debugHard);
     decryptBlock(encrypted, ke_p, decrypted, debugHard);
