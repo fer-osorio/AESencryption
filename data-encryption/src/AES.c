@@ -54,14 +54,9 @@ struct KeyExpansion_{
   size_t blockSize;
   Block_t* dataBlocks;
 };
-static size_t getNr(enum Nk_t Nk){
-  return Nk+6;
-}
-static size_t KeyExpansionLenWords(enum Nk_t Nk){
-  return NB*(getNr(Nk) + 1);
-}
-static size_t KeyExpansionLenBlocks(enum Nk_t Nk){
-  return KeyExpansionLenWords(Nk) / NB;
+
+static size_t getKeyExpansionLengthBlocksfromNk(enum Nk_t Nk){
+  return getKeyExpansionLengthWordsfromNk(Nk) / NB;
 }
 
 static bool usingLittleEndian(){
@@ -294,7 +289,7 @@ static void AddRoundKey(Block_t* b, const Block_t keyExpansion[], size_t round) 
 
 static void KeyExpansionBuildWords(const uint8_t* key, enum Nk_t Nk, Word_t outputKeyExpansion[], bool debug){
   Word_t tmp;
-  const size_t keyExpLen = KeyExpansionLenWords(Nk);
+  const size_t KeyExpansionLen = getKeyExpansionLengthWordsfromNk(Nk);
   size_t i;
 
   for(i = 0; i < Nk; i++) {
@@ -314,7 +309,7 @@ static void KeyExpansionBuildWords(const uint8_t* key, enum Nk_t Nk, Word_t outp
     );
   }
 
-  for(i = Nk; i < keyExpLen; i++) {
+  for(i = Nk; i < KeyExpansionLen; i++) {
     copyWord(&outputKeyExpansion[i - 1], &tmp);                                       // -Guarding against modify things that we don't want to modify.
     if(debug) {
       printf(" %lu",i);
@@ -377,9 +372,9 @@ static ptrKeyExpansion_t KeyExpansionMemoryAllocation(enum Nk_t Nk){
   if(output == NULL) return NULL;
   // -Building KeyExpansion_t object
   output->Nk = Nk;
-  output->Nr = getNr(Nk);
-  output->wordsSize = KeyExpansionLenWords(Nk);
-  output->blockSize = KeyExpansionLenBlocks(Nk);
+  output->Nr = getNrfromNk(Nk);
+  output->wordsSize = getKeyExpansionLengthWordsfromNk(Nk);
+  output->blockSize = getKeyExpansionLengthBlocksfromNk(Nk);
   output->dataBlocks = (Block_t*)malloc(output->blockSize*sizeof (Block_t));
   if(output->dataBlocks == NULL) return NULL;
   return output;
