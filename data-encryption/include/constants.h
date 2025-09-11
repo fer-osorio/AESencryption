@@ -45,9 +45,9 @@ enum KeyExpansionLengthBytes_t getKeyExpansionLengthBytesfromKeylenBits(enum Key
 #define KEY_EXPANSION_LENGTH_256_WORDS 60
 enum KeyExpansionLengthWords_t{
   UnknowKeyExpansionLengthWords,
-  KeyExpansionLengthWords128 = KEY_EXPANSION_LENGTH_128_BYTES,
-  KeyExpansionLengthWords192 = KEY_EXPANSION_LENGTH_192_BYTES,
-  KeyExpansionLengthWords256 = KEY_EXPANSION_LENGTH_256_BYTES
+  KeyExpansionLengthWords128 = KEY_EXPANSION_LENGTH_128_WORDS,
+  KeyExpansionLengthWords192 = KEY_EXPANSION_LENGTH_192_WORDS,
+  KeyExpansionLengthWords256 = KEY_EXPANSION_LENGTH_256_WORDS
 };
 enum KeyExpansionLengthWords_t getKeyExpansionLengthWordsfromNk(enum Nk_t Nk);
 
