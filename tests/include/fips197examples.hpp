@@ -15,27 +15,36 @@
 
 namespace FIPS197examples {
 
-enum struct Classification{
-	UnknownClass, KeyExpansion, Encryption
-};
-
-enum struct Keylen {
+enum struct KeylengthBits {
 	UnknownKeylen, keylen128 = 128, keylen192 = 192, keylen256 = 256
 };
 
-struct Example{
-private:
-	Classification exampClass;
-	Keylen keylen;
-	const unsigned char* inputkey;
-	const unsigned char* output;
+struct ExampleBase{
+protected:
+	KeylengthBits keylenbits;
+	const unsigned char* key;
 public:
-	static Example getExample(Classification, Keylen);
+	KeylengthBits getKeylenBits() const;
+	const unsigned char* getKey() const;
 };
 
+KeylengthBits ExampleBase::getKeylenBits() const{
+	return this->keylenbits;
+}
+
+const unsigned char* ExampleBase::getKey() const{
+	return this->key;
+}
 
 namespace KeyExpansion_ns{
 
+struct Example : private ExampleBase{
+private:
+	const unsigned char* expectedKeyExpansion;
+public:
+	Example(KeylengthBits);
+	const unsigned char* getExpectedKeyExpansion() const;
+};
 
 const unsigned char key128[] = {
 	0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
@@ -53,18 +62,18 @@ const unsigned char key256[] = {
 	0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4
 };
 
-static const unsigned char* retrieveKey(Keylen kl){
+static const unsigned char* retrieveKey(KeylengthBits kl){
 	switch(kl){
-		case Keylen::keylen128:
+		case KeylengthBits::keylen128:
 			return key128;
 			break;
-		case Keylen::keylen192:
+		case KeylengthBits::keylen192:
 			return key192;
 			break;
-		case Keylen::keylen256:
+		case KeylengthBits::keylen256:
 			return key256;
 			break;
-		case Keylen::UnknownKeylen:
+		case KeylengthBits::UnknownKeylen:
 			return 0;
 			break;
 	}
@@ -296,26 +305,48 @@ const unsigned char key256_expanded[240] = {
     0x70, 0x6c, 0x63, 0x1e   // w[59]
 };
 
-static const unsigned char* retrieveKeyExpansion(Keylen kl){
+static const unsigned char* retrieveKeyExpansion(KeylengthBits kl){
 	switch(kl){
-		case Keylen::keylen128:
+		case KeylengthBits::keylen128:
 			return key128_expanded;
 			break;
-		case Keylen::keylen192:
+		case KeylengthBits::keylen192:
 			return key192_expanded;
 			break;
-		case Keylen::keylen256:
+		case KeylengthBits::keylen256:
 			return key256_expanded;
 			break;
-		case Keylen::UnknownKeylen:
+		case KeylengthBits::UnknownKeylen:
 			return 0;
 			break;
 	}
 }
 
+Example::Example(KeylengthBits kl){
+	this->keylenbits = kl;
+	this->key = retrieveKey(kl);
+	this->expectedKeyExpansion = retrieveKey(kl);
+}
+
+const unsigned char* Example::getExpectedKeyExpansion() const{
+	return this->expectedKeyExpansion;
+}
+
 }
 
 namespace Encryption_ns{
+
+struct Example : private ExampleBase{
+	enum struct Classification{ Encryption, Decryption };
+private:
+	Classification clss_;
+	const unsigned char* input;
+	const unsigned char* expectedOutput;
+public:
+	Example(KeylengthBits kl, Classification clss);
+	const unsigned char* getInput() const;
+	const unsigned char* getExpectedOutput() const;
+};
 
 const unsigned char key128[] = {
 	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
@@ -333,18 +364,18 @@ const unsigned char key256[] = {
 	0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f
 };
 
-static const unsigned char* retrieveKey(Keylen kl){
+static const unsigned char* retrieveKey(KeylengthBits kl){
 	switch(kl){
-		case Keylen::keylen128:
+		case KeylengthBits::keylen128:
 			return key128;
 			break;
-		case Keylen::keylen192:
+		case KeylengthBits::keylen192:
 			return key192;
 			break;
-		case Keylen::keylen256:
+		case KeylengthBits::keylen256:
 			return key256;
 			break;
-		case Keylen::UnknownKeylen:
+		case KeylengthBits::UnknownKeylen:
 			return 0;
 			break;
 	}
@@ -362,6 +393,10 @@ const unsigned char plainText[16] = {
 	0x88,0x99,0xaa,0xbb,
 	0xcc,0xdd,0xee,0xff
 };
+
+/*******************************************************************************
+ * Cipher text for example vectors
+ * ****************************************************************************/
 
 const unsigned char cipherTextKey128[16] = {
 	0x69,0xc4,0xe0,0xd8,
@@ -384,45 +419,47 @@ const unsigned char cipherTextKey256[16] = {
 	0x4b,0x49,0x60,0x89
 };
 
-static const unsigned char* retrieveCipherText(Keylen kl){
+static const unsigned char* retrieveCipherText(KeylengthBits kl){
 	switch(kl){
-		case Keylen::keylen128:
+		case KeylengthBits::keylen128:
 			return cipherTextKey128;
 			break;
-		case Keylen::keylen192:
+		case KeylengthBits::keylen192:
 			return cipherTextKey192;
 			break;
-		case Keylen::keylen256:
+		case KeylengthBits::keylen256:
 			return cipherTextKey256;
 			break;
-		case Keylen::UnknownKeylen:
+		case KeylengthBits::UnknownKeylen:
 			return 0;
 			break;
 	}
 }
 
-
-}
-
-Example Example::getExample(Classification clss, Keylen kl){
-	Example e;
-	e.exampClass = clss;
-	e.keylen = kl;
+Example::Example(KeylengthBits kl, Classification clss){
+	this->clss_ = clss;
+	this->keylenbits = kl;
+	this->key = retrieveKey(kl);
 	switch(clss){
-		case Classification::KeyExpansion:
-			e.inputkey = KeyExpansion_ns::retrieveKey(kl);
-			e.output = KeyExpansion_ns::retrieveKey(kl);
-			break;
 		case Classification::Encryption:
-			e.inputkey = Encryption_ns::retrieveKey(kl);
-			e.output = Encryption_ns::retrieveCipherText(kl);
+			input = plainText;
+			expectedOutput = retrieveCipherText(kl);
 			break;
-		case Classification::UnknownClass:
-			e.inputkey = 0;
-			e.output = 0;
+		case Classification::Decryption:
+			input = retrieveCipherText(kl);
+			expectedOutput = plainText;
 			break;
 	}
-	return e;
+}
+
+const unsigned char* Example::getInput() const{
+	return this->input;
+}
+
+const unsigned char* Example::getExpectedOutput() const{
+	return this->expectedOutput;
+}
+
 }
 
 }
