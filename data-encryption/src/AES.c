@@ -11,16 +11,16 @@ typedef union Word_ {
   uint8_t  uint08_[WORD_SIZE];
   uint16_t uint16_[WORD_SIZE_SHORTS];
   uint32_t uint32_;
-} Word ;
+} Word_t ;
 
 #define BLOCK_SIZE_INT64 2
 typedef union Block_{
     uint8_t  uint08_[BLOCK_SIZE];
-    Word     word_[NB];
+    Word_t     word_[NB];
     uint64_t uint64_[BLOCK_SIZE_INT64];
-} Block ;
+} Block_t ;
 
-static const Word Rcon[10] = {						                            // -Notice that the value of the left most byte in polynomial form is 2^i.
+static const Word_t Rcon[10] = {						                            // -Notice that the value of the left most byte in polynomial form is 2^i.
   {{0x01, 0x00, 0x00, 0x00}},
   {{0x02, 0x00, 0x00, 0x00}},
   {{0x04, 0x00, 0x00, 0x00}},
@@ -33,14 +33,14 @@ static const Word Rcon[10] = {						                            // -Notice that 
   {{0x36, 0x00, 0x00, 0x00}}
 };
 
-static const Block a = {{                                                       // -For MixColumns.
+static const Block_t a = {{                                                       // -For MixColumns.
   0x02, 0x03, 0x01, 0x01,
   0x01, 0x02, 0x03, 0x01,
   0x01, 0x01, 0x02, 0x03,
   0x03, 0x01, 0x01, 0x02
 }};
 
-static const Block aInv = {{                                                    // -For InvMixColumns.
+static const Block_t aInv = {{                                                    // -For InvMixColumns.
   0x0E, 0x0B, 0x0D, 0x09,
   0x09, 0x0E, 0x0B, 0x0D,
   0x0D, 0x09, 0x0E, 0x0B,
@@ -52,7 +52,7 @@ struct KeyExpansion_{
   size_t Nr;
   size_t wordsSize;
   size_t blockSize;
-  Block* dataBlocks;
+  Block_t* dataBlocks;
 };
 static size_t getNr(enum Nk_t Nk){
   return Nk+6;
@@ -65,50 +65,50 @@ static size_t KeyExpansionLenBlocks(enum Nk_t Nk){
 }
 
 static bool usingLittleEndian(){
-  Word val = {.uint32_ = 1};                                                                // Represents 0x00000001 in hexadecimal
+  Word_t val = {.uint32_ = 1};                                                                // Represents 0x00000001 in hexadecimal
   return val.uint08_[0] == 1;                                                  // Cast the address of the integer to a uint8_t pointer to access individual bytes
 }
 
-static void printWord(Word w) {
+static void printWord(Word_t w) {
   uint32_t WL_1 = WORD_SIZE-1, i;
   printf("[");
   for(i = 0; i < WL_1; i++) printf("%.2X,", (uint32_t)w.uint08_[i]);
   printf("%.2X]", (uint32_t)w.uint08_[i]);
 }
 
-static void copyWord(const Word* orgin, Word* dest){
+static void copyWord(const Word_t* orgin, Word_t* dest){
   dest->uint32_ = orgin->uint32_;
 }
 
-static void RotWord(Word* word) {
+static void RotWord(Word_t* word) {
   uint8_t temp = word->uint08_[0];                                              // As a byte array, the rotation must be performed to the left, but since integer
   if(usingLittleEndian()) word->uint32_ >>= 8;                                  // types have endianess, the bit rotation must be perform according to it
   else word->uint32_ <<= 8;
   word->uint08_[WORD_LASTIND] = temp;
 }
 
-static void SubWord(Word* w) {
+static void SubWord(Word_t* w) {
   w->uint08_[0] = SBox[w->uint08_[0]];
   w->uint08_[1] = SBox[w->uint08_[1]];
   w->uint08_[2] = SBox[w->uint08_[2]];
   w->uint08_[3] = SBox[w->uint08_[3]];
 }
 
-static void XORword(const Word b1, const Word b2, Word* result) {
+static void XORword(const Word_t b1, const Word_t b2, Word_t* result) {
   result->uint32_ = b1.uint32_ ^ b2.uint32_;
 }
 
 /*
  * Classical dot product with vectors of dimension four with coefficients in GF(256)
  * */
-static uint8_t dotProductWord(const Word w1, const Word w2){                  // Classical dot product with vectors of dimension four with coefficients in
+static uint8_t dotProductWord(const Word_t w1, const Word_t w2){                  // Classical dot product with vectors of dimension four with coefficients in
   return  multiply[w1.uint08_[0]][w2.uint08_[0]] ^                          // GF(256)
           multiply[w1.uint08_[1]][w2.uint08_[1]] ^
           multiply[w1.uint08_[2]][w2.uint08_[2]] ^
           multiply[w1.uint08_[3]][w2.uint08_[3]];
 }
 
-static void BlockWriteFromBytes(const uint8_t source[], Block* output){
+static void BlockWriteFromBytes(const uint8_t source[], Block_t* output){
   // First column
   output->uint08_[0] = source[0];
   output->uint08_[4] = source[1];
@@ -131,20 +131,20 @@ static void BlockWriteFromBytes(const uint8_t source[], Block* output){
   output->uint08_[15]= source[15];
 }
 
-Block_ptr BlockMemoryAllocationFromBytes(const uint8_t source[]){
-  Block_ptr output = (Block*)malloc(sizeof(Block));
+ptrBlock_t BlockMemoryAllocationFromBytes(const uint8_t source[]){
+  ptrBlock_t output = (Block_t*)malloc(sizeof(Block_t));
   if(output == NULL) return NULL;
   BlockWriteFromBytes(source, output);
   return output;
 }
 
-void BlockDelete(Block** blk_pp){
-  Block* blk_p = *blk_pp;
+void BlockDelete(Block_t** blk_pp){
+  Block_t* blk_p = *blk_pp;
   if(blk_p != NULL) free(blk_p);
   *blk_pp = NULL;
 }
 
-void bytesFromBlock(const Block* source, uint8_t output[]){
+void bytesFromBlock(const Block_t* source, uint8_t output[]){
   // First column
   output[0] = source->uint08_[0];
   output[4] = source->uint08_[1];
@@ -167,15 +167,15 @@ void bytesFromBlock(const Block* source, uint8_t output[]){
   output[15]= source->uint08_[15];
 }
 
-Block_ptr BlockMemoryAllocationRandom(unsigned int seed){
-  Block_ptr output = (Block*)malloc(sizeof(Block));
+ptrBlock_t BlockMemoryAllocationRandom(unsigned int seed){
+  ptrBlock_t output = (Block_t*)malloc(sizeof(Block_t));
   if(output == NULL) return NULL;
   srand(seed);
   for(size_t i = 0; i < NB; i++) output->word_[i].uint32_ = rand();
   return output;
 }
 
-void printBlock(const Block* b, const char* rowHeaders[4]) {
+void printBlock(const Block_t* b, const char* rowHeaders[4]) {
   for(size_t i = 0; i < 4; i++) {
     if(rowHeaders != NULL) printf("%s",rowHeaders[i]);
       printWord(b->word_[i]);
@@ -183,12 +183,12 @@ void printBlock(const Block* b, const char* rowHeaders[4]) {
     }
 }
 
-static void XORblocks(const Block* b1,const Block* b2, Block* result) {
+static void XORblocks(const Block_t* b1,const Block_t* b2, Block_t* result) {
   result->uint64_[0] = b1->uint64_[0] ^ b2->uint64_[0];
   result->uint64_[1] = b1->uint64_[1] ^ b2->uint64_[1];
 }
 
-void BlockXORequalBytes(Block* input, const uint8_t byteBlock[]){
+void BlockXORequalBytes(Block_t* input, const uint8_t byteBlock[]){
   input->uint08_[0] ^= byteBlock[0];
   input->uint08_[1] ^= byteBlock[4];
   input->uint08_[2] ^= byteBlock[8];
@@ -207,19 +207,19 @@ void BlockXORequalBytes(Block* input, const uint8_t byteBlock[]){
   input->uint08_[15] ^= byteBlock[15];
 }
 
-static void copyBlock(const Block* source, Block* destination) {
+static void copyBlock(const Block_t* source, Block_t* destination) {
   destination->uint64_[0] = source->uint64_[0];
   destination->uint64_[1] = source->uint64_[1];
 }
 
-static void SubBytes(Block* b) {                                                // -Applies a substitution table (S-box) to each uint8_t.
+static void SubBytes(Block_t* b) {                                                // -Applies a substitution table (S-box) to each uint8_t.
   SubWord(&b->word_[0]);
   SubWord(&b->word_[1]);
   SubWord(&b->word_[2]);
   SubWord(&b->word_[3]);
 }
 
-static void ShiftRows(Block* b) {                                               // -Shift rows of the state array by different offset.
+static void ShiftRows(Block_t* b) {                                               // -Shift rows of the state array by different offset.
   bool isLittleEndian = usingLittleEndian();                                    // isLittleEndian will determine the direction of the shift
   // Shift of second row
   uint8_t temp1 = b->word_[1].uint08_[0];                                       // As a byte array, the rotation must be performed to the left, but since integer
@@ -240,7 +240,7 @@ static void ShiftRows(Block* b) {                                               
   b->word_[3].uint08_[0] = temp3;
 }
 
-static void transposeBlock(const Block* source, Block* result){
+static void transposeBlock(const Block_t* source, Block_t* result){
   // Transposing and coping first column
   result->word_[0].uint08_[0] = source->word_[0].uint08_[0];
   result->word_[0].uint08_[1] = source->word_[1].uint08_[0];
@@ -263,8 +263,8 @@ static void transposeBlock(const Block* source, Block* result){
   result->word_[3].uint08_[3] = source->word_[3].uint08_[3];
 }
 
-static void MixColumns(Block* b) {                                              // -Mixes the data within each column of the state array.
-  Block bT;
+static void MixColumns(Block_t* b) {                                              // -Mixes the data within each column of the state array.
+  Block_t bT;
   transposeBlock(b,&bT);
   // First column
   b->uint08_[0] = dotProductWord(a.word_[0], bT.word_[0]);
@@ -288,12 +288,12 @@ static void MixColumns(Block* b) {                                              
   b->uint08_[15]= dotProductWord(a.word_[3], bT.word_[3]);
 }
 
-static void AddRoundKey(Block* b, const Block keyExpansion[], size_t round) {   // -Combines a round key with the state.
+static void AddRoundKey(Block_t* b, const Block_t keyExpansion[], size_t round) {   // -Combines a round key with the state.
   XORblocks(b,keyExpansion+round,b);
 }
 
-static void KeyExpansionBuildWords(const uint8_t* key, enum Nk_t Nk, Word outputKeyExpansion[], bool debug){
-  Word tmp;
+static void KeyExpansionBuildWords(const uint8_t* key, enum Nk_t Nk, Word_t outputKeyExpansion[], bool debug){
+  Word_t tmp;
   const size_t keyExpLen = KeyExpansionLenWords(Nk);
   size_t i;
 
@@ -380,7 +380,7 @@ static KeyExpansion_ptr KeyExpansionMemoryAllocation(enum Nk_t Nk){
   output->Nr = getNr(Nk);
   output->wordsSize = KeyExpansionLenWords(Nk);
   output->blockSize = KeyExpansionLenBlocks(Nk);
-  output->dataBlocks = (Block*)malloc(output->blockSize*sizeof (Block));
+  output->dataBlocks = (Block_t*)malloc(output->blockSize*sizeof (Block_t));
   if(output->dataBlocks == NULL) return NULL;
   return output;
 }
@@ -406,7 +406,7 @@ static enum Nk_t keylenbitsToNk(uint32_t keylenbits){                           
  * Seeing words as vectors rows of a matrix, the resulting block is the transposed of this matrix
  * Considerations: Assuming that the pointer 'source' is pointing to a valid 4-words array
  * */
-static void BlockFromWords(const Word source[], Block* output){
+static void BlockFromWords(const Word_t source[], Block_t* output){
   // First row
   output->uint08_[0] = source[0].uint08_[0];
   output->uint08_[4] = source[0].uint08_[1];
@@ -440,7 +440,7 @@ KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t ke
   KeyExpansion_ptr output = KeyExpansionMemoryAllocation(Nk);
   if(output == NULL) return NULL;
 
-  Word* buffer = (Word*)malloc(output->wordsSize*sizeof(Word));
+  Word_t* buffer = (Word_t*)malloc(output->wordsSize*sizeof(Word_t));
   if(buffer == NULL) return NULL;
 
   // Writing key expansion on array of words
@@ -486,20 +486,20 @@ const uint8_t* KeyExpansionReturnBytePointerToData(const KeyExpansion*const ke_p
   return (uint8_t*)ke_p->dataBlocks;
 }
 
-void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, bool debug) {
+void encryptBlock(const Block_t* input, const KeyExpansion* ke_p, Block_t* output, bool debug) {
   size_t i, j;
   // -Debugging purposes. Columns of the debugging table.
-  Block* SOR;                                                                   // Start of round
-  Block* ASB;                                                                   // After SubBytes
-  Block* ASR;                                                                   // After ShiftRows
-  Block *AMC;                                                                   // After MixColumns
+  Block_t* SOR;                                                                   // Start of round
+  Block_t* ASB;                                                                   // After SubBytes
+  Block_t* ASR;                                                                   // After ShiftRows
+  Block_t *AMC;                                                                   // After MixColumns
   SOR = ASB = ASR = AMC = NULL;
 
   if(debug) {
-    SOR = (Block*)malloc((ke_p->Nr+2)*sizeof(Block));
-    AMC = (Block*)malloc((ke_p->Nr - 1)*sizeof(Block));
-    ASB = (Block*)malloc(ke_p->Nr*sizeof(Block));
-    ASR = (Block*)malloc(ke_p->Nr*sizeof(Block));
+    SOR = (Block_t*)malloc((ke_p->Nr+2)*sizeof(Block_t));
+    AMC = (Block_t*)malloc((ke_p->Nr - 1)*sizeof(Block_t));
+    ASB = (Block_t*)malloc(ke_p->Nr*sizeof(Block_t));
+    ASR = (Block_t*)malloc(ke_p->Nr*sizeof(Block_t));
   }
 
   if(input != output) copyBlock(input, output);
@@ -589,7 +589,7 @@ void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, b
   if(AMC != NULL) { free(AMC); AMC=NULL; }
 }
 
-static void InvShiftRows(Block* b) {                                            // -Shift rows of the state array by different offset.
+static void InvShiftRows(Block_t* b) {                                            // -Shift rows of the state array by different offset.
   bool isLittleEndian = usingLittleEndian();                                    // isLittleEndian will determine the direction of the shift
 
   // Shift of second row
@@ -611,22 +611,22 @@ static void InvShiftRows(Block* b) {                                            
   b->word_[3].uint08_[WORD_LASTIND] = temp3;
 }
 
-static void InvSubWord(Word* w) {
+static void InvSubWord(Word_t* w) {
     w->uint08_[0] = invSBox[w->uint08_[0]];
     w->uint08_[1] = invSBox[w->uint08_[1]];
     w->uint08_[2] = invSBox[w->uint08_[2]];
     w->uint08_[3] = invSBox[w->uint08_[3]];
 }
 
-static void InvSubBytes(Block* b) {                                             // -Applies a substitution table (S-box) to each uint8_t.
+static void InvSubBytes(Block_t* b) {                                             // -Applies a substitution table (S-box) to each uint8_t.
     InvSubWord(&b->word_[0]);
     InvSubWord(&b->word_[1]);
     InvSubWord(&b->word_[2]);
     InvSubWord(&b->word_[3]);
 }
 
-static void InvMixColumns(Block* b) {                                           // -Mixes the data within each column of the state array.
-  Block bT;
+static void InvMixColumns(Block_t* b) {                                           // -Mixes the data within each column of the state array.
+  Block_t bT;
   transposeBlock(b,&bT);
   // First column
   b->uint08_[0] = dotProductWord(aInv.word_[0], bT.word_[0]);
@@ -650,20 +650,20 @@ static void InvMixColumns(Block* b) {                                           
   b->uint08_[15]= dotProductWord(aInv.word_[3], bT.word_[3]);
 }
 
-void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, bool debug) {
+void decryptBlock(const Block_t* input, const KeyExpansion* ke_p, Block_t* output, bool debug) {
   size_t i, j;
   // -Debugging purposes. Columns of the debugging table.
-  Block* SOR;                                                                   // Start of round
-  Block* AiSB;                                                                  // After SubBytes
-  Block* AiSR;                                                                  // After ShiftRows
-  Block* AARK;                                                                  // After MixColumns
+  Block_t* SOR;                                                                   // Start of round
+  Block_t* AiSB;                                                                  // After SubBytes
+  Block_t* AiSR;                                                                  // After ShiftRows
+  Block_t* AARK;                                                                  // After MixColumns
   SOR = AiSB = AiSR = AARK = NULL;
 
   if(debug) {
-    SOR = (Block*)malloc((ke_p->Nr+1)*sizeof(Block));
-    AARK = (Block*)malloc(ke_p->Nr*sizeof(Block));
-    AiSB = (Block*)malloc(ke_p->Nr*sizeof(Block));
-    AiSR = (Block*)malloc(ke_p->Nr*sizeof(Block));
+    SOR = (Block_t*)malloc((ke_p->Nr+1)*sizeof(Block_t));
+    AARK = (Block_t*)malloc(ke_p->Nr*sizeof(Block_t));
+    AiSB = (Block_t*)malloc(ke_p->Nr*sizeof(Block_t));
+    AiSR = (Block_t*)malloc(ke_p->Nr*sizeof(Block_t));
   }
 
   if(input != output) copyBlock(input, output);
