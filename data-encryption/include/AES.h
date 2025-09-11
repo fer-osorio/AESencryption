@@ -17,7 +17,7 @@ typedef struct KeyExpansion_ KeyExpansion_t;
 typedef KeyExpansion_t* ptrKeyExpansion_t;
 
 enum ExceptionCode{
-  NullKey, NullKeyExpansion, NullSource, NullDestination, NullInput, NullOutput
+  NoException, NullKey, NullKeyExpansion, NullSource, NullDestination, NullInput, NullOutput
 };
 
 /*
@@ -88,13 +88,13 @@ const uint8_t* KeyExpansionReturnBytePointerToData(const KeyExpansion_t*const ke
  * Encrypts input block using the key referenced by key_p, the resultant encrypted block is written in output
  * If input == output (they point to the same memory location), the input block is overwritten with the encrypted data
  * */
-void encryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* output, bool debug);
+enum ExceptionCode encryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* output, bool debug);
 
 /*
  * Decrypts input block using the key referenced by key_p, the resultant decrypted block is written in output
  * If input == output (they point to the same memory location), the input block is overwritten with the encrypted data
  * */
-void decryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* output, bool debug);
+enum ExceptionCode decryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* output, bool debug);
 
 #ifdef __cplusplus
 }
