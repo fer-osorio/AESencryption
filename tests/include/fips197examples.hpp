@@ -77,6 +77,7 @@ static const unsigned char* retrieveKey(KeylengthBits kl){
 			return 0;
 			break;
 	}
+	return 0;
 }
 
 const unsigned char key128_expanded[176] = {
@@ -320,12 +321,13 @@ static const unsigned char* retrieveKeyExpansion(KeylengthBits kl){
 			return 0;
 			break;
 	}
+	return 0;
 }
 
 Example::Example(KeylengthBits kl){
 	this->keylenbits = kl;
 	this->key = retrieveKey(kl);
-	this->expectedKeyExpansion = retrieveKey(kl);
+	this->expectedKeyExpansion = retrieveKeyExpansion(kl);
 }
 
 const unsigned char* Example::getExpectedKeyExpansion() const{
@@ -379,6 +381,7 @@ static const unsigned char* retrieveKey(KeylengthBits kl){
 			return 0;
 			break;
 	}
+	return 0;
 }
 
 /******************************************************************************/
@@ -434,6 +437,7 @@ static const unsigned char* retrieveCipherText(KeylengthBits kl){
 			return 0;
 			break;
 	}
+	return 0;
 }
 
 Example::Example(KeylengthBits kl, Classification clss){
