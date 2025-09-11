@@ -16,6 +16,10 @@ typedef Block_t* ptrBlock_t;
 typedef struct KeyExpansion_ KeyExpansion_t;
 typedef KeyExpansion_t* ptrKeyExpansion_t;
 
+enum ExceptionCode{
+  NullKey, NullKeyExpansion, NullSource, NullDestination, NullInput, NullOutput
+};
+
 /*
  * Creates a Block instance from the bytes pointed by source. Basically it takes pieces of four bytes and creates the columns with them
  * Consider: It will read 16 bytes starting from 'source', no caring about what those bytes represent.
