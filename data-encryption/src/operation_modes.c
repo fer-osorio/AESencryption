@@ -38,8 +38,8 @@ static bool InputOutputHandlerIsSmallerThanBlock(const struct InputOutputHandler
  * Takes BLOCK_SIZE bytes, converts to block, encrypts and writes on output.
  * If input == output, original data will be rewritten with encrypted data.
  * */
-static void encryptBlockBytes(const uint8_t*const input, const KeyExpansion* ke_p, uint8_t* output){
-  Block* buffer = BlockMemoryAllocationFromBytes(input);
+static void encryptBlockBytes(const uint8_t*const input, const KeyExpansion_t* ke_p, uint8_t* output){
+  Block_t* buffer = BlockMemoryAllocationFromBytes(input);
   encryptBlock(buffer, ke_p, buffer, false);
   bytesFromBlock(buffer, output);
   BlockDelete(&buffer);
@@ -48,7 +48,7 @@ static void encryptBlockBytes(const uint8_t*const input, const KeyExpansion* ke_
 /*
  * Implements encryptBlockBytes on InputOutputHandler object
  * */
-static void InputOutputHandlerEncryptBlockBytes(const struct InputOutputHandler* ioh, const KeyExpansion* ke_p){
+static void InputOutputHandlerEncryptBlockBytes(const struct InputOutputHandler* ioh, const KeyExpansion_t* ke_p){
   encryptBlockBytes(ioh->inputCurrentPossition, ke_p, ioh->outputCurrentPossition);
 }
 
@@ -56,8 +56,8 @@ static void InputOutputHandlerEncryptBlockBytes(const struct InputOutputHandler*
  * Takes 16 bytes, converts to block, decrypts and writes on output.
  * If input == output, original data will be rewritten with decrypted data.
  * */
-static void decryptBlockBytes(const uint8_t*const input, const KeyExpansion* ke_p, uint8_t* output){
-  Block* buffer = BlockMemoryAllocationFromBytes(input);
+static void decryptBlockBytes(const uint8_t*const input, const KeyExpansion_t* ke_p, uint8_t* output){
+  Block_t* buffer = BlockMemoryAllocationFromBytes(input);
   decryptBlock(buffer, ke_p, buffer, false);
   bytesFromBlock(buffer, output);
   BlockDelete(&buffer);
@@ -66,14 +66,14 @@ static void decryptBlockBytes(const uint8_t*const input, const KeyExpansion* ke_
 /*
  * Implements decryptBlockBytes on InputOutputHandler object
  * */
-static void InputOutputHandlerDecryptBlockBytes(const struct InputOutputHandler* ioh, const KeyExpansion* ke_p){
+static void InputOutputHandlerDecryptBlockBytes(const struct InputOutputHandler* ioh, const KeyExpansion_t* ke_p){
   decryptBlockBytes(ioh->inputCurrentPossition, ke_p, ioh->outputCurrentPossition);
 }
 
 /*
  * Implementation of ECB encryption operation mode.
  * */
-static void encryptECB__(const KeyExpansion* ke_p, struct InputOutputHandler* ioh){
+static void encryptECB__(const KeyExpansion_t* ke_p, struct InputOutputHandler* ioh){
   if(InputOutputHandlerIsSmallerThanBlock(ioh)) return;                         // -Not handling the case size < 16
   InputOutputHandlerEncryptBlockBytes(ioh, ke_p);
   for(size_t i = 1; i < ioh->sizeInBlocks; i++) {
@@ -87,10 +87,10 @@ static void encryptECB__(const KeyExpansion* ke_p, struct InputOutputHandler* io
 }
 
 /*
- * Builds KeyExpansion and InputOutput objects, then implements ECB encryption operation mode.
+ * Builds KeyExpansion_t and InputOutput objects, then implements ECB encryption operation mode.
  * */
 void encryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
-  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
+  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   encryptECB__(ke_p, &ioh);
   KeyExpansionDelete(&ke_p);
@@ -99,7 +99,7 @@ void encryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpans
 /*
  * Implementation of ECB decryption operation mode.
  * */
-static void decryptECB__(const KeyExpansion* ke_p, struct InputOutputHandler* ioh){
+static void decryptECB__(const KeyExpansion_t* ke_p, struct InputOutputHandler* ioh){
   if(InputOutputHandlerIsSmallerThanBlock(ioh)) return;                         // -Not handling the case size < 16
   InputOutputHandlerDecryptBlockBytes(ioh, ke_p);
   for(size_t i = 1; i < ioh->sizeInBlocks; i++) {
@@ -113,20 +113,20 @@ static void decryptECB__(const KeyExpansion* ke_p, struct InputOutputHandler* io
 }
 
 /*
- * Builds KeyExpansion and InputOutput objects, then implements ECB decryption operation mode.
+ * Builds KeyExpansion_t and InputOutput objects, then implements ECB decryption operation mode.
  * */
 void decryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
-  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
+  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   decryptECB__(ke_p, &ioh);
   KeyExpansionDelete(&ke_p);
 }
 
 /*
- * Build Block with input, build Block with XORsource, xors both blocks and encrypt the result.
+ * Build Block_t with input, build Block_t with XORsource, xors both blocks and encrypt the result.
  * */
-static void xorEncryptBlockBytes(const uint8_t*const input, const KeyExpansion* ke_p, const uint8_t* XORsource, uint8_t* output){
-  Block* buffer = BlockMemoryAllocationFromBytes(input);
+static void xorEncryptBlockBytes(const uint8_t*const input, const KeyExpansion_t* ke_p, const uint8_t* XORsource, uint8_t* output){
+  Block_t* buffer = BlockMemoryAllocationFromBytes(input);
   BlockXORequalBytes(buffer, XORsource);
   encryptBlock(buffer, ke_p, buffer, false);
   bytesFromBlock(buffer, output);
@@ -136,14 +136,14 @@ static void xorEncryptBlockBytes(const uint8_t*const input, const KeyExpansion* 
 /*
  * Implements xorEncryptBlockBytes on ioh object.
  * */
-static void InputOutputHandlerXorEncryptBlockBytes(const struct InputOutputHandler* ioh, const uint8_t *XORsource, const KeyExpansion* ke_p){
+static void InputOutputHandlerXorEncryptBlockBytes(const struct InputOutputHandler* ioh, const uint8_t *XORsource, const KeyExpansion_t* ke_p){
   xorEncryptBlockBytes(ioh->inputCurrentPossition, ke_p, XORsource, ioh->outputCurrentPossition);
 }
 
 /*
  * Implementation of CBC encryption operation mode.
  * */
-static void encryptCBC__(const KeyExpansion* ke_p, const uint8_t* IV, struct InputOutputHandler* ioh){
+static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputOutputHandler* ioh){
   if(InputOutputHandlerIsSmallerThanBlock(ioh)) return;                         // -Not handling the case size < 16
   const uint8_t* inputPreviousBlock = NULL;
   InputOutputHandlerXorEncryptBlockBytes(ioh, IV, ke_p);                        // -Encryption of the first block.
@@ -161,10 +161,10 @@ static void encryptCBC__(const KeyExpansion* ke_p, const uint8_t* IV, struct Inp
 }
 
 /*
- * Builds KeyExpansion and InputOutput objects, then implements CBC encryption operation mode.
+ * Builds KeyExpansion_t and InputOutput objects, then implements CBC encryption operation mode.
  * */
 void encryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
-  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
+  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   encryptCBC__(ke_p, IV, &ioh);
   KeyExpansionDelete(&ke_p);
@@ -172,10 +172,10 @@ void encryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpans
 
 
 /*
- * Build Block with input, build Block with XORsource, xors both blocks and decrypt the result.
+ * Build Block_t with input, build Block_t with XORsource, xors both blocks and decrypt the result.
  * */
-static void decryptXorBlockBytes(const uint8_t*const input, const KeyExpansion* ke_p, const uint8_t* XORsource, uint8_t* output){
-  Block* buffer = BlockMemoryAllocationFromBytes(input);
+static void decryptXorBlockBytes(const uint8_t*const input, const KeyExpansion_t* ke_p, const uint8_t* XORsource, uint8_t* output){
+  Block_t* buffer = BlockMemoryAllocationFromBytes(input);
   decryptBlock(buffer, ke_p, buffer, false);
   BlockXORequalBytes(buffer, XORsource);
   bytesFromBlock(buffer, output);
@@ -185,14 +185,14 @@ static void decryptXorBlockBytes(const uint8_t*const input, const KeyExpansion* 
 /*
  * Implements xorEncryptBlockBytes on ioh object.
  * */
-static void InputOutputHandlerDecryptXorBlockBytes(const struct InputOutputHandler* ioh, const uint8_t *XORsource, const KeyExpansion* ke_p){
+static void InputOutputHandlerDecryptXorBlockBytes(const struct InputOutputHandler* ioh, const uint8_t *XORsource, const KeyExpansion_t* ke_p){
   decryptXorBlockBytes(ioh->inputCurrentPossition, ke_p, XORsource, ioh->outputCurrentPossition);
 }
 
 /*
  * Implementation of CBC decryption operation mode.
  * */
-static void decryptCBC__(const KeyExpansion* ke_p, const uint8_t* IV, struct InputOutputHandler* ioh) {
+static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputOutputHandler* ioh) {
   if(InputOutputHandlerIsSmallerThanBlock(ioh)) return;                         // -Not handling the case size < 16
   uint8_t prevBlockCopy[BLOCK_SIZE];
   uint8_t currBlockCopy[BLOCK_SIZE];
@@ -213,10 +213,10 @@ static void decryptCBC__(const KeyExpansion* ke_p, const uint8_t* IV, struct Inp
 }
 
 /*
- * Builds KeyExpansion and InputOutput objects, then implements CBC decryption operation mode.
+ * Builds KeyExpansion_t and InputOutput objects, then implements CBC decryption operation mode.
  * */
 void decryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
-  KeyExpansion_ptr ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
+  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   decryptCBC__(ke_p, IV, &ioh);
   KeyExpansionDelete(&ke_p);
