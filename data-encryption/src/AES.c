@@ -372,10 +372,10 @@ static void KeyExpansionBuildWords(const uint8_t* key, enum Nk_t Nk, Word_t outp
   debug = false;
 }
 
-static KeyExpansion_ptr KeyExpansionMemoryAllocation(enum Nk_t Nk){
-  KeyExpansion_ptr output = (KeyExpansion*)malloc(sizeof(KeyExpansion));
+static ptrKeyExpansion_t KeyExpansionMemoryAllocation(enum Nk_t Nk){
+  ptrKeyExpansion_t output = (KeyExpansion_t*)malloc(sizeof(KeyExpansion_t));
   if(output == NULL) return NULL;
-  // -Building KeyExpansion object
+  // -Building KeyExpansion_t object
   output->Nk = Nk;
   output->Nr = getNr(Nk);
   output->wordsSize = KeyExpansionLenWords(Nk);
@@ -429,7 +429,7 @@ static void BlockFromWords(const Word_t source[], Block_t* output){
   output->uint08_[15]= source[3].uint08_[3];
 }
 
-KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t keylenbits, bool debug){
+ptrKeyExpansion_t KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t keylenbits, bool debug){
   enum Nk_t Nk = keylenbitsToNk(keylenbits);
   if(Nk == UnknownNk) {
     //printf("KeyExpansionMemoryAllocationBuild: Nk == Unknown\n");
@@ -437,7 +437,7 @@ KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t ke
     return NULL;
   }
 
-  KeyExpansion_ptr output = KeyExpansionMemoryAllocation(Nk);
+  ptrKeyExpansion_t output = KeyExpansionMemoryAllocation(Nk);
   if(output == NULL) return NULL;
 
   Word_t* buffer = (Word_t*)malloc(output->wordsSize*sizeof(Word_t));
@@ -445,7 +445,7 @@ KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t ke
 
   // Writing key expansion on array of words
   KeyExpansionBuildWords(key, Nk, buffer, debug);
-  // Writting key expansion on the array of Blocks 'inside' KeyExpansion object.
+  // Writting key expansion on the array of Blocks 'inside' KeyExpansion_t object.
   for(size_t i = 0, j = 0; i < output->wordsSize && j < output->blockSize; i += NB, j++){
     BlockFromWords(buffer + i, output->dataBlocks + j);
   }
@@ -453,8 +453,8 @@ KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t ke
   return output;
 }
 
-void KeyExpansionDelete(KeyExpansion** ke_pp){
-  KeyExpansion* ke_p = *ke_pp;
+void KeyExpansionDelete(KeyExpansion_t** ke_pp){
+  KeyExpansion_t* ke_p = *ke_pp;
   if(ke_p != NULL){
     if(ke_p->dataBlocks != NULL) {
       free(ke_p->dataBlocks);
@@ -465,16 +465,16 @@ void KeyExpansionDelete(KeyExpansion** ke_pp){
   }
 }
 
-void KeyExpansionWriteBytes(const KeyExpansion* source, uint8_t* dest){
+void KeyExpansionWriteBytes(const KeyExpansion_t* source, uint8_t* dest){
   for(size_t i = 0, j = 0; i < source->blockSize; i++, j += BLOCK_SIZE){
     bytesFromBlock(source->dataBlocks + i, dest + j);
   }
 }
 
-KeyExpansion_ptr KeyExpansionFromBytes(const uint8_t source[], size_t keylenbits){
+ptrKeyExpansion_t KeyExpansionFromBytes(const uint8_t source[], size_t keylenbits){
   enum Nk_t Nk = keylenbitsToNk(keylenbits);
   if(Nk == UnknownNk) return NULL;
-  KeyExpansion_ptr output = KeyExpansionMemoryAllocation(Nk);
+  ptrKeyExpansion_t output = KeyExpansionMemoryAllocation(Nk);
   if(output == NULL) return NULL;
   for(size_t i = 0, j = 0; i < output->blockSize; i++, j += BLOCK_SIZE){
     BlockWriteFromBytes(source + j,output->dataBlocks + i);
@@ -482,11 +482,11 @@ KeyExpansion_ptr KeyExpansionFromBytes(const uint8_t source[], size_t keylenbits
   return output;
 }
 
-const uint8_t* KeyExpansionReturnBytePointerToData(const KeyExpansion*const ke_p){
+const uint8_t* KeyExpansionReturnBytePointerToData(const KeyExpansion_t*const ke_p){
   return (uint8_t*)ke_p->dataBlocks;
 }
 
-void encryptBlock(const Block_t* input, const KeyExpansion* ke_p, Block_t* output, bool debug) {
+void encryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* output, bool debug) {
   size_t i, j;
   // -Debugging purposes. Columns of the debugging table.
   Block_t* SOR;                                                                   // Start of round
@@ -650,7 +650,7 @@ static void InvMixColumns(Block_t* b) {                                         
   b->uint08_[15]= dotProductWord(aInv.word_[3], bT.word_[3]);
 }
 
-void decryptBlock(const Block_t* input, const KeyExpansion* ke_p, Block_t* output, bool debug) {
+void decryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* output, bool debug) {
   size_t i, j;
   // -Debugging purposes. Columns of the debugging table.
   Block_t* SOR;                                                                   // Start of round

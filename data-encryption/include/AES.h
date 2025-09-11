@@ -13,8 +13,8 @@ typedef union Word_ Word_t;
 //typedef Word_t* Word_t_ptr;
 typedef union Block_ Block_t;
 typedef Block_t* ptrBlock_t;
-typedef struct KeyExpansion_ KeyExpansion;
-typedef KeyExpansion* KeyExpansion_ptr;
+typedef struct KeyExpansion_ KeyExpansion_t;
+typedef KeyExpansion_t* ptrKeyExpansion_t;
 
 /*
  * Creates a Block instance from the bytes pointed by source. Basically it takes pieces of four bytes and creates the columns with them
@@ -56,41 +56,41 @@ void BlockXORequalBytes(Block_t* input, const uint8_t byteBlock[]);
  * Builds key expansion object and returns a pointer to it.
  * Consider: Allocates memory using malloc.
  * */
-KeyExpansion_ptr KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t keylenbits, bool debug);
+ptrKeyExpansion_t KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t keylenbits, bool debug);
 
 /*
- * Free the memory allocated for an KeyExpansion object pointed by *ke_pp.
+ * Free the memory allocated for an KeyExpansion_t object pointed by *ke_pp.
  * */
-void KeyExpansionDelete(KeyExpansion** ke_pp);
+void KeyExpansionDelete(KeyExpansion_t** ke_pp);
 
 /*
  * Write the bytes that forms the key expansion object on the location pointed by dest.
  * */
-void KeyExpansionWriteBytes(const KeyExpansion* source, uint8_t* dest);
+void KeyExpansionWriteBytes(const KeyExpansion_t* source, uint8_t* dest);
 
 /*
- * Creates KeyExpansion object using the bytes pointed by source.
+ * Creates KeyExpansion_t object using the bytes pointed by source.
  * The amounth of bytes it uses is Nb*((Nk + 6) + 1), where Nb = 4 and Nk = keylenbits/2^5.
  * Consider: Allocates memory using malloc.
  * */
-KeyExpansion_ptr KeyExpansionFromBytes(const uint8_t source[], size_t keylenbits);
+ptrKeyExpansion_t KeyExpansionFromBytes(const uint8_t source[], size_t keylenbits);
 
 /*
  * Returns a pointer of type char* to the first element of the key expansion
  * */
-const uint8_t* KeyExpansionReturnBytePointerToData(const KeyExpansion*const ke_p);
+const uint8_t* KeyExpansionReturnBytePointerToData(const KeyExpansion_t*const ke_p);
 
 /*
  * Encrypts input block using the key referenced by key_p, the resultant encrypted block is written in output
  * If input == output (they point to the same memory location), the input block is overwritten with the encrypted data
  * */
-void encryptBlock(const Block_t* input, const KeyExpansion* ke_p, Block_t* output, bool debug);
+void encryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* output, bool debug);
 
 /*
  * Decrypts input block using the key referenced by key_p, the resultant decrypted block is written in output
  * If input == output (they point to the same memory location), the input block is overwritten with the encrypted data
  * */
-void decryptBlock(const Block_t* input, const KeyExpansion* ke_p, Block_t* output, bool debug);
+void decryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* output, bool debug);
 
 #ifdef __cplusplus
 }
