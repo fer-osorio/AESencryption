@@ -481,7 +481,7 @@ const uint8_t* KeyExpansionReturnBytePointerToData(const KeyExpansion_t*const ke
   return (uint8_t*)ke_p->dataBlocks;
 }
 
-void encryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* output, bool debug) {
+enum ExceptionCode encryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* output, bool debug) {
   size_t i, j;
   // -Debugging purposes. Columns of the debugging table.
   Block_t* SOR;                                                                   // Start of round
@@ -497,9 +497,13 @@ void encryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* out
     ASR = (Block_t*)malloc(ke_p->Nr*sizeof(Block_t));
   }
 
+  if(input == NULL) return NullInput;
+  if(output== NULL) return NullOutput;
   if(input != output) copyBlock(input, output);
 
   if(debug) copyBlock(output,SOR);                                              // Equivalent to copyBlock(output,&SOR[0])
+
+  if(ke_p == NULL) return NullKeyExpansion;
   AddRoundKey(output, ke_p->dataBlocks, 0);
   if(debug) copyBlock(output,SOR + 1);                                          // Equivalent to copyBlock(output,&SOR[1])
   for(i = 1; i < ke_p->Nr; i++) {
@@ -582,6 +586,8 @@ void encryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* out
   if(ASB != NULL) { free(ASB); ASB=NULL; }
   if(ASR != NULL) { free(ASR); ASR=NULL; }
   if(AMC != NULL) { free(AMC); AMC=NULL; }
+
+  return NoException;
 }
 
 static void InvShiftRows(Block_t* b) {                                            // -Shift rows of the state array by different offset.
@@ -645,7 +651,7 @@ static void InvMixColumns(Block_t* b) {                                         
   b->uint08_[15]= dotProductWord(aInv.word_[3], bT.word_[3]);
 }
 
-void decryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* output, bool debug) {
+enum ExceptionCode decryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* output, bool debug) {
   size_t i, j;
   // -Debugging purposes. Columns of the debugging table.
   Block_t* SOR;                                                                   // Start of round
@@ -661,9 +667,13 @@ void decryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* out
     AiSR = (Block_t*)malloc(ke_p->Nr*sizeof(Block_t));
   }
 
+  if(input == NULL) return NullInput;
+  if(output== NULL) return NullOutput;
   if(input != output) copyBlock(input, output);
 
   if(debug) copyBlock(output,SOR + ke_p->Nr);                                   // Equivalent to copyBlock(output,&SOR[ke_p->Nr])
+
+  if(ke_p == NULL) return NullKeyExpansion;
   AddRoundKey(output, ke_p->dataBlocks, ke_p->Nr);
   if(debug) copyBlock(output,SOR + ke_p->Nr-1);                                 // Equivalent to copyBlock(output,&SOR[ke_p->Nr])
 
@@ -746,4 +756,6 @@ void decryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* out
   if(AiSB != NULL) { free(AiSB); AiSB=NULL; }
   if(AiSR != NULL) { free(AiSR); AiSR=NULL; }
   if(AARK != NULL) { free(AARK); AARK=NULL; }
+
+  return NoException;
 }
