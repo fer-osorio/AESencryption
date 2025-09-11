@@ -181,7 +181,7 @@ Cipher::OperationMode Cipher::buildOperationMode(const OperationMode::Identifier
 }
 
 void Cipher::buildKeyExpansion() {
-    KeyExpansion* ke_p = KeyExpansionMemoryAllocationBuild(this->key.data, static_cast<size_t>(this->key.getLenBits()), false);
+    KeyExpansion_t* ke_p = KeyExpansionMemoryAllocationBuild(this->key.data, static_cast<size_t>(this->key.getLenBits()), false);
     if(this->keyExpansion == NULL) this->keyExpansion = new uint8_t[this->config.getKeyExpansionLengthBytes()];
     KeyExpansionWriteBytes(ke_p, this->keyExpansion);
     KeyExpansionDelete(&ke_p);
