@@ -9,10 +9,10 @@
 extern "C" {
 #endif
 
-typedef union Word_ Word;
-typedef Word* Word_ptr;
-typedef union Block_ Block;
-typedef Block* Block_ptr;
+typedef union Word_ Word_t;
+//typedef Word_t* Word_t_ptr;
+typedef union Block_ Block_t;
+typedef Block_t* ptrBlock_t;
 typedef struct KeyExpansion_ KeyExpansion;
 typedef KeyExpansion* KeyExpansion_ptr;
 
@@ -21,36 +21,36 @@ typedef KeyExpansion* KeyExpansion_ptr;
  * Consider: It will read 16 bytes starting from 'source', no caring about what those bytes represent.
  * Consider: Allocates memory using malloc.
  * */
-Block_ptr BlockMemoryAllocationFromBytes(const uint8_t source[]);
+ptrBlock_t BlockMemoryAllocationFromBytes(const uint8_t source[]);
 
 /*
  * Free the memory allocated for the object pointed by *blk_pp
  * */
-void BlockDelete(Block** blk_pp);
+void BlockDelete(Block_t** blk_pp);
 
 /*
  * Writes 16 bytes using the content of 'source'. The writting is perform column to column, from top to bottom.
  * Consider: It supposes there is enough space pointed by the 'output' pointer.
  * */
-void bytesFromBlock(const Block* source, uint8_t output[]);
+void bytesFromBlock(const Block_t* source, uint8_t output[]);
 
 /*
  * Allocates memory for a block filled with random values.
  * Consider: Not intended for the generation of secure random values for cryptographic application.
  * Consider Allocate memory using malloc.
  * */
-Block_ptr BlockMemoryAllocationRandom(unsigned int seed);
+ptrBlock_t BlockMemoryAllocationRandom(unsigned int seed);
 
 /*
  * Prints block in matrix form.
  * Row headers are the 'tags' the user wants to put to each row.
  * */
-void printBlock(const Block* b, const char* rowHeaders[4]);
+void printBlock(const Block_t* b, const char* rowHeaders[4]);
 
 /*
  * This function has the same efect than apply the sequence: b = BlockFromBytes(byteBlock), then XORblocks(input, b, input)
  * */
-void BlockXORequalBytes(Block* input, const uint8_t byteBlock[]);
+void BlockXORequalBytes(Block_t* input, const uint8_t byteBlock[]);
 
 /*
  * Builds key expansion object and returns a pointer to it.
@@ -84,13 +84,13 @@ const uint8_t* KeyExpansionReturnBytePointerToData(const KeyExpansion*const ke_p
  * Encrypts input block using the key referenced by key_p, the resultant encrypted block is written in output
  * If input == output (they point to the same memory location), the input block is overwritten with the encrypted data
  * */
-void encryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, bool debug);
+void encryptBlock(const Block_t* input, const KeyExpansion* ke_p, Block_t* output, bool debug);
 
 /*
  * Decrypts input block using the key referenced by key_p, the resultant decrypted block is written in output
  * If input == output (they point to the same memory location), the input block is overwritten with the encrypted data
  * */
-void decryptBlock(const Block* input, const KeyExpansion* ke_p, Block* output, bool debug);
+void decryptBlock(const Block_t* input, const KeyExpansion* ke_p, Block_t* output, bool debug);
 
 #ifdef __cplusplus
 }
