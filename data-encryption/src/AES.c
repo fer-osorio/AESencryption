@@ -11,14 +11,14 @@ typedef union Word_ {
   uint8_t  uint08_[WORD_SIZE];
   uint16_t uint16_[WORD_SIZE_SHORTS];
   uint32_t uint32_;
-} Word_t ;
+} Word_t;
 
 #define BLOCK_SIZE_INT64 2
 typedef union Block_{
     uint8_t  uint08_[BLOCK_SIZE];
-    Word_t     word_[NB];
+    Word_t   word_[NB];
     uint64_t uint64_[BLOCK_SIZE_INT64];
-} Block_t ;
+} Block_t;
 
 static const Word_t Rcon[10] = {						                            // -Notice that the value of the left most byte in polynomial form is 2^i.
   {{0x01, 0x00, 0x00, 0x00}},
@@ -47,13 +47,13 @@ static const Block_t aInv = {{                                                  
   0x0B, 0x0D, 0x09, 0x0E
 }};
 
-struct KeyExpansion_{
+typedef struct KeyExpansion_{
   enum Nk_t Nk;
   size_t Nr;
   size_t wordsSize;
   size_t blockSize;
   Block_t* dataBlocks;
-};
+} KeyExpansion_t;
 
 static size_t getKeyExpansionLengthBlocksfromNk(enum Nk_t Nk){
   return getKeyExpansionLengthWordsfromNk(Nk) / NB;
@@ -428,7 +428,7 @@ ptrKeyExpansion_t KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t k
   enum Nk_t Nk = keylenbitsToNk(keylenbits);
   if(Nk == UnknownNk) {
     //printf("KeyExpansionMemoryAllocationBuild: Nk == Unknown\n");
-    //printf("KeyExpansionMemoryAllocationBuild: nk == %lu\n", nk);
+    //printf("KeyExpansionMemoryAllocationBuild: nk == %d\n", Nk);
     return NULL;
   }
 
