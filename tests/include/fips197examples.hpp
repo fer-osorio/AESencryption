@@ -38,7 +38,7 @@ const unsigned char* ExampleBase::getKey() const{
 
 namespace KeyExpansion_ns{
 
-struct Example : private ExampleBase{
+struct Example : public ExampleBase{
 private:
 	const unsigned char* expectedKeyExpansion;
 public:
@@ -336,7 +336,7 @@ const unsigned char* Example::getExpectedKeyExpansion() const{
 
 namespace Encryption_ns{
 
-struct Example : private ExampleBase{
+struct Example : public ExampleBase{
 	enum struct Classification{ Encryption, Decryption };
 private:
 	Classification clss_;
