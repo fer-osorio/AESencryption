@@ -21,8 +21,13 @@ enum ExceptionCode{
 };
 
 /*
+ * Reads BLOCK_SIZE bytes from source and writes the on the block pointed by output.
+ * */
+void BlockWriteFromBytes(const uint8_t source[], Block_t* output);
+
+/*
  * Creates a Block instance from the bytes pointed by source. Basically it takes pieces of four bytes and creates the columns with them
- * Consider: It will read 16 bytes starting from 'source', no caring about what those bytes represent.
+ * Consider: It will read BLOCK_SIZE bytes starting from 'source', no caring about what those bytes represent.
  * Consider: Allocates memory using malloc.
  * */
 ptrBlock_t BlockMemoryAllocationFromBytes(const uint8_t source[]);
@@ -33,7 +38,7 @@ ptrBlock_t BlockMemoryAllocationFromBytes(const uint8_t source[]);
 void BlockDelete(Block_t** blk_pp);
 
 /*
- * Writes 16 bytes using the content of 'source'. The writting is perform column to column, from top to bottom.
+ * Writes BLOCK_SIZE bytes using the content of 'source'. The writting is perform column to column, from top to bottom.
  * Consider: It supposes there is enough space pointed by the 'output' pointer.
  * */
 void bytesFromBlock(const Block_t* source, uint8_t output[]);
