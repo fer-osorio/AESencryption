@@ -103,7 +103,7 @@ static uint8_t dotProductWord(const Word_t w1, const Word_t w2){                
           multiply[w1.uint08_[3]][w2.uint08_[3]];
 }
 
-static void BlockWriteFromBytes(const uint8_t source[], Block_t* output){
+void BlockWriteFromBytes(const uint8_t source[], Block_t* output){
   // First column
   output->uint08_[0] = source[0];
   output->uint08_[4] = source[1];
