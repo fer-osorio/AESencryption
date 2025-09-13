@@ -73,7 +73,7 @@ define compile_c_rule
 endef
 
 # Standard compilation rule for cpp files
-# Usage $(call compile_cpp_rule,source_file,object_file,additional_flags)
+# Usage: $(call compile_cpp_rule,source_file,object_file,additional_flags)
 define compile_cpp_rule
 	$(call print_building,"C++ object:\\n\\t\\t$(2)")
 	$(call create_dir,$(dir $(2)))
@@ -97,9 +97,10 @@ define create_shared_lib
 endef
 
 # Executable creation
+# Usage: $(call create_executable,executable,objects)
 define create_executable
 	$(call print_building,"Executable:\\n\\t\\t$(1)")
-	@$(CXX) -o $(1) $(2) $(LDFLAGS) $(LIBS)
+	@$(CXX) $(2) -o $(1) $(LDFLAGS) $(LIBS)
 	$(call print_success,"Created executable:\\n\\t\\t$(1)")
 endef
 
