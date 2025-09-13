@@ -1,6 +1,7 @@
 #ifndef OPERATION_MODES_H
 #define OPERATION_MODES_H
 
+#include"exception_code.h"
 #include<stdint.h>
 #include<stddef.h>
 
