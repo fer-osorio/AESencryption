@@ -147,7 +147,7 @@ static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
   BlockXORequalBytes(buffer, IV);
   encryptBlock(buffer, ke_p, buffer, false);
   bytesFromBlock(buffer, ioh_p->outputCurrentPossition);
-  for(size_t i = 1; i < ioh_p->sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
+  for(i = 1; i < ioh_p->sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
     outputPreviousBlock = ioh_p->outputCurrentPossition;
     InputOutputHandlerMoveForwardOneBlock(ioh_p);
     BlockWriteFromBytes(ioh_p->inputCurrentPossition, buffer);
@@ -221,7 +221,7 @@ static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
     buffer  = BlockMemoryAllocationFromBytes(ioh_p->inputCurrentPossition + ioh_p->tailSize);
     decryptBlock(buffer, ke_p, buffer, false);
     bytesFromBlock(buffer, ioh_p->outputCurrentPossition);
-    for(size_t i = 0; i < ioh_p->tailSize; i++) ioh_p->outputCurrentPossition[i] ^= inputPreviousBlock[i];
+    for(i = 0; i < ioh_p->tailSize; i++) ioh_p->outputCurrentPossition[i] ^= inputPreviousBlock[i];
     BlockWriteFromBytes(ioh_p->inputCurrentPossition, buffer);
   } else{
     buffer  = BlockMemoryAllocationFromBytes(ioh_p->inputCurrentPossition);
