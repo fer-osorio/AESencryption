@@ -83,7 +83,7 @@ static void encryptECB__(const KeyExpansion_t* ke_p, struct InputOutputHandler* 
 /*
  * Builds KeyExpansion_t and InputOutput objects, then implements ECB encryption operation mode.
  * */
-void encryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
+enum ExceptionCode encryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   encryptECB__(ke_p, &ioh);
@@ -119,7 +119,7 @@ static void decryptECB__(const KeyExpansion_t* ke_p, struct InputOutputHandler* 
 /*
  * Builds KeyExpansion_t and InputOutput objects, then implements ECB decryption operation mode.
  * */
-void decryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
+enum ExceptionCode decryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   decryptECB__(ke_p, &ioh);
@@ -162,7 +162,7 @@ static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
 /*
  * Builds KeyExpansion_t and InputOutput objects, then implements CBC encryption operation mode.
  * */
-void encryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
+enum ExceptionCode encryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   encryptCBC__(ke_p, IV, &ioh);
@@ -234,7 +234,7 @@ static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
 /*
  * Builds KeyExpansion_t and InputOutput objects, then implements CBC decryption operation mode.
  * */
-void decryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
+enum ExceptionCode decryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   decryptCBC__(ke_p, IV, &ioh);
