@@ -176,6 +176,7 @@ enum ExceptionCode encryptCBC(const uint8_t*const input, size_t size, const uint
   if(input == NULL) return NullInput;
   if(output == NULL) return NullOutput;
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
+  if(IV == NULL) return NullInitialVector;
   encryptCBC__(ke_p, IV, &ioh);
   KeyExpansionDelete(&ke_p);
   return NoException;
@@ -251,6 +252,7 @@ enum ExceptionCode decryptCBC(const uint8_t*const input, size_t size, const uint
   if(input == NULL) return NullInput;
   if(output == NULL) return NullOutput;
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
+  if(IV == NULL) return NullInitialVector;
   decryptCBC__(ke_p, IV, &ioh);
   KeyExpansionDelete(&ke_p);
   return NoException;
