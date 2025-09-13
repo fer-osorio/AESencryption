@@ -84,6 +84,7 @@ static void encryptECB__(const KeyExpansion_t* ke_p, struct InputOutputHandler* 
  * Builds KeyExpansion_t and InputOutput objects, then implements ECB encryption operation mode.
  * */
 enum ExceptionCode encryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
+  if(size == 0) return ZeroLength;
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   if(ke_p == NULL) return NullKeyExpansion;
   if(input == NULL) return NullInput;
@@ -124,6 +125,7 @@ static void decryptECB__(const KeyExpansion_t* ke_p, struct InputOutputHandler* 
  * Builds KeyExpansion_t and InputOutput objects, then implements ECB decryption operation mode.
  * */
 enum ExceptionCode decryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
+  if(size == 0) return ZeroLength;
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   if(ke_p == NULL) return NullKeyExpansion;
   if(input == NULL) return NullInput;
@@ -171,6 +173,7 @@ static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
  * Builds KeyExpansion_t and InputOutput objects, then implements CBC encryption operation mode.
  * */
 enum ExceptionCode encryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
+  if(size == 0) return ZeroLength;
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   if(ke_p == NULL) return NullKeyExpansion;
   if(input == NULL) return NullInput;
@@ -247,6 +250,7 @@ static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
  * Builds KeyExpansion_t and InputOutput objects, then implements CBC decryption operation mode.
  * */
 enum ExceptionCode decryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
+  if(size == 0) return ZeroLength;
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   if(ke_p == NULL) return NullKeyExpansion;
   if(input == NULL) return NullInput;
