@@ -85,9 +85,13 @@ static void encryptECB__(const KeyExpansion_t* ke_p, struct InputOutputHandler* 
  * */
 enum ExceptionCode encryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
+  if(ke_p == NULL) return NullKeyExpansion;
+  if(input == NULL) return NullInput;
+  if(output == NULL) return NullOutput;
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   encryptECB__(ke_p, &ioh);
   KeyExpansionDelete(&ke_p);
+  return NoException;
 }
 
 /*
@@ -121,9 +125,13 @@ static void decryptECB__(const KeyExpansion_t* ke_p, struct InputOutputHandler* 
  * */
 enum ExceptionCode decryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
+  if(ke_p == NULL) return NullKeyExpansion;
+  if(input == NULL) return NullInput;
+  if(output == NULL) return NullOutput;
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   decryptECB__(ke_p, &ioh);
   KeyExpansionDelete(&ke_p);
+  return NoException;
 }
 
 /*
@@ -164,11 +172,14 @@ static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
  * */
 enum ExceptionCode encryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
+  if(ke_p == NULL) return NullKeyExpansion;
+  if(input == NULL) return NullInput;
+  if(output == NULL) return NullOutput;
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   encryptCBC__(ke_p, IV, &ioh);
   KeyExpansionDelete(&ke_p);
+  return NoException;
 }
-
 
 /*
  * Build Block_t with input, build Block_t with XORsource, xors both blocks and decrypt the result.
@@ -236,7 +247,11 @@ static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
  * */
 enum ExceptionCode decryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
+  if(ke_p == NULL) return NullKeyExpansion;
+  if(input == NULL) return NullInput;
+  if(output == NULL) return NullOutput;
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   decryptCBC__(ke_p, IV, &ioh);
   KeyExpansionDelete(&ke_p);
+  return NoException;
 }
