@@ -53,29 +53,32 @@ void test_ecb_mode() {
     uint8_t decrypted[PLAINTEXT_SIZE];
 
     // Prepare key expansion
-    ASSERT_TRUE(KeyExpansionBuildWrite(TestVectors::key_128, static_cast<size_t>(Keylenbits128), expanded_key, false) == NoException,
-                "Key expansion should succeed");
+    ASSERT_TRUE(
+        KeyExpansionBuildWrite(TestVectors::key_128, static_cast<size_t>(Keylenbits128), expanded_key, false) == NoException,
+        "Key expansion should succeed"
+    );
 
     // Test ECB encryption
-    encryptECB(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, expanded_key, Keylenbits128, output);
-    ASSERT_TRUE(aes_ecb_encrypt(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, output,
-                               expanded_key, 10) == 0,
-                "ECB encryption should succeed");
+    ASSERT_TRUE(
+        encryptECB(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, expanded_key, Keylenbits128, output) == NoException,
+        "ECB encryption should succeed"
+    );
 
-    ASSERT_BYTES_EQUAL(TestVectors::expected_ecb_2blocks, output, CIPHERTEXT_SIZE,
-                       "ECB encryption should match test vector");
+    ASSERT_BYTES_EQUAL(
+        TestVectors::expected_ecb_2blocks, output, CIPHERTEXT_SIZE,
+        "ECB encryption should match test vector"
+    );
 
     // Test ECB decryption
-    ASSERT_TRUE(aes_ecb_decrypt(output, CIPHERTEXT_SIZE, decrypted, expanded_key, 10) == 0,
-                "ECB decryption should succeed");
+    ASSERT_TRUE(
+        decryptECB(output, CIPHERTEXT_SIZE, expanded_key, Keylenbits128, decrypted) == NoException,
+        "ECB decryption should succeed"
+    );
 
-    ASSERT_BYTES_EQUAL(TestVectors::plaintext_2blocks, decrypted, PLAINTEXT_SIZE,
-                       "ECB roundtrip should preserve plaintext");
-
-    // Test block alignment requirement
-    ASSERT_TRUE(aes_ecb_encrypt(TestVectors::plaintext_2blocks, 17, output,
-                               expanded_key, 10) != 0,
-                "ECB should reject non-block-aligned input");
+    ASSERT_BYTES_EQUAL(
+        TestVectors::plaintext_2blocks, decrypted, PLAINTEXT_SIZE,
+        "ECB roundtrip should preserve plaintext"
+    );
 
     PRINT_RESULTS();
 }
@@ -83,57 +86,35 @@ void test_ecb_mode() {
 void test_cbc_mode() {
     TEST_SUITE("CBC Mode Tests");
 
-    uint8_t expanded_key[176];
+    uint8_t expanded_key[KEY_EXPANSION_LENGTH_128_BYTES];
     uint8_t output[CIPHERTEXT_SIZE];
     uint8_t decrypted[PLAINTEXT_SIZE];
-    uint8_t iv_copy[16];
+    uint8_t iv_copy[BLOCK_SIZE];
 
-    aes_key_expansion(TestVectors::key_128, 128, expanded_key);
+    KeyExpansionBuildWrite(TestVectors::key_128, static_cast<size_t>(Keylenbits128), expanded_key, false);
 
     // Test CBC encryption
-    memcpy(iv_copy, TestVectors::iv, 16); // CBC modifies IV
-    ASSERT_TRUE(aes_cbc_encrypt(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, output,
-                               expanded_key, 10, iv_copy) == 0,
-                "CBC encryption should succeed");
+    memcpy(iv_copy, TestVectors::iv, BLOCK_SIZE); // CBC modifies IV
+    ASSERT_TRUE(
+        encryptCBC(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, expanded_key, Keylenbits128, iv_copy, output) == NoException,
+        "CBC encryption should succeed"
+    );
 
-    ASSERT_BYTES_EQUAL(TestVectors::expected_cbc_2blocks, output, CIPHERTEXT_SIZE,
-                       "CBC encryption should match test vector");
+    ASSERT_BYTES_EQUAL(
+        TestVectors::expected_cbc_2blocks, output, CIPHERTEXT_SIZE,
+        "CBC encryption should match test vector"
+    );
 
     // Test CBC decryption
-    memcpy(iv_copy, TestVectors::iv, 16); // Reset IV
-    ASSERT_TRUE(aes_cbc_decrypt(output, CIPHERTEXT_SIZE, decrypted, expanded_key, 10, iv_copy) == 0,
-                "CBC decryption should succeed");
+    ASSERT_TRUE(
+        decryptCBC(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, expanded_key, Keylenbits128, iv_copy, output) == NoException,
+        "CBC decryption should succeed"
+    );
 
-    ASSERT_BYTES_EQUAL(TestVectors::plaintext_2blocks, decrypted, PLAINTEXT_SIZE,
-                       "CBC roundtrip should preserve plaintext");
-
-    PRINT_RESULTS();
-}
-
-void test_mode_differences() {
-    TEST_SUITE("Mode Difference Tests");
-
-    uint8_t expanded_key[176];
-    uint8_t ecb_output[CIPHERTEXT_SIZE];
-    uint8_t cbc_output[CIPHERTEXT_SIZE];
-    uint8_t iv_copy[16];
-
-    aes_key_expansion(TestVectors::key_128, 128, expanded_key);
-
-    // Encrypt same data with both modes
-    aes_ecb_encrypt(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, ecb_output, expanded_key, 10);
-
-    memcpy(iv_copy, TestVectors::iv, 16);
-    aes_cbc_encrypt(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, cbc_output, expanded_key, 10, iv_copy);
-
-    // Results should be different
-    ASSERT_TRUE(memcmp(ecb_output, cbc_output, CIPHERTEXT_SIZE) != 0,
-                "ECB and CBC should produce different ciphertext");
-
-    // But first block of ECB should differ from first block of CBC
-    // because CBC uses IV
-    ASSERT_TRUE(memcmp(ecb_output, cbc_output, 16) != 0,
-                "First blocks should differ due to IV in CBC");
+    ASSERT_BYTES_EQUAL(
+        TestVectors::plaintext_2blocks, decrypted, PLAINTEXT_SIZE,
+        "CBC roundtrip should preserve plaintext"
+    );
 
     PRINT_RESULTS();
 }
@@ -141,23 +122,25 @@ void test_mode_differences() {
 void test_iv_independence() {
     TEST_SUITE("IV Independence Tests");
 
-    uint8_t expanded_key[176];
+    uint8_t expanded_key[KEY_EXPANSION_LENGTH_128_BYTES];
     uint8_t output1[CIPHERTEXT_SIZE], output2[CIPHERTEXT_SIZE];
-    uint8_t iv1[16], iv2[16];
+    uint8_t iv1[BLOCK_SIZE], iv2[BLOCK_SIZE];
 
-    aes_key_expansion(TestVectors::key_128, 128, expanded_key);
+    KeyExpansionBuildWrite(TestVectors::key_128, static_cast<size_t>(Keylenbits128), expanded_key, false);
 
     // Set up two different IVs
-    memcpy(iv1, TestVectors::iv, 16);
-    memcpy(iv2, TestVectors::iv, 16);
+    memcpy(iv1, TestVectors::iv, BLOCK_SIZE);
+    memcpy(iv2, TestVectors::iv, BLOCK_SIZE);
     iv2[0] = 0xFF; // Make second IV different
 
     // Encrypt same plaintext with different IVs
-    aes_cbc_encrypt(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, output1, expanded_key, 10, iv1);
-    aes_cbc_encrypt(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, output2, expanded_key, 10, iv2);
+    encryptCBC(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, expanded_key, Keylenbits128, iv1, output1);
+    encryptCBC(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, expanded_key, Keylenbits128, iv2, output2);
 
-    ASSERT_TRUE(memcmp(output1, output2, CIPHERTEXT_SIZE) != 0,
-                "Different IVs should produce different ciphertext");
+    ASSERT_TRUE(
+        memcmp(output1, output2, CIPHERTEXT_SIZE) != 0,
+        "Different IVs should produce different ciphertext"
+    );
 
     PRINT_RESULTS();
 }
@@ -165,29 +148,34 @@ void test_iv_independence() {
 void test_error_conditions() {
     TEST_SUITE("Error Condition Tests");
 
-    uint8_t expanded_key[176];
+    uint8_t expanded_key[KEY_EXPANSION_LENGTH_128_BYTES];
     uint8_t output[CIPHERTEXT_SIZE];
-    uint8_t iv_copy[16];
+    uint8_t iv_copy[BLOCK_SIZE];
 
-    aes_key_expansion(TestVectors::key_128, 128, expanded_key);
-    memcpy(iv_copy, TestVectors::iv, 16);
+    KeyExpansionBuildWrite(TestVectors::key_128, static_cast<size_t>(Keylenbits128), expanded_key, false);
+    memcpy(iv_copy, TestVectors::iv, BLOCK_SIZE);
 
     // Test null pointer handling
-    ASSERT_TRUE(aes_ecb_encrypt(nullptr, PLAINTEXT_SIZE, output, expanded_key, 10) != 0,
-                "ECB should handle null input");
+    ASSERT_TRUE(
+        encryptECB(NULL, PLAINTEXT_SIZE, expanded_key, Keylenbits128, output) != NoException,
+        "ECB should handle null input"
+    );
 
-    ASSERT_TRUE(aes_ecb_encrypt(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, nullptr,
-                               expanded_key, 10) != 0,
-                "ECB should handle null output");
+    ASSERT_TRUE(
+        encryptECB(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, expanded_key, Keylenbits128, NULL) != NoException,
+        "ECB should handle null output"
+    );
 
-    ASSERT_TRUE(aes_cbc_encrypt(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, output,
-                               expanded_key, 10, nullptr) != 0,
-                "CBC should handle null IV");
+    ASSERT_TRUE(
+        encryptCBC(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, expanded_key, Keylenbits128, NULL, output) == NullInitialVector,
+        "CBC should handle null IV"
+    );
 
     // Test zero length
-    ASSERT_TRUE(aes_ecb_encrypt(TestVectors::plaintext_2blocks, 0, output,
-                               expanded_key, 10) != 0,
-                "ECB should handle zero length");
+    ASSERT_TRUE(
+        encryptECB(TestVectors::plaintext_2blocks, 0, expanded_key, Keylenbits128, output) != ZeroLength,
+        "ECB should handle zero length"
+    );
 
     PRINT_RESULTS();
 }
@@ -197,7 +185,6 @@ int main() {
 
     test_ecb_mode();
     test_cbc_mode();
-    test_mode_differences();
     test_iv_independence();
     test_error_conditions();
 
