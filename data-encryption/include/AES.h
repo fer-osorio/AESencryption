@@ -1,6 +1,7 @@
 #ifndef CIPHER_H
 #define CIPHER_H
 
+#include"exception_code.h"
 #include<stdlib.h>
 #include<stdbool.h>
 #include<stdint.h>
@@ -15,10 +16,6 @@ typedef union Block_ Block_t;
 typedef Block_t* ptrBlock_t;
 typedef struct KeyExpansion_ KeyExpansion_t;
 typedef KeyExpansion_t* ptrKeyExpansion_t;
-
-enum ExceptionCode{
-  NoException, NullKey, NullKeyExpansion, NullSource, NullDestination, NullInput, NullOutput
-};
 
 /*
  * Reads BLOCK_SIZE bytes from source and writes the on the block pointed by output.
