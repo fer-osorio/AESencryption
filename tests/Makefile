@@ -93,13 +93,13 @@ integration: check-deps $(INTEGRATION_TESTS)
 # Build individual unit test
 $(BINDIR)/$(UNIT_DIR)/test_%: $(OBJDIR)/$(UNIT_DIR)/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR)/$(UNIT_DIR) $(OBJDIR)
 	$(call print_building,"Unit test executable: $@")
-	@$(CXX) $^ -o $@ $(LDFLAGS) $(LIBS)
+	$(call create_executable,$@,$^)
 	$(call print_success,"Built unit test: $@")
 
 # Build individual integration test
 $(BINDIR)/$(INTEGRATION_DIR)/test_%: $(OBJDIR)/$(INTEGRATION_DIR)/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR)/$(INTEGRATION_DIR) $(OBJDIR)
 	$(call print_building,"Integration test executable: $@")
-	@$(CXX) $^ -o $@ $(LDFLAGS) $(LIBS)
+	$(call create_executable,$@,$^)
 	$(call print_success,"Built integration test: $@")
 
 # Compile test utility objects using common.mk function
@@ -114,7 +114,7 @@ $(OBJDIR)/$(UNIT_DIR)/%.o: $(UNIT_DIR)/%.cpp | $(OBJDIR)/$(UNIT_DIR)
 $(OBJDIR)/$(INTEGRATION_DIR)/%.o: $(INTEGRATION_DIR)/%.cpp | $(OBJDIR)/$(INTEGRATION_DIR)
 	$(call compile_cpp_rule,$<,$@)
 
-# Create directories (now handled by common.mk functions, but kept for explicit dependencies)
+# Create directories (handled by common.mk functions, but kept for explicit dependencies)
 $(OBJDIR) $(BINDIR)/$(INTEGRATION_DIR) $(BINDIR)/$(UNIT_DIR) $(OBJDIR)/$(SRCDIR) $(OBJDIR)/$(UNIT_DIR) $(OBJDIR)/$(INTEGRATION_DIR):
 	$(call create_dir,$@)
 
@@ -168,7 +168,6 @@ run-integration: integration
 run-all: run-unit run-integration
 	$(call print_success,"All tests completed successfully!")
 
-# Enhanced clean using common.mk function
 clean:
 	$(call print_info,"Cleaning test artifacts...")
 	$(call clean_standard)
