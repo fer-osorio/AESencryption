@@ -2,6 +2,10 @@
 #ifndef _CONSTANTS_
 #define _CONSTANTS_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define WORD_SIZE 4
 #define BLOCK_SIZE 16
 #define NB 4
@@ -50,5 +54,9 @@ enum KeyExpansionLengthWords_t{
   KeyExpansionLengthWords256 = KEY_EXPANSION_LENGTH_256_WORDS
 };
 enum KeyExpansionLengthWords_t getKeyExpansionLengthWordsfromNk(enum Nk_t Nk);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
