@@ -482,9 +482,9 @@ const uint8_t* KeyExpansionReturnBytePointerToData(const KeyExpansion_t*const ke
 }
 
 enum ExceptionCode KeyExpansionBuildWrite(const uint8_t* key, size_t keylenbits, uint8_t* dest, bool debug){
+  if(dest == NULL) return NullDestination;
   KeyExpansion_t* ke_p = KeyExpansionMemoryAllocationBuild(key, keylenbits, false);
   if(ke_p == NULL) return NullKeyExpansion;
-  if(dest == NULL) return NullDestination;
   KeyExpansionWriteBytes(ke_p, dest);
   KeyExpansionDelete(&ke_p);
   return NoException;
