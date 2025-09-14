@@ -45,6 +45,23 @@ namespace TestVectors {
     };
 }
 
+void test_ecb_mode();
+void test_cbc_mode();
+void test_iv_independence();
+void test_error_conditions();
+
+int main() {
+    std::cout << "=== Operation Modes Tests ===" << std::endl;
+
+    test_ecb_mode();
+    test_cbc_mode();
+    test_iv_independence();
+    test_error_conditions();
+
+    std::cout << "\n=== Operation Modes Tests Complete ===" << std::endl;
+    return 0;
+}
+
 void test_ecb_mode() {
     TEST_SUITE("ECB Mode Tests");
 
@@ -94,7 +111,7 @@ void test_cbc_mode() {
     KeyExpansionBuildWrite(TestVectors::key_128, static_cast<size_t>(Keylenbits128), expanded_key, false);
 
     // Test CBC encryption
-    memcpy(iv_copy, TestVectors::iv, BLOCK_SIZE); // CBC modifies IV
+    memcpy(iv_copy, TestVectors::iv, BLOCK_SIZE);
     ASSERT_TRUE(
         encryptCBC(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, expanded_key, Keylenbits128, iv_copy, output) == NoException,
         "CBC encryption should succeed"
@@ -107,7 +124,7 @@ void test_cbc_mode() {
 
     // Test CBC decryption
     ASSERT_TRUE(
-        decryptCBC(TestVectors::plaintext_2blocks, PLAINTEXT_SIZE, expanded_key, Keylenbits128, iv_copy, output) == NoException,
+        decryptCBC(output, CIPHERTEXT_SIZE, expanded_key, Keylenbits128, iv_copy, decrypted) == NoException,
         "CBC decryption should succeed"
     );
 
@@ -173,21 +190,9 @@ void test_error_conditions() {
 
     // Test zero length
     ASSERT_TRUE(
-        encryptECB(TestVectors::plaintext_2blocks, 0, expanded_key, Keylenbits128, output) != ZeroLength,
+        encryptECB(TestVectors::plaintext_2blocks, 0, expanded_key, Keylenbits128, output) == ZeroLength,
         "ECB should handle zero length"
     );
 
     PRINT_RESULTS();
-}
-
-int main() {
-    std::cout << "=== Operation Modes Tests ===" << std::endl;
-
-    test_ecb_mode();
-    test_cbc_mode();
-    test_iv_independence();
-    test_error_conditions();
-
-    std::cout << "\n=== Operation Modes Tests Complete ===" << std::endl;
-    return 0;
 }
