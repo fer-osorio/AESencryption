@@ -40,31 +40,15 @@ static bool InputOutputHandlerIsSmallerThanBlock(const struct InputOutputHandler
 }
 
 /*
- * Takes BLOCK_SIZE bytes, converts to block, decrypts and writes on output.
- * If input == output, original data will be rewritten with decrypted data.
- * */
-/*static void decryptBlockBytes(const uint8_t*const input, const KeyExpansion_t* ke_p, uint8_t* output){
-  Block_t* buffer = BlockMemoryAllocationFromBytes(input);
-  decryptBlock(buffer, ke_p, buffer, false);
-  bytesFromBlock(buffer, output);
-  BlockDelete(&buffer);
-}*/
-
-/*
- * Implements decryptBlockBytes on InputOutputHandler object
- * */
-/*static void InputOutputHandlerDecryptBlockBytes(const struct InputOutputHandler* ioh, const KeyExpansion_t* ke_p){
-  decryptBlockBytes(ioh->inputCurrentPossition, ke_p, ioh->outputCurrentPossition);
-}*/
-
-/*
  * Implementation of ECB encryption operation mode.
  * */
 static void encryptECB__(const KeyExpansion_t* ke_p, struct InputOutputHandler* ioh_p){
   if(InputOutputHandlerIsSmallerThanBlock(ioh_p)) return;                         // -Not handling the case size < BLOCK_SIZE
+  // Encrypt first block
   Block_t* buffer = BlockMemoryAllocationFromBytes(ioh_p->input);
-
   encryptBlock(buffer, ke_p, buffer, false);
+  bytesFromBlock(buffer,ioh_p->outputCurrentPossition);
+  // Encrypting rest of the blocks
   for(size_t i = 1; i < ioh_p->sizeInBlocks; i++) {
     InputOutputHandlerMoveForwardOneBlock(ioh_p);
     BlockWriteFromBytes(ioh_p->inputCurrentPossition, buffer);
@@ -85,10 +69,10 @@ static void encryptECB__(const KeyExpansion_t* ke_p, struct InputOutputHandler* 
  * */
 enum ExceptionCode encryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
   if(size == 0) return ZeroLength;
-  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
-  if(ke_p == NULL) return NullKeyExpansion;
   if(input == NULL) return NullInput;
   if(output == NULL) return NullOutput;
+  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
+  if(ke_p == NULL) return NullKeyExpansion;
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   encryptECB__(ke_p, &ioh);
   KeyExpansionDelete(&ke_p);
@@ -112,6 +96,7 @@ static void decryptECB__(const KeyExpansion_t* ke_p, struct InputOutputHandler* 
     buffer = BlockMemoryAllocationFromBytes(ioh_p->input);
   }
   decryptBlock(buffer, ke_p, buffer, false);
+  bytesFromBlock (buffer,ioh_p->outputCurrentPossition);
   for(size_t i = 1; i < ioh_p->sizeInBlocks; i++) {
     InputOutputHandlerMoveForwardOneBlock(ioh_p);
     BlockWriteFromBytes(ioh_p->inputCurrentPossition, buffer);
@@ -126,10 +111,10 @@ static void decryptECB__(const KeyExpansion_t* ke_p, struct InputOutputHandler* 
  * */
 enum ExceptionCode decryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
   if(size == 0) return ZeroLength;
-  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
-  if(ke_p == NULL) return NullKeyExpansion;
   if(input == NULL) return NullInput;
   if(output == NULL) return NullOutput;
+  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
+  if(ke_p == NULL) return NullKeyExpansion;
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   decryptECB__(ke_p, &ioh);
   KeyExpansionDelete(&ke_p);
@@ -174,12 +159,12 @@ static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
  * */
 enum ExceptionCode encryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
   if(size == 0) return ZeroLength;
-  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
-  if(ke_p == NULL) return NullKeyExpansion;
   if(input == NULL) return NullInput;
   if(output == NULL) return NullOutput;
-  struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   if(IV == NULL) return NullInitialVector;
+  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
+  if(ke_p == NULL) return NullKeyExpansion;
+  struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
   encryptCBC__(ke_p, IV, &ioh);
   KeyExpansionDelete(&ke_p);
   return NoException;
@@ -211,44 +196,35 @@ static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
 
   size_t i = (ioh_p->sizeInBlocks - 1)*BLOCK_SIZE, j;
   const uint8_t* inputPreviousBlock = NULL;
-  Block_t* buffer;
+  Block_t* buffer = BlockMemoryAllocationRandom(0);
 
   InputOutputHandlerMoveTowards(ioh_p, i);
-  //inputPreviousBlock = ioh_p->input + j;
 
   // -Handling the case where input size is not multiple of BLOCK_SIZE. This is not specified in the NIST standard. Not specified in the NIST standard.
   if(ioh_p->tailSize != 0) {
     // Decrypting tail block
-    buffer  = BlockMemoryAllocationFromBytes(ioh_p->inputCurrentPossition + ioh_p->tailSize);
+    BlockWriteFromBytes(ioh_p->inputCurrentPossition + ioh_p->tailSize, buffer);
     decryptBlock(buffer, ke_p, buffer, false);
     bytesFromBlock(buffer, ioh_p->outputCurrentPossition + ioh_p->tailSize);
     // Xor tail
     inputPreviousBlock = ioh_p->inputCurrentPossition;
     InputOutputHandlerMoveForwardOneBlock(ioh_p);
     for(i = 0; i < ioh_p->tailSize; i++) ioh_p->outputCurrentPossition[i] ^= inputPreviousBlock[i];
-    // Comming back to previous block
-    InputOutputHandlerMoveTowards(ioh_p, i);
-    BlockWriteFromBytes(ioh_p->inputCurrentPossition, buffer);
-  } else{
-    buffer  = BlockMemoryAllocationFromBytes(ioh_p->inputCurrentPossition);
   }
-  decryptBlock(buffer, ke_p, buffer, false);
-  BlockXORequalBytes(buffer, inputPreviousBlock);
-  bytesFromBlock(buffer, ioh_p->outputCurrentPossition);
-  for(; i > 0; i -= BLOCK_SIZE, j = i - BLOCK_SIZE) {                               // -Encryption of the rest of the blocks.
+  j = i >= BLOCK_SIZE ? i - BLOCK_SIZE : 0;
+  for(; i >= BLOCK_SIZE; i -= BLOCK_SIZE, j -= BLOCK_SIZE) {                    // -Encryption of the rest of the blocks.
     InputOutputHandlerMoveTowards(ioh_p, i);
     inputPreviousBlock = ioh_p->input + j;
-    //InputOutputHandlerMoveForwardOneBlock(ioh_p);
     BlockWriteFromBytes(ioh_p->inputCurrentPossition, buffer);
     decryptBlock(buffer, ke_p, buffer, false);
     BlockXORequalBytes(buffer, inputPreviousBlock);
     bytesFromBlock(buffer, ioh_p->outputCurrentPossition);
   }
   // Decryption of last block.
-  BlockWriteFromBytes(ioh_p->inputCurrentPossition, buffer);                    // At this point ioh_p->inputCurrentPossition == ioh_p->input
+  BlockWriteFromBytes(ioh_p->input, buffer);                                    // At this point ioh_p->inputCurrentPossition == ioh_p->input
   decryptBlock(buffer, ke_p, buffer, false);
   BlockXORequalBytes(buffer, IV);
-  bytesFromBlock(buffer, ioh_p->outputCurrentPossition);
+  bytesFromBlock(buffer, ioh_p->output);
   BlockDelete(&buffer);
 }
 
