@@ -27,12 +27,6 @@ enum struct OperationMode {
     CBC   // Cipher Block Chaining
 };
 
-enum struct OperationType {
-    Unknown,
-    Encryption,
-    Decryption
-};
-
 // Extends the common base class with members specific to operation modes.
 struct ExampleBase : public CommonAESVectors::ExampleBase {
 protected:
@@ -86,30 +80,30 @@ static const unsigned char* retrieveECBCiphertext(CommonAESVectors::KeylengthBit
 
 struct Example : public ExampleBase {
 private:
-    OperationType operation;
+    CommonAESVectors::EncryptionOperationType operation;
     const unsigned char* input;
     const unsigned char* expectedOutput;
 
 public:
-    Example(CommonAESVectors::KeylengthBits kl, OperationType op);
-    OperationType getOperationType() const;
+    Example(CommonAESVectors::KeylengthBits kl, CommonAESVectors::EncryptionOperationType op);
+    CommonAESVectors::EncryptionOperationType getOperationType() const;
     const unsigned char* getInput() const;
     const unsigned char* getExpectedOutput() const;
     static constexpr size_t getDataSize() { return 64; }
 };
 
-Example::Example(CommonAESVectors::KeylengthBits kl, OperationType op) {
+Example::Example(CommonAESVectors::KeylengthBits kl, CommonAESVectors::EncryptionOperationType op) {
     this->keylenbits = kl;
     this->mode = OperationMode::ECB;
     this->operation = op;
     this->key = CommonAESVectors::retrieveKey(kl); // Use common function
 
     switch(op) {
-        case OperationType::Encryption:
+        case CommonAESVectors::EncryptionOperationType::Encryption:
             this->input = CommonAESVectors::commonPlaintext; // Use common plaintext
             this->expectedOutput = retrieveECBCiphertext(kl);
             break;
-        case OperationType::Decryption:
+        case CommonAESVectors::EncryptionOperationType::Decryption:
             this->input = retrieveECBCiphertext(kl);
             this->expectedOutput = CommonAESVectors::commonPlaintext; // Use common plaintext
             break;
@@ -120,7 +114,7 @@ Example::Example(CommonAESVectors::KeylengthBits kl, OperationType op) {
     }
 }
 
-OperationType Example::getOperationType() const { return this->operation; }
+CommonAESVectors::EncryptionOperationType Example::getOperationType() const { return this->operation; }
 const unsigned char* Example::getInput() const { return this->input; }
 const unsigned char* Example::getExpectedOutput() const { return this->expectedOutput; }
 
@@ -165,14 +159,14 @@ static const unsigned char* retrieveCBCCiphertext(CommonAESVectors::KeylengthBit
 
 struct Example : public ExampleBase {
 private:
-    OperationType operation;
+    CommonAESVectors::EncryptionOperationType operation;
     const unsigned char* input;
     const unsigned char* expectedOutput;
     const unsigned char* iv;
 
 public:
-    Example(CommonAESVectors::KeylengthBits kl, OperationType op);
-    OperationType getOperationType() const;
+    Example(CommonAESVectors::KeylengthBits kl, CommonAESVectors::EncryptionOperationType op);
+    CommonAESVectors::EncryptionOperationType getOperationType() const;
     const unsigned char* getInput() const;
     const unsigned char* getExpectedOutput() const;
     const unsigned char* getIV() const;
@@ -180,7 +174,7 @@ public:
     static constexpr size_t getIVSize() { return 16; }
 };
 
-Example::Example(CommonAESVectors::KeylengthBits kl, OperationType op) {
+Example::Example(CommonAESVectors::KeylengthBits kl, CommonAESVectors::EncryptionOperationType op) {
     this->keylenbits = kl;
     this->mode = OperationMode::CBC;
     this->operation = op;
@@ -188,11 +182,11 @@ Example::Example(CommonAESVectors::KeylengthBits kl, OperationType op) {
     this->iv = CommonAESVectors::initializationVector; // Use common IV
 
     switch(op) {
-        case OperationType::Encryption:
+        case CommonAESVectors::EncryptionOperationType::Encryption:
             this->input = CommonAESVectors::commonPlaintext; // Use common plaintext
             this->expectedOutput = retrieveCBCCiphertext(kl);
             break;
-        case OperationType::Decryption:
+        case CommonAESVectors::EncryptionOperationType::Decryption:
             this->input = retrieveCBCCiphertext(kl);
             this->expectedOutput = CommonAESVectors::commonPlaintext; // Use common plaintext
             break;
@@ -203,7 +197,7 @@ Example::Example(CommonAESVectors::KeylengthBits kl, OperationType op) {
     }
 }
 
-OperationType Example::getOperationType() const { return this->operation; }
+CommonAESVectors::EncryptionOperationType Example::getOperationType() const { return this->operation; }
 const unsigned char* Example::getInput() const { return this->input; }
 const unsigned char* Example::getExpectedOutput() const { return this->expectedOutput; }
 const unsigned char* Example::getIV() const { return this->iv; }
@@ -219,11 +213,11 @@ namespace Utils {
 template<typename ExampleType>
 struct ExampleFactory {
     static ExampleType createEncryptionExample(CommonAESVectors::KeylengthBits keylen) {
-        return ExampleType(keylen, OperationType::Encryption);
+        return ExampleType(keylen, CommonAESVectors::EncryptionOperationType::Encryption);
     }
 
     static ExampleType createDecryptionExample(CommonAESVectors::KeylengthBits keylen) {
-        return ExampleType(keylen, OperationType::Decryption);
+        return ExampleType(keylen, CommonAESVectors::EncryptionOperationType::Decryption);
     }
 };
 
@@ -237,10 +231,10 @@ const char* getModeString(OperationMode mode) {
 }
 
 // Helper function to get operation type as string
-const char* getOperationString(OperationType op) {
+const char* getOperationString(CommonAESVectors::EncryptionOperationType op) {
     switch(op) {
-        case OperationType::Encryption: return "Encryption";
-        case OperationType::Decryption: return "Decryption";
+        case CommonAESVectors::EncryptionOperationType::Encryption: return "Encryption";
+        case CommonAESVectors::EncryptionOperationType::Decryption: return "Decryption";
         default: return "Unknown";
     }
 }
