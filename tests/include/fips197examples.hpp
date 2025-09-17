@@ -1,85 +1,48 @@
 /*
- * AES Key Expansion Arrays - FIPS 197 Standard Reference
+ * AES Key Expansion and Cipher Examples - FIPS 197 Standard Reference
  *
- * This file contains the complete key expansion for all three AES variants:
- * - AES-128: 128-bit key -> 11 round keys (176 bytes total)
- * - AES-192: 192-bit key -> 13 round keys (208 bytes total)
- * - AES-256: 256-bit key -> 15 round keys (240 bytes total)
+ * This file contains test vectors from the FIPS 197 standard for:
+ * - Appendix A: Key Expansion examples.
+ * - Appendix B: A simple Cipher example.
  *
- * All arrays use byte representation in big-endian format.
+ * It relies on "common_aes_vectors.hpp" for base definitions and the
+ * standard FIPS 197 keys used in the Key Expansion examples.
+ *
+ * Note: The Cipher example in Appendix B uses a different set of keys
+ * than the Key Expansion examples. These keys are defined locally within
+ * the "Encryption_ns" namespace.
  */
 
-// =============================================================================
-// AES-128 Key Expansion (Nk=4, Nr=10)
-// =============================================================================
+#ifndef FIPS197_EXAMPLES_HPP
+#define FIPS197_EXAMPLES_HPP
+
+#include "common_aes_vectors.hpp"
 
 namespace FIPS197examples {
 
-enum struct KeylengthBits {
-	UnknownKeylen, keylen128 = 128, keylen192 = 192, keylen256 = 256
-};
+// NOTE: KeylengthBits enum and the base ExampleBase struct have been moved
+// to "common_aes_vectors.hpp" and are removed from this file.
 
-struct ExampleBase{
-protected:
-	KeylengthBits keylenbits;
-	const unsigned char* key;
-public:
-	KeylengthBits getKeylenBits() const;
-	const unsigned char* getKey() const;
-};
+// =============================================================================
+// Appendix A: Key Expansion Examples
+// =============================================================================
 
-KeylengthBits ExampleBase::getKeylenBits() const{
-	return this->keylenbits;
-}
+namespace KeyExpansion_ns {
 
-const unsigned char* ExampleBase::getKey() const{
-	return this->key;
-}
-
-namespace KeyExpansion_ns{
-
-struct Example : public ExampleBase{
+// Inherits directly from the common base class.
+struct Example : public CommonAESVectors::ExampleBase {
 private:
-	const unsigned char* expectedKeyExpansion;
+    const unsigned char* expectedKeyExpansion;
+
 public:
-	Example(KeylengthBits);
-	const unsigned char* getExpectedKeyExpansion() const;
+    Example(CommonAESVectors::KeylengthBits kl);
+    const unsigned char* getExpectedKeyExpansion() const;
 };
 
-const unsigned char key128[] = {
-	0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
-	0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
-};
-const unsigned char key192[] = {
-	0x8e, 0x73, 0xb0, 0xf7, 0xda, 0x0e, 0x64, 0x52,
-	0xc8, 0x10, 0xf3, 0x2b, 0x80, 0x90, 0x79, 0xe5,
-	0x62, 0xf8, 0xea, 0xd2, 0x52, 0x2c, 0x6b, 0x7b
-};
-const unsigned char key256[] = {
-	0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe,
-	0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
-	0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7,
-	0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4
-};
+// NOTE: The key128, key192, and key256 arrays, along with the retrieveKey
+// function, have been removed as they are now provided by "common_aes_vectors.hpp".
 
-static const unsigned char* retrieveKey(KeylengthBits kl){
-	switch(kl){
-		case KeylengthBits::keylen128:
-			return key128;
-			break;
-		case KeylengthBits::keylen192:
-			return key192;
-			break;
-		case KeylengthBits::keylen256:
-			return key256;
-			break;
-		case KeylengthBits::UnknownKeylen:
-			return 0;
-			break;
-	}
-	return 0;
-}
-
+// Expected expanded key schedules for each key length.
 const unsigned char key128_expanded[176] = {
     // w[0] to w[3] - Original key
     0x2b, 0x7e, 0x15, 0x16,  // w[0]
@@ -306,164 +269,122 @@ const unsigned char key256_expanded[240] = {
     0x70, 0x6c, 0x63, 0x1e   // w[59]
 };
 
-static const unsigned char* retrieveKeyExpansion(KeylengthBits kl){
-	switch(kl){
-		case KeylengthBits::keylen128:
-			return key128_expanded;
-			break;
-		case KeylengthBits::keylen192:
-			return key192_expanded;
-			break;
-		case KeylengthBits::keylen256:
-			return key256_expanded;
-			break;
-		case KeylengthBits::UnknownKeylen:
-			return 0;
-			break;
-	}
-	return 0;
+static const unsigned char* retrieveKeyExpansion(CommonAESVectors::KeylengthBits kl) {
+    switch (kl) {
+        case CommonAESVectors::KeylengthBits::keylen128: return key128_expanded;
+        case CommonAESVectors::KeylengthBits::keylen192: return key192_expanded;
+        case CommonAESVectors::KeylengthBits::keylen256: return key256_expanded;
+        default: return nullptr;
+    }
 }
 
-Example::Example(KeylengthBits kl){
-	this->keylenbits = kl;
-	this->key = retrieveKey(kl);
-	this->expectedKeyExpansion = retrieveKeyExpansion(kl);
+Example::Example(CommonAESVectors::KeylengthBits kl) {
+    this->keylenbits = kl;
+    // Uses the key retrieval function from the common header
+    this->key = CommonAESVectors::retrieveKey(kl);
+    this->expectedKeyExpansion = retrieveKeyExpansion(kl);
 }
 
-const unsigned char* Example::getExpectedKeyExpansion() const{
-	return this->expectedKeyExpansion;
+const unsigned char* Example::getExpectedKeyExpansion() const {
+    return this->expectedKeyExpansion;
 }
 
-}
+} // namespace KeyExpansion_ns
 
-namespace Encryption_ns{
 
-struct Example : public ExampleBase{
-	enum struct Classification{ Encryption, Decryption };
+// =============================================================================
+// Appendix B: Cipher Example
+// =============================================================================
+
+namespace Encryption_ns {
+
+// Inherits directly from the common base class.
+struct Example : public CommonAESVectors::ExampleBase {
+    enum struct Classification { Encryption, Decryption };
+
 private:
-	Classification clss_;
-	const unsigned char* input;
-	const unsigned char* expectedOutput;
+    Classification clss_;
+    const unsigned char* input;
+    const unsigned char* expectedOutput;
+
 public:
-	Example(KeylengthBits kl, Classification clss);
-	const unsigned char* getInput() const;
-	const unsigned char* getExpectedOutput() const;
+    Example(CommonAESVectors::KeylengthBits kl, Classification clss);
+    const unsigned char* getInput() const;
+    const unsigned char* getExpectedOutput() const;
 };
 
+// These keys are specific to the FIPS 197 Appendix B example and are
+// intentionally kept separate from the common test vector keys.
 const unsigned char key128[] = {
-	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
-	0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f
+    0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f
 };
 const unsigned char key192[] = {
-	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
-	0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
-	0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17
+    0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
+    0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17
 };
 const unsigned char key256[] = {
-	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
-	0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
-	0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
-	0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f
+    0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
+    0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f
 };
 
-static const unsigned char* retrieveKey(KeylengthBits kl){
-	switch(kl){
-		case KeylengthBits::keylen128:
-			return key128;
-			break;
-		case KeylengthBits::keylen192:
-			return key192;
-			break;
-		case KeylengthBits::keylen256:
-			return key256;
-			break;
-		case KeylengthBits::UnknownKeylen:
-			return 0;
-			break;
-	}
-	return 0;
+// This function is local to this namespace and uses the local keys defined above.
+static const unsigned char* retrieveKey(CommonAESVectors::KeylengthBits kl) {
+    switch (kl) {
+        case CommonAESVectors::KeylengthBits::keylen128: return key128;
+        case CommonAESVectors::KeylengthBits::keylen192: return key192;
+        case CommonAESVectors::KeylengthBits::keylen256: return key256;
+        default: return nullptr;
+    }
 }
-
-/******************************************************************************/
-
-/*******************************************************************************
- * Plain text for example vectors
- * ****************************************************************************/
 
 const unsigned char plainText[16] = {
-	0x00,0x11,0x22,0x33,
-	0x44,0x55,0x66,0x77,
-	0x88,0x99,0xaa,0xbb,
-	0xcc,0xdd,0xee,0xff
+    0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
+    0x88,0x99,0xaa,0xbb,0xcc,0xdd,0xee,0xff
 };
-
-/*******************************************************************************
- * Cipher text for example vectors
- * ****************************************************************************/
 
 const unsigned char cipherTextKey128[16] = {
-	0x69,0xc4,0xe0,0xd8,
-	0x6a,0x7b,0x04,0x30,
-	0xd8,0xcd,0xb7,0x80,
-	0x70,0xb4,0xc5,0x5a
+    0x69,0xc4,0xe0,0xd8,0x6a,0x7b,0x04,0x30,
+    0xd8,0xcd,0xb7,0x80,0x70,0xb4,0xc5,0x5a
 };
-
 const unsigned char cipherTextKey192[16] = {
-	0xdd,0xa9,0x7c,0xa4,
-	0x86,0x4c,0xdf,0xe0,
-	0x6e,0xaf,0x70,0xa0,
-	0xec,0x0d,0x71,0x91
+    0xdd,0xa9,0x7c,0xa4,0x86,0x4c,0xdf,0xe0,
+    0x6e,0xaf,0x70,0xa0,0xec,0x0d,0x71,0x91
 };
-
 const unsigned char cipherTextKey256[16] = {
-	0x8e,0xa2,0xb7,0xca,
-	0x51,0x67,0x45,0xbf,
-	0xea,0xfc,0x49,0x90,
-	0x4b,0x49,0x60,0x89
+    0x8e,0xa2,0xb7,0xca,0x51,0x67,0x45,0xbf,
+    0xea,0xfc,0x49,0x90,0x4b,0x49,0x60,0x89
 };
 
-static const unsigned char* retrieveCipherText(KeylengthBits kl){
-	switch(kl){
-		case KeylengthBits::keylen128:
-			return cipherTextKey128;
-			break;
-		case KeylengthBits::keylen192:
-			return cipherTextKey192;
-			break;
-		case KeylengthBits::keylen256:
-			return cipherTextKey256;
-			break;
-		case KeylengthBits::UnknownKeylen:
-			return 0;
-			break;
-	}
-	return 0;
+static const unsigned char* retrieveCipherText(CommonAESVectors::KeylengthBits kl) {
+    switch (kl) {
+        case CommonAESVectors::KeylengthBits::keylen128: return cipherTextKey128;
+        case CommonAESVectors::KeylengthBits::keylen192: return cipherTextKey192;
+        case CommonAESVectors::KeylengthBits::keylen256: return cipherTextKey256;
+        default: return nullptr;
+    }
 }
 
-Example::Example(KeylengthBits kl, Classification clss){
-	this->clss_ = clss;
-	this->keylenbits = kl;
-	this->key = retrieveKey(kl);
-	switch(clss){
-		case Classification::Encryption:
-			input = plainText;
-			expectedOutput = retrieveCipherText(kl);
-			break;
-		case Classification::Decryption:
-			input = retrieveCipherText(kl);
-			expectedOutput = plainText;
-			break;
-	}
+Example::Example(CommonAESVectors::KeylengthBits kl, Classification clss) {
+    this->clss_ = clss;
+    this->keylenbits = kl;
+    this->key = Encryption_ns::retrieveKey(kl); // Uses the local retrieveKey function
+    switch (clss) {
+        case Classification::Encryption:
+            input = plainText;
+            expectedOutput = retrieveCipherText(kl);
+            break;
+        case Classification::Decryption:
+            input = retrieveCipherText(kl);
+            expectedOutput = plainText;
+            break;
+    }
 }
 
-const unsigned char* Example::getInput() const{
-	return this->input;
-}
+const unsigned char* Example::getInput() const { return this->input; }
+const unsigned char* Example::getExpectedOutput() const { return this->expectedOutput; }
 
-const unsigned char* Example::getExpectedOutput() const{
-	return this->expectedOutput;
-}
+} // namespace Encryption_ns
 
-}
+} // namespace FIPS197examples
 
-}
+#endif // FIPS197_EXAMPLES_HPP
