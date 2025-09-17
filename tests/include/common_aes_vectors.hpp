@@ -35,6 +35,8 @@ enum struct KeylengthBits {
     keylen256 = 256
 };
 
+const char* getKeylengthString(KeylengthBits keylen);
+
 // =============================================================================
 // Common Base Classes
 // =============================================================================
@@ -139,13 +141,13 @@ static const unsigned char* retrieveKey(KeylengthBits kl) {
 /**
  * @brief Helper function to get key length as a C-string.
  * @param keylen The key length enumeration.
- * @return A string representation (e.g., "AES-128").
+ * @return A string representation (e.g., "128").
  */
 const char* getKeylengthString(KeylengthBits keylen) {
     switch(keylen) {
-        case KeylengthBits::keylen128: return "AES-128";
-        case KeylengthBits::keylen192: return "AES-192";
-        case KeylengthBits::keylen256: return "AES-256";
+        case KeylengthBits::keylen128: return "128";
+        case KeylengthBits::keylen192: return "192";
+        case KeylengthBits::keylen256: return "256";
         default: return "Unknown";
     }
 }
