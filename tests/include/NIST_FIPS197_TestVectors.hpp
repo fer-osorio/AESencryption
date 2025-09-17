@@ -18,7 +18,7 @@
 
 #include "common_aes_vectors.hpp"
 
-namespace FIPS197examples {
+namespace NISTFIPS197_Examples {
 
 // =============================================================================
 // Appendix A: Key Expansion Examples
@@ -388,6 +388,6 @@ const unsigned char* Example::getExpectedOutput() const {
 
 } // namespace Encryption_ns
 
-} // namespace FIPS197examples
+} // namespace NISTFIPS197_Examples
 
 #endif // FIPS197_EXAMPLES_HPP
