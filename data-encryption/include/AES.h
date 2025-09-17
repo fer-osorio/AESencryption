@@ -41,11 +41,10 @@ void BlockDelete(Block_t** blk_pp);
 void bytesFromBlock(const Block_t* source, uint8_t output[]);
 
 /*
- * Allocates memory for a block filled with random values.
- * Consider: Not intended for the generation of secure random values for cryptographic application.
+ * Allocates memory for a block filled with zeros.
  * Consider Allocate memory using malloc.
  * */
-ptrBlock_t BlockMemoryAllocationRandom(unsigned int seed);
+ptrBlock_t BlockMemoryAllocationZero();
 
 /*
  * Prints block in matrix form.
