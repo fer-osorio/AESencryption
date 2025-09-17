@@ -51,7 +51,7 @@ bool test_KeyExpansionMemoryAllocationBuild(CommonAESVectors::KeylengthBits kl, 
 
     bool success = true;
     // Building reference for out test
-    FIPS197examples::KeyExpansion_ns::Example reference(kl);
+    NISTFIPS197_Examples::KeyExpansion_ns::Example reference(kl);
     // Casting key length
     size_t keylenbits = static_cast<size_t>(reference.getKeylenBits());
     // Buildgin key
@@ -91,22 +91,22 @@ bool test_encryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard) {
 
     bool success = true;
     // Building reference for out test
-    FIPS197examples::Encryption_ns::Example reference(kl, FIPS197examples::Encryption_ns::Example::Classification::Encryption);
+    NISTFIPS197_Examples::Encryption_ns::Example reference(kl, CommonAESVectors::EncryptionOperationType::Encryption);
     // Casting key length
     size_t keylenbits = static_cast<size_t>(reference.getKeylenBits());
     // Buildgin key
     ptrKeyExpansion_t ke_p = KeyExpansionMemoryAllocationBuild(reference.getKey(), keylenbits, debugHard);
     // Building input block
     Block_t* input = BlockMemoryAllocationFromBytes(reference.getInput());
-    uint8_t BuffBlock[BLOCK_SIZE] = {0};
-    Block_t* output = BlockMemoryAllocationFromBytes(BuffBlock);
+    Block_t* output = BlockMemoryAllocationZero();
+    uint8_t outputPlainBytes[BLOCK_SIZE] = {0};
 
     // Test single block encryption
     ASSERT_TRUE(encryptBlock(input, ke_p, output, debugHard) == NoException, "AES block encryption should succeed");
     encryptBlock(input, ke_p, output, debugHard);
-    bytesFromBlock(output, BuffBlock);
+    bytesFromBlock(output, outputPlainBytes);
 
-    success = ASSERT_BYTES_EQUAL(reference.getExpectedOutput(), BuffBlock, BLOCK_SIZE, "Encrypted block should match test vector") && success;
+    success = ASSERT_BYTES_EQUAL(reference.getExpectedOutput(), outputPlainBytes, BLOCK_SIZE, "Encrypted block should match test vector") && success;
 
     // Test null pointer handling
     ASSERT_TRUE(encryptBlock(NULL, ke_p, output, debugHard) != NoException, "Null input should return error");
@@ -123,22 +123,22 @@ bool test_decryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard) {
 
     bool success = true;
     // Building reference for out test
-    FIPS197examples::Encryption_ns::Example reference(kl, FIPS197examples::Encryption_ns::Example::Classification::Decryption);
+    NISTFIPS197_Examples::Encryption_ns::Example reference(kl, CommonAESVectors::EncryptionOperationType::Decryption);
     // Casting key length
     size_t keylenbits = static_cast<size_t>(reference.getKeylenBits());
     // Buildgin key
     ptrKeyExpansion_t ke_p = KeyExpansionMemoryAllocationBuild(reference.getKey(), keylenbits, debugHard);
     // Building input block
     Block_t* input = BlockMemoryAllocationFromBytes(reference.getInput());
-    uint8_t BuffBlock[BLOCK_SIZE] = {0};
-    Block_t* output = BlockMemoryAllocationFromBytes(BuffBlock);
+    Block_t* output = BlockMemoryAllocationZero();
+    uint8_t outputPlainBytes[BLOCK_SIZE] = {0};
 
     // Test single block encryption
     ASSERT_TRUE(decryptBlock(input, ke_p, output, debugHard) == NoException, "AES block encryption should succeed");
     decryptBlock(input, ke_p, output, debugHard);
-    bytesFromBlock(output, BuffBlock);
+    bytesFromBlock(output, outputPlainBytes);
 
-    success = ASSERT_BYTES_EQUAL(reference.getExpectedOutput(), BuffBlock, BLOCK_SIZE, "Decrypted block should match original plaintext") && success;
+    success = ASSERT_BYTES_EQUAL(reference.getExpectedOutput(), outputPlainBytes, BLOCK_SIZE, "Decrypted block should match original plaintext") && success;
 
     // Test null pointer handling
     ASSERT_TRUE(decryptBlock(NULL, ke_p, output, debugHard) != NoException, "Null input should return error");
@@ -155,22 +155,22 @@ bool test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits kl, bool
 
     bool success = true;
     // Building reference for out test
-    FIPS197examples::Encryption_ns::Example reference(kl, FIPS197examples::Encryption_ns::Example::Classification::Encryption);
+    NISTFIPS197_Examples::Encryption_ns::Example reference(kl, CommonAESVectors::EncryptionOperationType::Encryption);
     // Casting key length
     size_t keylenbits = static_cast<size_t>(reference.getKeylenBits());
     // Buildgin key
     ptrKeyExpansion_t ke_p = KeyExpansionMemoryAllocationBuild(reference.getKey(), keylenbits, debugHard);
     // Building input block
     Block_t* input = BlockMemoryAllocationFromBytes(reference.getInput());
-    uint8_t BuffBlock[BLOCK_SIZE] = {0};
-    Block_t* encrypted = BlockMemoryAllocationFromBytes(BuffBlock);
-    Block_t* decrypted = BlockMemoryAllocationFromBytes(BuffBlock);
+    Block_t* encrypted = BlockMemoryAllocationZero();
+    Block_t* decrypted = BlockMemoryAllocationZero();
+    uint8_t roundTripOutputBytes[BLOCK_SIZE] = {0};
 
     encryptBlock(input, ke_p, encrypted, debugHard);
     decryptBlock(encrypted, ke_p, decrypted, debugHard);
-    bytesFromBlock(decrypted, BuffBlock);
+    bytesFromBlock(decrypted, roundTripOutputBytes);
 
-    success = ASSERT_BYTES_EQUAL(FIPS197examples::Encryption_ns::plainText, BuffBlock, BLOCK_SIZE, "Roundtrip encryption/decryption should preserve data") && success;
+    success = ASSERT_BYTES_EQUAL(NISTFIPS197_Examples::Encryption_ns::plainText, roundTripOutputBytes, BLOCK_SIZE, "Roundtrip encryption/decryption should preserve data") && success;
 
     BlockDelete(&decrypted);
     BlockDelete(&encrypted);
