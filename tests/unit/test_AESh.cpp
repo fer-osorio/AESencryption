@@ -1,14 +1,14 @@
 // Tests for data-encryption/AES.h
-#include"../include/fips197examples.hpp"
+#include"../include/NIST_FIPS197_TestVectors.hpp"
 #include"../include/test_framework.hpp"
 #include"../../data-encryption/include/AES.h"
 #include"../../data-encryption/include/constants.h"
 #include<cstring>
 
-bool test_KeyExpansionMemoryAllocationBuild(FIPS197examples::KeylengthBits kl, bool debugHard);
-bool test_encryptBlock(FIPS197examples::KeylengthBits kl, bool debugHard);
-bool test_decryptBlock(FIPS197examples::KeylengthBits kl, bool debugHard);
-bool test_encryptionDecryptionRoundtrip(FIPS197examples::KeylengthBits kl, bool debugHard);
+bool test_KeyExpansionMemoryAllocationBuild(CommonAESVectors::KeylengthBits kl, bool debugHard);
+bool test_encryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard);
+bool test_decryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard);
+bool test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits kl, bool debugHard);
 
 int main() {
     std::cout << "=== AES Core Implementation Tests ===\n" << std::endl;
@@ -16,46 +16,46 @@ int main() {
     std::cout <<"\n**************************************************\n"
                 "\n**************** AES key 128 bits ****************\n"
                 "\n**************************************************\n" << std::endl;
-    if(test_KeyExpansionMemoryAllocationBuild(FIPS197examples::KeylengthBits::keylen128, false) == false) {
+    if(test_KeyExpansionMemoryAllocationBuild(CommonAESVectors::KeylengthBits::keylen128, false) == false) {
         std::cout << "\n=== Fail to create a valid Key Expansion object. Stop. ===" << std::endl;
         return 0;
     }
-    test_encryptBlock(FIPS197examples::KeylengthBits::keylen128, false);
-    test_decryptBlock(FIPS197examples::KeylengthBits::keylen128, false);
-    test_encryptionDecryptionRoundtrip(FIPS197examples::KeylengthBits::keylen128, false);
+    test_encryptBlock(CommonAESVectors::KeylengthBits::keylen128, false);
+    test_decryptBlock(CommonAESVectors::KeylengthBits::keylen128, false);
+    test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits::keylen128, false);
 
     std::cout << std::endl;
 
     std::cout <<"\n**************************************************\n"
                 "\n**************** AES key 192 bits ****************\n"
                 "\n**************************************************\n" << std::endl;
-    if(test_KeyExpansionMemoryAllocationBuild(FIPS197examples::KeylengthBits::keylen192, false) == false) {
+    if(test_KeyExpansionMemoryAllocationBuild(CommonAESVectors::KeylengthBits::keylen192, false) == false) {
         std::cout << "\n=== Fail to create a valid Key Expansion object. Stop. ===" << std::endl;
         return 0;
     }
-    test_encryptBlock(FIPS197examples::KeylengthBits::keylen192, false);
-    test_decryptBlock(FIPS197examples::KeylengthBits::keylen192, false);
-    test_encryptionDecryptionRoundtrip(FIPS197examples::KeylengthBits::keylen192, false);
+    test_encryptBlock(CommonAESVectors::KeylengthBits::keylen192, false);
+    test_decryptBlock(CommonAESVectors::KeylengthBits::keylen192, false);
+    test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits::keylen192, false);
 
     std::cout << std::endl;
 
     std::cout <<"\n**************************************************\n"
                 "\n**************** AES key 256 bits ****************\n"
                 "\n**************************************************\n" << std::endl;
-    if(test_KeyExpansionMemoryAllocationBuild(FIPS197examples::KeylengthBits::keylen256, false) == false) {
+    if(test_KeyExpansionMemoryAllocationBuild(CommonAESVectors::KeylengthBits::keylen256, false) == false) {
         std::cout << "\n=== Fail to create a valid Key Expansion object. Stop. ===" << std::endl;
         return 0;
     }
-    test_encryptBlock(FIPS197examples::KeylengthBits::keylen256, false);
-    test_decryptBlock(FIPS197examples::KeylengthBits::keylen256, false);
-    test_encryptionDecryptionRoundtrip(FIPS197examples::KeylengthBits::keylen256, false);
+    test_encryptBlock(CommonAESVectors::KeylengthBits::keylen256, false);
+    test_decryptBlock(CommonAESVectors::KeylengthBits::keylen256, false);
+    test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits::keylen256, false);
 
     std::cout << "\n\n=== All AES Core Tests Complete ===" << std::endl;
     return 0;
 }
 
 // Test functions
-bool test_KeyExpansionMemoryAllocationBuild(FIPS197examples::KeylengthBits kl, bool debugHard) {
+bool test_KeyExpansionMemoryAllocationBuild(CommonAESVectors::KeylengthBits kl, bool debugHard) {
     TEST_SUITE("AES Key Expansion Tests");
 
     bool success = true;
@@ -95,7 +95,7 @@ bool test_KeyExpansionMemoryAllocationBuild(FIPS197examples::KeylengthBits kl, b
     return success;
 }
 
-bool test_encryptBlock(FIPS197examples::KeylengthBits kl, bool debugHard) {
+bool test_encryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard) {
     TEST_SUITE("AES Block_t Encryption Tests");
 
     bool success = true;
@@ -127,7 +127,7 @@ bool test_encryptBlock(FIPS197examples::KeylengthBits kl, bool debugHard) {
     return success;
 }
 
-bool test_decryptBlock(FIPS197examples::KeylengthBits kl, bool debugHard) {
+bool test_decryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard) {
     TEST_SUITE("AES Block_t Decryption Tests");
 
     bool success = true;
@@ -159,7 +159,7 @@ bool test_decryptBlock(FIPS197examples::KeylengthBits kl, bool debugHard) {
     return success;
 }
 
-bool test_encryptionDecryptionRoundtrip(FIPS197examples::KeylengthBits kl, bool debugHard) {
+bool test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits kl, bool debugHard) {
     TEST_SUITE("AES Roundtrip Tests");
 
     bool success = true;
