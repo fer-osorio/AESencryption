@@ -1,18 +1,34 @@
 #include"../include/test_framework.hpp"
 #include<cstring>
 
+#define TF_COLOR_RED    "\033[31m"
+#define TF_COLOR_GREEN  "\033[32m"
+#define TF_COLOR_BLUE   "\033[34m"
+#define TF_COLOR_NC     "\033[0m"   // No color
+#define TF_INFO         "\t\033[34m[INFO]\033[0m"
+
 using namespace TestFramework;
 
 TestSuite::TestSuite(const std::string& name) : suiteName(name) {}
+
+static std::ostream& sendSuccessMessage(std::ostream& os, const std::string& testName){
+    os << TF_COLOR_GREEN "  ✓ " << testName << TF_COLOR_NC << std::endl;
+    return os;
+}
+
+static std::ostream& sendFailureMessage(std::ostream& os, const std::string& testName){
+    os << TF_COLOR_RED "  ✗ " << testName << " - FAILED" TF_COLOR_NC << std::endl;
+    return os;
+}
 
 bool TestSuite::assertTrue(bool condition, const std::string& testName){
     this->testsRun++;
     if(condition) {
         this->testsPassed++;
-        std::cout << "  ✓ " << testName << std::endl;
+        sendSuccessMessage(std::cout, testName);
     } else {
         this->failedTests.push_back(testName);
-        std::cout << "  ✗ " << testName << " - FAILED" << std::endl;
+        sendFailureMessage(std::cout, testName);
     }
     return condition;
 }
@@ -21,11 +37,11 @@ bool TestSuite::assertEqual(int expected, int actual, const std::string& testNam
     this->testsRun++;
     if(expected == actual) {
         this->testsPassed++;
-        std::cout << "  ✓ " << testName << std::endl;
+        sendSuccessMessage(std::cout, testName);
         return true;
     } else {
         this->failedTests.push_back(testName + " (expected: " + std::to_string(expected) + ", got: " + std::to_string(actual) + ")");
-        std::cout << "  ✗ " << testName << " - FAILED (expected: " << expected << ", got: " << actual << ")" << std::endl;
+        sendFailureMessage(std::cout, testName) << TF_INFO"(expected: " << expected << ", got: " << actual << ")" << std::endl;
         return false;
     }
 }
@@ -34,11 +50,11 @@ bool TestSuite::assertBytesEqual(const uint8_t* expected, const uint8_t* actual,
     this->testsRun++;
     if(memcmp(expected, actual, len) == 0) {
         this->testsPassed++;
-        std::cout << "  ✓ " << testName << std::endl;
+        sendSuccessMessage(std::cout, testName);
         return true;
     } else {
         this->failedTests.push_back(testName + " (byte arrays differ)");
-        std::cout << "  ✗ " << testName << " - FAILED (byte arrays differ)" << std::endl;
+        sendFailureMessage(std::cout, testName) << TF_INFO"(byte arrays differ)" << std::endl;
         // Show first differing bytes for debugging
         for(size_t i = 0; i < len; i++) {
             if(expected[i] != actual[i]) {
@@ -56,11 +72,11 @@ bool TestSuite::assertNotNull(const void* ptr, const std::string& testName){
     this->testsRun++;
     if(ptr != NULL) {
         this->testsPassed++;
-        std::cout << "  ✓ " << testName << std::endl;
+        sendSuccessMessage(std::cout, testName);
         return true;
     } else {
         this->failedTests.push_back(testName + " (pointer is null)");
-        std::cout << "  ✗ " << testName << " - FAILED (pointer is null)" << std::endl;
+        sendFailureMessage(std::cout, testName) << TF_INFO"(pointer is null)" << std::endl;
         return false;
     }
 }
@@ -72,16 +88,15 @@ bool TestSuite::runTest(std::function<bool ()> testFunc, const std::string& test
         success = testFunc();
     } catch(const std::exception& exp) {
         this->failedTests.push_back(testName + " (exception: " + exp.what() + ")");
-        std::cout << "  ✗ " << testName << " - FAILED (exception: "
-                  << exp.what() << ")" << std::endl;
+        sendFailureMessage(std::cout, testName) << TF_INFO"(exception: " << exp.what() << ")" << std::endl;
     }
     if(success == true) {
         this->testsPassed++;
-        std::cout << "  ✓ " << testName << std::endl;
+        sendSuccessMessage(std::cout, testName);
         return true;
     } else {
         this->failedTests.push_back(testName + " (function exit with non success status)");
-        std::cout << "  ✗ " << testName << " - FAILED (function exit with non success status)" << std::endl;
+        sendFailureMessage(std::cout, testName) << TF_INFO"(function exit with non success status)" << std::endl;
         return false;
     }
 }
