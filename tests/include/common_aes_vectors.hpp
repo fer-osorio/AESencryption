@@ -43,6 +43,8 @@ enum struct EncryptionOperationType {
     Decryption
 };
 
+const char* getOperationString(CommonAESVectors::EncryptionOperationType op);
+
 // =============================================================================
 // Common Base Classes
 // =============================================================================
@@ -65,24 +67,24 @@ public:
     }
 
     /**
-     * @brief Gets a pointer to the raw key data.
-     * @return A const pointer to the key array.
-     */
-    const unsigned char* getKey() const {
-        return this->key;
-    }
-
-    /**
      * @brief Gets the size of the key in bytes.
      * @return The key size (16, 24, or 32) or 0 for unknown.
      */
-    size_t getKeySize() const {
+    size_t getKeylenBytes() const {
         switch(this->keylenbits) {
             case KeylengthBits::keylen128: return 16;
             case KeylengthBits::keylen192: return 24;
             case KeylengthBits::keylen256: return 32;
             default: return 0;
         }
+    }
+
+    /**
+     * @brief Gets a pointer to the raw key data.
+     * @return A const pointer to the key array.
+     */
+    const unsigned char* getKey() const {
+        return this->key;
     }
 };
 
@@ -109,20 +111,6 @@ const unsigned char key256[32] = {
     0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
     0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7,
     0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4
-};
-
-// Common plaintext used in NIST SP 800-38A mode examples (64 bytes = 4 blocks)
-const unsigned char commonPlaintext[64] = {
-    0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a,
-    0xae, 0x2d, 0x8a, 0x57, 0x1e, 0x03, 0xac, 0x9c, 0x9e, 0xb7, 0x6f, 0xac, 0x45, 0xaf, 0x8e, 0x51,
-    0x30, 0xc8, 0x1c, 0x46, 0xa3, 0x5c, 0xe4, 0x11, 0xe5, 0xfb, 0xc1, 0x19, 0x1a, 0x0a, 0x52, 0xef,
-    0xf6, 0x9f, 0x24, 0x45, 0xdf, 0x4f, 0x9b, 0x17, 0xad, 0x2b, 0x41, 0x7b, 0xe6, 0x6c, 0x37, 0x10
-};
-
-// Common Initialization Vector for CBC mode examples
-const unsigned char initializationVector[16] = {
-    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-    0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
 };
 
 
@@ -157,6 +145,26 @@ const char* getKeylengthString(KeylengthBits keylen) {
         default: return "Unknown";
     }
 }
+
+// Helper function to get operation type as string
+const char* getOperationString(CommonAESVectors::EncryptionOperationType op) {
+    switch(op) {
+        case CommonAESVectors::EncryptionOperationType::Encryption: return "Encryption";
+        case CommonAESVectors::EncryptionOperationType::Decryption: return "Decryption";
+        default: return "Unknown";
+    }
+}
+
+template<typename ExampleType>
+struct ExampleFactory {
+    static ExampleType createEncryptionExample(CommonAESVectors::KeylengthBits keylen) {
+        return ExampleType(keylen, CommonAESVectors::EncryptionOperationType::Encryption);
+    }
+
+    static ExampleType createDecryptionExample(CommonAESVectors::KeylengthBits keylen) {
+        return ExampleType(keylen, CommonAESVectors::EncryptionOperationType::Decryption);
+    }
+};
 
 } // namespace CommonAESVectors
 
