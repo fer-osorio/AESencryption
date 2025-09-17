@@ -87,7 +87,7 @@ bool TestSuite::runTest(std::function<bool ()> testFunc, const std::string& test
 }
 
 void TestSuite::printResults(){
-    std::cout << "\n" << std::string(50, '=') << "\n";
+    std::cout << "\n" << std::string(65, '=') << "\n";
     std::cout << "Test Suite: " << this->suiteName << "\n";
     std::cout << "Tests run: " << this->testsRun << "\n";
     std::cout << "Tests passed: " << this->testsPassed << "\n";
@@ -101,7 +101,7 @@ void TestSuite::printResults(){
             std::cout << "  - " << failure << "\n";
         }
     }
-    std::cout << std::string(50, '=') << std::endl;
+    std::cout << std::string(65, '=') << std::endl;
 }
 
 bool TestSuite::allPassed() const{
