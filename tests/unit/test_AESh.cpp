@@ -21,7 +21,7 @@ bool test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits kl, bool
  * @param debugHard The debug flag to pass to the test functions.
  * @return true if the critical key expansion test passes, false otherwise.
  */
-bool runTestsForKeylength(CommonAESVectors::KeylengthBits kl, const std::string& keylengthStr, bool debugHard);
+bool runTestsForKeylength(CommonAESVectors::KeylengthBits kl, bool debugHard);
 
 int main() {
     std::cout << "================= AES Core Implementation Tests =================\n" << std::endl;
@@ -29,15 +29,15 @@ int main() {
     // The debug flag is set once and can be easily changed for all tests here.
     const bool debugMode = false;
 
-    if (!runTestsForKeylength(CommonAESVectors::KeylengthBits::keylen128, "128", debugMode)) {
+    if (!runTestsForKeylength(CommonAESVectors::KeylengthBits::keylen128, debugMode)) {
         return 1; // Exit with an error code on critical failure
     }
 
-    if (!runTestsForKeylength(CommonAESVectors::KeylengthBits::keylen192, "192", debugMode)) {
+    if (!runTestsForKeylength(CommonAESVectors::KeylengthBits::keylen192, debugMode)) {
         return 1; // Exit with an error code on critical failure
     }
 
-    if (!runTestsForKeylength(CommonAESVectors::KeylengthBits::keylen256, "256", debugMode)) {
+    if (!runTestsForKeylength(CommonAESVectors::KeylengthBits::keylen256, debugMode)) {
         return 1; // Exit with an error code on critical failure
     }
 
@@ -181,9 +181,10 @@ bool test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits kl, bool
     return success;
 }
 
-bool runTestsForKeylength(CommonAESVectors::KeylengthBits kl, const std::string& keylengthStr, bool debugHard) {
+bool runTestsForKeylength(CommonAESVectors::KeylengthBits kl, bool debugHard) {
+    const char* keylenStr = CommonAESVectors::getKeylengthString(kl);
     std::cout << "\n*****************************************************************\n"
-              << "\n======================= AES key " << keylengthStr << " bits ========================\n"
+              << "\n======================= AES key " << keylenStr << " bits ========================\n"
               << "\n*****************************************************************\n" << std::endl;
 
     if (test_KeyExpansionMemoryAllocationBuild(kl, debugHard) == false) {
