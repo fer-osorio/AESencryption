@@ -196,7 +196,7 @@ static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
 
   size_t i = (ioh_p->sizeInBlocks - 1)*BLOCK_SIZE, j;
   const uint8_t* inputPreviousBlock = NULL;
-  Block_t* buffer = BlockMemoryAllocationRandom(0);
+  Block_t* buffer = BlockMemoryAllocationZero();
 
   InputOutputHandlerMoveTowards(ioh_p, i);
 
