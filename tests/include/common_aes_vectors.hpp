@@ -37,6 +37,12 @@ enum struct KeylengthBits {
 
 const char* getKeylengthString(KeylengthBits keylen);
 
+enum struct EncryptionOperationType {
+    Unknown,
+    Encryption,
+    Decryption
+};
+
 // =============================================================================
 // Common Base Classes
 // =============================================================================
