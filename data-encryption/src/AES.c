@@ -162,11 +162,10 @@ void bytesFromBlock(const Block_t* source, uint8_t output[]){
   output[15]= source->uint08_[15];
 }
 
-ptrBlock_t BlockMemoryAllocationRandom(unsigned int seed){
+ptrBlock_t BlockMemoryAllocationZero(){
   ptrBlock_t output = (Block_t*)malloc(sizeof(Block_t));
   if(output == NULL) return NULL;
-  srand(seed);
-  for(size_t i = 0; i < NB; i++) output->word_[i].uint32_ = rand();
+  for(size_t i = 0; i < NB; i++) output->word_[i].uint32_ = 0;
   return output;
 }
 
