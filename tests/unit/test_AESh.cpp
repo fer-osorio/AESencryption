@@ -17,7 +17,6 @@ bool test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits kl, bool
  * expansion, encryption, decryption, and roundtrip tests.
  *
  * @param kl The key length to test (e.g., keylen128).
- * @param keylengthStr A string representation of the key length for display.
  * @param debugHard The debug flag to pass to the test functions.
  * @return true if the critical key expansion test passes, false otherwise.
  */
