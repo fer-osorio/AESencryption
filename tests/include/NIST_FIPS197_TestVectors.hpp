@@ -20,16 +20,12 @@
 
 namespace FIPS197examples {
 
-// NOTE: KeylengthBits enum and the base ExampleBase struct have been moved
-// to "common_aes_vectors.hpp" and are removed from this file.
-
 // =============================================================================
 // Appendix A: Key Expansion Examples
 // =============================================================================
 
 namespace KeyExpansion_ns {
 
-// Inherits directly from the common base class.
 struct Example : public CommonAESVectors::ExampleBase {
 private:
     const unsigned char* expectedKeyExpansion;
@@ -38,9 +34,6 @@ public:
     Example(CommonAESVectors::KeylengthBits kl);
     const unsigned char* getExpectedKeyExpansion() const;
 };
-
-// NOTE: The key128, key192, and key256 arrays, along with the retrieveKey
-// function, have been removed as they are now provided by "common_aes_vectors.hpp".
 
 // Expected expanded key schedules for each key length.
 const unsigned char key128_expanded[176] = {
