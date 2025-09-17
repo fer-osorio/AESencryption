@@ -10,48 +10,39 @@ bool test_encryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard);
 bool test_decryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard);
 bool test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits kl, bool debugHard);
 
+/**
+ * @brief Runs the complete set of AES tests for a specific key length.
+ *
+ * This function prints a banner for the key length and then executes the key
+ * expansion, encryption, decryption, and roundtrip tests.
+ *
+ * @param kl The key length to test (e.g., keylen128).
+ * @param keylengthStr A string representation of the key length for display.
+ * @param debugHard The debug flag to pass to the test functions.
+ * @return true if the critical key expansion test passes, false otherwise.
+ */
+bool runTestsForKeylength(CommonAESVectors::KeylengthBits kl, const std::string& keylengthStr, bool debugHard);
+
 int main() {
-    std::cout << "=== AES Core Implementation Tests ===\n" << std::endl;
+    std::cout << "================ AES Core Implementation Tests ================\n" << std::endl;
 
-    std::cout <<"\n**************************************************\n"
-                "\n**************** AES key 128 bits ****************\n"
-                "\n**************************************************\n" << std::endl;
-    if(test_KeyExpansionMemoryAllocationBuild(CommonAESVectors::KeylengthBits::keylen128, false) == false) {
-        std::cout << "\n=== Fail to create a valid Key Expansion object. Stop. ===" << std::endl;
-        return 0;
+    // The debug flag is set once and can be easily changed for all tests here.
+    const bool debugMode = false;
+
+    if (!runTestsForKeylength(CommonAESVectors::KeylengthBits::keylen128, "128", debugMode)) {
+        return 1; // Exit with an error code on critical failure
     }
-    test_encryptBlock(CommonAESVectors::KeylengthBits::keylen128, false);
-    test_decryptBlock(CommonAESVectors::KeylengthBits::keylen128, false);
-    test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits::keylen128, false);
 
-    std::cout << std::endl;
-
-    std::cout <<"\n**************************************************\n"
-                "\n**************** AES key 192 bits ****************\n"
-                "\n**************************************************\n" << std::endl;
-    if(test_KeyExpansionMemoryAllocationBuild(CommonAESVectors::KeylengthBits::keylen192, false) == false) {
-        std::cout << "\n=== Fail to create a valid Key Expansion object. Stop. ===" << std::endl;
-        return 0;
+    if (!runTestsForKeylength(CommonAESVectors::KeylengthBits::keylen192, "192", debugMode)) {
+        return 1; // Exit with an error code on critical failure
     }
-    test_encryptBlock(CommonAESVectors::KeylengthBits::keylen192, false);
-    test_decryptBlock(CommonAESVectors::KeylengthBits::keylen192, false);
-    test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits::keylen192, false);
 
-    std::cout << std::endl;
-
-    std::cout <<"\n**************************************************\n"
-                "\n**************** AES key 256 bits ****************\n"
-                "\n**************************************************\n" << std::endl;
-    if(test_KeyExpansionMemoryAllocationBuild(CommonAESVectors::KeylengthBits::keylen256, false) == false) {
-        std::cout << "\n=== Fail to create a valid Key Expansion object. Stop. ===" << std::endl;
-        return 0;
+    if (!runTestsForKeylength(CommonAESVectors::KeylengthBits::keylen256, "256", debugMode)) {
+        return 1; // Exit with an error code on critical failure
     }
-    test_encryptBlock(CommonAESVectors::KeylengthBits::keylen256, false);
-    test_decryptBlock(CommonAESVectors::KeylengthBits::keylen256, false);
-    test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits::keylen256, false);
 
-    std::cout << "\n\n=== All AES Core Tests Complete ===" << std::endl;
-    return 0;
+    std::cout << "\n\n================ All AES Core Tests Complete ================" << std::endl;
+    return 0; // Success
 }
 
 // Test functions
@@ -188,4 +179,21 @@ bool test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits kl, bool
 
     PRINT_RESULTS();
     return success;
+}
+
+bool runTestsForKeylength(CommonAESVectors::KeylengthBits kl, const std::string& keylengthStr, bool debugHard) {
+    std::cout << "\n**************************************************\n"
+              << "\n================ AES key " << keylengthStr << " bits ================\n"
+              << "\n**************************************************\n" << std::endl;
+
+    if (test_KeyExpansionMemoryAllocationBuild(kl, debugHard) == false) {
+        std::cout << "\n=== Fail to create a valid Key Expansion object. Stop. ===" << std::endl;
+        return false;
+    }
+    test_encryptBlock(kl, debugHard);
+    test_decryptBlock(kl, debugHard);
+    test_encryptionDecryptionRoundtrip(kl, debugHard);
+
+    std::cout << std::endl;
+    return true;
 }
