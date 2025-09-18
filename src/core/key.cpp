@@ -31,17 +31,17 @@ Key::Key(LengthBits lenbits)
     }
 }
 
-Key::Key(const uint8_t* const _key, LengthBits lenbits)
+Key::Key(const std::vector<uint8_t>& _key, LengthBits lenbits)
     : lenBits(lenbits), lenBytes(fromLenBitsToLenBytes(lenbits)){
     this->data = new uint8_t[this->lenBytes];
-    if(_key != NULL) for(size_t i = 0; i < this->lenBytes; i++) this->data[i] = _key[i];
+    if(!_key.empty()) for(size_t i = 0; i < this->lenBytes; i++) this->data[i] = _key[i];
 }
 
 Key::Key(const Key& k)
     :lenBits(k.lenBits), lenBytes(k.lenBytes) {
     size_t i;
     this->data = new uint8_t[k.lenBytes];
-    for(i = 0; i < k.lenBytes; i++) this->data[i] = k.data[i];                  // -Supposing Cipher object is well constructed, this is, k.data != NULL
+    for(i = 0; i < k.lenBytes; i++) this->data[i] = k.data[i];                  // -Supposing Cipher object is well constructed, this is, k.data != nullptr
 }
 
 Key::Key(const char*const fname)
@@ -90,8 +90,8 @@ Key::Key(const char*const fname)
 }
 
 Key::~Key() {
-    if(this->data != NULL) delete[] this->data;
-    this->data = NULL;
+    if(this->data != nullptr) delete[] this->data;
+    this->data = nullptr;
 }
 
 Key& Key::operator = (const Key& k) {
@@ -100,7 +100,7 @@ Key& Key::operator = (const Key& k) {
         if(this->lenBytes != k.lenBytes) {                                // -Modifying length and array containing key only if necessary
             this->lenBits = k.lenBits;
             this->lenBytes = k.lenBytes;
-            if(this->data != NULL) delete[] this->data;
+            if(this->data != nullptr) delete[] this->data;
             this->data = new uint8_t[k.lenBytes];
         }
         for(i = 0; i < k.lenBytes; i++) this->data[i] = k.data[i];
