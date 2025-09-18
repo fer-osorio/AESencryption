@@ -18,6 +18,7 @@
 #define COMMON_AES_VECTORS_HPP
 
 #include <stddef.h>
+#include <vector>
 
 namespace CommonAESVectors {
 
@@ -85,6 +86,10 @@ public:
      */
     const unsigned char* getKey() const {
         return this->key;
+    }
+
+    std::vector<unsigned char> getKeyAsVector() const{
+	return std::vector<unsigned char>(this->key, this->key + this->getKeylenBytes());
     }
 };
 
