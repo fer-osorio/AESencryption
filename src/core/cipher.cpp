@@ -157,7 +157,7 @@ const uint8_t* Cipher::Config::getIVpointerData() const{
 Cipher::Cipher(): config(OperationMode::Identifier::ECB, Nk128) {
     size_t keyExpLen = this->config.getKeyExpansionLengthBytes();
     this->keyExpansion = new uint8_t[keyExpLen];
-    for(size_t i = 0; i < keyExpLen; i++) this->keyExpansion[i] = 0;            // -Since the key constitutes of just zeros, key expansion is also just zeros
+    for(size_t i = 0; i < keyExpLen; i++) this->keyExpansion[i] = 0;            // -Since the default key constitutes of just zeros, key expansion is also just zeros
 }
 
 Cipher::Cipher(const Key& k, const OperationMode::Identifier optModeID): key(k) {
