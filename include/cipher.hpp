@@ -90,7 +90,11 @@ public:
 
 	private:
 	OperationMode buildOperationMode(const OperationMode::Identifier);
-	void buildKeyExpansion();						// -Creates key expansion
+	/*
+	 * Creates key expansion
+	 * Consider: Trows KeyExpansionException
+	 * */
+	void buildKeyExpansion();
 	void formInitialVector();						// -Creates initial vector and writes it on destination array
 
 	/*
