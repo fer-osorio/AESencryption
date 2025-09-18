@@ -62,7 +62,7 @@ static void handleExceptionCode(enum ExceptionCode code, const std::string& oper
         case InvalidKeyLength:
             throw KeyExpansionException("Invalid key length");
         case InvalidInputSize:
-            throw std::invalid_argument(base_msg + "Input size is invalid (must be multiple of 16 bytes)");
+            throw std::invalid_argument(base_msg + "Input size is invalid (must be al least 16 bytes)");
         default:
             throw AESException(base_msg + "Unknown error code: " + std::to_string(code));
     }
@@ -275,16 +275,51 @@ void Cipher::buildKeyExpansion() {
 }
 
 void Cipher::encrypt(const uint8_t*const data, size_t size, uint8_t*const output) const{
-    if(size == 0 || data == NULL) return;
-    size_t thisKeylenbits = static_cast<size_t>(this->key.getLenBits());
-    OperationMode::Identifier optMode = this->config.getOperationModeID();
-    switch(optMode) {
+    // Validate inputs at C++ level for immediate feedback
+    if (data == nullptr) {
+        throw std::invalid_argument("Encryption failed: Input data cannot be null");
+    }
+
+    if (output == nullptr) {
+        throw std::invalid_argument("Encryption failed: Output buffer cannot be null");
+    }
+
+    if (size == 0) {
+        throw std::invalid_argument("Encryption failed: Data size cannot be zero");
+    }
+
+    // Check block alignment for block cipher modes
+    if (size < BLOCK_SIZE) {
+        throw std::invalid_argument("Encryption failed: Data size (" + std::to_string(size) +
+                                   ") must be at least (" + std::to_string(BLOCK_SIZE) + " bytes)");
+    }
+
+    if (this->keyExpansion == nullptr) {
+        throw EncryptionException("Key expansion not initialized - call buildKeyExpansion() first");
+    }
+
+    // Perform encryption
+    size_t keylenBits = static_cast<size_t>(this->key.getLenBits());
+    OperationMode::Identifier opt_mode = this->config.getOperationModeID();
+    enum ExceptionCode result;
+
+    switch (opt_mode) {
         case OperationMode::Identifier::ECB:
-            encryptECB(data, size, this->keyExpansion, thisKeylenbits, output);
+            result = encryptECB(data, size, this->keyExpansion, keylenBits, output);
+            handleExceptionCode(result, "ECB encryption");
             break;
         case OperationMode::Identifier::CBC:
-            encryptCBC(data, size, this->keyExpansion, thisKeylenbits, this->config.getIVpointerData(), output);
+            {   // New scope, avoiding "cannot jump" error
+                const uint8_t* iv = this->config.getIVpointerData();
+                if (iv == nullptr) {
+                    throw EncryptionException("IV is required for CBC mode but not set");
+                }
+                result = encryptCBC(data, size, this->keyExpansion, keylenBits, iv, output);
+                handleExceptionCode(result, "CBC encryption");
+            }
             break;
+        default:
+            throw EncryptionException("Unsupported operation mode: " + std::to_string(static_cast<int>(opt_mode)));
     }
 }
 
