@@ -26,7 +26,7 @@ public:
 		};
 	private:
 		Identifier ID_ = Identifier::ECB;
-		InitVector* IV_ = NULL;						// -Initial vector in case of CBC operation mode
+		InitVector* IV_ = nullptr;						// -Initial vector in case of CBC operation mode
 	public:
 		OperationMode();
 		OperationMode(Identifier);
@@ -56,7 +56,7 @@ public:
 	};
 private:
 	Key key = Key();
-	uint8_t* keyExpansion = NULL;
+	uint8_t* keyExpansion = nullptr;
 	struct Config config;
 
 	Cipher();								// -The default constructor will set the key expansion as zero in every element.
@@ -85,8 +85,8 @@ public:
 	OperationMode getOptModeID() const;
 
 	// For testing purposes
-	const uint8_t* getKeyExpansionForTesting() const { return this->keyExpansion; }
-	bool isKeyExpansionInitialized() const { return this->keyExpansion != nullptr; }
+	const uint8_t* getKeyExpansionForTesting() const;
+	bool isKeyExpansionInitialized() const;
 
 	private:
 	OperationMode buildOperationMode(const OperationMode::Identifier);
