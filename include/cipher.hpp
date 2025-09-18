@@ -73,13 +73,13 @@ public:
 	 * Encrypts data contatined in data vector using the key in cipher this object
 	 * Interface with Encryptor object
 	 * */
-	void encryption(std::vector<uint8_t>& data) const override;
+	void encryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output) const override;
 
 	/*
 	 * Decrypts data contatined in data vector using the key in cipher this object
 	 * Interface with Encryptor object
 	 * */
-	void decryption(std::vector<uint8_t>& data) const override;
+	void decryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output) const override;
 
 	void saveKey(const char*const fname) const;
 	OperationMode getOptModeID() const;
