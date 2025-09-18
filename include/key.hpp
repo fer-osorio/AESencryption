@@ -4,6 +4,7 @@
 #include<iostream>
 #include<stddef.h>
 #include<stdint.h>
+#include<vector>
 
 namespace AESencryption {
 
@@ -21,11 +22,11 @@ private:
 	size_t lenBytes;							// -Length in bytes.
 
 	friend Cipher;
-	// The following two private constructors can only be acceced by Cipher class, the intention is to have well-constructed keys for the user.
+	// The following private constructor can only be acceced by Cipher class, the intention is to have well-constructed keys for the user.
 	Key();
-	Key(LengthBits);
-	Key(const uint8_t* const _key, LengthBits);
 public:
+	Key(LengthBits);
+	Key(const std::vector<uint8_t>& _key, LengthBits);
 	Key(const char*const fname);						// -Building from binary file.
 	Key(const Key&);
 	~Key();
