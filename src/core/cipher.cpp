@@ -371,12 +371,32 @@ void Cipher::decrypt(const uint8_t*const data, size_t size, uint8_t*const output
     }
 }
 
-void Cipher::encryption(std::vector<uint8_t>& data) const{
-    encrypt(data.data(), data.size(), data.data());
+void Cipher::encryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output) const{
+    if(output.size() < input.size()){
+        throw std::invalid_argument(
+            "In member function Cipher::encryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output):"
+            "output vector size most be bigger or equal than input vector size"
+        );
+    }
+    try{
+        encrypt(input.data(), input.size(), output.data());
+    } catch(...){
+        throw;
+    }
 }
 
-void Cipher::decryption(std::vector<uint8_t>& data) const{
-    decrypt(data.data(), data.size(), data.data());
+void Cipher::decryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output) const{
+    if(output.size() < input.size()){
+        throw std::invalid_argument(
+            "In member function Cipher::encryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output):"
+            "output vector size most be bigger or equal than input vector size"
+        );
+    }
+    try{
+        decrypt(input.data(), input.size(), output.data());
+    } catch(...){
+        throw;
+    }
 }
 
 void Cipher::saveKey(const char*const fname) const{
