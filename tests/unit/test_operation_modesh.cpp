@@ -10,9 +10,6 @@ bool test_cbc_mode(CommonAESVectors::KeylengthBits klb);
 bool test_iv_independence(CommonAESVectors::KeylengthBits klb);
 bool test_error_conditions(CommonAESVectors::KeylengthBits klb);
 
-NISTSP800_38A_Examples::ECB_ns::Example createECBencryptionExample(CommonAESVectors::KeylengthBits klb);
-NISTSP800_38A_Examples::CBC_ns::Example createCBCencryptionExample(CommonAESVectors::KeylengthBits klb);
-
 /**
  * @brief Runs the complete set of AES Operation Modes tests for a specific key length.
  *
@@ -211,14 +208,6 @@ bool test_error_conditions(CommonAESVectors::KeylengthBits klb) {
     PRINT_RESULTS();
 
     return successStatus;
-}
-
-NISTSP800_38A_Examples::ECB_ns::Example createECBencryptionExample(CommonAESVectors::KeylengthBits klb){
-    return CommonAESVectors::ExampleFactory<NISTSP800_38A_Examples::ECB_ns::Example>::createEncryptionExample(klb);
-}
-
-NISTSP800_38A_Examples::CBC_ns::Example createCBCencryptionExample(CommonAESVectors::KeylengthBits klb){
-    return CommonAESVectors::ExampleFactory<NISTSP800_38A_Examples::CBC_ns::Example>::createEncryptionExample(klb);
 }
 
 bool runTestsForKeylength(CommonAESVectors::KeylengthBits klb) {
