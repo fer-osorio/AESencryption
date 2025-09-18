@@ -6,6 +6,27 @@
 
 namespace AESencryption {
 
+// Forward declarations of custom exceptions
+class AESException : public std::runtime_error {
+public:
+	explicit AESException(const std::string& message);
+};
+
+class KeyExpansionException : public AESException {
+public:
+	explicit KeyExpansionException(const std::string& message);
+};
+
+class EncryptionException: public AESException {
+public:
+	explicit EncryptionException(const std::string& message);
+};
+
+class DecryptionException : public AESException {
+public:
+	explicit DecryptionException(const std::string& message);
+};
+
 struct InitVector;
 
 std::ostream& operator << (std::ostream& st, const Cipher& c);			// -Declaration here so this function is inside the name space function.
@@ -77,6 +98,10 @@ public:
 
 	void saveKey(const char*const fname) const;
 	OperationMode getOptModeID() const;
+
+	// For testing purposes
+	const uint8_t* getKeyExpansionForTesting() const { return this->keyExpansion; }
+	bool isKeyExpansionInitialized() const { return this->keyExpansion != nullptr; }
 
 	private:
 	OperationMode buildOperationMode(const OperationMode::Identifier);
