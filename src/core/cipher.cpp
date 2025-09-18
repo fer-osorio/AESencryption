@@ -324,16 +324,50 @@ void Cipher::encrypt(const uint8_t*const data, size_t size, uint8_t*const output
 }
 
 void Cipher::decrypt(const uint8_t*const data, size_t size, uint8_t*const output) const{
-    if(size == 0 || data == NULL) return;
-    size_t thisKeylenbits = static_cast<size_t>(this->key.getLenBits());
-    OperationMode::Identifier optMode = this->config.getOperationModeID();
-    switch(optMode) {
+    // Validate inputs (same validation as encrypt)
+    if (data == nullptr) {
+        throw std::invalid_argument("Decryption failed: Input data cannot be null");
+    }
+
+    if (output == nullptr) {
+        throw std::invalid_argument("Decryption failed: Output buffer cannot be null");
+    }
+
+    if (size == 0) {
+        throw std::invalid_argument("Decryption failed: Data size cannot be zero");
+    }
+
+    if (size < BLOCK_SIZE) {
+        throw std::invalid_argument("Decryption failed: Data size (" + std::to_string(size) +
+                                   ") must be at least (" + std::to_string(BLOCK_SIZE) + " bytes)");
+    }
+
+    if (this->keyExpansion == nullptr) {
+        throw DecryptionException("Key expansion not initialized - call buildKeyExpansion() first");
+    }
+
+    // Perform decryption
+    size_t key_len_bits = static_cast<size_t>(this->key.getLenBits());
+    OperationMode::Identifier opt_mode = this->config.getOperationModeID();
+    enum ExceptionCode result;
+
+    switch (opt_mode) {
         case OperationMode::Identifier::ECB:
-            decryptECB(data, size, this->keyExpansion, thisKeylenbits, output);
+            result = decryptECB(data, size, this->keyExpansion, key_len_bits, output);
+            handleExceptionCode(result, "ECB decryption");
             break;
         case OperationMode::Identifier::CBC:
-            decryptCBC(data, size, this->keyExpansion, thisKeylenbits, this->config.getIVpointerData(), output);
+            {   // New scope, avoiding "cannot jump" error
+                const uint8_t* iv = this->config.getIVpointerData();
+                if (iv == nullptr) {
+                    throw DecryptionException("IV is required for CBC mode but not set");
+                }
+                result = decryptCBC(data, size, this->keyExpansion, key_len_bits, iv, output);
+                handleExceptionCode(result, "CBC decryption");
+            }
             break;
+        default:
+            throw DecryptionException("Unsupported operation mode: " + std::to_string(static_cast<int>(opt_mode)));
     }
 }
 
@@ -345,5 +379,17 @@ void Cipher::decryption(std::vector<uint8_t>& data) const{
     decrypt(data.data(), data.size(), data.data());
 }
 
-void Cipher::saveKey(const char*const fname) const{ this->key.save(fname); }
-Cipher::OperationMode Cipher::getOptModeID() const{ return this->config.getOperationModeID(); }
+void Cipher::saveKey(const char*const fname) const{
+    this->key.save(fname);
+}
+Cipher::OperationMode Cipher::getOptModeID() const{
+    return this->config.getOperationModeID();
+}
+
+// Testing helper methods
+const uint8_t* Cipher::getKeyExpansionForTesting() const {
+    return this->keyExpansion;
+}
+bool Cipher::isKeyExpansionInitialized() const {
+    return this->keyExpansion != nullptr;
+}
