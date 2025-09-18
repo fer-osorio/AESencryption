@@ -15,19 +15,21 @@ public:
 
     /**
      * @brief Encrypts a block of data in-place.
-     * @param data The data to be transformed. This vector will be modified.
+     * @param input The input to be transformed.
+     * @param output The vector where the encrypted data will be written
      * * The 'const' on the method means the Encryptor object itself is not modified,
      * but the data it points to is.
      */
-    virtual void encryption(std::vector<uint8_t>& data) const = 0; // Pure virtual function
+    virtual void encryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output) const = 0; // Pure virtual function
 
     /**
      * @brief Decrypts a block of data in-place.
-     * @param data The data to be transformed. This vector will be modified.
+     * @param input The input to be transformed.
+     * @param output The vector where the decrypted data will be written
      * * The 'const' on the method means the Encryptor object itself is not modified,
      * but the data it points to is.
      */
-    virtual void decryption(std::vector<uint8_t>& data) const = 0; // Pure virtual function
+    virtual void decryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output) const = 0; // Pure virtual function
 };
 
 #endif // ENCRYPTOR_HPP
