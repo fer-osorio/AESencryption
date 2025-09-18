@@ -10,6 +10,7 @@ struct AESencryption::InitVector{
     uint8_t data[BLOCK_SIZE];
 };
 
+
 // Custom exception classes for better error categorization
 class AESencryption::AESException : public std::runtime_error {
 public:
@@ -35,6 +36,37 @@ public:
 };
 
 using namespace AESencryption;
+
+// Error code to exception mapping
+static void handleExceptionCode(enum ExceptionCode code, const std::string& operation) {
+    if(code == NoException) return;                                             // Success
+
+    std::string base_msg = operation + " failed: ";
+    switch (code) {
+        case NullKey:
+            throw std::invalid_argument(base_msg + "Key is null");
+        case NullKeyExpansion:
+            throw KeyExpansionException("Key expansion is null");
+        case NullSource:
+            throw std::invalid_argument(base_msg + "Source is null");
+        case NullDestination:
+            throw std::invalid_argument(base_msg + "Destination is null");
+        case NullInput:
+            throw std::invalid_argument(base_msg + "Input is null");
+        case NullOutput:
+            throw std::invalid_argument(base_msg + "Output is null");
+        case NullInitialVector:
+            throw std::invalid_argument(base_msg + "Initial vector is null");
+        case ZeroLength:
+            throw std::invalid_argument(base_msg + "Length is zero");
+        case InvalidKeyLength:
+            throw KeyExpansionException("Invalid key length");
+        case InvalidInputSize:
+            throw std::invalid_argument(base_msg + "Input size is invalid (must be multiple of 16 bytes)");
+        default:
+            throw AESException(base_msg + "Unknown error code: " + std::to_string(code));
+    }
+}
 
 static size_t getNkfromLenbit(Key::LengthBits lb){
     return size_t(lb)/32;
