@@ -237,10 +237,41 @@ Cipher::OperationMode Cipher::buildOperationMode(const OperationMode::Identifier
 }
 
 void Cipher::buildKeyExpansion() {
-    KeyExpansion_t* ke_p = KeyExpansionMemoryAllocationBuild(this->key.data, static_cast<size_t>(this->key.getLenBits()), false);
-    if(this->keyExpansion == NULL) this->keyExpansion = new uint8_t[this->config.getKeyExpansionLengthBytes()];
-    KeyExpansionWriteBytes(ke_p, this->keyExpansion);
-    KeyExpansionDelete(&ke_p);
+    // Validate input first at C++ level for better error messages
+    if (this->key.data == nullptr) {
+        throw KeyExpansionException("Key data is null");
+    }
+    size_t keylenBits = static_cast<size_t>(this->key.getLenBits());
+    if (keylenBits != 128 && keylenBits != 192 && keylenBits != 256) {
+        throw KeyExpansionException("Invalid key length: " + std::to_string(keylenBits) + " bits (must be 128, 192, or 256)");
+    }
+
+    // Build key expansion using C function
+    KeyExpansion_t* ke_p = KeyExpansionMemoryAllocationBuild(this->key.data, keylenBits, false);
+    if (ke_p == NULL) {
+        throw KeyExpansionException("Failed to allocate key expansion object");
+    }
+
+    try {
+        // Allocate memory for key expansion bytes if not already allocated
+        if (this->keyExpansion == nullptr) {
+            size_t expansion_size = this->config.getKeyExpansionLengthBytes();
+            if(expansion_size == 0) {
+                throw KeyExpansionException("Invalid key expansion size");
+            }
+            this->keyExpansion = new uint8_t[expansion_size];
+        }
+        // Write key expansion bytes
+        KeyExpansionWriteBytes(ke_p, this->keyExpansion);
+        // Clean up C object
+        KeyExpansionDelete(&ke_p);
+    } catch (...) {
+        // Ensure C resources are cleaned up even if exception occurs
+        if (ke_p != NULL) {
+            KeyExpansionDelete(&ke_p);
+        }
+        throw; // Re-throw the exception
+    }
 }
 
 void Cipher::encrypt(const uint8_t*const data, size_t size, uint8_t*const output) const{
