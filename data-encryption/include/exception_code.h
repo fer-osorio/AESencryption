@@ -6,7 +6,9 @@ extern "C" {
 #endif
 
 enum ExceptionCode{
-  NoException, NullKey, NullKeyExpansion, NullSource, NullDestination, NullInput, NullOutput, NullInitialVector, ZeroLength
+  NoException,
+  NullKey, NullKeyExpansion, NullSource, NullDestination, NullInput, NullOutput, NullInitialVector,
+  ZeroLength, InvalidKeyLength, InvalidInputSize
 };
 
 #ifdef __cplusplus
