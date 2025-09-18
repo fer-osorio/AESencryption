@@ -42,7 +42,9 @@ public:
 	CommonAESVectors::EncryptionOperationType getOperationType() const;
 	OperationMode getOperationMode() const;
 	const unsigned char* getInput() const;
+	std::vector<unsigned char> getInputAsVector() const;
 	const unsigned char* getExpectedOutput() const;
+	std::vector<unsigned char> getExpectedOutputAsVector() const;
 	static constexpr size_t getDataSize() { return TEXT_SIZE; }
 };
 
@@ -55,8 +57,14 @@ OperationMode ExampleBase::getOperationMode() const {
 const unsigned char* ExampleBase::getInput() const {
 	return this->input;
 }
+std::vector<unsigned char> ExampleBase::getInputAsVector() const{
+	return std::vector<unsigned char>(this->input, this->input + TEXT_SIZE);
+}
 const unsigned char* ExampleBase::getExpectedOutput() const {
 	return this->expectedOutput;
+}
+std::vector<unsigned char> ExampleBase::getExpectedOutputAsVector() const {
+	return std::vector<unsigned char>(this->expectedOutput, this->expectedOutput + TEXT_SIZE);
 }
 
 // Plaintext used in NIST SP 800-38A mode examples (64 bytes = 4 blocks)
