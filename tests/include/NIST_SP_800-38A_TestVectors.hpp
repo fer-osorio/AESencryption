@@ -227,4 +227,15 @@ const char* getModeString(OperationMode mode) {
 
 } // namespace NISTSP800_38A_Examples
 
+/*NISTSP800_38A_Examples::ECB_ns::Example createECBencryptionExample(CommonAESVectors::KeylengthBits klb);
+NISTSP800_38A_Examples::CBC_ns::Example createCBCencryptionExample(CommonAESVectors::KeylengthBits klb);*/
+
+NISTSP800_38A_Examples::ECB_ns::Example createECBencryptionExample(CommonAESVectors::KeylengthBits klb){
+    return CommonAESVectors::ExampleFactory<NISTSP800_38A_Examples::ECB_ns::Example>::createEncryptionExample(klb);
+}
+
+NISTSP800_38A_Examples::CBC_ns::Example createCBCencryptionExample(CommonAESVectors::KeylengthBits klb){
+    return CommonAESVectors::ExampleFactory<NISTSP800_38A_Examples::CBC_ns::Example>::createEncryptionExample(klb);
+}
+
 #endif // NIST_SP800_38A_EXAMPLES_HPP
