@@ -7,25 +7,10 @@
 namespace AESencryption {
 
 // Forward declarations of custom exceptions
-class AESException : public std::runtime_error {
-public:
-	explicit AESException(const std::string& message);
-};
-
-class KeyExpansionException : public AESException {
-public:
-	explicit KeyExpansionException(const std::string& message);
-};
-
-class EncryptionException: public AESException {
-public:
-	explicit EncryptionException(const std::string& message);
-};
-
-class DecryptionException : public AESException {
-public:
-	explicit DecryptionException(const std::string& message);
-};
+class AESException;
+class KeyExpansionException;
+class EncryptionException;
+class DecryptionException;
 
 struct InitVector;
 
