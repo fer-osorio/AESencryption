@@ -10,6 +10,30 @@ struct AESencryption::InitVector{
     uint8_t data[BLOCK_SIZE];
 };
 
+// Custom exception classes for better error categorization
+class AESencryption::AESException : public std::runtime_error {
+public:
+    explicit AESException(const std::string& message) : std::runtime_error(message) {}
+};
+
+class AESencryption::KeyExpansionException : public AESException {
+public:
+    explicit KeyExpansionException(const std::string& message)
+        : AESException("Key expansion error: " + message) {}
+};
+
+class AESencryption::EncryptionException : public AESException {
+public:
+    explicit EncryptionException(const std::string& message)
+        : AESException("Encryption error: " + message) {}
+};
+
+class AESencryption::DecryptionException : public AESException {
+public:
+    explicit DecryptionException(const std::string& message)
+        : AESException("Decryption error: " + message) {}
+};
+
 using namespace AESencryption;
 
 static size_t getNkfromLenbit(Key::LengthBits lb){
