@@ -12,12 +12,13 @@
 
 #define AESENC_KEYLEN AESencryption::Key::LengthBits
 
+#define OPTMODE_ID AESencryption::Cipher::OperationMode::Identifier
 #define ECB_ID AESencryption::Cipher::OperationMode::Identifier::ECB
 #define ECB_EXAMPLE NISTSP800_38A_Examples::ECB_ns::Example
 #define CBC_ID AESencryption::Cipher::OperationMode::Identifier::CBC
 #define CBC_EXAMPLE NISTSP800_38A_Examples::CBC_ns::Example
 
-void test_successful_operations(CommonAESVectors::KeylengthBits klb) {
+void test_successful_operations(CommonAESVectors::KeylengthBits klb, OPTMODE_ID optm_id) {
     TEST_SUITE("Successful Operations Tests");
 
     try {
@@ -31,13 +32,13 @@ void test_successful_operations(CommonAESVectors::KeylengthBits klb) {
         // Verify key expansion is initialized
         ASSERT_TRUE(ecb_cipher.isKeyExpansionInitialized(), "Key expansion should be initialized after Cipher construction");
 
-        std::vector<uint8_t> encrypted = ecb_exmp.getInputAsVector();
-        std::vector<uint8_t> decrypted = encrypted;
+        std::vector<uint8_t> input = ecb_exmp.getInputAsVector();
+        std::vector<uint8_t> encrypted(BLOCK_SIZE);
+        std::vector<uint8_t> decrypted(BLOCK_SIZE);
 
-        ecb_cipher.encryption(encrypted);   // encryption method rewrites vector
+        ecb_cipher.encryption(input, encrypted);
         ASSERT_BYTES_EQUAL(ecb_exmp.getExpectedOutput(), encrypted.data(), TEXT_SIZE,"ECB encryption should match reference vector");
-        decrypted = encrypted;
-        ecb_cipher.decryption(decrypted);
+        ecb_cipher.decryption(encrypted, decrypted);
         ASSERT_BYTES_EQUAL(ecb_exmp.getInput(), decrypted.data(), TEXT_SIZE,"ECB roundtrip should preserve data");
 
         // Test CBC mode
@@ -47,13 +48,12 @@ void test_successful_operations(CommonAESVectors::KeylengthBits klb) {
 
         ASSERT_TRUE(cbc_cipher.isKeyExpansionInitialized(),"Key expansion should be initialized for CBC cipher");
 
-        encrypted = ecb_exmp.getInputAsVector();
-        decrypted = encrypted;
+        input = ecb_exmp.getInputAsVector();
 
-        cbc_cipher.encryption(encrypted);   // encryption method rewrites input vector
+        cbc_cipher.encryption(input, encrypted);   // encryption method rewrites input vector
         ASSERT_BYTES_EQUAL(cbc_exmp.getExpectedOutput(), encrypted.data(), TEXT_SIZE,"CBC encryption should match reference vector");
         decrypted = encrypted;
-        cbc_cipher.decryption(decrypted);
+        cbc_cipher.decryption(encrypted, decrypted);
         ASSERT_BYTES_EQUAL(ecb_exmp.getInput(), decrypted.data(), TEXT_SIZE, "CBC roundtrip should preserve data");
 
         ASSERT_TRUE(true, "All successful operations completed");
