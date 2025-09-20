@@ -72,12 +72,14 @@ public:
 	/*
 	 * Encrypts data contatined in data vector using the key in cipher this object
 	 * Interface with Encryptor object
+	 * Consider: Throws std::invalid_argument, EncryptionException, AESException
 	 * */
 	void encryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output) const override;
 
 	/*
 	 * Decrypts data contatined in data vector using the key in cipher this object
 	 * Interface with Encryptor object
+	 * Consider: Throws std::invalid_argument, EncryptionException, AESException
 	 * */
 	void decryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output) const override;
 
@@ -85,6 +87,7 @@ public:
 	 * Encrypts using operation mode stored in Cipher object
 	 * Consider: Comunicates with AES.h
 	 * Consider: Rewrites bytes pointed by output
+	 * Consider: Throws std::invalid_argument, EncryptionException, AESException
 	 * */
 	void encrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;
 
@@ -92,6 +95,7 @@ public:
 	 * Decrypts using operation mode stored in Cipher object
 	 * Consider: Comunicates with AES.h
 	 * Consider: Rewrites bytes pointed by output
+	 * Consider: Throws std::invalid_argument, EncryptionException, AESException
 	 * */
 	void decrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;
 
