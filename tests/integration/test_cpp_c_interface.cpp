@@ -10,6 +10,8 @@
 
 #define TEXT_SIZE NISTSP800_38A_Examples::TEXT_SIZE
 
+#define AESKEY AESencryption::Key
+
 #define AESENC_KEYLEN AESencryption::Key::LengthBits
 #define AESENC_OPTMODE AESencryption::Cipher::OperationMode::Identifier
 
@@ -19,19 +21,19 @@
 #define EXAMPLE_BASE NISTSP800_38A_Examples::ExampleBase
 
 void test_successful_operations(COMMAESVECT_KEYLEN klb, COMMAESVECT_OPTMODE mode) {
-    TEST_SUITE("Successful Operations Tests");
     std::unique_ptr<EXAMPLE_BASE> example = NISTSP800_38A_Examples::createExample(klb, mode);
     if (!example) {
         // Handle the error if the mode is unsupported
         std::cerr << "Error: Unsupported operation mode." << std::endl;
         return;
     }
+    TEST_SUITE("Successful Operations Tests");
 
     try {
         AESENC_KEYLEN keylen = static_cast<AESENC_KEYLEN>(klb);
         AESENC_OPTMODE opt_mode = static_cast<AESENC_OPTMODE>(mode);
         // Test operation mode
-        AESencryption::Key key(example->getKeyAsVector(), keylen);
+        AESKEY key(example->getKeyAsVector(), keylen);
         AESencryption::Cipher ciph(key, opt_mode);
 
         // Verify key expansion is initialized
@@ -59,7 +61,6 @@ void test_successful_operations(COMMAESVECT_KEYLEN klb, COMMAESVECT_OPTMODE mode
             "ECB roundtrip should preserve data"
         );
         ASSERT_TRUE(true, "All successful operations completed");
-
     } catch (const std::exception& e) {
         ASSERT_TRUE(false, std::string("Unexpected exception: ") + e.what());
     }
@@ -67,46 +68,62 @@ void test_successful_operations(COMMAESVECT_KEYLEN klb, COMMAESVECT_OPTMODE mode
     PRINT_RESULTS();
 }
 
-void test_null_pointer_exceptions(CommonAESVectors::KeylengthBits klb) {
-    TEST_SUITE("Null Pointer Exception Tests");
+void test_empty_vector_exceptions(COMMAESVECT_KEYLEN klb, COMMAESVECT_OPTMODE mode) {
+    TEST_SUITE("Empty Vector Exception Tests");
 
     AESENC_KEYLEN keylen = static_cast<AESENC_KEYLEN>(klb);
-    ECB_EXAMPLE exmp = createECBencryptionExample(klb);
-    AESencryption::Key key(exmp.getKeyAsVector(), keylen);
-    AESencryption::Cipher cipher(key, ECB_ID);
+    AESKEY key(keylen);
+    AESencryption::Cipher cipher(key, static_cast<AESENC_OPTMODE>(mode));
 
-    uint8_t output[BLOCK_SIZE];
+    std::vector<uint8_t> input(BLOCK_SIZE);
+    std::vector<uint8_t> output(BLOCK_SIZE);
 
-    // Test null input data (should map to NullInput from C)
+    // Test empty input data
     try {
-        cipher.encrypt(nullptr, BLOCK_SIZE, output);
-        ASSERT_TRUE(false, "Should throw exception for null input");
+        cipher.encryption(std::vector<uint8_t>(0), output);
+        ASSERT_TRUE(false, "Should throw exception for empty input vector");
     } catch (const std::invalid_argument& e) {
         std::string error_msg = e.what();
-        ASSERT_TRUE(error_msg.find("Input data cannot be null") != std::string::npos,
-                    "Should mention null input in error message");
+        ASSERT_TRUE(error_msg.find("Input vector data cannot be empty") != std::string::npos,
+                    "Should mention empty input in error message");
     } catch (const std::exception& e) {
         ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
     }
 
-    // Test null output buffer (should map to NullOutput from C)
+    // Test empty output
     try {
-        cipher.encrypt(TestVectors::test_data, BLOCK_SIZE, nullptr);
-        ASSERT_TRUE(false, "Should throw exception for null output");
+        std::vector<uint8_t> empty(0);
+        cipher.decryption(input, empty);
+        ASSERT_TRUE(false, "Should throw exception for empty output vector");
     } catch (const std::invalid_argument& e) {
         std::string error_msg = e.what();
-        ASSERT_TRUE(error_msg.find("Output buffer cannot be null") != std::string::npos,
-                    "Should mention null output in error message");
+        ASSERT_TRUE(error_msg.find("Output vector cannot be empty") != std::string::npos,
+                    "Should mention empty output in error message");
     } catch (const std::exception& e) {
         ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
     }
 
-    // Test decryption with null pointers
+    // Test decryption empty vectors
     try {
-        cipher.decrypt(nullptr, BLOCK_SIZE, output);
-        ASSERT_TRUE(false, "Decryption should throw exception for null input");
+        cipher.decryption(std::vector<uint8_t>(0), output);
+        ASSERT_TRUE(false, "Should throw exception for empty input vector");
     } catch (const std::invalid_argument& e) {
-        ASSERT_TRUE(true, "Correctly threw invalid_argument for null input in decryption");
+        std::string error_msg = e.what();
+        ASSERT_TRUE(error_msg.find("Input vector data cannot be empty") != std::string::npos,
+                    "Should mention empty input in error message");
+    } catch (const std::exception& e) {
+        ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
+    }
+
+    // Test empty output
+    try {
+        std::vector<uint8_t> empty(0);
+        cipher.decryption(input, empty);
+        ASSERT_TRUE(false, "Should throw exception for empty output vector");
+    } catch (const std::invalid_argument& e) {
+        std::string error_msg = e.what();
+        ASSERT_TRUE(error_msg.find("Output vector cannot be empty") != std::string::npos,
+                    "Should mention empty output in error message");
     } catch (const std::exception& e) {
         ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
     }
@@ -121,7 +138,7 @@ void test_invalid_size_exceptions() {
 
         // Test ECB mode
         ECB_EXAMPLE ecb_exmp = createECBencryptionExample(klb);
-        AESencryption::Key key(example->getKeyAsVector(), keylen);
+        AESKEY key(example->getKeyAsVector(), keylen);
     AESencryption::Cipher cipher(key);
 
     uint8_t output[TEXT_SIZE];
@@ -207,7 +224,7 @@ void test_key_expansion_initialization() {
 
         // Test ECB mode
         ECB_EXAMPLE ecb_exmp = createECBencryptionExample(klb);
-        AESencryption::Key key(example->getKeyAsVector(), keylen);
+        AESKEY key(example->getKeyAsVector(), keylen);
     AESencryption::Cipher cipher(key);
 
     ASSERT_TRUE(cipher.isKeyExpansionInitialized(),
@@ -232,54 +249,14 @@ void test_key_expansion_initialization() {
     PRINT_RESULTS();
 }
 
-void test_nothrow_versions() {
-    TEST_SUITE("No-throw Version Tests");
-
-    AESENC_KEYLEN keylen = static_cast<AESENC_KEYLEN>(klb);
-
-        // Test ECB mode
-        ECB_EXAMPLE ecb_exmp = createECBencryptionExample(klb);
-        AESencryption::Key key(example->getKeyAsVector(), keylen);
-    AESencryption::Cipher cipher(key);
-
-    uint8_t output[BLOCK_SIZE];
-    std::string error_message;
-
-    // Test successful operation
-    bool success = cipher.encrypt_nothrow(TestVectors::test_data, BLOCK_SIZE, output, error_message);
-    ASSERT_TRUE(success, "No-throw encryption should succeed for valid input");
-    ASSERT_TRUE(error_message.empty(), "Error message should be empty on success");
-
-    // Test null input failure
-    bool failure = cipher.encrypt_nothrow(nullptr, BLOCK_SIZE, output, error_message);
-    ASSERT_TRUE(!failure, "No-throw encryption should fail for null input");
-    ASSERT_TRUE(!error_message.empty(), "Error message should be set on failure");
-    ASSERT_TRUE(error_message.find("Input data cannot be null") != std::string::npos,
-                "Error message should contain specific null input message");
-
-    // Test invalid size failure
-    error_message.clear();
-    failure = cipher.encrypt_nothrow(TestVectors::invalid_data_17bytes, 17, output, error_message);
-    ASSERT_TRUE(!failure, "No-throw encryption should fail for invalid size");
-    ASSERT_TRUE(!error_message.empty(), "Error message should be set for invalid size");
-    ASSERT_TRUE(error_message.find("multiple of block size") != std::string::npos,
-                "Error message should mention block size requirement");
-
-    // Test no-throw decryption
-    success = cipher.decrypt_nothrow(output, BLOCK_SIZE, output, error_message);
-    ASSERT_TRUE(success, "No-throw decryption should succeed for valid input");
-
-    PRINT_RESULTS();
-}
-
 void test_exception_safety() {
     TEST_SUITE("Exception Safety Tests");
 
     AESENC_KEYLEN keylen = static_cast<AESENC_KEYLEN>(klb);
 
-        // Test ECB mode
-        ECB_EXAMPLE ecb_exmp = createECBencryptionExample(klb);
-        AESencryption::Key key(example->getKeyAsVector(), keylen);
+    // Test ECB mode
+    ECB_EXAMPLE ecb_exmp = createECBencryptionExample(klb);
+    AESKEY key(example->getKeyAsVector(), keylen);
     AESencryption::Cipher cipher(key);
 
     uint8_t output[BLOCK_SIZE];
@@ -323,7 +300,7 @@ void test_consistency_with_c_implementation() {
         ASSERT_TRUE(c_result == NoException, "C encryption should succeed with NoException");
 
         // C++ wrapper implementation
-        AESencryption::Key cpp_key(TestVectors::test_key_128,
+        AESKEY cpp_key(TestVectors::test_key_128,
                                    AESencryption::Key::LengthBits::_128,
                                    AESencryption::Key::OpMode::ECB);
         AESencryption::Cipher cpp_cipher(cpp_key);
@@ -394,7 +371,7 @@ int main() {
     std::cout << "=== C/C++ Interface Integration Tests with Specific Exception Handling ===" << std::endl;
 
     test_successful_operations();
-    test_null_pointer_exceptions();
+    test_empty_vector_exceptions();
     test_invalid_size_exceptions();
     test_specific_exception_code_mapping();
     test_key_expansion_initialization();
