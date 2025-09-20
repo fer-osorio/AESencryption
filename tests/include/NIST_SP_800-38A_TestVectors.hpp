@@ -42,6 +42,7 @@ protected:
 	const unsigned char* input;
 	const unsigned char* expectedOutput;
 public:
+	virtual ~ExampleBase() = default;
 	CommonAESVectors::EncryptionOperationType getOperationType() const;
 	OperationMode getOperationMode() const;
 	const unsigned char* getInput() const;
