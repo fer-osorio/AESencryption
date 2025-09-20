@@ -131,48 +131,43 @@ void test_empty_vector_exceptions(COMMAESVECT_KEYLEN klb, COMMAESVECT_OPTMODE mo
     PRINT_RESULTS();
 }
 
-void test_invalid_size_exceptions() {
+void test_invalid_size_exceptions(COMMAESVECT_KEYLEN klb, COMMAESVECT_OPTMODE mode) {
+    std::unique_ptr<EXAMPLE_BASE> example = NISTSP800_38A_Examples::createExample(klb, mode);
+    if (!example) {
+        // Handle the error if the mode is unsupported
+        std::cerr << "Error: Unsupported operation mode." << std::endl;
+        return;
+    }
     TEST_SUITE("Invalid Size Exception Tests");
 
     AESENC_KEYLEN keylen = static_cast<AESENC_KEYLEN>(klb);
+    AESKEY key(keylen);
+    AESENC_OPTMODE opt_mode = static_cast<AESENC_OPTMODE>(mode);
+    AESencryption::Cipher cipher(key, opt_mode);
 
-        // Test ECB mode
-        ECB_EXAMPLE ecb_exmp = createECBencryptionExample(klb);
-        AESKEY key(example->getKeyAsVector(), keylen);
-    AESencryption::Cipher cipher(key);
-
-    uint8_t output[TEXT_SIZE];
-
-    // Test zero size (should map to ZeroLength from C)
-    try {
-        cipher.encrypt(TestVectors::test_data, 0, output);
-        ASSERT_TRUE(false, "Should throw exception for zero size");
-    } catch (const std::invalid_argument& e) {
-        std::string error_msg = e.what();
-        ASSERT_TRUE(error_msg.find("Data size cannot be zero") != std::string::npos,
-                    "Should mention zero size in error message");
-    } catch (const std::exception& e) {
-        ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
-    }
+    std::vector<uint8_t> invalid_input(15);
+    std::vector<uint8_t> output(TEXT_SIZE);
 
     // Test non-block-aligned size (should map to InvalidInputSize from C)
     try {
-        cipher.encrypt(TestVectors::invalid_data_17bytes, 17, output);
-        ASSERT_TRUE(false, "Should throw exception for non-aligned size");
+        cipher.encryption(invalid_input, output);
+        ASSERT_TRUE(false, "Should throw exception for non-valid size");
     } catch (const std::invalid_argument& e) {
         std::string error_msg = e.what();
-        ASSERT_TRUE(error_msg.find("must be multiple of block size") != std::string::npos,
-                    "Should mention block size alignment in error message");
+        ASSERT_TRUE(error_msg.find("must be at least block size") != std::string::npos,
+                    "Should mention block size condition in error message");
     } catch (const std::exception& e) {
         ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
     }
 
     // Test same errors for decryption
     try {
-        cipher.decrypt(TestVectors::invalid_data_17bytes, 17, output);
-        ASSERT_TRUE(false, "Decryption should throw exception for non-aligned size");
+        cipher.decryption(invalid_input, output);
+        ASSERT_TRUE(false, "Decryption should throw exception for non-valid size");
     } catch (const std::invalid_argument& e) {
-        ASSERT_TRUE(true, "Correctly threw invalid_argument for non-aligned size in decryption");
+        std::string error_msg = e.what();
+        ASSERT_TRUE(error_msg.find("must be at least block size") != std::string::npos,
+                    "Should mention block size condition in error message");
     } catch (const std::exception& e) {
         ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
     }
@@ -180,7 +175,7 @@ void test_invalid_size_exceptions() {
     PRINT_RESULTS();
 }
 
-void test_specific_exception_code_mapping() {
+void test_specific_exception_code_mapping(AESENC_KEYLEN, AESENC_OPTMODE) {
     TEST_SUITE("Specific Exception Code Mapping Tests");
 
     // Test direct C function calls and their error codes
@@ -199,7 +194,7 @@ void test_specific_exception_code_mapping() {
         ASSERT_TRUE(result == NullOutput, "C function should return NullOutput for null output");
 
         // Test InvalidInputSize error code
-        result = encryptECB(TestVectors::invalid_data_17bytes, 17, key_expansion_ptr, 128, output);
+        result = encryptECB(input, key_expansion_ptr, 128, output);
         ASSERT_TRUE(result == InvalidInputSize, "C function should return InvalidInputSize for non-aligned size");
 
         // Test ZeroLength error code
