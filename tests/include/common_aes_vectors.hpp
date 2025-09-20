@@ -59,6 +59,7 @@ protected:
     const unsigned char* key;
 
 public:
+    virtual ~ExampleBase() = default;
     /**
      * @brief Gets the key length enumeration.
      * @return The key length as a KeylengthBits enum value.
