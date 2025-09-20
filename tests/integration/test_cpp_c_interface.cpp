@@ -19,9 +19,10 @@
 #define COMMAESVECT_OPTMODE NISTSP800_38A_Examples::OperationMode
 
 #define EXAMPLE_BASE NISTSP800_38A_Examples::ExampleBase
+#define CREATE_EXAMPLE(klb,mode) NISTSP800_38A_Examples::createExample(static_cast<COMMAESVECT_KEYLEN>(klb), static_cast<COMMAESVECT_OPTMODE>(mode))
 
-void test_successful_operations(COMMAESVECT_KEYLEN klb, COMMAESVECT_OPTMODE mode) {
-    std::unique_ptr<EXAMPLE_BASE> example = NISTSP800_38A_Examples::createExample(klb, mode);
+void test_successful_operations(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
+    std::unique_ptr<EXAMPLE_BASE> example = CREATE_EXAMPLE(klb,mode);
     if (!example) {
         // Handle the error if the mode is unsupported
         std::cerr << "Error: Unsupported operation mode." << std::endl;
@@ -30,10 +31,9 @@ void test_successful_operations(COMMAESVECT_KEYLEN klb, COMMAESVECT_OPTMODE mode
     TEST_SUITE("Successful Operations Tests");
 
     try {
-        AESENC_KEYLEN keylen = static_cast<AESENC_KEYLEN>(klb);
         AESENC_OPTMODE opt_mode = static_cast<AESENC_OPTMODE>(mode);
         // Test operation mode
-        AESKEY key(example->getKeyAsVector(), keylen);
+        AESKEY key(example->getKeyAsVector(), klb);
         AESencryption::Cipher ciph(key, opt_mode);
 
         // Verify key expansion is initialized
@@ -68,12 +68,11 @@ void test_successful_operations(COMMAESVECT_KEYLEN klb, COMMAESVECT_OPTMODE mode
     PRINT_RESULTS();
 }
 
-void test_empty_vector_exceptions(COMMAESVECT_KEYLEN klb, COMMAESVECT_OPTMODE mode) {
+void test_empty_vector_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     TEST_SUITE("Empty Vector Exception Tests");
 
-    AESENC_KEYLEN keylen = static_cast<AESENC_KEYLEN>(klb);
-    AESKEY key(keylen);
-    AESencryption::Cipher cipher(key, static_cast<AESENC_OPTMODE>(mode));
+    AESKEY key(klb);
+    AESencryption::Cipher cipher(key, mode);
 
     std::vector<uint8_t> input(BLOCK_SIZE);
     std::vector<uint8_t> output(BLOCK_SIZE);
@@ -131,19 +130,11 @@ void test_empty_vector_exceptions(COMMAESVECT_KEYLEN klb, COMMAESVECT_OPTMODE mo
     PRINT_RESULTS();
 }
 
-void test_invalid_size_exceptions(COMMAESVECT_KEYLEN klb, COMMAESVECT_OPTMODE mode) {
-    std::unique_ptr<EXAMPLE_BASE> example = NISTSP800_38A_Examples::createExample(klb, mode);
-    if (!example) {
-        // Handle the error if the mode is unsupported
-        std::cerr << "Error: Unsupported operation mode." << std::endl;
-        return;
-    }
+void test_invalid_size_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     TEST_SUITE("Invalid Size Exception Tests");
 
-    AESENC_KEYLEN keylen = static_cast<AESENC_KEYLEN>(klb);
-    AESKEY key(keylen);
-    AESENC_OPTMODE opt_mode = static_cast<AESENC_OPTMODE>(mode);
-    AESencryption::Cipher cipher(key, opt_mode);
+    AESKEY key(klb);
+    AESencryption::Cipher cipher(key, mode);
 
     std::vector<uint8_t> invalid_input(15);
     std::vector<uint8_t> output(TEXT_SIZE);
@@ -216,32 +207,38 @@ void test_specific_exception_code_mapping(AESENC_KEYLEN klb, AESENC_OPTMODE mode
     PRINT_RESULTS();
 }
 
-void test_key_expansion_initialization() {
+void test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     TEST_SUITE("Key Expansion Initialization Tests");
 
     // Test that key expansion is properly initialized
-    AESENC_KEYLEN keylen = static_cast<AESENC_KEYLEN>(klb);
+    size_t keylen = static_cast<size_t>(klb);
+    size_t ke_lenbytes = getKeyExpansionLengthBytesfromKeylenBits(static_cast<enum KeylenBits_t>(keylen));
+    std::vector<uint8_t> dumm(keylen/8, 1);
+    AESKEY key(dumm, klb);
+    AESencryption::Cipher cipher(key, mode);
 
-    // Test ECB mode
-    ECB_EXAMPLE ecb_exmp = createECBencryptionExample(klb);
-    AESKEY key(example->getKeyAsVector(), keylen);
-    AESencryption::Cipher cipher(key);
-
-    ASSERT_TRUE(cipher.isKeyExpansionInitialized(),
-                "Key expansion should be initialized after construction");
+    ASSERT_TRUE(
+        cipher.isKeyExpansionInitialized(),
+        "Key expansion should be initialized after construction"
+    );
 
     const uint8_t* key_expansion_ptr = cipher.getKeyExpansionForTesting();
-    ASSERT_NOT_NULL(key_expansion_ptr, "Key expansion pointer should not be null");
+    ASSERT_NOT_NULL(
+        key_expansion_ptr,
+        "Key expansion pointer should not be null"
+    );
 
     // Compare with direct C implementation
-    ptrKeyExpansion_t c_ke = KeyExpansionMemoryAllocationBuild(TestVectors::test_key_128, 128, false);
+    ptrKeyExpansion_t c_ke = KeyExpansionMemoryAllocationBuild(dumm.data(), keylen, false);
     if (c_ke != nullptr) {
-        uint8_t c_key_expansion[176]; // AES-128 key expansion size
-        KeyExpansionWriteBytes(c_ke, c_key_expansion);
+        std::vector<uint8_t> c_key_expansion(ke_lenbytes);
+        KeyExpansionWriteBytes(c_ke, c_key_expansion.data());
 
-        // Compare first few bytes to verify consistency
-        ASSERT_BYTES_EQUAL(TestVectors::test_key_128, key_expansion_ptr, BLOCK_SIZE,
-                          "First BLOCK_SIZE bytes of key expansion should match original key");
+        // Compare bytes to verify consistency
+        ASSERT_BYTES_EQUAL(
+            c_key_expansion.data(), key_expansion_ptr, BLOCK_SIZE,
+            "c key expansion and c++ key expansion should match"
+        );
 
         KeyExpansionDelete(&c_ke);
     }
@@ -249,16 +246,13 @@ void test_key_expansion_initialization() {
     PRINT_RESULTS();
 }
 
-void test_exception_safety() {
+void test_exception_safety(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     TEST_SUITE("Exception Safety Tests");
 
-    AESENC_KEYLEN keylen = static_cast<AESENC_KEYLEN>(klb);
+    AESKEY key(klb);
+    AESencryption::Cipher cipher(key, mode);
 
-    // Test ECB mode
-    ECB_EXAMPLE ecb_exmp = createECBencryptionExample(klb);
-    AESKEY key(example->getKeyAsVector(), keylen);
-    AESencryption::Cipher cipher(key);
-
+    uint8_t input[BLOCK_SIZE];
     uint8_t output[BLOCK_SIZE];
 
     // Verify object is in valid state initially
@@ -270,43 +264,52 @@ void test_exception_safety() {
         ASSERT_TRUE(false, "Should have thrown exception");
     } catch (const std::invalid_argument&) {
         // Object should still be usable after exception
-        ASSERT_TRUE(cipher.isKeyExpansionInitialized(),
-                    "Key expansion should still be initialized after exception");
-
+        ASSERT_TRUE(
+            cipher.isKeyExpansionInitialized(),
+            "Key expansion should still be initialized after exception"
+        );
         try {
-            cipher.encrypt(TestVectors::test_data, BLOCK_SIZE, output);
+            cipher.encrypt(input, BLOCK_SIZE, output);
             ASSERT_TRUE(true, "Cipher object remained usable after exception");
         } catch (const std::exception& e) {
-            ASSERT_TRUE(false, std::string("Cipher object corrupted after exception: ") + e.what());
+            ASSERT_TRUE(
+                false,
+                std::string("Cipher object corrupted after exception: ") + e.what()
+            );
         }
     }
 
     PRINT_RESULTS();
 }
 
-void test_consistency_with_c_implementation() {
+void test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
+    std::unique_ptr<EXAMPLE_BASE> example = CREATE_EXAMPLE(klb,mode);
+    if (!example) {
+        // Handle the error if the mode is unsupported
+        std::cerr << "Error: Unsupported operation mode." << std::endl;
+        return;
+    }
     TEST_SUITE("C vs C++ Consistency Tests");
 
     try {
         // Direct C implementation
-        ptrKeyExpansion_t c_ke = KeyExpansionMemoryAllocationBuild(TestVectors::test_key_128, 128, false);
+        size_t sz_klb = static_cast<size_t>(klb);
+        ptrKeyExpansion_t c_ke = KeyExpansionMemoryAllocationBuild(example->getKey(), sz_klb, false);
         ASSERT_NOT_NULL(c_ke, "C key expansion creation should succeed");
 
-        const uint8_t* key_expansion_ptr = KeyExpansionReturnBytePointerToData(c_ke);
+        std::vector<uint8_t> key_expansion_bytes(sz_klb/8);
+        KeyExpansionWriteBytes(c_ke, key_expansion_bytes.data());
         uint8_t c_output[TEXT_SIZE];
 
-        enum ExceptionCode c_result = encryptECB(TestVectors::test_data_2blocks, TEXT_SIZE,
-                                                key_expansion_ptr, 128, c_output);
+        enum ExceptionCode c_result = encryptECB(example->getInput(), TEXT_SIZE, key_expansion_bytes.data(), sz_klb, c_output);
         ASSERT_TRUE(c_result == NoException, "C encryption should succeed with NoException");
 
         // C++ wrapper implementation
-        AESKEY cpp_key(TestVectors::test_key_128,
-                                   AESencryption::Key::LengthBits::_128,
-                                   AESencryption::Key::OpMode::ECB);
-        AESencryption::Cipher cpp_cipher(cpp_key);
+        AESKEY cpp_key(example->getKey(), klb, AESencryption::Key::OpMode::ECB);
+        AESencryption::Cipher cpp_cipher(cpp_key, mode);
 
         uint8_t cpp_output[TEXT_SIZE];
-        cpp_cipher.encrypt(TestVectors::test_data_2blocks, TEXT_SIZE, cpp_output);
+        cpp_cipher.encrypt(example->getInput(), TEXT_SIZE, cpp_output);
 
         ASSERT_BYTES_EQUAL(c_output, cpp_output, TEXT_SIZE,
                            "C++ wrapper should produce same result as direct C");
@@ -315,7 +318,7 @@ void test_consistency_with_c_implementation() {
         uint8_t c_decrypted[TEXT_SIZE];
         uint8_t cpp_decrypted[TEXT_SIZE];
 
-        c_result = decryptECB(c_output, TEXT_SIZE, key_expansion_ptr, 128, c_decrypted);
+        c_result = decryptECB(c_output, TEXT_SIZE, key_expansion_bytes.data(), sz_klb, c_decrypted);
         ASSERT_TRUE(c_result == NoException, "C decryption should succeed");
 
         cpp_cipher.decrypt(cpp_output, TEXT_SIZE, cpp_decrypted);
@@ -323,7 +326,7 @@ void test_consistency_with_c_implementation() {
         ASSERT_BYTES_EQUAL(c_decrypted, cpp_decrypted, TEXT_SIZE,
                            "C++ and C decryption should produce same result");
 
-        ASSERT_BYTES_EQUAL(TestVectors::test_data_2blocks, cpp_decrypted, TEXT_SIZE,
+        ASSERT_BYTES_EQUAL(example->getInput(), cpp_decrypted, TEXT_SIZE,
                            "Both implementations should correctly decrypt data");
 
         KeyExpansionDelete(&c_ke);
@@ -335,21 +338,19 @@ void test_consistency_with_c_implementation() {
     PRINT_RESULTS();
 }
 
-void test_cbc_mode_iv_handling() {
+void test_cbc_mode_iv_handling(AESENC_KEYLEN klb) {
     TEST_SUITE("CBC Mode IV Handling Tests");
 
     try {
-        AESencryption::Key cbc_key(TestVectors::test_key_128,
-                                  AESencryption::Key::LengthBits::_128,
-                                  AESencryption::Key::OpMode::CBC);
-        AESencryption::Cipher cbc_cipher(cbc_key);
+        AESencryption::Key cbc_key(klb);
+        AESencryption::Cipher cbc_cipher(cbc_key, AESencryption::Cipher::OperationMode::Identifier::CBC);
 
-        uint8_t output[TEXT_SIZE];
+        std::vector<uint8_t> input(TEXT_SIZE);
+        std::vector<uint8_t> output(TEXT_SIZE);
 
-        // This test depends on your IV handling implementation
         // If IV is not properly set, it should throw an exception
         try {
-            cbc_cipher.encrypt(TestVectors::test_data_2blocks, TEXT_SIZE, output);
+            cbc_cipher.encryption(input, output);
             ASSERT_TRUE(true, "CBC encryption succeeded (IV properly handled)");
         } catch (const std::exception& e) {
             std::string error_msg = e.what();
@@ -375,7 +376,6 @@ int main() {
     test_invalid_size_exceptions();
     test_specific_exception_code_mapping();
     test_key_expansion_initialization();
-    test_nothrow_versions();
     test_exception_safety();
     test_consistency_with_c_implementation();
     test_cbc_mode_iv_handling();
