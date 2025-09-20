@@ -175,37 +175,42 @@ void test_invalid_size_exceptions(COMMAESVECT_KEYLEN klb, COMMAESVECT_OPTMODE mo
     PRINT_RESULTS();
 }
 
-void test_specific_exception_code_mapping(AESENC_KEYLEN, AESENC_OPTMODE) {
+void test_specific_exception_code_mapping(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     TEST_SUITE("Specific Exception Code Mapping Tests");
 
     // Test direct C function calls and their error codes
-    ptrKeyExpansion_t c_ke = KeyExpansionMemoryAllocationBuild(TestVectors::test_key_128, 128, false);
+    std::vector<uint8_t> dummy_key(static_cast<size_t>(klb)/8, 0);
+    size_t c_klb = static_cast<size_t>(klb);
+    ptrKeyExpansion_t c_ke = KeyExpansionMemoryAllocationBuild(dummy_key.data(), c_klb, false);
 
     if (c_ke != nullptr) {
         const uint8_t* key_expansion_ptr = KeyExpansionReturnBytePointerToData(c_ke);
+        uint8_t input[BLOCK_SIZE];
         uint8_t output[BLOCK_SIZE];
 
         // Test NullInput error code
-        enum ExceptionCode result = encryptECB(nullptr, BLOCK_SIZE, key_expansion_ptr, 128, output);
+        enum ExceptionCode result = encryptECB(nullptr, BLOCK_SIZE, key_expansion_ptr, c_klb, output);
         ASSERT_TRUE(result == NullInput, "C function should return NullInput for null input");
 
         // Test NullOutput error code
-        result = encryptECB(TestVectors::test_data, BLOCK_SIZE, key_expansion_ptr, 128, nullptr);
+        result = encryptECB(input, BLOCK_SIZE, key_expansion_ptr, c_klb, nullptr);
         ASSERT_TRUE(result == NullOutput, "C function should return NullOutput for null output");
 
         // Test InvalidInputSize error code
-        result = encryptECB(input, key_expansion_ptr, 128, output);
-        ASSERT_TRUE(result == InvalidInputSize, "C function should return InvalidInputSize for non-aligned size");
+        result = encryptECB(input, 15, key_expansion_ptr, 128, output);
+        ASSERT_TRUE(result == InvalidInputSize, "C function should return InvalidInputSize for non-valid size");
 
         // Test ZeroLength error code
-        result = encryptECB(TestVectors::test_data, 0, key_expansion_ptr, 128, output);
+        result = encryptECB(input, 0, key_expansion_ptr, 128, output);
         ASSERT_TRUE(result == ZeroLength, "C function should return ZeroLength for zero size");
 
         // Test NullKeyExpansion error code
-        result = encryptECB(TestVectors::test_data, BLOCK_SIZE, nullptr, 128, output);
+        result = encryptECB(input, BLOCK_SIZE, nullptr, 128, output);
         ASSERT_TRUE(result == NullKeyExpansion, "C function should return NullKeyExpansion for null key expansion");
 
         KeyExpansionDelete(&c_ke);
+    } else{
+        std::cerr << "No test runned. Something went wrong in key creation.";
     }
 
     PRINT_RESULTS();
@@ -217,9 +222,9 @@ void test_key_expansion_initialization() {
     // Test that key expansion is properly initialized
     AESENC_KEYLEN keylen = static_cast<AESENC_KEYLEN>(klb);
 
-        // Test ECB mode
-        ECB_EXAMPLE ecb_exmp = createECBencryptionExample(klb);
-        AESKEY key(example->getKeyAsVector(), keylen);
+    // Test ECB mode
+    ECB_EXAMPLE ecb_exmp = createECBencryptionExample(klb);
+    AESKEY key(example->getKeyAsVector(), keylen);
     AESencryption::Cipher cipher(key);
 
     ASSERT_TRUE(cipher.isKeyExpansionInitialized(),
