@@ -13,6 +13,9 @@
 #define NIST_SP800_38A_EXAMPLES_HPP
 
 #include "common_aes_vectors.hpp"
+#include <memory>
+#include <functional>
+#include <map>
 
 // =============================================================================
 // Mode-Specific Definitions and Base Classes
@@ -66,6 +69,10 @@ const unsigned char* ExampleBase::getExpectedOutput() const {
 std::vector<unsigned char> ExampleBase::getExpectedOutputAsVector() const {
 	return std::vector<unsigned char>(this->expectedOutput, this->expectedOutput + TEXT_SIZE);
 }
+
+std::unique_ptr<ExampleBase> makeExampleCBC(CommonAESVectors::KeylengthBits kl);
+std::unique_ptr<ExampleBase> makeExampleCTR(CommonAESVectors::KeylengthBits kl);
+// ... other factories here
 
 // Plaintext used in NIST SP 800-38A mode examples (64 bytes = 4 blocks)
 const unsigned char commonPlaintext[TEXT_SIZE] = {
@@ -231,6 +238,28 @@ const char* getModeString(OperationMode mode) {
         case OperationMode::CBC: return "CBC";
         default: return "Unknown";
     }
+}
+
+using ExampleFactory = std::function<std::unique_ptr<ExampleBase>(CommonAESVectors::KeylengthBits)>;
+
+// The map that connects the enum to the factory function
+static const std::map<OperationMode, ExampleFactory> factoryMap = {
+    { OperationMode::ECB, &makeExampleCBC },
+    { OperationMode::CBC, &makeExampleCTR }
+    // To add a new mode, you just add a new line here
+};
+
+/**
+ * @brief Factory dispatcher using a map lookup.
+ */
+std::unique_ptr<ExampleBase> createExample(CommonAESVectors::KeylengthBits klb, OperationMode mode) {
+    auto it = factoryMap.find(mode);
+    if (it != factoryMap.end()) {
+        // 'it->second' holds the function (e.g., &makeExampleCBC),
+        // so we call it with the key length.
+        return it->second(klb);
+    }
+    return nullptr; // Mode not found in map
 }
 
 } // namespace NISTSP800_38A_Examples
