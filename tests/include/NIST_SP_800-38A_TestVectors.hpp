@@ -71,8 +71,8 @@ std::vector<unsigned char> ExampleBase::getExpectedOutputAsVector() const {
 	return std::vector<unsigned char>(this->expectedOutput, this->expectedOutput + TEXT_SIZE);
 }
 
-std::unique_ptr<ExampleBase> makeExampleCBC(CommonAESVectors::KeylengthBits kl);
-std::unique_ptr<ExampleBase> makeExampleCTR(CommonAESVectors::KeylengthBits kl);
+std::unique_ptr<ExampleBase> makeExampleECB(CommonAESVectors::KeylengthBits klb);
+std::unique_ptr<ExampleBase> makeExampleCBC(CommonAESVectors::KeylengthBits klb);
 // ... other factories here
 
 // Plaintext used in NIST SP 800-38A mode examples (64 bytes = 4 blocks)
@@ -117,8 +117,8 @@ const unsigned char ecb_aes256_ciphertext[TEXT_SIZE] = {
     0x23, 0x30, 0x4b, 0x7a, 0x39, 0xf9, 0xf3, 0xff, 0x06, 0x7d, 0x8d, 0x8f, 0x9e, 0x24, 0xec, 0xc7
 };
 
-static const unsigned char* retrieveECBCiphertext(CommonAESVectors::KeylengthBits kl) {
-    switch(kl) {
+static const unsigned char* retrieveECBCiphertext(CommonAESVectors::KeylengthBits klb) {
+    switch(klb) {
         case CommonAESVectors::KeylengthBits::keylen128: return ecb_aes128_ciphertext;
         case CommonAESVectors::KeylengthBits::keylen192: return ecb_aes192_ciphertext;
         case CommonAESVectors::KeylengthBits::keylen256: return ecb_aes256_ciphertext;
@@ -128,22 +128,22 @@ static const unsigned char* retrieveECBCiphertext(CommonAESVectors::KeylengthBit
 
 struct Example : public ExampleBase {
 public:
-    Example(CommonAESVectors::KeylengthBits kl, CommonAESVectors::EncryptionOperationType op);
+    Example(CommonAESVectors::KeylengthBits klb, CommonAESVectors::EncryptionOperationType op);
 };
 
-Example::Example(CommonAESVectors::KeylengthBits kl, CommonAESVectors::EncryptionOperationType op) {
-    this->keylenbits = kl;
+Example::Example(CommonAESVectors::KeylengthBits klb, CommonAESVectors::EncryptionOperationType op) {
+    this->keylenbits = klb;
     this->mode = OperationMode::ECB;
     this->operation = op;
-    this->key = CommonAESVectors::retrieveKey(kl); // Use common function
+    this->key = CommonAESVectors::retrieveKey(klb); // Use common function
 
     switch(op) {
         case CommonAESVectors::EncryptionOperationType::Encryption:
             this->input = commonPlaintext; // Use common plaintext
-            this->expectedOutput = retrieveECBCiphertext(kl);
+            this->expectedOutput = retrieveECBCiphertext(klb);
             break;
         case CommonAESVectors::EncryptionOperationType::Decryption:
-            this->input = retrieveECBCiphertext(kl);
+            this->input = retrieveECBCiphertext(klb);
             this->expectedOutput = commonPlaintext; // Use common plaintext
             break;
         default:
@@ -183,8 +183,8 @@ const unsigned char cbc_aes256_ciphertext[TEXT_SIZE] = {
     0xb2, 0xeb, 0x05, 0xe2, 0xc3, 0x9b, 0xe9, 0xfc, 0xda, 0x6c, 0x19, 0x07, 0x8c, 0x6a, 0x9d, 0x1b
 };
 
-static const unsigned char* retrieveCBCCiphertext(CommonAESVectors::KeylengthBits kl) {
-    switch(kl) {
+static const unsigned char* retrieveCBCCiphertext(CommonAESVectors::KeylengthBits klb) {
+    switch(klb) {
         case CommonAESVectors::KeylengthBits::keylen128: return cbc_aes128_ciphertext;
         case CommonAESVectors::KeylengthBits::keylen192: return cbc_aes192_ciphertext;
         case CommonAESVectors::KeylengthBits::keylen256: return cbc_aes256_ciphertext;
@@ -197,26 +197,26 @@ private:
     const unsigned char* iv;
 
 public:
-    Example(CommonAESVectors::KeylengthBits kl, CommonAESVectors::EncryptionOperationType op);
+    Example(CommonAESVectors::KeylengthBits klb, CommonAESVectors::EncryptionOperationType op);
     const unsigned char* getIV() const;
     static constexpr size_t getDataSize() { return TEXT_SIZE; }
     static constexpr size_t getIVSize() { return 16; }
 };
 
-Example::Example(CommonAESVectors::KeylengthBits kl, CommonAESVectors::EncryptionOperationType op) {
-    this->keylenbits = kl;
+Example::Example(CommonAESVectors::KeylengthBits klb, CommonAESVectors::EncryptionOperationType op) {
+    this->keylenbits = klb;
     this->mode = OperationMode::CBC;
     this->operation = op;
-    this->key = CommonAESVectors::retrieveKey(kl); // Use common function
+    this->key = CommonAESVectors::retrieveKey(klb); // Use common function
     this->iv = initializationVector; // Use common IV
 
     switch(op) {
         case CommonAESVectors::EncryptionOperationType::Encryption:
             this->input = commonPlaintext; // Use common plaintext
-            this->expectedOutput = retrieveCBCCiphertext(kl);
+            this->expectedOutput = retrieveCBCCiphertext(klb);
             break;
         case CommonAESVectors::EncryptionOperationType::Decryption:
-            this->input = retrieveCBCCiphertext(kl);
+            this->input = retrieveCBCCiphertext(klb);
             this->expectedOutput = commonPlaintext; // Use common plaintext
             break;
         default:
@@ -243,10 +243,22 @@ const char* getModeString(OperationMode mode) {
 
 using ExampleFactory = std::function<std::unique_ptr<ExampleBase>(CommonAESVectors::KeylengthBits)>;
 
+std::unique_ptr<ExampleBase> makeExampleECB(CommonAESVectors::KeylengthBits klb){
+	return std::unique_ptr<ECB_ns::Example>(
+		new ECB_ns::Example(klb, CommonAESVectors::EncryptionOperationType::Encryption)
+	);
+}
+
+std::unique_ptr<ExampleBase> makeExampleCBC(CommonAESVectors::KeylengthBits klb){
+	return std::unique_ptr<CBC_ns::Example>(
+		new CBC_ns::Example(klb, CommonAESVectors::EncryptionOperationType::Encryption)
+	);
+}
+
 // The map that connects the enum to the factory function
 static const std::map<OperationMode, ExampleFactory> factoryMap = {
-    { OperationMode::ECB, &makeExampleCBC },
-    { OperationMode::CBC, &makeExampleCTR }
+    { OperationMode::ECB, &makeExampleECB },
+    { OperationMode::CBC, &makeExampleCBC }
     // To add a new mode, you just add a new line here
 };
 
