@@ -36,6 +36,7 @@ enum struct KeylengthBits {
     keylen256 = 256
 };
 
+size_t getKeyLengthBytes(KeylengthBits klb);
 const char* getKeylengthString(KeylengthBits keylen);
 
 enum struct EncryptionOperationType {
@@ -136,6 +137,15 @@ static const unsigned char* retrieveKey(KeylengthBits kl) {
         case KeylengthBits::keylen256: return key256;
         default: return nullptr;
     }
+}
+
+size_t getKeyLengthBytes(KeylengthBits klb){
+	switch(klb) {
+		case KeylengthBits::keylen128: return 16;
+		case KeylengthBits::keylen192: return 24;
+		case KeylengthBits::keylen256: return 32;
+		default: return 0;
+        }
 }
 
 /**
