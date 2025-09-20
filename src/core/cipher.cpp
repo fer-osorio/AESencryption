@@ -388,7 +388,7 @@ void Cipher::encryption(const std::vector<uint8_t>& input, std::vector<uint8_t>&
 void Cipher::decryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output) const{
     if(output.size() < input.size()){
         throw std::invalid_argument(
-            "In member function Cipher::encryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output):"
+            "In member function Cipher::decryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output):"
             "output vector size most be bigger or equal than input vector size"
         );
     }
