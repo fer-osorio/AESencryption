@@ -81,6 +81,21 @@ public:
 	 * */
 	void decryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output) const override;
 
+		/*
+	 * Encrypts using operation mode stored in Cipher object
+	 * Consider: Comunicates with AES.h
+	 * Consider: Rewrites bytes pointed by output
+	 * */
+	void encrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;
+
+	/*
+	 * Decrypts using operation mode stored in Cipher object
+	 * Consider: Comunicates with AES.h
+	 * Consider: Rewrites bytes pointed by output
+	 * */
+	void decrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;
+
+
 	void saveKey(const char*const fname) const;
 	OperationMode getOptModeID() const;
 
@@ -96,18 +111,6 @@ public:
 	 * */
 	void buildKeyExpansion();
 	void formInitialVector();						// -Creates initial vector and writes it on destination array
-
-	/*
-	 * Encrypts using operation mode stored in Cipher object
-	 * Consider: Comunicates with AES.h
-	 * */
-	void encrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;
-
-	/*
-	 * Decrypts using operation mode stored in Cipher object
-	 * Consider: Comunicates with AES.h
-	 * */
-	void decrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;
 };
 };
 #endif
