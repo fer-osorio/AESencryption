@@ -106,6 +106,7 @@ public:
 	// For testing purposes
 	const uint8_t* getKeyExpansionForTesting() const;
 	bool isKeyExpansionInitialized() const;
+	const uint8_t* getInitialVectorForTesting() const;
 
 	private:
 	OperationMode buildOperationMode(const OperationMode::Identifier);
