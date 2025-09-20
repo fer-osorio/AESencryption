@@ -8,7 +8,8 @@ extern "C" {
 enum ExceptionCode{
   NoException,
   NullKey, NullKeyExpansion, NullSource, NullDestination, NullInput, NullOutput, NullInitialVector,
-  ZeroLength, InvalidKeyLength, InvalidInputSize
+  ZeroLength, InvalidKeyLength, InvalidInputSize,
+  UnknownOperation
 };
 
 #ifdef __cplusplus
