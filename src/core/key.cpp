@@ -31,10 +31,14 @@ Key::Key(LengthBits lenbits)
     }
 }
 
-Key::Key(const std::vector<uint8_t>& _key, LengthBits lenbits)
+Key::Key(const std::vector<uint8_t>& key_, LengthBits lenbits)
     : lenBits(lenbits), lenBytes(fromLenBitsToLenBytes(lenbits)){
+    if(key_.size() < this->lenBytes){
+        throw std::invalid_argument("In constructor Key::Key(const std::vector<uint8_t>& key_, LengthBits lenbits): "
+                                    "vector argument size is insuficient.");
+    }
     this->data = new uint8_t[this->lenBytes];
-    if(!_key.empty()) for(size_t i = 0; i < this->lenBytes; i++) this->data[i] = _key[i];
+    if(!key_.empty()) for(size_t i = 0; i < this->lenBytes; i++) this->data[i] = key_[i];
 }
 
 Key::Key(const Key& k)
