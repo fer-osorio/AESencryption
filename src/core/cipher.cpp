@@ -413,3 +413,7 @@ const uint8_t* Cipher::getKeyExpansionForTesting() const {
 bool Cipher::isKeyExpansionInitialized() const {
     return this->keyExpansion != nullptr;
 }
+
+const uint8_t* Cipher::getInitialVectorForTesting() const{
+    return this->config.getIVpointerData();
+}
