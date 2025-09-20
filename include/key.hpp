@@ -26,7 +26,10 @@ private:
 	Key();
 public:
 	Key(LengthBits);
-	Key(const std::vector<uint8_t>& _key, LengthBits);
+	/*
+	 * Consider: Throws exception whe the size of the passed vector argument key_ is insuficient
+	 * */
+	Key(const std::vector<uint8_t>& key_, LengthBits);
 	Key(const char*const fname);						// -Building from binary file.
 	Key(const Key&);
 	~Key();
