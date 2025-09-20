@@ -17,11 +17,11 @@
 #define EXAMPLE_BASE NISTSP800_38A_Examples::ExampleBase
 #define CREATE_EXAMPLE(klb,mode) NISTSP800_38A_Examples::createExample(static_cast<COMMAESVECT_KEYLEN>(klb), static_cast<COMMAESVECT_OPTMODE>(mode))
 
-void test_successful_operations(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
-void test_empty_vector_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
-void test_invalid_size_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
-void test_exception_safety(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
-void test_cbc_mode_iv_handling(AESENC_KEYLEN klb);
+bool test_successful_operations(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
+bool test_empty_vector_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
+bool test_invalid_size_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
+bool test_exception_safety(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
+bool test_cbc_mode_iv_handling(AESENC_KEYLEN klb);
 
 /**
  * @brief Runs the complete set of tests for a specific key length and operation mode.
@@ -37,19 +37,21 @@ bool runTestsForKeylengthMode(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
 
 int main() {
     std::cout << "=== C/C++ Interface Integration Tests with Specific Exception Handling ===" << std::endl;
-
+    std::vector<AESENC_KEYLEN> keylengths = { AESENC_KEYLEN::_128, AESENC_KEYLEN::_192, AESENC_KEYLEN::_256 };
+    std::vector<AESENC_OPTMODE> optModes = { AESENC_OPTMODE::ECB, AESENC_OPTMODE::CBC };
     std::cout << "\n=== Interface Integration Tests Complete ===" << std::endl;
     return 0;
 }
 
-void test_successful_operations(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
+bool test_successful_operations(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     std::unique_ptr<EXAMPLE_BASE> example = CREATE_EXAMPLE(klb,mode);
     if (!example) {
         // Handle the error if the mode is unsupported
         std::cerr << "Error: Unsupported operation mode." << std::endl;
-        return;
+        return false;
     }
     TEST_SUITE("Successful Operations Tests");
+    bool success = true;
 
     try {
         AESENC_OPTMODE opt_mode = static_cast<AESENC_OPTMODE>(mode);
@@ -58,7 +60,7 @@ void test_successful_operations(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
         AESencryption::Cipher ciph(key, opt_mode);
 
         // Verify key expansion is initialized
-        ASSERT_TRUE(
+        success &= ASSERT_TRUE(
             ciph.isKeyExpansionInitialized(),
             "Key expansion should be initialized after Cipher construction"
         );
@@ -68,29 +70,30 @@ void test_successful_operations(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
         std::vector<uint8_t> decrypted(TEXT_SIZE);
 
         ciph.encryption(input, encrypted);
-        ASSERT_BYTES_EQUAL(
+        success &= ASSERT_BYTES_EQUAL(
             example->getExpectedOutput(),
             encrypted.data(),
             TEXT_SIZE,
             "ECB encryption should match reference vector"
         );
         ciph.decryption(encrypted, decrypted);
-        ASSERT_BYTES_EQUAL(
+        success &= ASSERT_BYTES_EQUAL(
             example->getInput(),
             decrypted.data(),
             TEXT_SIZE,
             "ECB roundtrip should preserve data"
         );
-        ASSERT_TRUE(true, "All successful operations completed");
+        success &= ASSERT_TRUE(true, "All successful operations completed");
     } catch (const std::exception& e) {
-        ASSERT_TRUE(false, std::string("Unexpected exception: ") + e.what());
+        success &= ASSERT_TRUE(false, std::string("Unexpected exception: ") + e.what());
     }
-
     PRINT_RESULTS();
+    return success;
 }
 
-void test_empty_vector_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
+bool test_empty_vector_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     TEST_SUITE("Empty Vector Exception Tests");
+    bool success = true;
 
     AESKEY key(klb);
     AESencryption::Cipher cipher(key, mode);
@@ -101,58 +104,59 @@ void test_empty_vector_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     // Test empty input data
     try {
         cipher.encryption(std::vector<uint8_t>(0), output);
-        ASSERT_TRUE(false, "Should throw exception for empty input vector");
+        success &= ASSERT_TRUE(false, "Should throw exception for empty input vector");
     } catch (const std::invalid_argument& e) {
         std::string error_msg = e.what();
-        ASSERT_TRUE(error_msg.find("Input vector data cannot be empty") != std::string::npos,
+        success &= ASSERT_TRUE(error_msg.find("Input vector data cannot be empty") != std::string::npos,
                     "Should mention empty input in error message");
     } catch (const std::exception& e) {
-        ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
+        success &= ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
     }
 
     // Test empty output
     try {
         std::vector<uint8_t> empty(0);
         cipher.decryption(input, empty);
-        ASSERT_TRUE(false, "Should throw exception for empty output vector");
+        success &= ASSERT_TRUE(false, "Should throw exception for empty output vector");
     } catch (const std::invalid_argument& e) {
         std::string error_msg = e.what();
-        ASSERT_TRUE(error_msg.find("Output vector cannot be empty") != std::string::npos,
+        success &= ASSERT_TRUE(error_msg.find("Output vector cannot be empty") != std::string::npos,
                     "Should mention empty output in error message");
     } catch (const std::exception& e) {
-        ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
+        success &= ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
     }
 
     // Test decryption empty vectors
     try {
         cipher.decryption(std::vector<uint8_t>(0), output);
-        ASSERT_TRUE(false, "Should throw exception for empty input vector");
+        success &= ASSERT_TRUE(false, "Should throw exception for empty input vector");
     } catch (const std::invalid_argument& e) {
         std::string error_msg = e.what();
-        ASSERT_TRUE(error_msg.find("Input vector data cannot be empty") != std::string::npos,
+        success &= ASSERT_TRUE(error_msg.find("Input vector data cannot be empty") != std::string::npos,
                     "Should mention empty input in error message");
     } catch (const std::exception& e) {
-        ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
+        success &= ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
     }
 
     // Test empty output
     try {
         std::vector<uint8_t> empty(0);
         cipher.decryption(input, empty);
-        ASSERT_TRUE(false, "Should throw exception for empty output vector");
+        success &= ASSERT_TRUE(false, "Should throw exception for empty output vector");
     } catch (const std::invalid_argument& e) {
         std::string error_msg = e.what();
-        ASSERT_TRUE(error_msg.find("Output vector cannot be empty") != std::string::npos,
+        success &= ASSERT_TRUE(error_msg.find("Output vector cannot be empty") != std::string::npos,
                     "Should mention empty output in error message");
     } catch (const std::exception& e) {
-        ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
+        success &= ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
     }
-
     PRINT_RESULTS();
+    return success;
 }
 
-void test_invalid_size_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
+bool test_invalid_size_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     TEST_SUITE("Invalid Size Exception Tests");
+    bool success = true;
 
     AESKEY key(klb);
     AESencryption::Cipher cipher(key, mode);
@@ -163,32 +167,33 @@ void test_invalid_size_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     // Test non-block-aligned size (should map to InvalidInputSize from C)
     try {
         cipher.encryption(invalid_input, output);
-        ASSERT_TRUE(false, "Should throw exception for non-valid size");
+        success &= ASSERT_TRUE(false, "Should throw exception for non-valid size");
     } catch (const std::invalid_argument& e) {
         std::string error_msg = e.what();
-        ASSERT_TRUE(error_msg.find("must be at least block size") != std::string::npos,
+        success &= ASSERT_TRUE(error_msg.find("must be at least block size") != std::string::npos,
                     "Should mention block size condition in error message");
     } catch (const std::exception& e) {
-        ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
+        success &= ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
     }
 
     // Test same errors for decryption
     try {
         cipher.decryption(invalid_input, output);
-        ASSERT_TRUE(false, "Decryption should throw exception for non-valid size");
+        success &= ASSERT_TRUE(false, "Decryption should throw exception for non-valid size");
     } catch (const std::invalid_argument& e) {
         std::string error_msg = e.what();
-        ASSERT_TRUE(error_msg.find("must be at least block size") != std::string::npos,
+        success &= ASSERT_TRUE(error_msg.find("must be at least block size") != std::string::npos,
                     "Should mention block size condition in error message");
     } catch (const std::exception& e) {
-        ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
+        success &= ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
     }
-
     PRINT_RESULTS();
+    return success;
 }
 
-void test_exception_safety(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
+bool test_exception_safety(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     TEST_SUITE("Exception Safety Tests");
+    bool success = true;
 
     AESKEY key(klb);
     AESencryption::Cipher cipher(key, mode);
@@ -197,34 +202,35 @@ void test_exception_safety(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     uint8_t output[TEXT_SIZE];
 
     // Verify object is in valid state initially
-    ASSERT_TRUE(cipher.isKeyExpansionInitialized(), "Cipher should be properly initialized");
+    success &= ASSERT_TRUE(cipher.isKeyExpansionInitialized(), "Cipher should be properly initialized");
 
     try {
         // This should throw
         cipher.encrypt(nullptr, TEXT_SIZE, output);
-        ASSERT_TRUE(false, "Should have thrown exception");
+        success &= ASSERT_TRUE(false, "Should have thrown exception");
     } catch (const std::invalid_argument&) {
         // Object should still be usable after exception
-        ASSERT_TRUE(
+        success &= ASSERT_TRUE(
             cipher.isKeyExpansionInitialized(),
             "Key expansion should still be initialized after exception"
         );
         try {
             cipher.encrypt(input, TEXT_SIZE, output);
-            ASSERT_TRUE(true, "Cipher object remained usable after exception");
+            success &= ASSERT_TRUE(true, "Cipher object remained usable after exception");
         } catch (const std::exception& e) {
-            ASSERT_TRUE(
+            success &= ASSERT_TRUE(
                 false,
                 std::string("Cipher object corrupted after exception: ") + e.what()
             );
         }
     }
-
     PRINT_RESULTS();
+    return success;
 }
 
-void test_cbc_mode_iv_handling(AESENC_KEYLEN klb) {
+bool test_cbc_mode_iv_handling(AESENC_KEYLEN klb) {
     TEST_SUITE("CBC Mode IV Handling Tests");
+    bool success = true;
 
     try {
         AESencryption::Key cbc_key(klb);
@@ -236,27 +242,36 @@ void test_cbc_mode_iv_handling(AESENC_KEYLEN klb) {
         // If IV is not properly set, it should throw an exception
         try {
             cbc_cipher.encryption(input, output);
-            ASSERT_TRUE(true, "CBC encryption succeeded (IV properly handled)");
+            success &= ASSERT_TRUE(true, "CBC encryption succeeded (IV properly handled)");
         } catch (const std::exception& e) {
             std::string error_msg = e.what();
             if (error_msg.find("IV") != std::string::npos) {
-                ASSERT_TRUE(true, "CBC properly detected missing IV");
+                success &= ASSERT_TRUE(true, "CBC properly detected missing IV");
             } else {
-                ASSERT_TRUE(false, std::string("Unexpected CBC error: ") + e.what());
+                success &= ASSERT_TRUE(false, std::string("Unexpected CBC error: ") + e.what());
             }
         }
 
     } catch (const std::exception& e) {
-        ASSERT_TRUE(false, std::string("CBC IV test failed: ") + e.what());
+        success &= ASSERT_TRUE(false, std::string("CBC IV test failed: ") + e.what());
     }
-
     PRINT_RESULTS();
+    return success;
 }
 
 bool runTestsForKeylengthMode(AESENC_KEYLEN klb, AESENC_OPTMODE mode){
-    test_successful_operations(klb, mode);
-    test_empty_vector_exceptions(klb, mode);
-    test_invalid_size_exceptions(klb, mode);
-    test_exception_safety(klb, mode);
-    test_cbc_mode_iv_handling(klb);
+    bool success = true;
+    const char* keylenStr = CommonAESVectors::getKeylengthString(static_cast<COMMAESVECT_KEYLEN>(klb));
+    const char* optModeStr = NISTSP800_38A_Examples::getModeString(static_cast<COMMAESVECT_OPTMODE>(mode));
+    std::cout << "\n*****************************************************************\n"
+              << "\n========== AES key " << keylenStr << " bits, operation mode: " << optModeStr << " ============\n"
+              << "\n*****************************************************************\n" << std::endl;
+
+    success &= test_successful_operations(klb, mode);
+    success &= test_empty_vector_exceptions(klb, mode);
+    success &= test_invalid_size_exceptions(klb, mode);
+    success &= test_exception_safety(klb, mode);
+    success &= test_cbc_mode_iv_handling(klb);
+
+    return success;
 }
