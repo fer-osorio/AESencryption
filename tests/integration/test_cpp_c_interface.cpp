@@ -11,51 +11,53 @@
 #define TEXT_SIZE NISTSP800_38A_Examples::TEXT_SIZE
 
 #define AESENC_KEYLEN AESencryption::Key::LengthBits
+#define AESENC_OPTMODE AESencryption::Cipher::OperationMode::Identifier
 
-#define OPTMODE_ID AESencryption::Cipher::OperationMode::Identifier
-#define ECB_ID AESencryption::Cipher::OperationMode::Identifier::ECB
-#define ECB_EXAMPLE NISTSP800_38A_Examples::ECB_ns::Example
-#define CBC_ID AESencryption::Cipher::OperationMode::Identifier::CBC
-#define CBC_EXAMPLE NISTSP800_38A_Examples::CBC_ns::Example
+#define COMMAESVECT_KEYLEN CommonAESVectors::KeylengthBits
+#define COMMAESVECT_OPTMODE NISTSP800_38A_Examples::OperationMode
 
-void test_successful_operations(CommonAESVectors::KeylengthBits klb, OPTMODE_ID optm_id) {
+#define EXAMPLE_BASE NISTSP800_38A_Examples::ExampleBase
+
+void test_successful_operations(COMMAESVECT_KEYLEN klb, COMMAESVECT_OPTMODE mode) {
     TEST_SUITE("Successful Operations Tests");
+    std::unique_ptr<EXAMPLE_BASE> example = NISTSP800_38A_Examples::createExample(klb, mode);
+    if (!example) {
+        // Handle the error if the mode is unsupported
+        std::cerr << "Error: Unsupported operation mode." << std::endl;
+        return;
+    }
 
     try {
         AESENC_KEYLEN keylen = static_cast<AESENC_KEYLEN>(klb);
-
-        // Test ECB mode
-        ECB_EXAMPLE ecb_exmp = createECBencryptionExample(klb);
-        AESencryption::Key ecb_key(ecb_exmp.getKeyAsVector(), keylen);
-        AESencryption::Cipher ecb_cipher(ecb_key,ECB_ID);
+        AESENC_OPTMODE opt_mode = static_cast<AESENC_OPTMODE>(mode);
+        // Test operation mode
+        AESencryption::Key key(example->getKeyAsVector(), keylen);
+        AESencryption::Cipher ciph(key, opt_mode);
 
         // Verify key expansion is initialized
-        ASSERT_TRUE(ecb_cipher.isKeyExpansionInitialized(), "Key expansion should be initialized after Cipher construction");
+        ASSERT_TRUE(
+            ciph.isKeyExpansionInitialized(),
+            "Key expansion should be initialized after Cipher construction"
+        );
 
-        std::vector<uint8_t> input = ecb_exmp.getInputAsVector();
+        std::vector<uint8_t> input = example->getInputAsVector();
         std::vector<uint8_t> encrypted(BLOCK_SIZE);
         std::vector<uint8_t> decrypted(BLOCK_SIZE);
 
-        ecb_cipher.encryption(input, encrypted);
-        ASSERT_BYTES_EQUAL(ecb_exmp.getExpectedOutput(), encrypted.data(), TEXT_SIZE,"ECB encryption should match reference vector");
-        ecb_cipher.decryption(encrypted, decrypted);
-        ASSERT_BYTES_EQUAL(ecb_exmp.getInput(), decrypted.data(), TEXT_SIZE,"ECB roundtrip should preserve data");
-
-        // Test CBC mode
-        CBC_EXAMPLE cbc_exmp = createCBCencryptionExample(klb);
-        AESencryption::Key cbc_key(ecb_exmp.getKeyAsVector(), keylen);
-        AESencryption::Cipher cbc_cipher(ecb_key,CBC_ID);
-
-        ASSERT_TRUE(cbc_cipher.isKeyExpansionInitialized(),"Key expansion should be initialized for CBC cipher");
-
-        input = ecb_exmp.getInputAsVector();
-
-        cbc_cipher.encryption(input, encrypted);   // encryption method rewrites input vector
-        ASSERT_BYTES_EQUAL(cbc_exmp.getExpectedOutput(), encrypted.data(), TEXT_SIZE,"CBC encryption should match reference vector");
-        decrypted = encrypted;
-        cbc_cipher.decryption(encrypted, decrypted);
-        ASSERT_BYTES_EQUAL(ecb_exmp.getInput(), decrypted.data(), TEXT_SIZE, "CBC roundtrip should preserve data");
-
+        ciph.encryption(input, encrypted);
+        ASSERT_BYTES_EQUAL(
+            example->getExpectedOutput(),
+            encrypted.data(),
+            TEXT_SIZE,
+            "ECB encryption should match reference vector"
+        );
+        ciph.decryption(encrypted, decrypted);
+        ASSERT_BYTES_EQUAL(
+            example->getInput(),
+            decrypted.data(),
+            TEXT_SIZE,
+            "ECB roundtrip should preserve data"
+        );
         ASSERT_TRUE(true, "All successful operations completed");
 
     } catch (const std::exception& e) {
@@ -119,7 +121,7 @@ void test_invalid_size_exceptions() {
 
         // Test ECB mode
         ECB_EXAMPLE ecb_exmp = createECBencryptionExample(klb);
-        AESencryption::Key ecb_key(ecb_exmp.getKeyAsVector(), keylen);
+        AESencryption::Key key(example->getKeyAsVector(), keylen);
     AESencryption::Cipher cipher(key);
 
     uint8_t output[TEXT_SIZE];
@@ -205,7 +207,7 @@ void test_key_expansion_initialization() {
 
         // Test ECB mode
         ECB_EXAMPLE ecb_exmp = createECBencryptionExample(klb);
-        AESencryption::Key ecb_key(ecb_exmp.getKeyAsVector(), keylen);
+        AESencryption::Key key(example->getKeyAsVector(), keylen);
     AESencryption::Cipher cipher(key);
 
     ASSERT_TRUE(cipher.isKeyExpansionInitialized(),
@@ -237,7 +239,7 @@ void test_nothrow_versions() {
 
         // Test ECB mode
         ECB_EXAMPLE ecb_exmp = createECBencryptionExample(klb);
-        AESencryption::Key ecb_key(ecb_exmp.getKeyAsVector(), keylen);
+        AESencryption::Key key(example->getKeyAsVector(), keylen);
     AESencryption::Cipher cipher(key);
 
     uint8_t output[BLOCK_SIZE];
@@ -277,7 +279,7 @@ void test_exception_safety() {
 
         // Test ECB mode
         ECB_EXAMPLE ecb_exmp = createECBencryptionExample(klb);
-        AESencryption::Key ecb_key(ecb_exmp.getKeyAsVector(), keylen);
+        AESencryption::Key key(example->getKeyAsVector(), keylen);
     AESencryption::Cipher cipher(key);
 
     uint8_t output[BLOCK_SIZE];
