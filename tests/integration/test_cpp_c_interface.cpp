@@ -295,30 +295,64 @@ void test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
         // Direct C implementation
         size_t sz_klb = static_cast<size_t>(klb);
         ptrKeyExpansion_t c_ke = KeyExpansionMemoryAllocationBuild(example->getKey(), sz_klb, false);
-        ASSERT_NOT_NULL(c_ke, "C key expansion creation should succeed");
+        ASSERT_NOT_NULL(
+            c_ke,
+            "C key expansion creation should succeed"
+        );
 
         std::vector<uint8_t> key_expansion_bytes(sz_klb/8);
         KeyExpansionWriteBytes(c_ke, key_expansion_bytes.data());
         uint8_t c_output[TEXT_SIZE];
 
-        enum ExceptionCode c_result = encryptECB(example->getInput(), TEXT_SIZE, key_expansion_bytes.data(), sz_klb, c_output);
-        ASSERT_TRUE(c_result == NoException, "C encryption should succeed with NoException");
-
         // C++ wrapper implementation
-        AESKEY cpp_key(example->getKey(), klb, AESencryption::Key::OpMode::ECB);
+        AESKEY cpp_key(example->getKeyAsVector(), klb);
         AESencryption::Cipher cpp_cipher(cpp_key, mode);
+
+        enum ExceptionCode c_result = [&]() -> enum ExceptionCode{
+            switch(mode){
+                case AESENC_OPTMODE::ECB:
+                    return encryptECB(example->getInput(), TEXT_SIZE, key_expansion_bytes.data(), sz_klb, c_output);
+                    break;
+                case AESENC_OPTMODE::CBC:
+                    return encryptCBC(example->getInput(), TEXT_SIZE, key_expansion_bytes.data(), sz_klb, cpp_cipher.getInitialVectorForTesting(), c_output);
+                    break;
+                break;
+                default:
+                    return UnknownOperation;
+                    break;
+            }
+        }();
+        ASSERT_TRUE(
+            c_result == NoException,
+            "C encryption should succeed with NoException"
+        );
 
         uint8_t cpp_output[TEXT_SIZE];
         cpp_cipher.encrypt(example->getInput(), TEXT_SIZE, cpp_output);
 
-        ASSERT_BYTES_EQUAL(c_output, cpp_output, TEXT_SIZE,
-                           "C++ wrapper should produce same result as direct C");
+        ASSERT_BYTES_EQUAL(
+            c_output, cpp_output, TEXT_SIZE,
+            "C++ wrapper should produce same result as direct C"
+        );
 
         // Test decryption consistency
         uint8_t c_decrypted[TEXT_SIZE];
         uint8_t cpp_decrypted[TEXT_SIZE];
 
-        c_result = decryptECB(c_output, TEXT_SIZE, key_expansion_bytes.data(), sz_klb, c_decrypted);
+        c_result = [&]() -> enum ExceptionCode{
+            switch(mode){
+                case AESENC_OPTMODE::ECB:
+                    return encryptECB(c_output, TEXT_SIZE, key_expansion_bytes.data(), sz_klb, c_decrypted);
+                    break;
+                case AESENC_OPTMODE::CBC:
+                    return encryptCBC(c_output, TEXT_SIZE, key_expansion_bytes.data(), sz_klb, cpp_cipher.getInitialVectorForTesting(), c_decrypted);
+                    break;
+                break;
+                default:
+                    return UnknownOperation;
+                    break;
+            }
+        }();
         ASSERT_TRUE(c_result == NoException, "C decryption should succeed");
 
         cpp_cipher.decrypt(cpp_output, TEXT_SIZE, cpp_decrypted);
