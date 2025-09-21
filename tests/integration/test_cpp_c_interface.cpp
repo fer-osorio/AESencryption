@@ -38,6 +38,14 @@ bool runTestsForKeylengthMode(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
 
 int main() {
     std::cout << "=== C/C++ Interface Integration Tests with Specific Exception Handling ===" << std::endl;
+    std::vector<AESENC_KEYLEN> keylengths = { AESENC_KEYLEN::_128, AESENC_KEYLEN::_192, AESENC_KEYLEN::_256 };
+    std::vector<AESENC_OPTMODE> optModes = { AESENC_OPTMODE::ECB, AESENC_OPTMODE::CBC };
+
+    for(AESENC_KEYLEN klb: keylengths){
+        for(AESENC_OPTMODE mode: optModes){
+            runTestsForKeylengthMode(klb,mode);
+        }
+    }
 
     std::cout << "\n=== Interface Integration Tests Complete ===" << std::endl;
     return 0;
