@@ -20,9 +20,9 @@
 #define EXAMPLE_BASE NISTSP800_38A_Examples::ExampleBase
 #define CREATE_EXAMPLE(klb,mode) NISTSP800_38A_Examples::createExample(static_cast<COMMAESVECT_KEYLEN>(klb), static_cast<COMMAESVECT_OPTMODE>(mode))
 
-void test_specific_exception_code_mapping(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
-void test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
-void test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
+bool test_specific_exception_code_mapping(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
+bool test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
+bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
 
 /**
  * @brief Runs the complete set of tests for a specific key length and operation mode.
@@ -43,9 +43,9 @@ int main() {
     return 0;
 }
 
-void test_specific_exception_code_mapping(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
+bool test_specific_exception_code_mapping(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     TEST_SUITE("Specific Exception Code Mapping Tests");
-
+    bool success = true;
     // Test direct C function calls and their error codes
     std::vector<uint8_t> dummy_key(static_cast<size_t>(klb)/8, 0);
     size_t c_klb = static_cast<size_t>(klb);
@@ -58,35 +58,35 @@ void test_specific_exception_code_mapping(AESENC_KEYLEN klb, AESENC_OPTMODE mode
 
         // Test NullInput error code
         enum ExceptionCode result = encryptECB(nullptr, BLOCK_SIZE, key_expansion_ptr, c_klb, output);
-        ASSERT_TRUE(result == NullInput, "C function should return NullInput for null input");
+        success &= ASSERT_TRUE(result == NullInput, "C function should return NullInput for null input");
 
         // Test NullOutput error code
         result = encryptECB(input, BLOCK_SIZE, key_expansion_ptr, c_klb, nullptr);
-        ASSERT_TRUE(result == NullOutput, "C function should return NullOutput for null output");
+        success &= ASSERT_TRUE(result == NullOutput, "C function should return NullOutput for null output");
 
         // Test InvalidInputSize error code
         result = encryptECB(input, 15, key_expansion_ptr, 128, output);
-        ASSERT_TRUE(result == InvalidInputSize, "C function should return InvalidInputSize for non-valid size");
+        success &= ASSERT_TRUE(result == InvalidInputSize, "C function should return InvalidInputSize for non-valid size");
 
         // Test ZeroLength error code
         result = encryptECB(input, 0, key_expansion_ptr, 128, output);
-        ASSERT_TRUE(result == ZeroLength, "C function should return ZeroLength for zero size");
+        success &= ASSERT_TRUE(result == ZeroLength, "C function should return ZeroLength for zero size");
 
         // Test NullKeyExpansion error code
         result = encryptECB(input, BLOCK_SIZE, nullptr, 128, output);
-        ASSERT_TRUE(result == NullKeyExpansion, "C function should return NullKeyExpansion for null key expansion");
+        success &= ASSERT_TRUE(result == NullKeyExpansion, "C function should return NullKeyExpansion for null key expansion");
 
         KeyExpansionDelete(&c_ke);
     } else{
         std::cerr << "No test runned. Something went wrong in key creation.";
     }
-
     PRINT_RESULTS();
+    return success;
 }
 
-void test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
+bool test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     TEST_SUITE("Key Expansion Initialization Tests");
-
+    bool success = true;
     // Test that key expansion is properly initialized
     size_t keylen = static_cast<size_t>(klb);
     size_t ke_lenbytes = getKeyExpansionLengthBytesfromKeylenBits(static_cast<enum KeylenBits_t>(keylen));
@@ -94,13 +94,13 @@ void test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     AESKEY key(dumm, klb);
     AESencryption::Cipher cipher(key, mode);
 
-    ASSERT_TRUE(
+    success &= ASSERT_TRUE(
         cipher.isKeyExpansionInitialized(),
         "Key expansion should be initialized after construction"
     );
 
     const uint8_t* key_expansion_ptr = cipher.getKeyExpansionForTesting();
-    ASSERT_NOT_NULL(
+    success &= ASSERT_NOT_NULL(
         key_expansion_ptr,
         "Key expansion pointer should not be null"
     );
@@ -112,31 +112,31 @@ void test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
         KeyExpansionWriteBytes(c_ke, c_key_expansion.data());
 
         // Compare bytes to verify consistency
-        ASSERT_BYTES_EQUAL(
+        success &= ASSERT_BYTES_EQUAL(
             c_key_expansion.data(), key_expansion_ptr, BLOCK_SIZE,
             "c key expansion and c++ key expansion should match"
         );
 
         KeyExpansionDelete(&c_ke);
     }
-
     PRINT_RESULTS();
+    return success;
 }
 
-void test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
+bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     std::unique_ptr<EXAMPLE_BASE> example = CREATE_EXAMPLE(klb,mode);
     if (!example) {
         // Handle the error if the mode is unsupported
         std::cerr << "Error: Unsupported operation mode." << std::endl;
-        return;
+        return false;
     }
     TEST_SUITE("C vs C++ Consistency Tests");
-
+    bool success;
     try {
         // Direct C implementation
         size_t sz_klb = static_cast<size_t>(klb);
         ptrKeyExpansion_t c_ke = KeyExpansionMemoryAllocationBuild(example->getKey(), sz_klb, false);
-        ASSERT_NOT_NULL(
+        success &= ASSERT_NOT_NULL(
             c_ke,
             "C key expansion creation should succeed"
         );
@@ -163,7 +163,7 @@ void test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
                     break;
             }
         }();
-        ASSERT_TRUE(
+        success &= ASSERT_TRUE(
             c_result == NoException,
             "C encryption should succeed with NoException"
         );
@@ -171,7 +171,7 @@ void test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
         uint8_t cpp_output[TEXT_SIZE];
         cpp_cipher.encrypt(example->getInput(), TEXT_SIZE, cpp_output);
 
-        ASSERT_BYTES_EQUAL(
+        success &= ASSERT_BYTES_EQUAL(
             c_output, cpp_output, TEXT_SIZE,
             "C++ wrapper should produce same result as direct C"
         );
@@ -194,27 +194,36 @@ void test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
                     break;
             }
         }();
-        ASSERT_TRUE(c_result == NoException, "C decryption should succeed");
+        success &= ASSERT_TRUE(c_result == NoException, "C decryption should succeed");
 
         cpp_cipher.decrypt(cpp_output, TEXT_SIZE, cpp_decrypted);
 
-        ASSERT_BYTES_EQUAL(c_decrypted, cpp_decrypted, TEXT_SIZE,
+        success &= ASSERT_BYTES_EQUAL(c_decrypted, cpp_decrypted, TEXT_SIZE,
                            "C++ and C decryption should produce same result");
 
-        ASSERT_BYTES_EQUAL(example->getInput(), cpp_decrypted, TEXT_SIZE,
+        success &= ASSERT_BYTES_EQUAL(example->getInput(), cpp_decrypted, TEXT_SIZE,
                            "Both implementations should correctly decrypt data");
 
         KeyExpansionDelete(&c_ke);
 
     } catch (const std::exception& e) {
-        ASSERT_TRUE(false, std::string("Consistency test failed with exception: ") + e.what());
+        success &= ASSERT_TRUE(false, std::string("Consistency test failed with exception: ") + e.what());
     }
-
     PRINT_RESULTS();
+    return success;
 }
 
 bool runTestsForKeylengthMode(AESENC_KEYLEN klb, AESENC_OPTMODE mode){
-    test_specific_exception_code_mapping(klb, mode);
-    test_key_expansion_initialization(klb, mode);
-    test_consistency_with_c_implementation(klb, mode);
+    bool success = true;
+    const char* keylenStr = CommonAESVectors::getKeylengthString(static_cast<COMMAESVECT_KEYLEN>(klb));
+    const char* optModeStr = NISTSP800_38A_Examples::getModeString(static_cast<COMMAESVECT_OPTMODE>(mode));
+    std::cout << "\n*****************************************************************\n"
+              << "\n========== AES key " << keylenStr << " bits, operation mode: " << optModeStr << " ============\n"
+              << "\n*****************************************************************\n" << std::endl;
+
+    success &= test_specific_exception_code_mapping(klb, mode);
+    success &= test_key_expansion_initialization(klb, mode);
+    success &= test_consistency_with_c_implementation(klb, mode);
+
+    return success;
 }
