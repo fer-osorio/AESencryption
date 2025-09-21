@@ -63,8 +63,10 @@ static void handleExceptionCode(enum ExceptionCode code, const std::string& oper
             throw KeyExpansionException("Invalid key length");
         case InvalidInputSize:
             throw std::invalid_argument(base_msg + "Input size is invalid (must be al least 16 bytes)");
+        case UnknownOperation:
+            throw std::invalid_argument(base_msg + "Unknown operation");
         default:
-            throw AESException(base_msg + "Unknown error code: " + std::to_string(code));
+            throw AESException(base_msg + "Unknown error code: " + std::to_string(static_cast<int>(code)));
     }
 }
 
