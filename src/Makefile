@@ -9,16 +9,17 @@ LIBDIR = $(PROJECT_ROOT)/lib
 TARGET_LIB = $(LIBDIR)/libaesencryption_cpp.a
 
 # Local source directory and object directory
-SRCDIR = ./core
+CORE = ./core
+UTILS  = ./utils
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
 
 # Local includes
 INCLUDES = -I./utils/include -I$(PROJECT_ROOT)/data-encryption/include -I$(PROJECT_ROOT)/include
 
 # Source files
-SOURCES = $(wildcard $(SRCDIR)/*.cpp)
+SOURCES = $(wildcard $(CORE)/*.cpp) $(wildcard $(UTILS)/*.cpp)
 # Object files
-OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+OBJECTS = $(SOURCES:$(CORE)/%.cpp=$(OBJDIR)/%.o)
 
 # Dependencies on other modules
 DEPS = $(LIBDIR)/libaesencryption_c.a
@@ -41,11 +42,14 @@ check-deps:
 $(TARGET_LIB): check-deps $(OBJECTS) | $(OBJDIR) $(LIBDIR)
 	$(call create_static_lib,$@,$(OBJECTS))
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
+$(OBJDIR)/$(CORE)/%.o: $(CORE)/%.cpp | $(OBJDIR)
+	$(call compile_cpp_rule,$<,$@,$(INCLUDES))
+
+$(OBJDIR)/$(UTILS)/%.o: $(UTILS)/%.cpp | $(OBJDIR)
 	$(call compile_cpp_rule,$<,$@,$(INCLUDES))
 
 # Directory creation
-$(OBJDIR) $(LIBDIR):
+$(OBJDIR)/$(CORE) $(OBJDIR)/$(UTILS) $(LIBDIR):
 	$(call create_dir,$@)
 
 # Clean target
