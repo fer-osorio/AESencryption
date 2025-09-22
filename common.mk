@@ -104,12 +104,26 @@ define create_executable
 	$(call print_success,"Created executable:\\n\\t\\t$(1)")
 endef
 
-# Clean function
+# Clean function. Standard setting
 define clean_standard
 	$(call print_info,"Cleaning $(OBJDIR)")
 	@rm -rf $(OBJDIR)
 	$(call print_info,"Cleaning dependency files")
 	@find . -name "*.d" -delete 2>/dev/null || true
+endef
+
+# Clean directory function. Non-standar setting
+# Usage: $(call clean_dir,directory_path)
+define clean_dir
+	$(call print_info,"Cleaning $(1)")
+	@rm -rf $(1)
+endef
+
+# Clean dependency files from directory
+# Usage: $(call clean_deps,directory_path)
+define clean_deps
+	$(call print_info,"Cleaning dependency files")
+	@find $(1) -name "*.d" -delete 2>/dev/null || true
 endef
 
 # Dependency inclusion (include at end of Makefile)
