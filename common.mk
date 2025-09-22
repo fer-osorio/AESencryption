@@ -111,10 +111,10 @@ $(or $(patsubst ./%,%,$(shell find . -name "*.$(1)" 2>/dev/null)),$(warning No $
 endef
 
 # Function to convert source files to object files
-# Usage: OBJECTS = $(call sources_to_objects,sources,build_prefix)
+# Usage: OBJECTS = $(call sources_to_objects,sources,destination_dir)
 # If $(1) has .cpp as suffix, the suffix gets "cutted" and the $(2)/obj/>>the rest of $(1)<<.o is the output
 define sources_to_objects
-$(patsubst %.cpp,$(2)/obj/%.o,$(1))
+$(patsubst %.cpp,$(2)/%.o,$(1))
 endef
 
 # Clean function. Standard setting
