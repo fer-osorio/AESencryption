@@ -73,6 +73,7 @@ std::vector<unsigned char> ExampleBase::getExpectedOutputAsVector() const {
 
 std::unique_ptr<ExampleBase> makeExampleECB(CommonAESVectors::KeylengthBits klb);
 std::unique_ptr<ExampleBase> makeExampleCBC(CommonAESVectors::KeylengthBits klb);
+std::unique_ptr<ExampleBase> createExample(CommonAESVectors::KeylengthBits klb, OperationMode mode);
 // ... other factories here
 
 // Plaintext used in NIST SP 800-38A mode examples (64 bytes = 4 blocks)
@@ -277,8 +278,8 @@ std::unique_ptr<ExampleBase> createExample(CommonAESVectors::KeylengthBits klb, 
 
 } // namespace NISTSP800_38A_Examples
 
-/*NISTSP800_38A_Examples::ECB_ns::Example createECBencryptionExample(CommonAESVectors::KeylengthBits klb);
-NISTSP800_38A_Examples::CBC_ns::Example createCBCencryptionExample(CommonAESVectors::KeylengthBits klb);*/
+NISTSP800_38A_Examples::ECB_ns::Example createECBencryptionExample(CommonAESVectors::KeylengthBits klb);
+NISTSP800_38A_Examples::CBC_ns::Example createCBCencryptionExample(CommonAESVectors::KeylengthBits klb);
 
 NISTSP800_38A_Examples::ECB_ns::Example createECBencryptionExample(CommonAESVectors::KeylengthBits klb){
     return CommonAESVectors::ExampleFactory<NISTSP800_38A_Examples::ECB_ns::Example>::createEncryptionExample(klb);
