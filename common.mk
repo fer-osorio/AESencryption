@@ -110,6 +110,12 @@ define find_local_sources
 $(or $(patsubst ./%,%,$(shell find . -name "*.$(1)" 2>/dev/null)),$(warning No $(1) files found))
 endef
 
+# Function to find all source files in specified directory
+# Usage: $(call find_sources,directory,extension)
+define find_sources
+$(or $(patsubst ./%,%,$(shell find $(1) -name "*.$(2)" 2>/dev/null)),$(warning No $(1) files found in $(2)))
+endef
+
 # Function to convert source files to object files
 # Usage: OBJECTS = $(call sources_to_objects,sources,destination_dir)
 # If $(1) has .cpp as suffix, the suffix gets "cutted" and the $(2)/obj/>>the rest of $(1)<<.o is the output
