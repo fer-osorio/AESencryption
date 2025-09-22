@@ -113,7 +113,7 @@ endef
 # Function to find all source files in specified directory
 # Usage: $(call find_sources,directory,extension)
 define find_sources
-$(or $(patsubst ./%,%,$(shell find $(1) -name "*.$(2)" 2>/dev/null)),$(warning No $(1) files found in $(2)))
+$(or $(patsubst ./%,%,$(shell find $(1) -name "*.$(2)" 2>/dev/null)),$(warning No $(2) files found in $(1)))
 endef
 
 # Function to convert source files to object files
