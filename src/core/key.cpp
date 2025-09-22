@@ -135,34 +135,13 @@ size_t Key::getLenBytes() const{
     return this->lenBytes;
 }
 
-/*static const char* opModeToString(Key::OpMode mode) {
-    switch (mode) {
-        case Key::OpMode::ECB: return "ECB";
-        case Key::OpMode::CBC: return "CBC";
-        default: return "Unknown";
-    }
-}*/
-
 std::ostream& AESencryption::operator<<(std::ostream& ost, const Key& k) {
     ost << "\tKey size: " << static_cast<int>(k.lenBits) << " bits, " << k.lenBytes << " bytes, Nk = " << (k.lenBytes >> 2) << " words\n";
     ost << "\tKey: ";
     print_bytes_as_hex(ost, k.data, k.lenBytes);
     ost << '\n';
-    /*ost << "\tOperation mode: " << opModeToString(k.opMode_) << '\n';
-    if (k.opMode_ == Key::OpMode::CBC && k.initializedIV) {                     // Only print the IV if the mode is CBC and the IV is initialized
-        ost << "\tIV (for CBC): ";
-        print_bytes_as_hex(ost, k.IV.data, 16); // IV is typically 16 bytes for AES
-        ost << '\n';
-    }*/
     return ost;
 }
-
-/*void Key::set_IV(const InitVector source) {
-    if(!this->initializedIV)
-        for(size_t i = 0; i < AESconstants::BLOCK_SIZE; i++)
-            this->IV.data[i] = source.data[i];
-    this->initializedIV = true;
-}*/
 
 void Key::save(const char*const fname) const {
     const char* aeskey = "AESKEY";                                              // File type.
@@ -189,10 +168,6 @@ void Key::save(const char*const fname) const {
     }
 }
 
-/*void Key::write_IV(uint8_t*const destination) const {			// -Writes IV in destination
-	for(size_t i = 0; i < AESconstants::BLOCK_SIZE; i++)
-		destination[i] = this->IV.data[i];			// -Warning: We are supposing we have at least 16 bytes of space in destination
-}*/
 void Key::write_Key(uint8_t*const destination) const {			// -Writes key in destination. Warning: We're supposing we have enough space in
 	for(size_t i = 0; i < this->lenBytes; i++) destination[i] = this->data[i]; //  destination array.
 }
