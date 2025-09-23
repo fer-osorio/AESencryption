@@ -134,8 +134,11 @@ Cipher::OperationMode Cipher::OperationMode::buildInCBCmode(const InitVector& IV
 
 Cipher::Config::Config(): Nk_(NK128), Nr(NR128), keyExpansionLengthBytes(KEY_EXPANSION_LENGTH_128_BYTES) {}
 
-Cipher::Config::Config(OperationMode optMode, size_t Nk)
-    :operationMode(optMode), Nk_(Nk), Nr(getNrFromNk(Nk)), keyExpansionLengthBytes(getKeyExpansionByteLenFromNr(this->Nr)){
+Cipher::Config::Config(OperationMode optMode, Key::LengthBits klb):
+    operationMode(optMode),
+    Nk_(getNkfromLenbit(klb)),
+    Nr(getNrFromNk(this->Nk_)),
+    keyExpansionLengthBytes(getKeyExpansionByteLenFromNr(this->Nr)){
 }
 
 Cipher::OperationMode::Identifier Cipher::Config::getOperationModeID() const{
@@ -158,15 +161,14 @@ const uint8_t* Cipher::Config::getIVpointerData() const{
     return this->operationMode.getIVpointerData();
 }
 
-Cipher::Cipher(): config(OperationMode::Identifier::ECB, Nk128) {
+Cipher::Cipher(): config(OperationMode::Identifier::ECB, Key::LengthBits::_128) {
     size_t keyExpLen = this->config.getKeyExpansionLengthBytes();
     this->keyExpansion = new uint8_t[keyExpLen];
     for(size_t i = 0; i < keyExpLen; i++) this->keyExpansion[i] = 0;            // -Since the default key constitutes of just zeros, key expansion is also just zeros
 }
 
-Cipher::Cipher(const Key& k, const OperationMode::Identifier optModeID): key(k) {
+Cipher::Cipher(const Key& k, const OperationMode::Identifier optModeID): key(k), config(optModeID, k.getLenBits()) {
     this->buildKeyExpansion();
-    this->config = Config(this->buildOperationMode(optModeID), getNkfromLenbit(k.lenBits));
 }
 
 Cipher::Cipher(const Cipher& c): key(c.key), config(c.config) {
