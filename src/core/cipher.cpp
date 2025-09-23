@@ -89,6 +89,8 @@ Cipher::OperationMode::OperationMode(Identifier ID) : ID_(ID){
         case Identifier::CBC:
             this->IV_ = new InitVector;
             break;
+        case Identifier::Unknown:
+            break;
     }
 }
 
@@ -234,6 +236,8 @@ Cipher::OperationMode Cipher::buildOperationMode(const OperationMode::Identifier
                 encryptECB(tt.data08, BLOCK_SIZE, this->keyExpansion, static_cast<size_t>(this->key.getLenBits()), IVbuff.data);
             return OperationMode::buildInCBCmode(IVbuff);
             break;
+        case OperationMode::Identifier::Unknown:
+            return OperationMode(optModeID);
     }
     return OperationMode(optModeID);
 }
