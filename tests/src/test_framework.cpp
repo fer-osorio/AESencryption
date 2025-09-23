@@ -6,6 +6,8 @@
 #define TF_COLOR_BLUE   "\033[34m"
 #define TF_COLOR_NC     "\033[0m"   // No color
 #define TF_INFO         "\t\033[34m[INFO]\033[0m"
+#define TF_SUCCESS      "\t\033[32m[SUCCESS]\033[0m"
+#define TF_FAILURE      "\t\033[31m[FAILURE]\033[0m"
 
 using namespace TestFramework;
 
@@ -103,15 +105,15 @@ bool TestSuite::runTest(std::function<bool ()> testFunc, const std::string& test
 
 void TestSuite::printResults(){
     std::cout << "\n" << std::string(65, '=') << "\n";
-    std::cout << "Test Suite: " << this->suiteName << "\n";
-    std::cout << "Tests run: " << this->testsRun << "\n";
-    std::cout << "Tests passed: " << this->testsPassed << "\n";
-    std::cout << "Tests failed: " << (this->testsRun - this->testsPassed) << "\n";
+    std::cout << TF_INFO " Test Suite: " << this->suiteName << "\n";
+    std::cout << TF_INFO " Tests run: " << this->testsRun << "\n";
+    std::cout << TF_INFO " Tests passed: " << this->testsPassed << "\n";
+    std::cout << TF_INFO " Tests failed: " << (this->testsRun - this->testsPassed) << "\n";
 
     if(this->testsPassed == this->testsRun) {
-        std::cout << "✓ ALL TESTS PASSED" << "\n";
+        std::cout << TF_SUCCESS TF_COLOR_GREEN" ✓ ALL TESTS PASSED" TF_COLOR_NC << "\n";
     } else {
-        std::cout << "✗ SOME TESTS FAILED:" << "\n";
+        std::cout << TF_FAILURE TF_COLOR_RED" ✗ SOME TESTS FAILED:" TF_COLOR_NC << "\n";
         for (const std::string& failure : this->failedTests) {
             std::cout << "  - " << failure << "\n";
         }
