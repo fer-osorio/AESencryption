@@ -21,6 +21,7 @@ public:
 	struct OperationMode{
 	public:
 		enum struct Identifier {
+			Unknown,
 			ECB,							// -Electronic Code Book (not recommended).
 			CBC,							// -Cipher Block Chaining.
 		};
