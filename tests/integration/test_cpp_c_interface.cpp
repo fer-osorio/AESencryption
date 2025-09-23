@@ -82,7 +82,7 @@ bool test_specific_exception_code_mapping(AESENC_KEYLEN klb, AESENC_OPTMODE mode
 
         // Test NullKeyExpansion error code
         result = encryptECB(input, BLOCK_SIZE, nullptr, 128, output);
-        success &= ASSERT_TRUE(result == NullKeyExpansion, "C function should return NullKeyExpansion for null key expansion");
+        success &= ASSERT_TRUE(result == NullSource, "C function should return NullSource for null key expansion argument");
 
         KeyExpansionDelete(&c_ke);
     } else{
