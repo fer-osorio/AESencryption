@@ -26,7 +26,7 @@ OBJECTS = $(call sources_to_objects,$(SOURCES),$(OBJDIR))
 DEPS = $(LIBDIR)/libaesencryption_c.a
 
 # External libraries needed
-LIBS = -L$(LIBDIR) -laesencryption_c
+LIBS = -laesencryption_c
 
 # Default target
 all: $(TARGET_LIB)
