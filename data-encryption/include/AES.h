@@ -1,14 +1,14 @@
 #ifndef CIPHER_H
 #define CIPHER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include"exception_code.h"
 #include<stdlib.h>
 #include<stdbool.h>
 #include<stdint.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef union Word_ Word_t;
 //typedef Word_t* Word_t_ptr;

@@ -1,13 +1,13 @@
 #ifndef OPERATION_MODES_H
 #define OPERATION_MODES_H
 
-#include"exception_code.h"
-#include<stdint.h>
-#include<stddef.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include"exception_code.h"
+#include<stdint.h>
+#include<stddef.h>
 
 /*
  * Encrypts the data pointed by 'input' using ECB operation mode.
