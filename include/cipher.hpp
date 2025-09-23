@@ -48,7 +48,7 @@ public:
 		size_t keyExpansionLengthBytes;
 	public:
 		Config();
-		Config(OperationMode optMode, size_t Nk);
+		Config(OperationMode optMode, Key::LengthBits);
 		OperationMode::Identifier getOperationModeID() const;
 		size_t getNk() const;
 		size_t getNr() const;
