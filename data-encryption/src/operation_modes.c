@@ -72,6 +72,7 @@ enum ExceptionCode encryptECB(const uint8_t*const input, size_t size, const uint
   if(size == 0) return ZeroLength;
   if(size < BLOCK_SIZE) return InvalidInputSize;
   if(output == NULL) return NullOutput;
+  if(keyexpansion == NULL) return NullSource;
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   if(ke_p == NULL) return NullKeyExpansion;
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
@@ -115,6 +116,7 @@ enum ExceptionCode decryptECB(const uint8_t*const input, size_t size, const uint
   if(size == 0) return ZeroLength;
   if(size < BLOCK_SIZE) return InvalidInputSize;
   if(output == NULL) return NullOutput;
+  if(keyexpansion == NULL) return NullSource;
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   if(ke_p == NULL) return NullKeyExpansion;
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
@@ -165,6 +167,7 @@ enum ExceptionCode encryptCBC(const uint8_t*const input, size_t size, const uint
   if(size < BLOCK_SIZE) return InvalidInputSize;
   if(output == NULL) return NullOutput;
   if(IV == NULL) return NullInitialVector;
+  if(keyexpansion == NULL) return NullSource;
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   if(ke_p == NULL) return NullKeyExpansion;
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
@@ -240,6 +243,7 @@ enum ExceptionCode decryptCBC(const uint8_t*const input, size_t size, const uint
   if(size < BLOCK_SIZE) return InvalidInputSize;
   if(output == NULL) return NullOutput;
   if(IV == NULL) return NullInitialVector;
+  if(keyexpansion == NULL) return NullSource;
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   if(ke_p == NULL) return NullKeyExpansion;
   struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
