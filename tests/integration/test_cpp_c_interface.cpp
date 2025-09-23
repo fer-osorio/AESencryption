@@ -139,7 +139,7 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
         return false;
     }
     TEST_SUITE("C vs C++ Consistency Tests");
-    bool success;
+    bool success = true;
     try {
         // Direct C implementation
         size_t sz_klb = static_cast<size_t>(klb);
