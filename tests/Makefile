@@ -14,7 +14,7 @@ UNIT_DIR = unit
 INTEGRATION_DIR = integration
 
 # Local includes and libraries
-INCLUDES = -I./include -I../data-encryption/include
+INCLUDES = -I./include -I$(PROJECT_ROOT)/data-encryption/include
 LDFLAGS += -L$(PROJECT_ROOT)/lib
 LIBS = -laesencryption_c  -laesencryption_cpp  -lfilehandlers  -lmetricsanalysis
 
