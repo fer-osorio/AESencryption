@@ -387,7 +387,7 @@ void Cipher::encryption(const std::vector<uint8_t>& input, std::vector<uint8_t>&
         );
     }
     try{
-        encrypt(input.data(), input.size(), output.data());
+        this->encrypt(input.data(), input.size(), output.data());
     } catch(...){
         throw;
     }
@@ -401,7 +401,7 @@ void Cipher::decryption(const std::vector<uint8_t>& input, std::vector<uint8_t>&
         );
     }
     try{
-        decrypt(input.data(), input.size(), output.data());
+        this->decrypt(input.data(), input.size(), output.data());
     } catch(...){
         throw;
     }
