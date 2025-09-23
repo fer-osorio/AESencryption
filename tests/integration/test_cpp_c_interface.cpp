@@ -149,7 +149,7 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
             "C key expansion creation should succeed"
         );
 
-        std::vector<uint8_t> key_expansion_bytes(sz_klb/8);
+        std::vector<uint8_t> key_expansion_bytes(getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(klb)));
         KeyExpansionWriteBytes(c_ke, key_expansion_bytes.data());
         uint8_t c_output[TEXT_SIZE];
 
@@ -191,10 +191,10 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
         c_result = [&]() -> enum ExceptionCode{
             switch(mode){
                 case AESENC_OPTMODE::ECB:
-                    return encryptECB(c_output, TEXT_SIZE, key_expansion_bytes.data(), sz_klb, c_decrypted);
+                    return decryptECB(c_output, TEXT_SIZE, key_expansion_bytes.data(), sz_klb, c_decrypted);
                     break;
                 case AESENC_OPTMODE::CBC:
-                    return encryptCBC(c_output, TEXT_SIZE, key_expansion_bytes.data(), sz_klb, cpp_cipher.getInitialVectorForTesting(), c_decrypted);
+                    return decryptCBC(c_output, TEXT_SIZE, key_expansion_bytes.data(), sz_klb, cpp_cipher.getInitialVectorForTesting(), c_decrypted);
                     break;
                 break;
                 default:
