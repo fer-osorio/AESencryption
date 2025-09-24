@@ -39,6 +39,7 @@ public:
 
 		Identifier getOperationModeID() const;
 		const uint8_t* getIVpointerData() const;
+		bool setInitialVector(const std::vector<uint8_t>& source);
 	};
 	struct Config{
 	private:
@@ -54,6 +55,7 @@ public:
 		size_t getNr() const;
 		size_t getKeyExpansionLengthBytes() const;
 		const uint8_t* getIVpointerData() const;
+		bool setInitialVector(const std::vector<uint8_t>& source);
 	};
 private:
 	Key key = Key();
@@ -108,6 +110,7 @@ public:
 	const uint8_t* getKeyExpansionForTesting() const;
 	bool isKeyExpansionInitialized() const;
 	const uint8_t* getInitialVectorForTesting() const;
+	bool setInitialVectorForTesting(const std::vector<uint8_t>& source);
 
 	private:
 	OperationMode buildOperationMode(const OperationMode::Identifier);
