@@ -300,4 +300,12 @@ NISTSP800_38A_Examples::CBC_ns::Example createCBCencryptionExample(CommonAESVect
     return CommonAESVectors::ExampleFactory<NISTSP800_38A_Examples::CBC_ns::Example>::createEncryptionExample(klb);
 }
 
+// Utility macros for cleaner writting
+#define NIST NISTSP800_38A_Examples
+#define NIST_EXAPLEBASE NISTSP800_38A_Examples::ExampleBase
+#define NIST_OPTMODE NISTSP800_38A_Examples::OperationMode
+#define NIST_TEXTSIZE NISTSP800_38A_Examples::TEXT_SIZE
+#define NIST_CREATEEXAMPLE(klb,mode) NISTSP800_38A_Examples::createExample(static_cast<COMMAESVECT_KEYLEN>(klb), static_cast<NIST_OPTMODE>(mode))
+#define NIST_GETMODESTRING(mode) NISTSP800_38A_Examples::getModeString(static_cast<NIST_OPTMODE>(mode))
+
 #endif // NIST_SP800_38A_EXAMPLES_HPP
