@@ -2,20 +2,11 @@
 #include "../include/NIST_SP_800-38A_TestVectors.hpp"
 #include "../../include/cipher.hpp"
 
-#define TEXT_SIZE NISTSP800_38A_Examples::TEXT_SIZE
-
 #define AESKEY AESencryption::Key
 #define AESKEY_LENBITS AESencryption::Key::LengthBits
 
 #define AESCIPHER AESencryption::Cipher
 #define AESCIPHER_OPTMODE AESencryption::Cipher::OperationMode::Identifier
-
-#define COMMAESVECT_KEYLEN CommonAESVectors::KeylengthBits
-#define NIST_OPTMODE NISTSP800_38A_Examples::OperationMode
-
-#define NIST NISTSP800_38A_Examples
-#define NIST_EXAPLEBASE NISTSP800_38A_Examples::ExampleBase
-#define NIST_CREATEEXAMPLE(klb,mode) NISTSP800_38A_Examples::createExample(static_cast<COMMAESVECT_KEYLEN>(klb), static_cast<NIST_OPTMODE>(mode))
 
 bool test_successful_operations(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode);
 bool test_empty_vector_exceptions(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode);
@@ -59,7 +50,7 @@ bool test_successful_operations(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
     }
     TEST_SUITE("Successful Operations Tests");
     bool success = true;
-    std::string optModeStr = NIST::getModeString(static_cast<NIST_OPTMODE>(mode));
+    std::string optModeStr = NIST_GETMODESTRING(mode);
 
     try {
         // Test operation mode
@@ -74,21 +65,21 @@ bool test_successful_operations(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
         );
 
         std::vector<uint8_t> input = example->getInputAsVector();
-        std::vector<uint8_t> encrypted(TEXT_SIZE);
-        std::vector<uint8_t> decrypted(TEXT_SIZE);
+        std::vector<uint8_t> encrypted(NIST_TEXTSIZE);
+        std::vector<uint8_t> decrypted(NIST_TEXTSIZE);
 
         ciph.encryption(input, encrypted);
         success &= ASSERT_BYTES_EQUAL(
             example->getExpectedOutput(),
             encrypted.data(),
-            TEXT_SIZE,
+            NIST_TEXTSIZE,
             optModeStr + " encryption should match reference vector"
         );
         ciph.decryption(encrypted, decrypted);
         success &= ASSERT_BYTES_EQUAL(
             example->getInput(),
             decrypted.data(),
-            TEXT_SIZE,
+            NIST_TEXTSIZE,
             optModeStr + " roundtrip should preserve data"
         );
         success &= ASSERT_TRUE(true, "All successful operations completed");
@@ -106,8 +97,8 @@ bool test_empty_vector_exceptions(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
     AESKEY key(klb);
     AESCIPHER cipher(key, mode);
 
-    std::vector<uint8_t> input(TEXT_SIZE);
-    std::vector<uint8_t> output(TEXT_SIZE);
+    std::vector<uint8_t> input(NIST_TEXTSIZE);
+    std::vector<uint8_t> output(NIST_TEXTSIZE);
     std::vector<uint8_t> empty(0);
 
     // Test empty input data
@@ -169,7 +160,7 @@ bool test_invalid_size_exceptions(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
     AESCIPHER cipher(key, mode);
 
     std::vector<uint8_t> invalid_input(15);
-    std::vector<uint8_t> output(TEXT_SIZE);
+    std::vector<uint8_t> output(NIST_TEXTSIZE);
 
     // Test non-block-aligned size (should map to InvalidInputSize from C)
     try {
@@ -205,15 +196,15 @@ bool test_exception_safety(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
     AESKEY key(klb);
     AESCIPHER cipher(key, mode);
 
-    uint8_t input[TEXT_SIZE];
-    uint8_t output[TEXT_SIZE];
+    uint8_t input[NIST_TEXTSIZE];
+    uint8_t output[NIST_TEXTSIZE];
 
     // Verify object is in valid state initially
     success &= ASSERT_TRUE(cipher.isKeyExpansionInitialized(), "Cipher should be properly initialized");
 
     try {
         // This should throw
-        cipher.encrypt(nullptr, TEXT_SIZE, output);
+        cipher.encrypt(nullptr, NIST_TEXTSIZE, output);
         success &= ASSERT_TRUE(false, "Should have thrown exception");
     } catch (const std::invalid_argument&) {
         // Object should still be usable after exception
@@ -222,7 +213,7 @@ bool test_exception_safety(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
             "Key expansion should still be initialized after exception"
         );
         try {
-            cipher.encrypt(input, TEXT_SIZE, output);
+            cipher.encrypt(input, NIST_TEXTSIZE, output);
             success &= ASSERT_TRUE(true, "Cipher object remained usable after exception");
         } catch (const std::exception& e) {
             success &= ASSERT_TRUE(
@@ -243,8 +234,8 @@ bool test_cbc_mode_iv_handling(AESKEY_LENBITS klb) {
         AESencryption::Key cbc_key(klb);
         AESCIPHER cbc_cipher(cbc_key, AESCIPHER_OPTMODE::CBC);
 
-        std::vector<uint8_t> input(TEXT_SIZE);
-        std::vector<uint8_t> output(TEXT_SIZE);
+        std::vector<uint8_t> input(NIST_TEXTSIZE);
+        std::vector<uint8_t> output(NIST_TEXTSIZE);
 
         // If IV is not properly set, it should throw an exception
         try {
@@ -268,8 +259,8 @@ bool test_cbc_mode_iv_handling(AESKEY_LENBITS klb) {
 
 bool runTestsForKeylengthMode(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode){
     bool success = true;
-    const char* keylenStr = CommonAESVectors::getKeylengthString(static_cast<COMMAESVECT_KEYLEN>(klb));
-    const char* optModeStr = NISTSP800_38A_Examples::getModeString(static_cast<NIST_OPTMODE>(mode));
+    const char* keylenStr = CommonAESVectors::getKeylengthString(static_cast<COMAESVEC_KEYLEN>(klb));
+    const char* optModeStr = NIST_GETMODESTRING(mode);
     std::cout << "\n*****************************************************************\n"
               << "\n========== AES key " << keylenStr << " bits, operation mode: " << optModeStr << " ============\n"
               << "\n*****************************************************************\n" << std::endl;
