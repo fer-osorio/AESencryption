@@ -186,7 +186,7 @@ bool test_error_conditions(CommonAESVectors::KeylengthBits klb) {
 
     successStatus = ASSERT_TRUE(
         encryptCBC(NISTSP800_38A_Examples::commonPlaintext, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), Keylenbits128, ee_cbc.getIV(), NULL) == NullInitialVector,
-        "CBC should handle null input"
+        "CBC should handle null output"
     ) && successStatus;
 
     successStatus = ASSERT_TRUE(
