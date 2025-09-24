@@ -13,6 +13,7 @@
 #define COMMAESVECT_KEYLEN CommonAESVectors::KeylengthBits
 #define NIST_OPTMODE NISTSP800_38A_Examples::OperationMode
 
+#define NIST NISTSP800_38A_Examples
 #define NIST_EXAPLEBASE NISTSP800_38A_Examples::ExampleBase
 #define NIST_CREATEEXAMPLE(klb,mode) NISTSP800_38A_Examples::createExample(static_cast<COMMAESVECT_KEYLEN>(klb), static_cast<NIST_OPTMODE>(mode))
 
@@ -58,12 +59,13 @@ bool test_successful_operations(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
     }
     TEST_SUITE("Successful Operations Tests");
     bool success = true;
+    std::string optModeStr = NIST::getModeString(static_cast<NIST_OPTMODE>(mode));
 
     try {
-        AESCIPHER_OPTMODE opt_mode = static_cast<AESCIPHER_OPTMODE>(mode);
         // Test operation mode
         AESKEY key(example->getKeyAsVector(), klb);
-        AESCIPHER ciph(key, opt_mode);
+        AESCIPHER ciph(key, mode);
+        ciph.setInitialVectorForTesting(std::vector<uint8_t>(NIST::getInitializationVectorAsStdVector()));
 
         // Verify key expansion is initialized
         success &= ASSERT_TRUE(
@@ -80,14 +82,14 @@ bool test_successful_operations(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
             example->getExpectedOutput(),
             encrypted.data(),
             TEXT_SIZE,
-            "ECB encryption should match reference vector"
+            optModeStr + " encryption should match reference vector"
         );
         ciph.decryption(encrypted, decrypted);
         success &= ASSERT_BYTES_EQUAL(
             example->getInput(),
             decrypted.data(),
             TEXT_SIZE,
-            "ECB roundtrip should preserve data"
+            optModeStr + " roundtrip should preserve data"
         );
         success &= ASSERT_TRUE(true, "All successful operations completed");
     } catch (const std::exception& e) {
