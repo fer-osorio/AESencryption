@@ -5,10 +5,12 @@
 #include"../include/NIST_SP_800-38A_TestVectors.hpp"
 #include<cstring>
 
-bool test_ecb_mode(CommonAESVectors::KeylengthBits klb);
-bool test_cbc_mode(CommonAESVectors::KeylengthBits klb);
-bool test_iv_independence(CommonAESVectors::KeylengthBits klb);
-bool test_error_conditions(CommonAESVectors::KeylengthBits klb);
+#define COMMAESVECT_KEYLEN CommonAESVectors::KeylengthBits
+
+bool test_ecb_mode(KeylenBits_t klb);
+bool test_cbc_mode(KeylenBits_t klb);
+bool test_iv_independence(KeylenBits_t klb);
+bool test_error_conditions(KeylenBits_t klb);
 
 /**
  * @brief Runs the complete set of AES Operation Modes tests for a specific key length.
@@ -19,18 +21,18 @@ bool test_error_conditions(CommonAESVectors::KeylengthBits klb);
  * @param kl The key length to test (e.g., keylen128).
  * @return true if all test pass, false otherwise.
  */
-bool runTestsForKeylength(CommonAESVectors::KeylengthBits kl);
+bool runTestsForKeylength(KeylenBits_t kl);
 
 int main() {
     std::cout << "=== Operation Modes Tests ===" << std::endl;
 
-    if(!runTestsForKeylength(CommonAESVectors::KeylengthBits::keylen128)){
+    if(!runTestsForKeylength(KeylenBits_t::Keylenbits128)){
         return 1; // Exit with error status.
     }
-    if(!runTestsForKeylength(CommonAESVectors::KeylengthBits::keylen192)){
+    if(!runTestsForKeylength(KeylenBits_t::Keylenbits192)){
         return 1; // Exit with error status.
     }
-    if(!runTestsForKeylength(CommonAESVectors::KeylengthBits::keylen256)){
+    if(!runTestsForKeylength(KeylenBits_t::Keylenbits256)){
         return 1; // Exit with error status.
     }
 
@@ -38,11 +40,11 @@ int main() {
     return 0;
 }
 
-bool test_ecb_mode(CommonAESVectors::KeylengthBits klb) {
+bool test_ecb_mode(KeylenBits_t klb) {
     TEST_SUITE("ECB Mode Tests");
 
     bool successStatus = true;
-    NISTSP800_38A_Examples::ECB_ns::Example ee = createECBencryptionExample(klb);
+    NISTSP800_38A_Examples::ECB_ns::Example ee = createECBencryptionExample(static_cast<COMMAESVECT_KEYLEN>(klb));
     const size_t expanded_key_len = getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(klb));
     std::vector<uint8_t> expanded_key(expanded_key_len);                     // AES expanded key
     uint8_t output[NISTSP800_38A_Examples::TEXT_SIZE];                          // 2 blocks
@@ -56,7 +58,7 @@ bool test_ecb_mode(CommonAESVectors::KeylengthBits klb) {
 
     // Test ECB encryption
     successStatus = ASSERT_TRUE(
-        encryptECB(ee.getInput(), NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), Keylenbits128, output) == NoException,
+        encryptECB(ee.getInput(), NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), klb, output) == NoException,
         "ECB encryption should succeed"
     ) && successStatus;
 
@@ -67,7 +69,7 @@ bool test_ecb_mode(CommonAESVectors::KeylengthBits klb) {
 
     // Test ECB decryption
     successStatus = ASSERT_TRUE(
-        decryptECB(output, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), Keylenbits128, decrypted) == NoException,
+        decryptECB(output, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), klb, decrypted) == NoException,
         "ECB decryption should succeed"
     ) && successStatus;
 
@@ -81,11 +83,11 @@ bool test_ecb_mode(CommonAESVectors::KeylengthBits klb) {
     return successStatus;
 }
 
-bool test_cbc_mode(CommonAESVectors::KeylengthBits klb) {
+bool test_cbc_mode(KeylenBits_t klb) {
     TEST_SUITE("CBC Mode Tests");
 
     bool successStatus = true;
-    NISTSP800_38A_Examples::CBC_ns::Example ee = createCBCencryptionExample(klb);
+    NISTSP800_38A_Examples::CBC_ns::Example ee = createCBCencryptionExample(static_cast<COMMAESVECT_KEYLEN>(klb));
     const size_t expanded_key_len = getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(klb));
     std::vector<uint8_t> expanded_key(expanded_key_len);
     uint8_t output[NISTSP800_38A_Examples::TEXT_SIZE];
@@ -98,7 +100,7 @@ bool test_cbc_mode(CommonAESVectors::KeylengthBits klb) {
     ) && successStatus;
 
     successStatus = ASSERT_TRUE(
-        encryptCBC(NISTSP800_38A_Examples::commonPlaintext, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), Keylenbits128, ee.getIV(), output) == NoException,
+        encryptCBC(NISTSP800_38A_Examples::commonPlaintext, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), klb, ee.getIV(), output) == NoException,
         "CBC encryption should succeed"
     ) && successStatus;
 
@@ -109,7 +111,7 @@ bool test_cbc_mode(CommonAESVectors::KeylengthBits klb) {
 
     // Test CBC decryption
     successStatus = ASSERT_TRUE(
-        decryptCBC(output, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), Keylenbits128, ee.getIV(), decrypted) == NoException,
+        decryptCBC(output, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), klb, ee.getIV(), decrypted) == NoException,
         "CBC decryption should succeed"
     ) && successStatus;
 
@@ -123,11 +125,11 @@ bool test_cbc_mode(CommonAESVectors::KeylengthBits klb) {
     return successStatus;
 }
 
-bool test_iv_independence(CommonAESVectors::KeylengthBits klb) {
+bool test_iv_independence(KeylenBits_t klb) {
     TEST_SUITE("IV Independence Tests");
 
     bool successStatus = true;
-    NISTSP800_38A_Examples::CBC_ns::Example ee = createCBCencryptionExample(klb);
+    NISTSP800_38A_Examples::CBC_ns::Example ee = createCBCencryptionExample(static_cast<COMMAESVECT_KEYLEN>(klb));
     const size_t expanded_key_len = getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(klb));
     std::vector<uint8_t> expanded_key(expanded_key_len);
     uint8_t output1[NISTSP800_38A_Examples::TEXT_SIZE], output2[NISTSP800_38A_Examples::TEXT_SIZE];
@@ -141,8 +143,8 @@ bool test_iv_independence(CommonAESVectors::KeylengthBits klb) {
     iv2[0] = 0xFF; // Make second IV different
 
     // Encrypt same plaintext with different IVs
-    encryptCBC(NISTSP800_38A_Examples::commonPlaintext, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), Keylenbits128, iv1, output1);
-    encryptCBC(NISTSP800_38A_Examples::commonPlaintext, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), Keylenbits128, iv2, output2);
+    encryptCBC(NISTSP800_38A_Examples::commonPlaintext, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), klb, iv1, output1);
+    encryptCBC(NISTSP800_38A_Examples::commonPlaintext, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), klb, iv2, output2);
 
     successStatus = ASSERT_TRUE(
         memcmp(output1, output2, NISTSP800_38A_Examples::TEXT_SIZE) != 0,
@@ -154,12 +156,12 @@ bool test_iv_independence(CommonAESVectors::KeylengthBits klb) {
     return successStatus;
 }
 
-bool test_error_conditions(CommonAESVectors::KeylengthBits klb) {
+bool test_error_conditions(KeylenBits_t klb) {
     TEST_SUITE("Error Condition Tests");
 
     bool successStatus = true;
-    NISTSP800_38A_Examples::ECB_ns::Example ee_ecb = createECBencryptionExample(klb);
-    NISTSP800_38A_Examples::CBC_ns::Example ee_cbc = createCBCencryptionExample(klb);
+    NISTSP800_38A_Examples::ECB_ns::Example ee_ecb = createECBencryptionExample(static_cast<COMMAESVECT_KEYLEN>(klb));
+    NISTSP800_38A_Examples::CBC_ns::Example ee_cbc = createCBCencryptionExample(static_cast<COMMAESVECT_KEYLEN>(klb));
     const size_t expanded_key_len = getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(klb));
     std::vector<uint8_t> expanded_key(expanded_key_len);
     uint8_t output[NISTSP800_38A_Examples::TEXT_SIZE];
@@ -170,38 +172,38 @@ bool test_error_conditions(CommonAESVectors::KeylengthBits klb) {
 
     // Test null pointer handling
     successStatus = ASSERT_TRUE(
-        encryptECB(NULL, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), Keylenbits128, output) != NoException,
+        encryptECB(NULL, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), klb, output) != NoException,
         "ECB should handle null input"
     ) && successStatus;
 
     successStatus = ASSERT_TRUE(
-        encryptECB(NISTSP800_38A_Examples::commonPlaintext, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), Keylenbits128, NULL) != NoException,
+        encryptECB(NISTSP800_38A_Examples::commonPlaintext, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), klb, NULL) != NoException,
         "ECB should handle null output"
     ) && successStatus;
 
     successStatus = ASSERT_TRUE(
-        encryptCBC(NULL, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), Keylenbits128, ee_cbc.getIV(), output) == NullInitialVector,
+        encryptCBC(NULL, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), klb, ee_cbc.getIV(), output) == NullInput,
         "CBC should handle null input"
     ) && successStatus;
 
     successStatus = ASSERT_TRUE(
-        encryptCBC(NISTSP800_38A_Examples::commonPlaintext, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), Keylenbits128, ee_cbc.getIV(), NULL) == NullInitialVector,
+        encryptCBC(NISTSP800_38A_Examples::commonPlaintext, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), klb, ee_cbc.getIV(), NULL) == NullOutput,
         "CBC should handle null output"
     ) && successStatus;
 
     successStatus = ASSERT_TRUE(
-        encryptCBC(NISTSP800_38A_Examples::commonPlaintext, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), Keylenbits128, NULL, output) == NullInitialVector,
+        encryptCBC(NISTSP800_38A_Examples::commonPlaintext, NISTSP800_38A_Examples::TEXT_SIZE, expanded_key.data(), klb, NULL, output) == NullInitialVector,
         "CBC should handle null IV"
     ) && successStatus;
 
     // Test zero length
     successStatus = ASSERT_TRUE(
-        encryptECB(NISTSP800_38A_Examples::commonPlaintext, 0, expanded_key.data(), Keylenbits128, output) == ZeroLength,
+        encryptECB(NISTSP800_38A_Examples::commonPlaintext, 0, expanded_key.data(), klb, output) == ZeroLength,
         "ECB should handle zero length"
     ) && successStatus;
 
     successStatus = ASSERT_TRUE(
-        encryptCBC(NISTSP800_38A_Examples::commonPlaintext, 0, expanded_key.data(), Keylenbits128, ee_cbc.getIV(), output) == ZeroLength,
+        encryptCBC(NISTSP800_38A_Examples::commonPlaintext, 0, expanded_key.data(), klb, ee_cbc.getIV(), output) == ZeroLength,
         "CBC should handle zero length"
     ) && successStatus;
 
@@ -210,8 +212,8 @@ bool test_error_conditions(CommonAESVectors::KeylengthBits klb) {
     return successStatus;
 }
 
-bool runTestsForKeylength(CommonAESVectors::KeylengthBits klb) {
-    const char* keylenStr = CommonAESVectors::getKeylengthString(klb);
+bool runTestsForKeylength(KeylenBits_t klb) {
+    const char* keylenStr = CommonAESVectors::getKeylengthString(static_cast<COMMAESVECT_KEYLEN>(klb));
     bool successStatus = true;
     std::cout << "\n*****************************************************************\n"
               << "\n======================= AES key " << keylenStr << " bits ========================\n"
