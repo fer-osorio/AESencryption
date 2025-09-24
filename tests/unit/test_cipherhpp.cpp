@@ -106,14 +106,15 @@ bool test_empty_vector_exceptions(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
 
     std::vector<uint8_t> input(TEXT_SIZE);
     std::vector<uint8_t> output(TEXT_SIZE);
+    std::vector<uint8_t> empty(0);
 
     // Test empty input data
     try {
-        cipher.encryption(std::vector<uint8_t>(0), output);
+        cipher.encryption(empty, output);
         success &= ASSERT_TRUE(false, "Should throw exception for empty input vector");
     } catch (const std::invalid_argument& e) {
         std::string error_msg = e.what();
-        success &= ASSERT_TRUE(error_msg.find("Input vector data cannot be empty") != std::string::npos,
+        success &= ASSERT_TRUE(error_msg.find("Input data vector cannot be empty") != std::string::npos,
                     "Should mention empty input in error message");
     } catch (const std::exception& e) {
         success &= ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
@@ -121,12 +122,11 @@ bool test_empty_vector_exceptions(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
 
     // Test empty output
     try {
-        std::vector<uint8_t> empty(0);
         cipher.decryption(input, empty);
         success &= ASSERT_TRUE(false, "Should throw exception for empty output vector");
     } catch (const std::invalid_argument& e) {
         std::string error_msg = e.what();
-        success &= ASSERT_TRUE(error_msg.find("Output vector cannot be empty") != std::string::npos,
+        success &= ASSERT_TRUE(error_msg.find("Output data vector cannot be empty") != std::string::npos,
                     "Should mention empty output in error message");
     } catch (const std::exception& e) {
         success &= ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
@@ -138,7 +138,7 @@ bool test_empty_vector_exceptions(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
         success &= ASSERT_TRUE(false, "Should throw exception for empty input vector");
     } catch (const std::invalid_argument& e) {
         std::string error_msg = e.what();
-        success &= ASSERT_TRUE(error_msg.find("Input vector data cannot be empty") != std::string::npos,
+        success &= ASSERT_TRUE(error_msg.find("Input data vector cannot be empty") != std::string::npos,
                     "Should mention empty input in error message");
     } catch (const std::exception& e) {
         success &= ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
@@ -146,12 +146,11 @@ bool test_empty_vector_exceptions(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
 
     // Test empty output
     try {
-        std::vector<uint8_t> empty(0);
         cipher.decryption(input, empty);
         success &= ASSERT_TRUE(false, "Should throw exception for empty output vector");
     } catch (const std::invalid_argument& e) {
         std::string error_msg = e.what();
-        success &= ASSERT_TRUE(error_msg.find("Output vector cannot be empty") != std::string::npos,
+        success &= ASSERT_TRUE(error_msg.find("Output data vector cannot be empty") != std::string::npos,
                     "Should mention empty output in error message");
     } catch (const std::exception& e) {
         success &= ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
@@ -176,7 +175,7 @@ bool test_invalid_size_exceptions(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
         success &= ASSERT_TRUE(false, "Should throw exception for non-valid size");
     } catch (const std::invalid_argument& e) {
         std::string error_msg = e.what();
-        success &= ASSERT_TRUE(error_msg.find("must be at least block size") != std::string::npos,
+        success &= ASSERT_TRUE(error_msg.find("must be at least one block size") != std::string::npos,
                     "Should mention block size condition in error message");
     } catch (const std::exception& e) {
         success &= ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
@@ -188,7 +187,7 @@ bool test_invalid_size_exceptions(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
         success &= ASSERT_TRUE(false, "Decryption should throw exception for non-valid size");
     } catch (const std::invalid_argument& e) {
         std::string error_msg = e.what();
-        success &= ASSERT_TRUE(error_msg.find("must be at least block size") != std::string::npos,
+        success &= ASSERT_TRUE(error_msg.find("must be at least one block size") != std::string::npos,
                     "Should mention block size condition in error message");
     } catch (const std::exception& e) {
         success &= ASSERT_TRUE(false, std::string("Wrong exception type: ") + e.what());
