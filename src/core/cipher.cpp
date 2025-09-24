@@ -95,7 +95,7 @@ Cipher::OperationMode::OperationMode(Identifier ID) : ID_(ID){
 }
 
 Cipher::OperationMode::OperationMode(const OperationMode& optMode): ID_(optMode.ID_){
-    if(optMode.IV_ != NULL){
+    if(optMode.IV_ != nullptr){
         this->IV_ = new InitVector;
         std::memcpy(this->IV_->data, optMode.IV_, BLOCK_SIZE);
     }
@@ -104,11 +104,11 @@ Cipher::OperationMode::OperationMode(const OperationMode& optMode): ID_(optMode.
 Cipher::OperationMode& Cipher::OperationMode::operator=(const OperationMode& optMode){
     if(this != &optMode){
         this->ID_ = optMode.ID_;
-        if(optMode.IV_!=NULL){
-            if(this->IV_ == NULL) this->IV_ = new InitVector;
+        if(optMode.IV_!=nullptr){
+            if(this->IV_ == nullptr) this->IV_ = new InitVector;
             std::memcpy(this->IV_->data, optMode.IV_, BLOCK_SIZE);
         } else {
-            delete this->IV_; this->IV_ = NULL;
+            delete this->IV_; this->IV_ = nullptr;
         }
     }
     return *this;
@@ -122,8 +122,16 @@ const uint8_t* Cipher::OperationMode::getIVpointerData() const{
     return this->IV_->data;
 }
 
+bool Cipher::OperationMode::setInitialVector(const std::vector<uint8_t>& source){
+    if(this->IV_ == nullptr) this->IV_ = new InitVector;
+    if(source.size() < BLOCK_SIZE) return false;
+    for(size_t i = 0; i < BLOCK_SIZE; i++)
+        this->IV_->data[i] = source[i];
+    return true;
+}
+
 Cipher::OperationMode::~OperationMode(){
-    if(this->IV_ != NULL) delete this->IV_;
+    if(this->IV_ != nullptr) delete this->IV_;
 }
 
 Cipher::OperationMode Cipher::OperationMode::buildInCBCmode(const InitVector& IVsource){
@@ -161,6 +169,10 @@ const uint8_t* Cipher::Config::getIVpointerData() const{
     return this->operationMode.getIVpointerData();
 }
 
+bool Cipher::Config::setInitialVector(const std::vector<uint8_t>& source){
+    return this->operationMode.setInitialVector(source);
+}
+
 Cipher::Cipher(): config(OperationMode::Identifier::ECB, Key::LengthBits::_128) {
     size_t keyExpLen = this->config.getKeyExpansionLengthBytes();
     this->keyExpansion = new uint8_t[keyExpLen];
@@ -178,8 +190,8 @@ Cipher::Cipher(const Cipher& c): key(c.key), config(c.config) {
 }
 
 Cipher::~Cipher() {
-    if(keyExpansion != NULL) delete[] keyExpansion;
-    keyExpansion = NULL;
+    if(keyExpansion != nullptr) delete[] keyExpansion;
+    keyExpansion = nullptr;
 }
 
 Cipher& Cipher::operator = (const Cipher& c) {
@@ -187,7 +199,7 @@ Cipher& Cipher::operator = (const Cipher& c) {
         size_t ckeyExpLen = config.getKeyExpansionLengthBytes();
         this->key = c.key;
         if(this->config.getKeyExpansionLengthBytes() != ckeyExpLen) {
-            if(this->keyExpansion != NULL) delete[] keyExpansion;
+            if(this->keyExpansion != nullptr) delete[] keyExpansion;
             this->keyExpansion = new uint8_t[ckeyExpLen];
         }
         std::memcpy(this->keyExpansion, c.keyExpansion, ckeyExpLen);
@@ -234,7 +246,7 @@ Cipher::OperationMode Cipher::buildOperationMode(const OperationMode::Identifier
             } tt;
             tt.data64[0] = std::chrono::high_resolution_clock::now().time_since_epoch().count();
             tt.data64[1] = tt.data64[0]++;
-            if(this->keyExpansion != NULL)
+            if(this->keyExpansion != nullptr)
                 encryptECB(tt.data08, BLOCK_SIZE, this->keyExpansion, static_cast<size_t>(this->key.getLenBits()), IVbuff.data);
             return OperationMode::buildInCBCmode(IVbuff);
             break;
@@ -445,4 +457,8 @@ bool Cipher::isKeyExpansionInitialized() const {
 
 const uint8_t* Cipher::getInitialVectorForTesting() const{
     return this->config.getIVpointerData();
+}
+
+bool Cipher::setInitialVectorForTesting(const std::vector<uint8_t>& source){
+    return this->config.setInitialVector(source);
 }
