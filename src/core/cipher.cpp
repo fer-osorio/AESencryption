@@ -380,11 +380,21 @@ void Cipher::decrypt(const uint8_t*const data, size_t size, uint8_t*const output
 }
 
 void Cipher::encryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output) const{
+    if (input.empty()) {
+        throw std::invalid_argument("Input data vector cannot be empty");
+    }
+
+    if (output.empty()) {
+        throw std::invalid_argument("Output data vector cannot be empty");
+    }
     if(output.size() < input.size()){
         throw std::invalid_argument(
-            "In member function Cipher::encryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output):"
+            "In member function Cipher::encryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output): "
             "output vector size most be bigger or equal than input vector size"
         );
+    }
+    if(input.size() < BLOCK_SIZE){
+        throw std::invalid_argument("Input size must be at least one block size");
     }
     try{
         this->encrypt(input.data(), input.size(), output.data());
@@ -394,11 +404,22 @@ void Cipher::encryption(const std::vector<uint8_t>& input, std::vector<uint8_t>&
 }
 
 void Cipher::decryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output) const{
+    // Validate inputs (same validation as encryption)
+    if (input.empty()) {
+        throw std::invalid_argument("Input data vector cannot be empty");
+    }
+
+    if (output.empty()) {
+        throw std::invalid_argument("Output data vector cannot be empty");
+    }
     if(output.size() < input.size()){
         throw std::invalid_argument(
             "In member function Cipher::decryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output):"
             "output vector size most be bigger or equal than input vector size"
         );
+    }
+    if(input.size() < BLOCK_SIZE){
+        throw std::invalid_argument("Input size must be at least one block size");
     }
     try{
         this->decrypt(input.data(), input.size(), output.data());
