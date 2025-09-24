@@ -16,7 +16,7 @@ INTEGRATION_DIR = integration
 # Local includes and libraries
 INCLUDES = -I./include -I$(PROJECT_ROOT)/data-encryption/include
 LDFLAGS += -L$(PROJECT_ROOT)/lib
-LIBS = -laesencryption_c  -laesencryption_cpp  -lfilehandlers  -lmetricsanalysis
+LIBS = -laesencryption_cpp  -laesencryption_c  -lfilehandlers  -lmetricsanalysis
 
 # Define required dependencies (library files)
 REQUIRED_DEPS = \
