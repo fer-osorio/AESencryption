@@ -184,4 +184,7 @@ struct ExampleFactory {
 
 } // namespace CommonAESVectors
 
+// Utility macros for cleaner writting
+#define COMAESVEC_KEYLEN CommonAESVectors::KeylengthBits
+
 #endif // COMMON_AES_VECTORS_HPP
