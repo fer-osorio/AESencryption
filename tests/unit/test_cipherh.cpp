@@ -1,27 +1,26 @@
 #include "../include/test_framework.hpp"
-#include "../../include/cipher.hpp"
-#include "../../include/key.hpp"
 #include "../include/NIST_SP_800-38A_TestVectors.hpp"
-#include <cstring>
-#include <stdexcept>
+#include "../../include/cipher.hpp"
 
 #define TEXT_SIZE NISTSP800_38A_Examples::TEXT_SIZE
 
 #define AESKEY AESencryption::Key
-#define AESENC_KEYLEN AESencryption::Key::LengthBits
-#define AESENC_OPTMODE AESencryption::Cipher::OperationMode::Identifier
+#define AESKEY_LENBITS AESencryption::Key::LengthBits
+
+#define AESCIPHER AESencryption::Cipher
+#define AESCIPHER_OPTMODE AESencryption::Cipher::OperationMode::Identifier
 
 #define COMMAESVECT_KEYLEN CommonAESVectors::KeylengthBits
-#define COMMAESVECT_OPTMODE NISTSP800_38A_Examples::OperationMode
+#define NIST_OPTMODE NISTSP800_38A_Examples::OperationMode
 
-#define EXAMPLE_BASE NISTSP800_38A_Examples::ExampleBase
-#define CREATE_EXAMPLE(klb,mode) NISTSP800_38A_Examples::createExample(static_cast<COMMAESVECT_KEYLEN>(klb), static_cast<COMMAESVECT_OPTMODE>(mode))
+#define NIST_EXAPLEBASE NISTSP800_38A_Examples::ExampleBase
+#define NIST_CREATEEXAMPLE(klb,mode) NISTSP800_38A_Examples::createExample(static_cast<COMMAESVECT_KEYLEN>(klb), static_cast<NIST_OPTMODE>(mode))
 
-bool test_successful_operations(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
-bool test_empty_vector_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
-bool test_invalid_size_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
-bool test_exception_safety(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
-bool test_cbc_mode_iv_handling(AESENC_KEYLEN klb);
+bool test_successful_operations(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode);
+bool test_empty_vector_exceptions(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode);
+bool test_invalid_size_exceptions(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode);
+bool test_exception_safety(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode);
+bool test_cbc_mode_iv_handling(AESKEY_LENBITS klb);
 
 /**
  * @brief Runs the complete set of tests for a specific key length and operation mode.
@@ -33,15 +32,15 @@ bool test_cbc_mode_iv_handling(AESENC_KEYLEN klb);
  * @param mode The operation mode to test
  * @return true if all tests passed, false otherwise.
  */
-bool runTestsForKeylengthMode(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
+bool runTestsForKeylengthMode(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode);
 
 int main() {
     std::cout << "=== C/C++ Cipher.hpp Tests with Specific Exception Handling ===" << std::endl;
-    std::vector<AESENC_KEYLEN> keylengths = { AESENC_KEYLEN::_128, AESENC_KEYLEN::_192, AESENC_KEYLEN::_256 };
-    std::vector<AESENC_OPTMODE> optModes = { AESENC_OPTMODE::ECB, AESENC_OPTMODE::CBC };
+    std::vector<AESKEY_LENBITS> keylengths = { AESKEY_LENBITS::_128, AESKEY_LENBITS::_192, AESKEY_LENBITS::_256 };
+    std::vector<AESCIPHER_OPTMODE> optModes = { AESCIPHER_OPTMODE::ECB, AESCIPHER_OPTMODE::CBC };
 
-    for(AESENC_KEYLEN klb: keylengths){
-        for(AESENC_OPTMODE mode: optModes){
+    for(AESKEY_LENBITS klb: keylengths){
+        for(AESCIPHER_OPTMODE mode: optModes){
             runTestsForKeylengthMode(klb,mode);
         }
     }
@@ -50,8 +49,8 @@ int main() {
     return 0;
 }
 
-bool test_successful_operations(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
-    std::unique_ptr<EXAMPLE_BASE> example = CREATE_EXAMPLE(klb,mode);
+bool test_successful_operations(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
+    std::unique_ptr<NIST_EXAPLEBASE> example = NIST_CREATEEXAMPLE(klb,mode);
     if (!example) {
         // Handle the error if the mode is unsupported
         std::cerr << "Error: Unsupported operation mode." << std::endl;
@@ -61,10 +60,10 @@ bool test_successful_operations(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     bool success = true;
 
     try {
-        AESENC_OPTMODE opt_mode = static_cast<AESENC_OPTMODE>(mode);
+        AESCIPHER_OPTMODE opt_mode = static_cast<AESCIPHER_OPTMODE>(mode);
         // Test operation mode
         AESKEY key(example->getKeyAsVector(), klb);
-        AESencryption::Cipher ciph(key, opt_mode);
+        AESCIPHER ciph(key, opt_mode);
 
         // Verify key expansion is initialized
         success &= ASSERT_TRUE(
@@ -98,12 +97,12 @@ bool test_successful_operations(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     return success;
 }
 
-bool test_empty_vector_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
+bool test_empty_vector_exceptions(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
     TEST_SUITE("Empty Vector Exception Tests");
     bool success = true;
 
     AESKEY key(klb);
-    AESencryption::Cipher cipher(key, mode);
+    AESCIPHER cipher(key, mode);
 
     std::vector<uint8_t> input(TEXT_SIZE);
     std::vector<uint8_t> output(TEXT_SIZE);
@@ -161,12 +160,12 @@ bool test_empty_vector_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     return success;
 }
 
-bool test_invalid_size_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
+bool test_invalid_size_exceptions(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
     TEST_SUITE("Invalid Size Exception Tests");
     bool success = true;
 
     AESKEY key(klb);
-    AESencryption::Cipher cipher(key, mode);
+    AESCIPHER cipher(key, mode);
 
     std::vector<uint8_t> invalid_input(15);
     std::vector<uint8_t> output(TEXT_SIZE);
@@ -198,12 +197,12 @@ bool test_invalid_size_exceptions(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     return success;
 }
 
-bool test_exception_safety(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
+bool test_exception_safety(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
     TEST_SUITE("Exception Safety Tests");
     bool success = true;
 
     AESKEY key(klb);
-    AESencryption::Cipher cipher(key, mode);
+    AESCIPHER cipher(key, mode);
 
     uint8_t input[TEXT_SIZE];
     uint8_t output[TEXT_SIZE];
@@ -235,13 +234,13 @@ bool test_exception_safety(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     return success;
 }
 
-bool test_cbc_mode_iv_handling(AESENC_KEYLEN klb) {
+bool test_cbc_mode_iv_handling(AESKEY_LENBITS klb) {
     TEST_SUITE("CBC Mode IV Handling Tests");
     bool success = true;
 
     try {
         AESencryption::Key cbc_key(klb);
-        AESencryption::Cipher cbc_cipher(cbc_key, AESencryption::Cipher::OperationMode::Identifier::CBC);
+        AESCIPHER cbc_cipher(cbc_key, AESCIPHER_OPTMODE::CBC);
 
         std::vector<uint8_t> input(TEXT_SIZE);
         std::vector<uint8_t> output(TEXT_SIZE);
@@ -266,10 +265,10 @@ bool test_cbc_mode_iv_handling(AESENC_KEYLEN klb) {
     return success;
 }
 
-bool runTestsForKeylengthMode(AESENC_KEYLEN klb, AESENC_OPTMODE mode){
+bool runTestsForKeylengthMode(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode){
     bool success = true;
     const char* keylenStr = CommonAESVectors::getKeylengthString(static_cast<COMMAESVECT_KEYLEN>(klb));
-    const char* optModeStr = NISTSP800_38A_Examples::getModeString(static_cast<COMMAESVECT_OPTMODE>(mode));
+    const char* optModeStr = NISTSP800_38A_Examples::getModeString(static_cast<NIST_OPTMODE>(mode));
     std::cout << "\n*****************************************************************\n"
               << "\n========== AES key " << keylenStr << " bits, operation mode: " << optModeStr << " ============\n"
               << "\n*****************************************************************\n" << std::endl;
