@@ -33,6 +33,8 @@ enum struct OperationMode {
 };
 
 const char* getModeString(OperationMode mode);
+const unsigned char* getInitializationVector();
+std::vector<unsigned char> getInitializationVectorAsStdVector();
 
 // Extends the common base class with members specific to operation modes.
 struct ExampleBase : public CommonAESVectors::ExampleBase {
@@ -84,11 +86,21 @@ const unsigned char commonPlaintext[TEXT_SIZE] = {
     0xf6, 0x9f, 0x24, 0x45, 0xdf, 0x4f, 0x9b, 0x17, 0xad, 0x2b, 0x41, 0x7b, 0xe6, 0x6c, 0x37, 0x10
 };
 
+constexpr unsigned int INITIALIZATION_VECTOR_SIZE = 16;
+
 // Initialization Vector for CBC mode examples
-const unsigned char initializationVector[16] = {
+const unsigned char initializationVector[INITIALIZATION_VECTOR_SIZE] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
     0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
 };
+
+const unsigned char* getInitializationVector() {
+	return initializationVector;
+}
+
+std::vector<unsigned char> getInitializationVectorAsStdVector() {
+	return std::vector<unsigned char>(initializationVector, initializationVector + INITIALIZATION_VECTOR_SIZE);
+}
 
 // =============================================================================
 // ECB Mode Examples (NIST SP 800-38A Appendix F.1)
@@ -200,8 +212,7 @@ private:
 public:
     Example(CommonAESVectors::KeylengthBits klb, CommonAESVectors::EncryptionOperationType op);
     const unsigned char* getIV() const;
-    static constexpr size_t getDataSize() { return TEXT_SIZE; }
-    static constexpr size_t getIVSize() { return 16; }
+    static constexpr size_t getIVSize() { return INITIALIZATION_VECTOR_SIZE; }
 };
 
 Example::Example(CommonAESVectors::KeylengthBits klb, CommonAESVectors::EncryptionOperationType op) {
