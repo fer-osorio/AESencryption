@@ -5,10 +5,10 @@
 #include"../../data-encryption/include/constants.h"
 #include<cstring>
 
-bool test_KeyExpansionMemoryAllocationBuild(CommonAESVectors::KeylengthBits kl, bool debugHard);
-bool test_encryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard);
-bool test_decryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard);
-bool test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits kl, bool debugHard);
+bool test_KeyExpansionMemoryAllocationBuild(COMAESVEC_KEYLEN kl, bool debugHard);
+bool test_encryptBlock(COMAESVEC_KEYLEN kl, bool debugHard);
+bool test_decryptBlock(COMAESVEC_KEYLEN kl, bool debugHard);
+bool test_encryptionDecryptionRoundtrip(COMAESVEC_KEYLEN kl, bool debugHard);
 
 /**
  * @brief Runs the complete set of AES tests for a specific key length.
@@ -20,7 +20,7 @@ bool test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits kl, bool
  * @param debugHard The debug flag to pass to the test functions.
  * @return true if the critical key expansion test passes, false otherwise.
  */
-bool runTestsForKeylength(CommonAESVectors::KeylengthBits kl, bool debugHard);
+bool runTestsForKeylength(COMAESVEC_KEYLEN kl, bool debugHard);
 
 int main() {
     std::cout << "================= AES Core Implementation Tests =================\n" << std::endl;
@@ -28,15 +28,15 @@ int main() {
     // The debug flag is set once and can be easily changed for all tests here.
     const bool debugMode = false;
 
-    if (!runTestsForKeylength(CommonAESVectors::KeylengthBits::keylen128, debugMode)) {
+    if (!runTestsForKeylength(COMAESVEC_KEYLEN::keylen128, debugMode)) {
         return 1; // Exit with an error code on critical failure
     }
 
-    if (!runTestsForKeylength(CommonAESVectors::KeylengthBits::keylen192, debugMode)) {
+    if (!runTestsForKeylength(COMAESVEC_KEYLEN::keylen192, debugMode)) {
         return 1; // Exit with an error code on critical failure
     }
 
-    if (!runTestsForKeylength(CommonAESVectors::KeylengthBits::keylen256, debugMode)) {
+    if (!runTestsForKeylength(COMAESVEC_KEYLEN::keylen256, debugMode)) {
         return 1; // Exit with an error code on critical failure
     }
 
@@ -45,7 +45,7 @@ int main() {
 }
 
 // Test functions
-bool test_KeyExpansionMemoryAllocationBuild(CommonAESVectors::KeylengthBits kl, bool debugHard) {
+bool test_KeyExpansionMemoryAllocationBuild(COMAESVEC_KEYLEN kl, bool debugHard) {
     TEST_SUITE("AES Key Expansion Tests");
 
     bool success = true;
@@ -85,12 +85,12 @@ bool test_KeyExpansionMemoryAllocationBuild(CommonAESVectors::KeylengthBits kl, 
     return success;
 }
 
-bool test_encryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard) {
+bool test_encryptBlock(COMAESVEC_KEYLEN kl, bool debugHard) {
     TEST_SUITE("AES Block_t Encryption Tests");
 
     bool success = true;
     // Building reference for out test
-    NISTFIPS197_ENCRYPTION reference(kl, CommonAESVectors::EncryptionOperationType::Encryption);
+    NISTFIPS197_ENCRYPTION reference(kl, COMAESVEC_OPERTENCRYPT);
     // Casting key length
     size_t keylenbits = static_cast<size_t>(reference.getKeylenBits());
     // Buildgin key
@@ -117,12 +117,12 @@ bool test_encryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard) {
     return success;
 }
 
-bool test_decryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard) {
+bool test_decryptBlock(COMAESVEC_KEYLEN kl, bool debugHard) {
     TEST_SUITE("AES Block_t Decryption Tests");
 
     bool success = true;
     // Building reference for out test
-    NISTFIPS197_ENCRYPTION reference(kl, CommonAESVectors::EncryptionOperationType::Decryption);
+    NISTFIPS197_ENCRYPTION reference(kl, COMAESVEC_OPERTDECRYPT);
     // Casting key length
     size_t keylenbits = static_cast<size_t>(reference.getKeylenBits());
     // Buildgin key
@@ -149,12 +149,12 @@ bool test_decryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard) {
     return success;
 }
 
-bool test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits kl, bool debugHard) {
+bool test_encryptionDecryptionRoundtrip(COMAESVEC_KEYLEN kl, bool debugHard) {
     TEST_SUITE("AES Roundtrip Tests");
 
     bool success = true;
     // Building reference for out test
-    NISTFIPS197_ENCRYPTION reference(kl, CommonAESVectors::EncryptionOperationType::Encryption);
+    NISTFIPS197_ENCRYPTION reference(kl, COMAESVEC_OPERTENCRYPT);
     // Casting key length
     size_t keylenbits = static_cast<size_t>(reference.getKeylenBits());
     // Buildgin key
@@ -180,7 +180,7 @@ bool test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits kl, bool
     return success;
 }
 
-bool runTestsForKeylength(CommonAESVectors::KeylengthBits kl, bool debugHard) {
+bool runTestsForKeylength(COMAESVEC_KEYLEN kl, bool debugHard) {
     const char* keylenStr = CommonAESVectors::getKeylengthString(kl);
     std::cout << "\n*****************************************************************\n"
               << "\n======================= AES key " << keylenStr << " bits ========================\n"
