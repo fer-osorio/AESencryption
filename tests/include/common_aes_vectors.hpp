@@ -187,6 +187,7 @@ struct ExampleFactory {
 // Utility macros for cleaner writting
 #define COMAESVEC_KEYLEN CommonAESVectors::KeylengthBits
 #define COMAESVEC_OPERTENCRYPT CommonAESVectors::EncryptionOperationType::Encryption
+#define COMAESVEC_OPERTDECRYPT CommonAESVectors::EncryptionOperationType::Decryption
 #define COMAESVEC_GETKEYLENSTR(klb) CommonAESVectors::getKeylengthString(static_cast<COMAESVEC_KEYLEN>(klb))
 
 #endif // COMMON_AES_VECTORS_HPP
