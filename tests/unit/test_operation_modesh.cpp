@@ -42,7 +42,7 @@ bool test_ecb_mode(KeylenBits_t klb) {
     TEST_SUITE("ECB Mode Tests");
 
     bool successStatus = true;
-    NIST_EXAPLEECB_UPTR example_ecb = NIST_CREATEECBEXAMPLE(klb);
+    NIST_EXAMPLEECB_UPTR example_ecb = NIST_CREATEECBEXAMPLE(klb);
     const size_t expanded_key_len = getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(klb));
     std::vector<uint8_t> expanded_key(expanded_key_len);                     // AES expanded key
     uint8_t output[NIST_TEXTSIZE];                          // 2 blocks
@@ -85,7 +85,7 @@ bool test_cbc_mode(KeylenBits_t klb) {
     TEST_SUITE("CBC Mode Tests");
 
     bool successStatus = true;
-    NIST_EXAPLECBC_UPTR example_cbc = NIST_CREATECBCEXAMPLE(klb);
+    NIST_EXAMPLECBC_UPTR example_cbc = NIST_CREATECBCEXAMPLE(klb);
     const size_t expanded_key_len = getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(klb));
     std::vector<uint8_t> expanded_key(expanded_key_len);
     uint8_t output[NIST_TEXTSIZE];
@@ -127,7 +127,7 @@ bool test_iv_independence(KeylenBits_t klb) {
     TEST_SUITE("IV Independence Tests");
 
     bool successStatus = true;
-    NIST_EXAPLECBC_UPTR example_cbc = NIST_CREATECBCEXAMPLE(klb);
+    NIST_EXAMPLECBC_UPTR example_cbc = NIST_CREATECBCEXAMPLE(klb);
     const size_t expanded_key_len = getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(klb));
     std::vector<uint8_t> expanded_key(expanded_key_len);
     uint8_t output1[NIST_TEXTSIZE], output2[NIST_TEXTSIZE];
@@ -158,8 +158,8 @@ bool test_error_conditions(KeylenBits_t klb) {
     TEST_SUITE("Error Condition Tests");
 
     bool successStatus = true;
-    NIST_EXAPLEECB_UPTR example_ecb = NIST_CREATEECBEXAMPLE(klb);
-    NIST_EXAPLECBC_UPTR example_cbc = NIST_CREATECBCEXAMPLE(klb);
+    NIST_EXAMPLEECB_UPTR example_ecb = NIST_CREATEECBEXAMPLE(klb);
+    NIST_EXAMPLECBC_UPTR example_cbc = NIST_CREATECBCEXAMPLE(klb);
     const size_t expanded_key_len = getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(klb));
     std::vector<uint8_t> expanded_key(expanded_key_len);
     uint8_t output[NIST_TEXTSIZE];

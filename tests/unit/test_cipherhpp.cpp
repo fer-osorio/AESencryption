@@ -42,7 +42,7 @@ int main() {
 }
 
 bool test_successful_operations(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
-    std::unique_ptr<NIST_EXAPLEBASE> example = NIST_CREATEEXAMPLE(klb,mode);
+    NIST_EXAMPLEBASE_UPTR example = NIST_CREATEEXAMPLE(klb,mode);
     if (!example) {
         // Handle the error if the mode is unsupported
         std::cerr << "Error: Unsupported operation mode." << std::endl;

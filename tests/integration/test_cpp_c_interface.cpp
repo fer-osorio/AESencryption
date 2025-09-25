@@ -124,7 +124,7 @@ bool test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
 }
 
 bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
-    NIST_EXAPLEBASE_UPTR example = NIST_CREATEEXAMPLE(klb,mode);
+    NIST_EXAMPLEBASE_UPTR example = NIST_CREATEEXAMPLE(klb,mode);
     if (!example) {
         // Handle the error if the mode is unsupported
         std::cerr << "Error: Unsupported operation mode." << std::endl;
