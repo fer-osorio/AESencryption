@@ -120,7 +120,7 @@ $(OBJDIR) $(BINDIR)/$(INTEGRATION_DIR) $(BINDIR)/$(UNIT_DIR) $(OBJDIR)/$(SRCDIR)
 
 # Run tests with improved output
 run-unit: unit
-	$(call echo_info,"Running unit tests...")
+	$(call print_info,"Running unit tests...")
 	@failed=0; \
 	for test in $(UNIT_TESTS); do \
 		if [ -f "$$test" ]; then \
@@ -143,7 +143,7 @@ run-unit: unit
 	fi
 
 run-integration: integration
-	$(call echo_info,"Running integration tests...")
+	$(call print_info,"Running integration tests...")
 	@failed=0; \
 	for test in $(INTEGRATION_TESTS); do \
 		if [ -f "$$test" ]; then \
