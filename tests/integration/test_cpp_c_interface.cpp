@@ -8,17 +8,9 @@
 #include <cstring>
 #include <stdexcept>
 
-#define TEXT_SIZE NISTSP800_38A_Examples::TEXT_SIZE
-
 #define AESKEY AESencryption::Key
 #define AESENC_KEYLEN AESencryption::Key::LengthBits
 #define AESENC_OPTMODE AESencryption::Cipher::OperationMode::Identifier
-
-#define COMMAESVECT_KEYLEN CommonAESVectors::KeylengthBits
-#define COMMAESVECT_OPTMODE NISTSP800_38A_Examples::OperationMode
-
-#define EXAMPLE_BASE NISTSP800_38A_Examples::ExampleBase
-#define CREATE_EXAMPLE(klb,mode) NISTSP800_38A_Examples::createExample(static_cast<COMMAESVECT_KEYLEN>(klb), static_cast<COMMAESVECT_OPTMODE>(mode))
 
 bool test_specific_exception_code_mapping(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
 bool test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
@@ -132,7 +124,7 @@ bool test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
 }
 
 bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
-    std::unique_ptr<EXAMPLE_BASE> example = CREATE_EXAMPLE(klb,mode);
+    NIST_EXAPLEBASE_UPTR example = NIST_CREATEEXAMPLE(klb,mode);
     if (!example) {
         // Handle the error if the mode is unsupported
         std::cerr << "Error: Unsupported operation mode." << std::endl;
@@ -151,7 +143,7 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
 
         std::vector<uint8_t> key_expansion_bytes(getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(klb)));
         KeyExpansionWriteBytes(c_ke, key_expansion_bytes.data());
-        uint8_t c_output[TEXT_SIZE];
+        uint8_t c_output[NIST_TEXTSIZE];
 
         // C++ wrapper implementation
         AESKEY cpp_key(example->getKeyAsVector(), klb);
@@ -160,10 +152,10 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
         enum ExceptionCode c_result = [&]() -> enum ExceptionCode{
             switch(mode){
                 case AESENC_OPTMODE::ECB:
-                    return encryptECB(example->getInput(), TEXT_SIZE, key_expansion_bytes.data(), sz_klb, c_output);
+                    return encryptECB(example->getInput(), NIST_TEXTSIZE, key_expansion_bytes.data(), sz_klb, c_output);
                     break;
                 case AESENC_OPTMODE::CBC:
-                    return encryptCBC(example->getInput(), TEXT_SIZE, key_expansion_bytes.data(), sz_klb, cpp_cipher.getInitialVectorForTesting(), c_output);
+                    return encryptCBC(example->getInput(), NIST_TEXTSIZE, key_expansion_bytes.data(), sz_klb, cpp_cipher.getInitialVectorForTesting(), c_output);
                     break;
                 break;
                 default:
@@ -176,25 +168,25 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
             "C encryption should succeed with NoException"
         );
 
-        uint8_t cpp_output[TEXT_SIZE];
-        cpp_cipher.encrypt(example->getInput(), TEXT_SIZE, cpp_output);
+        uint8_t cpp_output[NIST_TEXTSIZE];
+        cpp_cipher.encrypt(example->getInput(), NIST_TEXTSIZE, cpp_output);
 
         success &= ASSERT_BYTES_EQUAL(
-            c_output, cpp_output, TEXT_SIZE,
+            c_output, cpp_output, NIST_TEXTSIZE,
             "C++ wrapper should produce same result as direct C"
         );
 
         // Test decryption consistency
-        uint8_t c_decrypted[TEXT_SIZE];
-        uint8_t cpp_decrypted[TEXT_SIZE];
+        uint8_t c_decrypted[NIST_TEXTSIZE];
+        uint8_t cpp_decrypted[NIST_TEXTSIZE];
 
         c_result = [&]() -> enum ExceptionCode{
             switch(mode){
                 case AESENC_OPTMODE::ECB:
-                    return decryptECB(c_output, TEXT_SIZE, key_expansion_bytes.data(), sz_klb, c_decrypted);
+                    return decryptECB(c_output, NIST_TEXTSIZE, key_expansion_bytes.data(), sz_klb, c_decrypted);
                     break;
                 case AESENC_OPTMODE::CBC:
-                    return decryptCBC(c_output, TEXT_SIZE, key_expansion_bytes.data(), sz_klb, cpp_cipher.getInitialVectorForTesting(), c_decrypted);
+                    return decryptCBC(c_output, NIST_TEXTSIZE, key_expansion_bytes.data(), sz_klb, cpp_cipher.getInitialVectorForTesting(), c_decrypted);
                     break;
                 break;
                 default:
@@ -204,12 +196,12 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
         }();
         success &= ASSERT_TRUE(c_result == NoException, "C decryption should succeed");
 
-        cpp_cipher.decrypt(cpp_output, TEXT_SIZE, cpp_decrypted);
+        cpp_cipher.decrypt(cpp_output, NIST_TEXTSIZE, cpp_decrypted);
 
-        success &= ASSERT_BYTES_EQUAL(c_decrypted, cpp_decrypted, TEXT_SIZE,
+        success &= ASSERT_BYTES_EQUAL(c_decrypted, cpp_decrypted, NIST_TEXTSIZE,
                            "C++ and C decryption should produce same result");
 
-        success &= ASSERT_BYTES_EQUAL(example->getInput(), cpp_decrypted, TEXT_SIZE,
+        success &= ASSERT_BYTES_EQUAL(example->getInput(), cpp_decrypted, NIST_TEXTSIZE,
                            "Both implementations should correctly decrypt data");
 
         KeyExpansionDelete(&c_ke);
@@ -223,8 +215,8 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
 
 bool runTestsForKeylengthMode(AESENC_KEYLEN klb, AESENC_OPTMODE mode){
     bool success = true;
-    const char* keylenStr = CommonAESVectors::getKeylengthString(static_cast<COMMAESVECT_KEYLEN>(klb));
-    const char* optModeStr = NISTSP800_38A_Examples::getModeString(static_cast<COMMAESVECT_OPTMODE>(mode));
+    const char* keylenStr = COMAESVEC_GETKEYLENSTR(klb);
+    const char* optModeStr = NIST_GETMODESTRING(mode);
     std::cout << "\n*****************************************************************\n"
               << "\n========== AES key " << keylenStr << " bits, operation mode: " << optModeStr << " ============\n"
               << "\n*****************************************************************\n" << std::endl;
