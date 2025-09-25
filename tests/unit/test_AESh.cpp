@@ -50,7 +50,7 @@ bool test_KeyExpansionMemoryAllocationBuild(CommonAESVectors::KeylengthBits kl, 
 
     bool success = true;
     // Building reference for out test
-    NISTFIPS197_Examples::KeyExpansion_ns::Example reference(kl);
+    NISTFIPS197_KEYEXPANSION reference(kl);
     // Casting key length
     size_t keylenbits = static_cast<size_t>(reference.getKeylenBits());
     // Buildgin key
@@ -90,7 +90,7 @@ bool test_encryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard) {
 
     bool success = true;
     // Building reference for out test
-    NISTFIPS197_Examples::Encryption_ns::Example reference(kl, CommonAESVectors::EncryptionOperationType::Encryption);
+    NISTFIPS197_ENCRYPTION reference(kl, CommonAESVectors::EncryptionOperationType::Encryption);
     // Casting key length
     size_t keylenbits = static_cast<size_t>(reference.getKeylenBits());
     // Buildgin key
@@ -122,7 +122,7 @@ bool test_decryptBlock(CommonAESVectors::KeylengthBits kl, bool debugHard) {
 
     bool success = true;
     // Building reference for out test
-    NISTFIPS197_Examples::Encryption_ns::Example reference(kl, CommonAESVectors::EncryptionOperationType::Decryption);
+    NISTFIPS197_ENCRYPTION reference(kl, CommonAESVectors::EncryptionOperationType::Decryption);
     // Casting key length
     size_t keylenbits = static_cast<size_t>(reference.getKeylenBits());
     // Buildgin key
@@ -154,7 +154,7 @@ bool test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits kl, bool
 
     bool success = true;
     // Building reference for out test
-    NISTFIPS197_Examples::Encryption_ns::Example reference(kl, CommonAESVectors::EncryptionOperationType::Encryption);
+    NISTFIPS197_ENCRYPTION reference(kl, CommonAESVectors::EncryptionOperationType::Encryption);
     // Casting key length
     size_t keylenbits = static_cast<size_t>(reference.getKeylenBits());
     // Buildgin key
@@ -169,7 +169,7 @@ bool test_encryptionDecryptionRoundtrip(CommonAESVectors::KeylengthBits kl, bool
     decryptBlock(encrypted, ke_p, decrypted, debugHard);
     bytesFromBlock(decrypted, roundTripOutputBytes);
 
-    success = ASSERT_BYTES_EQUAL(NISTFIPS197_Examples::Encryption_ns::plainText, roundTripOutputBytes, BLOCK_SIZE, "Roundtrip encryption/decryption should preserve data") && success;
+    success = ASSERT_BYTES_EQUAL(NISTFIPS197_PLAINTEXT, roundTripOutputBytes, BLOCK_SIZE, "Roundtrip encryption/decryption should preserve data") && success;
 
     BlockDelete(&decrypted);
     BlockDelete(&encrypted);
