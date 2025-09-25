@@ -55,6 +55,28 @@ define print_building
 	@echo -e "$(COLOR_CYAN)[BUILDING]$(COLOR_NC) $(1)"
 endef
 
+# Intended for bash
+define echo_success
+	echo -e "$(COLOR_GREEN)[SUCCESS]$(COLOR_NC) $(1)"
+endef
+
+define echo_error
+	echo -e "$(COLOR_RED)[ERROR]$(COLOR_NC) $(1)"
+endef
+
+define echo_warning
+	echo -e "$(COLOR_YELLOW)[WARNING]$(COLOR_NC) $(1)"
+endef
+
+define echo_info
+	echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC) $(1)"
+endef
+
+define echo_building
+	echo -e "$(COLOR_CYAN)[BUILDING]$(COLOR_NC) $(1)"
+endef
+
+
 # Directory creation function
 define create_dir
 $(shell \
