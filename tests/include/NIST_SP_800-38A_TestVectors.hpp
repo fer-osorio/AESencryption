@@ -289,23 +289,19 @@ std::unique_ptr<ExampleBase> createExample(CommonAESVectors::KeylengthBits klb, 
 
 } // namespace NISTSP800_38A_Examples
 
-NISTSP800_38A_Examples::ECB_ns::Example createECBencryptionExample(CommonAESVectors::KeylengthBits klb);
-NISTSP800_38A_Examples::CBC_ns::Example createCBCencryptionExample(CommonAESVectors::KeylengthBits klb);
-
-NISTSP800_38A_Examples::ECB_ns::Example createECBencryptionExample(CommonAESVectors::KeylengthBits klb){
-    return CommonAESVectors::ExampleFactory<NISTSP800_38A_Examples::ECB_ns::Example>::createEncryptionExample(klb);
-}
-
-NISTSP800_38A_Examples::CBC_ns::Example createCBCencryptionExample(CommonAESVectors::KeylengthBits klb){
-    return CommonAESVectors::ExampleFactory<NISTSP800_38A_Examples::CBC_ns::Example>::createEncryptionExample(klb);
-}
-
 // Utility macros for cleaner writting
 #define NIST NISTSP800_38A_Examples
 #define NIST_EXAPLEBASE NISTSP800_38A_Examples::ExampleBase
+#define NIST_EXAPLEECB NISTSP800_38A_Examples::ECB_ns::Example
+#define NIST_EXAPLECBC NISTSP800_38A_Examples::CBC_ns::Example
+#define NIST_EXAPLEBASE_UPTR std::unique_ptr<NISTSP800_38A_Examples::ExampleBase>
+#define NIST_EXAPLEECB_UPTR std::unique_ptr<NISTSP800_38A_Examples::ECB_ns::Example>
+#define NIST_EXAPLECBC_UPTR std::unique_ptr<NISTSP800_38A_Examples::CBC_ns::Example>
 #define NIST_OPTMODE NISTSP800_38A_Examples::OperationMode
 #define NIST_TEXTSIZE NISTSP800_38A_Examples::TEXT_SIZE
-#define NIST_CREATEEXAMPLE(klb,mode) NISTSP800_38A_Examples::createExample(static_cast<COMMAESVECT_KEYLEN>(klb), static_cast<NIST_OPTMODE>(mode))
+#define NIST_CREATEECBEXAMPLE(klb) std::make_unique<NIST_EXAPLEECB>(NIST_EXAPLEECB(static_cast<COMAESVEC_KEYLEN>(klb), COMAESVEC_OPERTENCRYPT))
+#define NIST_CREATECBCEXAMPLE(klb) std::make_unique<NIST_EXAPLECBC>(NIST_EXAPLECBC(static_cast<COMAESVEC_KEYLEN>(klb), COMAESVEC_OPERTENCRYPT))
+#define NIST_CREATEEXAMPLE(klb,mode) NISTSP800_38A_Examples::createExample(static_cast<COMAESVEC_KEYLEN>(klb), static_cast<NIST_OPTMODE>(mode))
 #define NIST_GETMODESTRING(mode) NISTSP800_38A_Examples::getModeString(static_cast<NIST_OPTMODE>(mode))
 
 #endif // NIST_SP800_38A_EXAMPLES_HPP
