@@ -120,48 +120,48 @@ $(OBJDIR) $(BINDIR)/$(INTEGRATION_DIR) $(BINDIR)/$(UNIT_DIR) $(OBJDIR)/$(SRCDIR)
 
 # Run tests with improved output
 run-unit: unit
-	$(call print_info,"Running unit tests...")
+	$(call echo_info,"Running unit tests...")
 	@failed=0; \
 	for test in $(UNIT_TESTS); do \
 		if [ -f "$$test" ]; then \
-			$(call print_building,"Executing: $$test"); \
+			$(call echo_building,"Executing: $$test"); \
 			if ./$$test; then \
-				$(call print_success,"PASSED: $$test"); \
+				$(call echo_success,"PASSED: $$test"); \
 			else \
-				$(call print_error,"FAILED: $$test"); \
+				$(call echo_error,"FAILED: $$test"); \
 				failed=1; \
 			fi; \
 		else \
-			$(call print_warning,"Test executable not found: $$test"); \
+			$(call echo_warning,"Test executable not found: $$test"); \
 		fi; \
 	done; \
 	if [ $$failed -eq 0 ]; then \
-		$(call print_success,"All unit tests passed!"); \
+		$(call echo_success,"All unit tests passed!"); \
 	else \
-		$(call print_error,"Some unit tests failed!"); \
+		$(call echo_error,"Some unit tests failed!"); \
 		exit 1; \
 	fi
 
 run-integration: integration
-	$(call print_info,"Running integration tests...")
+	$(call echo_info,"Running integration tests...")
 	@failed=0; \
 	for test in $(INTEGRATION_TESTS); do \
 		if [ -f "$$test" ]; then \
-			$(call print_building,"Executing: $$test"); \
+			$(call echo_building,"Executing: $$test"); \
 			if ./$$test; then \
-				$(call print_success,"PASSED: $$test"); \
+				$(call echo_success,"PASSED: $$test"); \
 			else \
-				$(call print_error,"FAILED: $$test"); \
+				$(call echo_error,"FAILED: $$test"); \
 				failed=1; \
 			fi; \
 		else \
-			$(call print_warning,"Test executable not found: $$test"); \
+			$(call echo_warning,"Test executable not found: $$test"); \
 		fi; \
 	done; \
 	if [ $$failed -eq 0 ]; then \
-		$(call print_success,"All integration tests passed!"); \
+		$(call echo_success,"All integration tests passed!"); \
 	else \
-		$(call print_error,"Some integration tests failed!"); \
+		$(call echo_error,"Some integration tests failed!"); \
 		exit 1; \
 	fi
 
