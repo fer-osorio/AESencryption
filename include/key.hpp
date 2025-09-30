@@ -36,16 +36,16 @@ public:
 
 	Key& operator =  (const Key&);
 	bool operator == (const Key&) const;
+	bool compareWithRawData(const uint8_t* raw_data, size_t len) const;
 	friend std::ostream& operator << (std::ostream& ost, const Key& k);
 
 	LengthBits getLenBits() const;
 	size_t getLenBytes() const;
 
+	const uint8_t* getDataForTesting() const;
+
 	void save(const char*const fname) const;				// -Saving information in a binary file.
 private:
-	// -Writes IV in destination
-	// -Warning: We are supposing we have at least 16 bytes of space in destination
-	void write_IV(uint8_t*const destination) const;
 	// -Writes key in destination. Warning: We're supposing we have enough space in
 	//  destination array.
 	void write_Key(uint8_t*const destination) const;
