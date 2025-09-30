@@ -72,6 +72,15 @@ Key::Key(const char*const fname): lenBits(LengthBits::_128), lenBytes(BLOCK_SIZE
                 this->lenBytes = fromLenBitsToLenBytes(this->lenBits);          // -lenBytes = lenbits / 8;
                 this->data = new uint8_t[this->lenBytes];                       // -Reading key
                 file.read(reinterpret_cast<char*>(this->data), static_cast<std::streamsize>(this->lenBytes));
+                if (!file || file.gcount() != static_cast<std::streamsize>(this->lenBytes)) {
+                    delete[] this->data;
+                    this->data = nullptr;
+                    throw std::runtime_error(
+                        "In file Source/AES.cpp, function Key::Key(const char*const fname): "
+                        "File is truncated or corrupted. Expected " + std::to_string(this->lenBytes) +
+                        " bytes of key data, but could only read " + std::to_string(file.gcount()) + " bytes.\n"
+                    );
+                }
            } else {
                 throw std::runtime_error(
                     "In file Source/AES.cpp, function Key::Key(const char*const fname): String "
@@ -133,14 +142,19 @@ std::ostream& AESencryption::operator<<(std::ostream& ost, const Key& k) {
 }
 
 void Key::save(const char*const fname) const {
-    const char* aeskey = "AESKEY";                                              // File type.
+    const char* keyFileHeaderID = "AESKEY";                                              // File type.
     std::ofstream file;
     file.open(fname, std::ios::binary);
     if(file.is_open()) {
-        file.write(aeskey,  6);                                                 // -File type
-        //file.write(op_mode, 3);                                                 // -Operation mode
+        file.write(keyFileHeaderID, headerLen);                                                 // -File type
         file.write(reinterpret_cast<const char*>(&this->lenBits), 2);           // -Key lenBits in bits
         file.write(reinterpret_cast<char*>(this->data), static_cast<std::streamsize>(this->lenBytes));
+        if (!file) {
+            throw std::runtime_error(
+            "In function void Key::save(const char*const fname) const: "
+            "Failed to write key data to file: " + std::string(fname)
+        );
+    }
     } else {
         throw std::runtime_error(
             "In file Source/AES.cpp, function void Key::save(const char* const fname): Failed to write "
