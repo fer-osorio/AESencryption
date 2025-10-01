@@ -30,15 +30,21 @@ int main() {
     std::cout << "=== C/C++ Cipher.hpp Tests with Specific Exception Handling ===" << std::endl;
     std::vector<AESKEY_LENBITS> keylengths = { AESKEY_LENBITS::_128, AESKEY_LENBITS::_192, AESKEY_LENBITS::_256 };
     std::vector<AESCIPHER_OPTMODE> optModes = { AESCIPHER_OPTMODE::ECB, AESCIPHER_OPTMODE::CBC };
+    bool success = true;
 
     for(AESKEY_LENBITS klb: keylengths){
         for(AESCIPHER_OPTMODE mode: optModes){
-            runTestsForKeylengthMode(klb,mode);
+            success &= runTestsForKeylengthMode(klb,mode);
         }
     }
 
-    std::cout << "\n=== Cipher.hpp Tests Complete ===" << std::endl;
-    return 0;
+    if(success){
+        std::cout << "\n===================== All Cipher.hpp Tests Succeed =====================" << std::endl;
+        return 0;
+    } else {
+        std::cout << "\n===================== Some Cipher.hpp Tests Failed =====================" << std::endl;
+        return 1;
+    }
 }
 
 bool test_successful_operations(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
