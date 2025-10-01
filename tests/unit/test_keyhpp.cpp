@@ -94,34 +94,20 @@ int main() {
     AESKEYLEN key_lengths[3] = { AESKEYLEN::_128, AESKEYLEN::_192, AESKEYLEN::_256 };
     bool allTestsSucceed = true;
 
-    // Construction tests
-    allTestsSucceed &= test_key_construction_from_length();
-    allTestsSucceed &= test_key_construction_from_vector();
-
     for(AESKEYLEN kl: key_lengths){
-        // Construction test
-        test_key_construction_errors(kl);
-
-        // Copy and assignment tests
-        test_key_copy_construction(kl);
-        test_key_assignment(kl);
-
-        // Equality tests
-        test_key_equality(kl);
-
-        // File I/O tests
-        test_key_save_and_load(kl);
-        test_key_load_errors(kl);
-
-        // Memory management tests
-        test_key_memory_management(kl);
+        allTestsSucceed &= runTestsForKeylength(kl);
     }
 
-    std::cout << "\n===================== Key Class Tests Complete =====================" << std::endl;
-    return 0;
+    if(allTestsSucceed) {
+        std::cout << "\n===================== All Key Class Tests Succeed =====================" << std::endl;
+        return 0;
+    } else {
+        std::cout << "\n===================== Some Key Class Tests Failed =====================" << std::endl;
+        return 1;
+    }
 }
 
-static std::map<AESKEYLEN, size_t> keyLengths_Sizet = {
+static const std::map<AESKEYLEN, size_t> keyLengths_Sizet = {
     {AESKEYLEN::_128, 128},
     {AESKEYLEN::_192, 192},
     {AESKEYLEN::_256, 256}
@@ -132,11 +118,12 @@ bool test_key_construction_from_length(AESKEYLEN keyLenBits) {
     bool success = true;
 
     // Test Key generation
-    AESencryption::Key key_128(keyLenBits);
+    AESencryption::Key key(keyLenBits);
     size_t keylensizet = keyLengths_Sizet.find(keyLenBits)->second;
     size_t sizeInBytes = keylensizet/8;
-    success &= ASSERT_EQUAL(keylensizet, static_cast<int>(key_128.getLenBits()), "Key should have correct" + std::to_string(keylensizet) + " length");
-    success &= ASSERT_EQUAL(sizeInBytes, static_cast<int>(key_128.getLenBytes()), "Key should have " + std::to_string(sizeInBytes) + "bytes");
+
+    success &= ASSERT_EQUAL(keylensizet, static_cast<int>(key.getLenBits()), "Key should have correct" + std::to_string(keylensizet) + " length");
+    success &= ASSERT_EQUAL(sizeInBytes, static_cast<int>(key.getLenBytes()), "Key should have " + std::to_string(sizeInBytes) + "bytes");
 
     PRINT_RESULTS();
     return success;
@@ -144,22 +131,16 @@ bool test_key_construction_from_length(AESKEYLEN keyLenBits) {
 
 bool test_key_construction_from_vector(AESKEYLEN keyLenBits) {
     TEST_SUITE("Key Construction from Vector");
+    KeyhppTest keytest(keyLenBits);
     bool success = true;
 
     // Test 128-bit key from vector
-    AESencryption::Key key_128(KeyhppTestVectors::key_128, AESKEYLEN::_128);
-    success &= ASSERT_EQUAL(128, static_cast<int>(key_128.getLenBits()), "128-bit key should have correct length");
-    success &= ASSERT_EQUAL(16, static_cast<int>(key_128.getLenBytes()), "128-bit key should have 16 bytes");
+    AESencryption::Key key(keytest.getKey(), keytest.getKeyLenBits());
+    size_t keylensizet = keyLengths_Sizet.find(keyLenBits)->second;
+    size_t sizeInBytes = keylensizet/8;
 
-    // Test 192-bit key from vector
-    AESencryption::Key key_192(KeyhppTestVectors::key_192, AESKEYLEN::_192);
-    success &= ASSERT_EQUAL(192, static_cast<int>(key_192.getLenBits()), "192-bit key should have correct length");
-    success &= ASSERT_EQUAL(24, static_cast<int>(key_192.getLenBytes()), "192-bit key should have 24 bytes");
-
-    // Test 256-bit key from vector
-    AESencryption::Key key_256(KeyhppTestVectors::key_256, AESKEYLEN::_256);
-    success &= ASSERT_EQUAL(256, static_cast<int>(key_256.getLenBits()), "256-bit key should have correct length");
-    success &= ASSERT_EQUAL(32, static_cast<int>(key_256.getLenBytes()), "256-bit key should have 32 bytes");
+    success &= ASSERT_EQUAL(keylensizet, static_cast<int>(key.getLenBits()), "Key should have correct" + std::to_string(keylensizet) + " length");
+    success &= ASSERT_EQUAL(sizeInBytes, static_cast<int>(key.getLenBytes()), "Key should have " + std::to_string(sizeInBytes) + "bytes");
 
     PRINT_RESULTS();
     return success;
@@ -412,7 +393,9 @@ bool runTestsForKeylength(AESKEYLEN keyLenBits){
               << "\n===================== AES key " << keylenStr << " bits ========================\n"
               << "\n=================================================================\n" << std::endl;
 
-    // Construction test
+    // Construction tests
+    success &= test_key_construction_from_length(keyLenBits);
+    success &= test_key_construction_from_vector(keyLenBits);
     success &= test_key_construction_errors(keyLenBits);
 
     // Copy and assignment tests
