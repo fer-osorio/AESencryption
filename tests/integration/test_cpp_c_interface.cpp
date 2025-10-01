@@ -19,8 +19,7 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
 /**
  * @brief Runs the complete set of tests for a specific key length and operation mode.
  *
- * This function prints a banner for the key length and then executes the key
- * expansion, encryption, decryption, and roundtrip tests.
+ * This function prints a banner for the key length and then executes all tests.
  *
  * @param kl The key length to test.
  * @param mode The operation mode to test
@@ -29,18 +28,24 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
 bool runTestsForKeylengthMode(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
 
 int main() {
-    std::cout << "=== C/C++ Interface Integration Tests with Specific Exception Handling ===" << std::endl;
+    std::cout << "===================== C/C++ Interface Integration Tests =====================" << std::endl;
     std::vector<AESENC_KEYLEN> keylengths = { AESENC_KEYLEN::_128, AESENC_KEYLEN::_192, AESENC_KEYLEN::_256 };
     std::vector<AESENC_OPTMODE> optModes = { AESENC_OPTMODE::ECB, AESENC_OPTMODE::CBC };
+    bool allTestsSucceed = true;
 
     for(AESENC_KEYLEN klb: keylengths){
         for(AESENC_OPTMODE mode: optModes){
-            runTestsForKeylengthMode(klb,mode);
+            allTestsSucceed &= runTestsForKeylengthMode(klb,mode);
         }
     }
 
-    std::cout << "\n=== Interface Integration Tests Complete ===" << std::endl;
-    return 0;
+    if(allTestsSucceed) {
+        std::cout << "\n===================== All C/C++ Interface Integration Tests Succeed =====================" << std::endl;
+        return 0;
+    } else {
+        std::cout << "\n===================== Some C/C++ Interface Integration Tests Failed =====================" << std::endl;
+        return 1;
+    }
 }
 
 bool test_specific_exception_code_mapping(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
