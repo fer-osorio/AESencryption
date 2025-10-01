@@ -27,21 +27,19 @@ int main() {
 
     // The debug flag is set once and can be easily changed for all tests here.
     const bool debugMode = false;
+    bool allTestsSucceed = true;
 
-    if (!runTestsForKeylength(COMAESVEC_KEYLEN::keylen128, debugMode)) {
-        return 1; // Exit with an error code on critical failure
+    allTestsSucceed &= runTestsForKeylength(COMAESVEC_KEYLEN::keylen128, debugMode);
+    allTestsSucceed &= runTestsForKeylength(COMAESVEC_KEYLEN::keylen192, debugMode);
+    allTestsSucceed &= runTestsForKeylength(COMAESVEC_KEYLEN::keylen256, debugMode);
+
+    if(allTestsSucceed) {
+        std::cout << "\n\n================== All AES Core Tests Succeed ==================" << std::endl;
+        return 0; // Success
+    } else {
+        std::cout << "\n\n================== Some AES Core Tests Failed ==================" << std::endl;
+        return 1; // Some tests failed
     }
-
-    if (!runTestsForKeylength(COMAESVEC_KEYLEN::keylen192, debugMode)) {
-        return 1; // Exit with an error code on critical failure
-    }
-
-    if (!runTestsForKeylength(COMAESVEC_KEYLEN::keylen256, debugMode)) {
-        return 1; // Exit with an error code on critical failure
-    }
-
-    std::cout << "\n\n================== All AES Core Tests Complete ==================" << std::endl;
-    return 0; // Success
 }
 
 // Test functions
@@ -182,18 +180,19 @@ bool test_encryptionDecryptionRoundtrip(COMAESVEC_KEYLEN kl, bool debugHard) {
 
 bool runTestsForKeylength(COMAESVEC_KEYLEN kl, bool debugHard) {
     const char* keylenStr = CommonAESVectors::getKeylengthString(kl);
-    std::cout << "\n*****************************************************************\n"
+    bool success = true;
+    std::cout << "\n=================================================================\n"
               << "\n======================= AES key " << keylenStr << " bits ========================\n"
-              << "\n*****************************************************************\n" << std::endl;
+              << "\n=================================================================\n" << std::endl;
 
     if (test_KeyExpansionMemoryAllocationBuild(kl, debugHard) == false) {
         std::cout << "\n=== Fail to create a valid Key Expansion object. Stop. ===" << std::endl;
         return false;
     }
-    test_encryptBlock(kl, debugHard);
-    test_decryptBlock(kl, debugHard);
-    test_encryptionDecryptionRoundtrip(kl, debugHard);
+    success &= test_encryptBlock(kl, debugHard);
+    success &= test_decryptBlock(kl, debugHard);
+    success &= test_encryptionDecryptionRoundtrip(kl, debugHard);
 
     std::cout << std::endl;
-    return true;
+    return success;
 }
