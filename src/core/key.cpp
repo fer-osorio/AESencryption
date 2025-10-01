@@ -66,7 +66,7 @@ Key::Key(const char*const fname): lenBits(LengthBits::_128), lenBytes(BLOCK_SIZE
                 else {
                     throw std::runtime_error(
                         "In file Source/AES.cpp, function Key::Key(const char*const fname):"
-                        + std::to_string(keyLen) + " is not a valid length (in bits) for key.\n"
+                        + std::to_string(static_cast<int>(keyLen)) + " is not a valid length (in bits) for key.\n"
                     );
                 }
                 this->lenBytes = fromLenBitsToLenBytes(this->lenBits);          // -lenBytes = lenbits / 8;
@@ -142,7 +142,6 @@ std::ostream& AESencryption::operator<<(std::ostream& ost, const Key& k) {
 }
 
 void Key::save(const char*const fname) const {
-    const char* keyFileHeaderID = "AESKEY";                                              // File type.
     std::ofstream file;
     file.open(fname, std::ios::binary);
     if(file.is_open()) {
