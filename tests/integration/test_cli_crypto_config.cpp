@@ -37,7 +37,8 @@ void test_valid_encryption_arguments() {
     int argc;
     TestHelpers::ArgvBuilder builder;
     char** argv = builder
-        .add("aes-encrypt")
+        .add("aes-encryption")
+        .add("--encrypt")
         .add("--key").add("test_key.bin")
         .add("--input").add("plaintext.txt")
         .add("--output").add("encrypted.bin")
@@ -80,7 +81,8 @@ void test_argument_to_crypto_type_conversion() {
         int argc;
         TestHelpers::ArgvBuilder builder;
         char** argv = builder
-            .add("aes-encrypt")
+            .add("aes-encryption")
+            .add("--encrypt")
             .add("--key").add("key.bin")
             .add("--input").add("in.txt")
             .add("--output").add("out.bin")
@@ -91,7 +93,7 @@ void test_argument_to_crypto_type_conversion() {
         CLI::CryptoConfig config = parser.parse();
 
         ASSERT_TRUE(config.operation_mode == AESencryption::Cipher::OperationMode::Identifier::ECB,
-                    "String 'ECB' should convert to OpMode::ECB");
+                    "String 'ECB' should convert to OperationMode::Identifier::ECB");
     }
 
     // Test all key lengths
@@ -99,7 +101,8 @@ void test_argument_to_crypto_type_conversion() {
         int argc;
         TestHelpers::ArgvBuilder builder;
         char** argv = builder
-            .add("aes-encrypt")
+            .add("aes-encryption")
+            .add("--encrypt")
             .add("--key").add("key.bin")
             .add("--input").add("in.txt")
             .add("--output").add("out.bin")
@@ -132,7 +135,8 @@ void test_invalid_arguments_prevent_crypto_initialization() {
         int argc;
         TestHelpers::ArgvBuilder builder;
         char** argv = builder
-            .add("aes-encrypt")
+            .add("aes-encryption")
+            .add("--encrypt")
             .add("--key").add("key.bin")
             .add("--input").add("in.txt")
             .add("--output").add("out.bin")
@@ -153,7 +157,8 @@ void test_invalid_arguments_prevent_crypto_initialization() {
         int argc;
         TestHelpers::ArgvBuilder builder;
         char** argv = builder
-            .add("aes-encrypt")
+            .add("aes-encryption")
+            .add("--encrypt")
             .add("--key").add("key.bin")
             .add("--input").add("in.txt")
             .add("--output").add("out.bin")
@@ -198,7 +203,8 @@ void test_missing_required_arguments() {
         int argc;
         TestHelpers::ArgvBuilder builder;
         char** argv = builder
-            .add("aes-encrypt")
+            .add("aes-encryption")
+            .add("--encrypt")
             .add("--input").add("in.txt")
             .add("--output").add("out.bin")
             .build(argc);
@@ -217,7 +223,8 @@ void test_missing_required_arguments() {
         int argc;
         TestHelpers::ArgvBuilder builder;
         char** argv = builder
-            .add("aes-encrypt")
+            .add("aes-encryption")
+            .add("--encrypt")
             .add("--key").add("key.bin")
             .add("--output").add("out.bin")
             .build(argc);
@@ -234,7 +241,7 @@ void test_missing_required_arguments() {
     // Test: No arguments at all
     {
         int argc = 1;
-        char* argv[] = {(char*)"aes-encrypt"};
+        char* argv[] = {(char*)"aes-encryption"};
 
         CLI::ArgumentParser parser(argc, argv);
         CLI::CryptoConfig config = parser.parse();
@@ -255,7 +262,8 @@ void test_default_values() {
     int argc;
     TestHelpers::ArgvBuilder builder;
     char** argv = builder
-        .add("aes-encrypt")
+        .add("aes-encryption")
+        .add("--encrypt")
         .add("--key").add("key.bin")
         .add("--input").add("in.txt")
         .add("--output").add("out.bin")
@@ -287,7 +295,8 @@ void test_config_creates_functional_crypto_objects() {
     int argc;
     TestHelpers::ArgvBuilder builder;
     char** argv = builder
-        .add("aes-encrypt")
+        .add("aes-encryption")
+        .add("--encrypt")
         .add("--generate-key")
         .add("--key-length").add("256")
         .add("--output").add("test_key.bin")
@@ -315,12 +324,13 @@ void test_config_creates_functional_crypto_objects() {
 void test_argument_format_variations() {
     TEST_SUITE("Argument Format Variations");
 
-    // Test that program name affects operation detection
+    // Test that decrypt option affects operation detection
     {
         int argc;
         TestHelpers::ArgvBuilder builder;
         char** argv = builder
-            .add("aes-decrypt")  // Note: decrypt in name
+            .add("aes-encryption")
+            .add("--decrypt")   // Note: decrypt option
             .add("--key").add("key.bin")
             .add("--input").add("encrypted.bin")
             .add("--output").add("decrypted.txt")
