@@ -60,6 +60,56 @@ public:
 };
 
 // 1. Construction Tests
+void test_key_construction_from_length();
+void test_key_construction_from_vector();
+void test_key_construction_errors(AESKEYLEN keyLenBits);
+
+// 2. Copy and Assignment Tests
+void test_key_copy_construction(AESKEYLEN keyLenBits);
+void test_key_assignment(AESKEYLEN keyLenBits);
+
+// 3. Equality Tests
+void test_key_equality(AESKEYLEN keyLenBits);
+
+// 4. File I/O Tests
+void test_key_save_and_load(AESKEYLEN keyLenBits);
+void test_key_load_errors(AESKEYLEN keyLenBits);
+
+// 6. Memory Management Tests
+void test_key_memory_management(AESKEYLEN keyLenBits);
+
+int main() {
+    std::cout << "=== Key Class Tests ===" << std::endl;
+
+    AESKEYLEN key_lengths[3] = { AESKEYLEN::_128, AESKEYLEN::_192, AESKEYLEN::_256 };
+
+    // Construction tests
+    test_key_construction_from_length();
+    test_key_construction_from_vector();
+
+    for(AESKEYLEN kl: key_lengths){
+        // Construction test
+        test_key_construction_errors(kl);
+
+        // Copy and assignment tests
+        test_key_copy_construction(kl);
+        test_key_assignment(kl);
+
+        // Equality tests
+        test_key_equality(kl);
+
+        // File I/O tests
+        test_key_save_and_load(kl);
+        test_key_load_errors(kl);
+
+        // Memory management tests
+        test_key_memory_management(kl);
+    }
+
+    std::cout << "\n=== Key Class Tests Complete ===" << std::endl;
+    return 0;
+}
+
 void test_key_construction_from_length() {
     TEST_SUITE("Key Construction from Length");
 
@@ -136,7 +186,6 @@ void test_key_construction_errors(AESKEYLEN keyLenBits) {
     PRINT_RESULTS();
 }
 
-// 2. Copy and Assignment Tests
 void test_key_copy_construction(AESKEYLEN keyLenBits) {
     TEST_SUITE("Key Copy Construction");
     KeyhppTest keytest(keyLenBits);
@@ -189,7 +238,6 @@ void test_key_assignment(AESKEYLEN keyLenBits) {
     PRINT_RESULTS();
 }
 
-// 3. Equality Tests
 void test_key_equality(AESKEYLEN keyLenBits) {
     TEST_SUITE("Key Equality Operator");
     KeyhppTest keytest(keyLenBits);
@@ -214,7 +262,6 @@ void test_key_equality(AESKEYLEN keyLenBits) {
     PRINT_RESULTS();
 }
 
-// 4. File I/O Tests
 void test_key_save_and_load(AESKEYLEN keyLenBits) {
     TEST_SUITE("Key Save and Load");
     KeyhppTest keytest(keyLenBits);
@@ -308,7 +355,6 @@ void test_key_load_errors(AESKEYLEN keyLenBits) {
     PRINT_RESULTS();
 }
 
-// 6. Memory Management Tests
 void test_key_memory_management(AESKEYLEN keyLenBits) {
     TEST_SUITE("Key Memory Management");
 
@@ -330,36 +376,4 @@ void test_key_memory_management(AESKEYLEN keyLenBits) {
     ASSERT_TRUE(true, "Multiple create/destroy cycles completed successfully");
 
     PRINT_RESULTS();
-}
-
-int main() {
-    std::cout << "=== Key Class Tests ===" << std::endl;
-
-    AESKEYLEN key_lengths[3] = { AESKEYLEN::_128, AESKEYLEN::_192, AESKEYLEN::_256 };
-
-    // Construction tests
-    test_key_construction_from_length();
-    test_key_construction_from_vector();
-
-    for(AESKEYLEN kl: key_lengths){
-        // Construction test
-        test_key_construction_errors(kl);
-
-        // Copy and assignment tests
-        test_key_copy_construction(kl);
-        test_key_assignment(kl);
-
-        // Equality tests
-        test_key_equality(kl);
-
-        // File I/O tests
-        test_key_save_and_load(kl);
-        test_key_load_errors(kl);
-
-        // Memory management tests
-        test_key_memory_management(kl);
-    }
-
-    std::cout << "\n=== Key Class Tests Complete ===" << std::endl;
-    return 0;
 }
