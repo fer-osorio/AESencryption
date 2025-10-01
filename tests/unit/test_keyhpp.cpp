@@ -54,7 +54,7 @@ public:
                 break;
         }
     }
-    const AESKEYLEN getKeyLenBits() { return this->lengthBits; }
+    AESKEYLEN getKeyLenBits() { return this->lengthBits; }
     const std::vector<uint8_t>& getKey() { return this->key; }
     const char* getFileName() { return this->fileName; }
 };
