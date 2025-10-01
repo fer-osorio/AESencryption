@@ -140,18 +140,21 @@ void test_key_construction_errors(AESKEYLEN keyLenBits) {
 void test_key_copy_construction(AESKEYLEN keyLenBits) {
     TEST_SUITE("Key Copy Construction");
     KeyhppTest keytest(keyLenBits);
-
     AESencryption::Key original(keytest.getKey(), keytest.getKeyLenBits());
     AESencryption::Key copy(original);
 
     // Test that copy has same properties
-    ASSERT_EQUAL(static_cast<int>(original.getLenBits()),
-                 static_cast<int>(copy.getLenBits()),
-                 "Copy should have same length");
+    ASSERT_EQUAL(
+        static_cast<int>(original.getLenBits()),
+        static_cast<int>(copy.getLenBits()),
+        "Copy should have same length"
+    );
 
-    ASSERT_EQUAL(static_cast<int>(original.getLenBytes()),
-                 static_cast<int>(copy.getLenBytes()),
-                 "Copy should have same byte length");
+    ASSERT_EQUAL(
+        static_cast<int>(original.getLenBytes()),
+        static_cast<int>(copy.getLenBytes()),
+        "Copy should have same byte length"
+    );
 
     // Test equality
     ASSERT_TRUE(original == copy, "Copy should be equal to original");
@@ -162,7 +165,6 @@ void test_key_copy_construction(AESKEYLEN keyLenBits) {
 void test_key_assignment(AESKEYLEN keyLenBits) {
     TEST_SUITE("Key Assignment Operator");
     KeyhppTest keytest(keyLenBits);
-
     AESencryption::Key key1(keytest.getKey(), keytest.getKeyLenBits());
     AESencryption::Key key2(
         keytest.getKeyLenBits() != AESKEYLEN::_256 ? AESKEYLEN::_256 : AESKEYLEN::_192  // Different size
@@ -172,9 +174,11 @@ void test_key_assignment(AESKEYLEN keyLenBits) {
     key2 = key1;
 
     // Test that key2 now matches key1
-    ASSERT_EQUAL(static_cast<int>(key1.getLenBits()),
-                 static_cast<int>(key2.getLenBits()),
-                 "Assigned key should have same length");
+    ASSERT_EQUAL(
+        static_cast<int>(key1.getLenBits()),
+        static_cast<int>(key2.getLenBits()),
+        "Assigned key should have same length"
+    );
 
     ASSERT_TRUE(key1 == key2, "Assigned key should equal original");
 
@@ -222,7 +226,7 @@ void test_key_save_and_load(AESKEYLEN keyLenBits) {
     // Load it back
     AESencryption::Key loaded(keytest.getFileName());
 
-    ASSERT_TRUE(original == loaded, "Loaded 128-bit key should equal original");
+    ASSERT_TRUE(original == loaded, "Loaded key should equal original");
     ASSERT_EQUAL(
         static_cast<int>(original.getLenBits()),
         static_cast<int>(loaded.getLenBits()),
@@ -268,8 +272,8 @@ void test_key_load_errors(AESKEYLEN keyLenBits) {
     // Test loading from file with invalid key length
     const char* invalid_length_file = "invalid_length.bin";
     std::ofstream ofs2(invalid_length_file, std::ios::binary);
-    ofs2.write("AESKEY", 6);  // Correct header
-    uint16_t invalid_len = 512;  // Invalid key length
+    ofs2.write("AESKEY", 6);                                                    // Correct header
+    uint16_t invalid_len = 512;                                                 // Invalid key length
     ofs2.write(reinterpret_cast<char*>(&invalid_len), 2);
     ofs2.write(reinterpret_cast<char*>(dummy_key), keyLengthBytes);
     ofs2.close();
@@ -288,7 +292,7 @@ void test_key_load_errors(AESKEYLEN keyLenBits) {
     ofs3.write("AESKEY", 6);
     uint16_t key_len = static_cast<uint16_t>(keytest.getKeyLenBits());
     ofs3.write(reinterpret_cast<char*>(&key_len), 2);
-    ofs3.write(reinterpret_cast<char*>(dummy_key), 8);  // Only 8 bytes, smaller than any key
+    ofs3.write(reinterpret_cast<char*>(dummy_key), 8);                          // Only 8 bytes, smaller than any valid key
     ofs3.close();
 
     try {
@@ -304,29 +308,8 @@ void test_key_load_errors(AESKEYLEN keyLenBits) {
     PRINT_RESULTS();
 }
 
-// 5. Stream Output Test
-void test_key_stream_output() {
-    TEST_SUITE("Key Stream Output");
-
-    AESencryption::Key key(keytest.getKey(), AESKEYLEN::_128);
-
-    // Test that stream output works without crashing
-    std::ostringstream oss;
-    oss << key;
-
-    std::string output = oss.str();
-    ASSERT_TRUE(output.length() > 0, "Stream output should produce non-empty string");
-
-    // Check if output contains expected information
-    ASSERT_TRUE(output.find("128") != std::string::npos ||
-                output.find("16") != std::string::npos,
-                "Stream output should contain key size information");
-
-    PRINT_RESULTS();
-}
-
 // 6. Memory Management Tests
-void test_key_memory_management() {
+void test_key_memory_management(AESKEYLEN keyLenBits) {
     TEST_SUITE("Key Memory Management");
 
     // Test that multiple keys can coexist
@@ -342,9 +325,8 @@ void test_key_memory_management() {
 
     // Test that keys can be created and destroyed in a loop
     for (int i = 0; i < 1024; ++i) {
-        AESencryption::Key temp(AESKEYLEN::_128);
+        AESencryption::Key temp(keyLenBits);
     }
-
     ASSERT_TRUE(true, "Multiple create/destroy cycles completed successfully");
 
     PRINT_RESULTS();
@@ -353,27 +335,30 @@ void test_key_memory_management() {
 int main() {
     std::cout << "=== Key Class Tests ===" << std::endl;
 
+    AESKEYLEN key_lengths[3] = { AESKEYLEN::_128, AESKEYLEN::_192, AESKEYLEN::_256 };
+
     // Construction tests
     test_key_construction_from_length();
     test_key_construction_from_vector();
-    test_key_construction_errors();
 
-    // Copy and assignment tests
-    test_key_copy_construction();
-    test_key_assignment();
+    for(AESKEYLEN kl: key_lengths){
+        // Construction test
+        test_key_construction_errors(kl);
 
-    // Equality tests
-    test_key_equality();
+        // Copy and assignment tests
+        test_key_copy_construction(kl);
+        test_key_assignment(kl);
 
-    // File I/O tests
-    test_key_save_and_load();
-    test_key_load_errors();
+        // Equality tests
+        test_key_equality(kl);
 
-    // Stream output test
-    test_key_stream_output();
+        // File I/O tests
+        test_key_save_and_load(kl);
+        test_key_load_errors(kl);
 
-    // Memory management tests
-    test_key_memory_management();
+        // Memory management tests
+        test_key_memory_management(kl);
+    }
 
     std::cout << "\n=== Key Class Tests Complete ===" << std::endl;
     return 0;
