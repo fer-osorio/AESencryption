@@ -30,8 +30,58 @@ namespace TestHelpers {
 // ============================================================================
 // TEST 1: Happy Path - Valid Arguments Create Valid Crypto Objects
 // ============================================================================
-void test_valid_encryption_arguments() {
+bool test_valid_encryption_arguments();
+
+// ============================================================================
+// TEST 2: Data Type Conversion - Strings to Crypto Types
+// ============================================================================
+bool test_argument_to_crypto_type_conversion();
+
+// ============================================================================
+// TEST 3: Error Propagation - Invalid Arguments Don't Create Crypto Objects
+// ============================================================================
+bool test_invalid_arguments_prevent_crypto_initialization();
+
+// ============================================================================
+// TEST 4: Missing Required Arguments
+// ============================================================================
+bool test_missing_required_arguments();
+
+// ============================================================================
+// TEST 5: Default Values Are Applied Correctly
+// ============================================================================
+bool test_default_values();
+
+// ============================================================================
+// TEST 6: Integration with Real Crypto Objects
+// ============================================================================
+bool test_config_creates_functional_crypto_objects();
+
+// ============================================================================
+// TEST 7: Multiple Valid Argument Formats
+// ============================================================================
+bool test_argument_format_variations();
+
+int main() {
+    std::cout << "=== CLI Argument Parsing ↔ Crypto Configuration Integration Tests ===" << std::endl;
+    std::cout << "\nThis test suite validates the integration between command-line" << std::endl;
+    std::cout << "argument parsing and cryptographic configuration initialization.\n" << std::endl;
+
+    test_valid_encryption_arguments();
+    test_argument_to_crypto_type_conversion();
+    test_invalid_arguments_prevent_crypto_initialization();
+    test_missing_required_arguments();
+    test_default_values();
+    test_config_creates_functional_crypto_objects();
+    test_argument_format_variations();
+
+    std::cout << "\n=== CLI-Crypto Integration Tests Complete ===" << std::endl;
+    return 0;
+}
+
+bool test_valid_encryption_arguments() {
     TEST_SUITE("Valid Encryption Arguments Integration");
+    bool success = true;
 
     // Setup: Prepare command-line arguments
     int argc;
@@ -51,30 +101,29 @@ void test_valid_encryption_arguments() {
     CLI::CryptoConfig config = parser.parse();
 
     // Test: Configuration should be valid
-    ASSERT_TRUE(config.is_valid, "Configuration should be valid with all required arguments");
-    ASSERT_TRUE(config.error_message.empty(), "No error message should be present");
+    success &= ASSERT_TRUE(config.is_valid, "Configuration should be valid with all required arguments");
+    success &= ASSERT_TRUE(config.error_message.empty(), "No error message should be present");
 
     // Test: Configuration values match arguments
-    ASSERT_TRUE(config.operation == CLI::CryptoConfig::Operation::ENCRYPT,
+    success &= ASSERT_TRUE(config.operation == CLI::CryptoConfig::Operation::ENCRYPT,
                 "Operation should be ENCRYPT");
-    ASSERT_TRUE(config.key_file == "test_key.bin", "Key file should match argument");
-    ASSERT_TRUE(config.input_file == "plaintext.txt", "Input file should match argument");
-    ASSERT_TRUE(config.output_file == "encrypted.bin", "Output file should match argument");
+    success &= ASSERT_TRUE(config.key_file == "test_key.bin", "Key file should match argument");
+    success &= ASSERT_TRUE(config.input_file == "plaintext.txt", "Input file should match argument");
+    success &= ASSERT_TRUE(config.output_file == "encrypted.bin", "Output file should match argument");
 
     // Test: Enum conversions are correct
-    ASSERT_TRUE(config.operation_mode == AESencryption::Cipher::OperationMode::Identifier::CBC,
+    success &= ASSERT_TRUE(config.operation_mode == AESencryption::Cipher::OperationMode::Identifier::CBC,
                 "Operation mode should be CBC");
-    ASSERT_TRUE(config.key_length == AESencryption::Key::LengthBits::_256,
+    success &= ASSERT_TRUE(config.key_length == AESencryption::Key::LengthBits::_256,
                 "Key length should be 256 bits");
 
     PRINT_RESULTS();
+    return success;
 }
 
-// ============================================================================
-// TEST 2: Data Type Conversion - Strings to Crypto Types
-// ============================================================================
-void test_argument_to_crypto_type_conversion() {
+bool test_argument_to_crypto_type_conversion() {
     TEST_SUITE("Argument to Crypto Type Conversion");
+    bool success = true;
 
     // Test ECB mode conversion
     {
@@ -92,7 +141,7 @@ void test_argument_to_crypto_type_conversion() {
         CLI::ArgumentParser parser(argc, argv);
         CLI::CryptoConfig config = parser.parse();
 
-        ASSERT_TRUE(config.operation_mode == AESencryption::Cipher::OperationMode::Identifier::ECB,
+        success &= ASSERT_TRUE(config.operation_mode == AESencryption::Cipher::OperationMode::Identifier::ECB,
                     "String 'ECB' should convert to OperationMode::Identifier::ECB");
     }
 
@@ -112,23 +161,22 @@ void test_argument_to_crypto_type_conversion() {
         CLI::ArgumentParser parser(argc, argv);
         CLI::CryptoConfig config = parser.parse();
 
-        ASSERT_TRUE(config.is_valid,
+        success &= ASSERT_TRUE(config.is_valid,
                     "Key length " + std::to_string(bits) + " should be valid");
 
         // Verify the conversion
         int expected_bits = static_cast<int>(config.key_length);
-        ASSERT_EQUAL(bits, expected_bits,
+        success &= ASSERT_EQUAL(bits, expected_bits,
                     "Key length conversion should preserve value");
     }
 
     PRINT_RESULTS();
+    return success;
 }
 
-// ============================================================================
-// TEST 3: Error Propagation - Invalid Arguments Don't Create Crypto Objects
-// ============================================================================
-void test_invalid_arguments_prevent_crypto_initialization() {
+bool test_invalid_arguments_prevent_crypto_initialization() {
     TEST_SUITE("Invalid Arguments Error Handling");
+    bool success = true;
 
     // Test: Invalid key length
     {
@@ -146,9 +194,9 @@ void test_invalid_arguments_prevent_crypto_initialization() {
         CLI::ArgumentParser parser(argc, argv);
         CLI::CryptoConfig config = parser.parse();
 
-        ASSERT_TRUE(!config.is_valid, "Invalid key length should mark config invalid");
-        ASSERT_TRUE(!config.error_message.empty(), "Error message should be provided");
-        ASSERT_TRUE(config.error_message.find("512") != std::string::npos,
+        success &= ASSERT_TRUE(!config.is_valid, "Invalid key length should mark config invalid");
+        success &= ASSERT_TRUE(!config.error_message.empty(), "Error message should be provided");
+        success &= ASSERT_TRUE(config.error_message.find("512") != std::string::npos,
                     "Error message should mention invalid value");
     }
 
@@ -168,8 +216,8 @@ void test_invalid_arguments_prevent_crypto_initialization() {
         CLI::ArgumentParser parser(argc, argv);
         CLI::CryptoConfig config = parser.parse();
 
-        ASSERT_TRUE(!config.is_valid, "Invalid mode should mark config invalid");
-        ASSERT_TRUE(config.error_message.find("XTS") != std::string::npos,
+        success &= ASSERT_TRUE(!config.is_valid, "Invalid mode should mark config invalid");
+        success &= ASSERT_TRUE(config.error_message.find("XTS") != std::string::npos,
                     "Error message should mention invalid mode");
     }
 
@@ -181,22 +229,21 @@ void test_invalid_arguments_prevent_crypto_initialization() {
 
         try {
             AESencryption::Key key = invalid_config.create_key();
-            ASSERT_TRUE(false, "Creating key from invalid config should throw exception");
+            success &= ASSERT_TRUE(false, "Creating key from invalid config should throw exception");
         } catch (const std::runtime_error& e) {
-            ASSERT_TRUE(true, "Invalid config properly throws exception");
-            ASSERT_TRUE(std::string(e.what()).find("invalid") != std::string::npos,
+            success &= ASSERT_TRUE(true, "Invalid config properly throws exception");
+            success &= ASSERT_TRUE(std::string(e.what()).find("invalid") != std::string::npos,
                         "Exception message should mention invalid configuration");
         }
     }
 
     PRINT_RESULTS();
+    return success;
 }
 
-// ============================================================================
-// TEST 4: Missing Required Arguments
-// ============================================================================
-void test_missing_required_arguments() {
+bool test_missing_required_arguments() {
     TEST_SUITE("Missing Required Arguments");
+    bool success = true;
 
     // Test: Missing key file
     {
@@ -212,8 +259,8 @@ void test_missing_required_arguments() {
         CLI::ArgumentParser parser(argc, argv);
         CLI::CryptoConfig config = parser.parse();
 
-        ASSERT_TRUE(!config.is_valid, "Missing key file should invalidate config");
-        ASSERT_TRUE(config.error_message.find("key") != std::string::npos ||
+        success &= ASSERT_TRUE(!config.is_valid, "Missing key file should invalidate config");
+        success &= ASSERT_TRUE(config.error_message.find("key") != std::string::npos ||
                     config.error_message.find("Key") != std::string::npos,
                     "Error should mention missing key");
     }
@@ -232,8 +279,8 @@ void test_missing_required_arguments() {
         CLI::ArgumentParser parser(argc, argv);
         CLI::CryptoConfig config = parser.parse();
 
-        ASSERT_TRUE(!config.is_valid, "Missing input file should invalidate config");
-        ASSERT_TRUE(config.error_message.find("input") != std::string::npos ||
+        success &= ASSERT_TRUE(!config.is_valid, "Missing input file should invalidate config");
+        success &= ASSERT_TRUE(config.error_message.find("input") != std::string::npos ||
                     config.error_message.find("Input") != std::string::npos,
                     "Error should mention missing input");
     }
@@ -246,17 +293,16 @@ void test_missing_required_arguments() {
         CLI::ArgumentParser parser(argc, argv);
         CLI::CryptoConfig config = parser.parse();
 
-        ASSERT_TRUE(!config.is_valid, "No arguments should invalidate config");
+        success &= ASSERT_TRUE(!config.is_valid, "No arguments should invalidate config");
     }
 
     PRINT_RESULTS();
+    return success;
 }
 
-// ============================================================================
-// TEST 5: Default Values Are Applied Correctly
-// ============================================================================
-void test_default_values() {
+bool test_default_values() {
     TEST_SUITE("Default Configuration Values");
+    bool success = true;
 
     // When mode is not specified, should default to CBC
     int argc;
@@ -273,20 +319,19 @@ void test_default_values() {
     CLI::ArgumentParser parser(argc, argv);
     CLI::CryptoConfig config = parser.parse();
 
-    ASSERT_TRUE(config.is_valid, "Config should be valid with defaults");
-    ASSERT_TRUE(config.operation_mode == AESencryption::Cipher::OperationMode::Identifier::CBC,
+    success &= ASSERT_TRUE(config.is_valid, "Config should be valid with defaults");
+    success &= ASSERT_TRUE(config.operation_mode == AESencryption::Cipher::OperationMode::Identifier::CBC,
                 "Default operation mode should be CBC");
-    ASSERT_TRUE(config.key_length == AESencryption::Key::LengthBits::_128,
+    success &= ASSERT_TRUE(config.key_length == AESencryption::Key::LengthBits::_128,
                 "Default key length should be 128 bits");
 
     PRINT_RESULTS();
+    return success;
 }
 
-// ============================================================================
-// TEST 6: Integration with Real Crypto Objects
-// ============================================================================
-void test_config_creates_functional_crypto_objects() {
+bool test_config_creates_functional_crypto_objects() {
     TEST_SUITE("Configuration Creates Functional Crypto Objects");
+    bool success = true;
 
     // Note: This test requires a real key file to exist
     // In a real scenario, you'd create a temporary key file first
@@ -305,24 +350,23 @@ void test_config_creates_functional_crypto_objects() {
     CLI::ArgumentParser parser(argc, argv);
     CLI::CryptoConfig config = parser.parse();
 
-    ASSERT_TRUE(config.is_valid, "Key generation config should be valid");
-    ASSERT_TRUE(config.operation == CLI::CryptoConfig::Operation::GENERATE_KEY,
+    success &= ASSERT_TRUE(config.is_valid, "Key generation config should be valid");
+    success &= ASSERT_TRUE(config.operation == CLI::CryptoConfig::Operation::GENERATE_KEY,
                 "Operation should be GENERATE_KEY");
-    ASSERT_TRUE(config.key_length == AESencryption::Key::LengthBits::_256,
+    success &= ASSERT_TRUE(config.key_length == AESencryption::Key::LengthBits::_256,
                 "Key length should be 256");
 
     // Test that configuration values can create crypto objects
     // (This would create actual Key object if constructor exists)
-    ASSERT_TRUE(true, "Configuration provides all necessary values for crypto object creation");
+    success &= ASSERT_TRUE(true, "Configuration provides all necessary values for crypto object creation");
 
     PRINT_RESULTS();
+    return success;
 }
 
-// ============================================================================
-// TEST 7: Multiple Valid Argument Formats
-// ============================================================================
-void test_argument_format_variations() {
+bool test_argument_format_variations() {
     TEST_SUITE("Argument Format Variations");
+    bool success = true;
 
     // Test that decrypt option affects operation detection
     {
@@ -339,26 +383,10 @@ void test_argument_format_variations() {
         CLI::ArgumentParser parser(argc, argv);
         CLI::CryptoConfig config = parser.parse();
 
-        ASSERT_TRUE(config.operation == CLI::CryptoConfig::Operation::DECRYPT,
+        success &= ASSERT_TRUE(config.operation == CLI::CryptoConfig::Operation::DECRYPT,
                     "Program name should affect operation detection");
     }
 
     PRINT_RESULTS();
-}
-
-int main() {
-    std::cout << "=== CLI Argument Parsing ↔ Crypto Configuration Integration Tests ===" << std::endl;
-    std::cout << "\nThis test suite validates the integration between command-line" << std::endl;
-    std::cout << "argument parsing and cryptographic configuration initialization.\n" << std::endl;
-
-    test_valid_encryption_arguments();
-    test_argument_to_crypto_type_conversion();
-    test_invalid_arguments_prevent_crypto_initialization();
-    test_missing_required_arguments();
-    test_default_values();
-    test_config_creates_functional_crypto_objects();
-    test_argument_format_variations();
-
-    std::cout << "\n=== CLI-Crypto Integration Tests Complete ===" << std::endl;
-    return 0;
+    return success;
 }
