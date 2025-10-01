@@ -22,20 +22,20 @@ bool test_error_conditions(KeylenBits_t klb);
 bool runTestsForKeylength(KeylenBits_t kl);
 
 int main() {
-    std::cout << "=== Operation Modes Tests ===" << std::endl;
+    std::cout << "===================== Operation Modes Tests =====================" << std::endl;
+    bool allTestsSucceed = true;
 
-    if(!runTestsForKeylength(KeylenBits_t::Keylenbits128)){
-        return 1; // Exit with error status.
-    }
-    if(!runTestsForKeylength(KeylenBits_t::Keylenbits192)){
-        return 1; // Exit with error status.
-    }
-    if(!runTestsForKeylength(KeylenBits_t::Keylenbits256)){
-        return 1; // Exit with error status.
-    }
+    allTestsSucceed &= runTestsForKeylength(KeylenBits_t::Keylenbits128);
+    allTestsSucceed &= runTestsForKeylength(KeylenBits_t::Keylenbits192);
+    allTestsSucceed &= runTestsForKeylength(KeylenBits_t::Keylenbits256);
 
-    std::cout << "\n=== Operation Modes Tests Complete ===" << std::endl;
-    return 0;
+    if(allTestsSucceed){
+        std::cout << "\n===================== All Operation Modes Tests Succeed =====================" << std::endl;
+        return 0;
+    } else {
+        std::cout << "\n===================== Some Operation Modes Tests Failed =====================" << std::endl;
+        return 1;
+    }
 }
 
 bool test_ecb_mode(KeylenBits_t klb) {
@@ -211,9 +211,9 @@ bool test_error_conditions(KeylenBits_t klb) {
 bool runTestsForKeylength(KeylenBits_t klb) {
     const char* keylenStr = CommonAESVectors::getKeylengthString(static_cast<COMAESVEC_KEYLEN>(klb));
     bool successStatus = true;
-    std::cout << "\n*****************************************************************\n"
+    std::cout << "\n=================================================================\n"
               << "\n======================= AES key " << keylenStr << " bits ========================\n"
-              << "\n*****************************************************************\n" << std::endl;
+              << "\n=================================================================\n" << std::endl;
 
     successStatus = test_ecb_mode(klb) && successStatus;
     successStatus = test_cbc_mode(klb) && successStatus;
