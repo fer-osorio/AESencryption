@@ -43,77 +43,76 @@ AESencryption::Key CryptoConfig::create_key() const {
 
 CryptoConfig ArgumentParser::parse() {
     if (argc < 2) {
-        config.error_message = "No arguments provided. Use --help for usage information.";
-        config.is_valid = false;
-        return config;
-    }
-
-    // Determine operation from program name or first argument
-    std::string program_name(argv[0]);
-    if (program_name.find("decrypt") != std::string::npos) {
-        config.operation = CryptoConfig::Operation::DECRYPT;
-    } else if (program_name.find("encrypt") != std::string::npos) {
-        config.operation = CryptoConfig::Operation::ENCRYPT;
+        this->config.error_message = "No arguments provided. Use --help for usage information.";
+        this->config.is_valid = false;
+        return this->config;
     }
 
     // Parse arguments
     for (int i = 1; i < argc; i++) {
         std::string arg(argv[i]);
 
+        // Options that require an additional argument
         if (arg == "--key" && i + 1 < argc) {
-            config.key_file = argv[++i];
+            this->config.key_file = argv[++i];
         }
         else if (arg == "--input" && i + 1 < argc) {
-            config.input_file = argv[++i];
+            this->config.input_file = argv[++i];
         }
         else if (arg == "--output" && i + 1 < argc) {
-            config.output_file = argv[++i];
+            this->config.output_file = argv[++i];
         }
         else if (arg == "--mode" && i + 1 < argc) {
             std::string mode(argv[++i]);
         if (mode == "ECB") {
-                config.operation_mode = AESencryption::Cipher::OperationMode::Identifier::ECB;
+                this->config.operation_mode = AESencryption::Cipher::OperationMode::Identifier::ECB;
             } else if (mode == "CBC") {
-                config.operation_mode = AESencryption::Cipher::OperationMode::Identifier::CBC;
+                this->config.operation_mode = AESencryption::Cipher::OperationMode::Identifier::CBC;
             } else {
-                config.error_message = "Invalid mode: " + mode + ". Use ECB or CBC.";
-                config.is_valid = false;
-                return config;
+                this->config.error_message = "Invalid mode: " + mode + ". Use ECB or CBC.";
+                this->config.is_valid = false;
+                return this->config;
             }
         }
         else if (arg == "--key-length" && i + 1 < argc) {
             int bits = std::stoi(argv[++i]);
             if (bits == 128) {
-                config.key_length = AESencryption::Key::LengthBits::_128;
+                this->config.key_length = AESencryption::Key::LengthBits::_128;
             } else if (bits == 192) {
-                config.key_length = AESencryption::Key::LengthBits::_192;
+                this->config.key_length = AESencryption::Key::LengthBits::_192;
             } else if (bits == 256) {
-                config.key_length = AESencryption::Key::LengthBits::_256;
+                this->config.key_length = AESencryption::Key::LengthBits::_256;
                 } else {
-                config.error_message = "Invalid key length: " + std::to_string(bits) +
+                this->config.error_message = "Invalid key length: " + std::to_string(bits) +
                                      ". Use 128, 192, or 256.";
-                config.is_valid = false;
-                return config;
+                this->config.is_valid = false;
+                return this->config;
             }
-        }
+        }   // Options that do not require an additional argument
         else if (arg == "--generate-key") {
-            config.operation = CryptoConfig::Operation::GENERATE_KEY;
+            this->config.operation = CryptoConfig::Operation::GENERATE_KEY;
+        }
+        else if (arg == "--encrypt") {
+            this->config.operation = CryptoConfig::Operation::ENCRYPT;
+        }
+        else if (arg == "--decrypt") {
+            this->config.operation = CryptoConfig::Operation::DECRYPT;
         }
         else if (arg == "--help") {
             print_help();
-            config.is_valid = false;
-            return config;
+            this->config.is_valid = false;
+            return this->config;
         }
         else {
-            config.error_message = "Unknown argument: " + arg;
-            config.is_valid = false;
-            return config;
+            this->config.error_message = "Unknown argument: " + arg;
+            this->config.is_valid = false;
+            return this->config;
         }
     }
 
     // Validate the configuration
-    config.validate();
-    return config;
+    this->config.validate();
+    return this->config;
 }
 
 CryptoConfig ArgumentParser::get_config() const {
