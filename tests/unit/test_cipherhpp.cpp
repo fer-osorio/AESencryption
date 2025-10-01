@@ -17,8 +17,7 @@ bool test_cbc_mode_iv_handling(AESKEY_LENBITS klb);
 /**
  * @brief Runs the complete set of tests for a specific key length and operation mode.
  *
- * This function prints a banner for the key length and then executes the key
- * expansion, encryption, decryption, and roundtrip tests.
+ * This function prints a banner for the key length and then executes the tests for cipher object.
  *
  * @param kl The key length to test.
  * @param mode The operation mode to test
