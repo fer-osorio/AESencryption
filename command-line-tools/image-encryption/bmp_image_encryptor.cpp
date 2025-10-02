@@ -1,7 +1,6 @@
-#include "../include/cipher.hpp"
-#include "../file-handlers/include/bitmap.hpp"
-#include "../CLI/include/cli_config.hpp"
-#include <memory>
+#include "../../include/cipher.hpp"
+#include "../../file-handlers/include/bitmap.hpp"
+#include "../../CLI/include/cli_config.hpp"
 
 int main(int argc, const char* argv[]){
     // Parsing arguments. Converting user intput to valid arguments for this program.
