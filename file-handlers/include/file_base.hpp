@@ -7,13 +7,13 @@
 #include<map>
 #include<stdexcept>  // For exceptions
 
-namespace File {
-
 // Forward declaration of the Encryptor interface.
 class Encryptor;
 
 // Forward declaration of the DataRandomness interface.
 struct DataRandomness;
+
+namespace File {
 
 /**
  * @class FileBase
