@@ -21,8 +21,8 @@ data-encryption:
 metrics-analysis:
 	@$(MAKE) -C metrics-analysis
 
-#tools: core file-handlers
-#	@$(MAKE) -C tools
+cli: core
+	@$(MAKE) -C CLI
 
 clean:
 	@$(MAKE) -C data-encryption clean
