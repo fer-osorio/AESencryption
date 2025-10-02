@@ -66,17 +66,23 @@ int main() {
     std::cout << "=== CLI Argument Parsing ↔ Crypto Configuration Integration Tests ===" << std::endl;
     std::cout << "\nThis test suite validates the integration between command-line" << std::endl;
     std::cout << "argument parsing and cryptographic configuration initialization.\n" << std::endl;
+    bool allTestsSucceed = true;
 
-    test_valid_encryption_arguments();
-    test_argument_to_crypto_type_conversion();
-    test_invalid_arguments_prevent_crypto_initialization();
-    test_missing_required_arguments();
-    test_default_values();
-    test_config_creates_functional_crypto_objects();
-    test_argument_format_variations();
+    allTestsSucceed &= test_valid_encryption_arguments();
+    allTestsSucceed &= test_argument_to_crypto_type_conversion();
+    allTestsSucceed &= test_invalid_arguments_prevent_crypto_initialization();
+    allTestsSucceed &= test_missing_required_arguments();
+    allTestsSucceed &= test_default_values();
+    allTestsSucceed &= test_config_creates_functional_crypto_objects();
+    allTestsSucceed &= test_argument_format_variations();
 
-    std::cout << "\n=== CLI-Crypto Integration Tests Complete ===" << std::endl;
-    return 0;
+    if(allTestsSucceed) {
+        std::cout << "\n===================== All CLI-Crypto Integration Tests Succeed =====================" << std::endl;
+        return 0;
+    } else {
+        std::cout << "\n===================== Some CLI-Crypto Integration Tests Failed =====================" << std::endl;
+        return 1;
+    }
 }
 
 bool test_valid_encryption_arguments() {
@@ -288,7 +294,7 @@ bool test_missing_required_arguments() {
     // Test: No arguments at all
     {
         int argc = 1;
-        char* argv[] = {(char*)"aes-encryption"};
+        char* argv[] = {const_cast<char*>("aes-encryption")};
 
         CLI::ArgumentParser parser(argc, argv);
         CLI::CryptoConfig config = parser.parse();
@@ -384,7 +390,7 @@ bool test_argument_format_variations() {
         CLI::CryptoConfig config = parser.parse();
 
         success &= ASSERT_TRUE(config.operation == CLI::CryptoConfig::Operation::DECRYPT,
-                    "Program name should affect operation detection");
+                    "Program option --decrypt should affect operation detection");
     }
 
     PRINT_RESULTS();
