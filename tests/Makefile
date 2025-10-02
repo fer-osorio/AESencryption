@@ -90,6 +90,7 @@ dependencies:
 	@$(MAKE) -C $(PROJECT_ROOT)/src
 	@$(MAKE) -C $(PROJECT_ROOT)/file-handlers
 	@$(MAKE) -C $(PROJECT_ROOT)/metrics-analysis
+	@$(MAKE) -C $(PROJECT_ROOT)/CLI
 	$(call print_success,"All dependencies built successfully")
 
 # Unit tests
