@@ -6,8 +6,12 @@
 
 using namespace File;
 
-const char*const Bitmap::RGBlabels[static_cast<unsigned>(RGB::Color_amount)] = {"Red", "Green", "Blue"};
-const char*const Bitmap::DirectionLabels[static_cast<unsigned>(Direction::direction_amount)] = {"Horizontal", "Vertical", "Diagonal"};
+const char*const Bitmap::RGBlabels[static_cast<unsigned>(RGB::Color_amount)] = {
+    "Red", "Green", "Blue"
+};
+const char*const Bitmap::DirectionLabels[static_cast<unsigned>(Direction::direction_amount)] = {
+    "Horizontal", "Vertical", "Diagonal"
+};
 
 Bitmap::Bitmap(const std::filesystem::path& path) : FileBase(path){
     std::ifstream file;
