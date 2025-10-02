@@ -4,6 +4,8 @@
 #include<fstream>
 #include<cmath>
 
+using namespace File;
+
 // Constructor implementation
 FileBase::FileBase(const std::filesystem::path& path) : file_path(path) {}
 

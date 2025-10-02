@@ -2,6 +2,8 @@
 #include<fstream>
 #include<cstring>
 
+using namespace File;
+
 TXT::TXT(const std::filesystem::path& path) : FileBase(path) {}
 
 bool TXT::load(){

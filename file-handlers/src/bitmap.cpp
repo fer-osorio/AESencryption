@@ -4,6 +4,8 @@
 #include<cmath>
 #include<exception>
 
+using namespace File;
+
 const char*const Bitmap::RGBlabels[static_cast<unsigned>(RGB::Color_amount)] = {"Red", "Green", "Blue"};
 const char*const Bitmap::DirectionLabels[static_cast<unsigned>(Direction::direction_amount)] = {"Horizontal", "Vertical", "Diagonal"};
 
@@ -130,7 +132,7 @@ Bitmap& Bitmap::operator = (const Bitmap &bmp) {
     return *this;
 }
 
-std::ostream& operator << (std::ostream &stream, const Bitmap &bmp) {
+std::ostream& File::operator << (std::ostream &stream, const Bitmap &bmp) {
     stream << "File path:";
     stream << "\n\t" << bmp.file_path;
     stream << "\nFile Header: ";
