@@ -39,7 +39,7 @@ AESencryption::Key CryptoConfig::create_key() const {
         // Load key from file
         try{
             return AESencryption::Key(this->key_file.c_str());
-        } catch(std::exception exp){
+        } catch(const std::exception& exp){
             throw;
         }
     }
