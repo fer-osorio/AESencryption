@@ -10,7 +10,7 @@ namespace File {
 
 class Bitmap;									// -The intention is to use the name Bitmap in the next function
 std::ostream& operator << (std::ostream& st, const Bitmap& bmp);		// -What we want is to make this function visible inside the name space scope
-class Bitmap : FileBase {							// -Handling bitmap format images.
+class Bitmap : public FileBase {							// -Handling bitmap format images.
 public:
 	enum struct RGB{ Red, Green, Blue, Color_amount};
 	enum struct Direction{ horizontal, vertical, diagonal, direction_amount };
