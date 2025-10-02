@@ -18,7 +18,7 @@ namespace TestHelpers {
 
         char** build(int& argc) {
             argv_ptrs.clear();
-            for (auto& arg : args_storage) {
+            for (std::string& arg : args_storage) {
                 argv_ptrs.push_back(const_cast<char*>(arg.c_str()));
             }
             argc = argv_ptrs.size();
@@ -357,7 +357,7 @@ bool test_config_creates_functional_crypto_objects() {
                 "Key length should be 256");
 
     // Test that configuration values can create crypto objects
-    // (This would create actual Key object if constructor exists)
+    // (This would create actual Key object)
     success &= ASSERT_TRUE(true, "Configuration provides all necessary values for crypto object creation");
 
     PRINT_RESULTS();
