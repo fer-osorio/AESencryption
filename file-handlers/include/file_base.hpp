@@ -7,6 +7,8 @@
 #include<map>
 #include<stdexcept>  // For exceptions
 
+namespace File {
+
 // Forward declaration of the Encryptor interface.
 class Encryptor;
 
@@ -77,5 +79,7 @@ public:
 	const std::vector<uint8_t>& get_data() const;
 	size_t get_size() const;
 };
+
+} //namespace File
 
 #endif // FILE_BASE_HPP

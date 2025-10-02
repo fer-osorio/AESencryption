@@ -4,6 +4,8 @@
 
 #include"file_base.hpp"
 
+namespace File {
+
 //#define NAME_MAX_LEN 4096
 
 class Bitmap;									// -The intention is to use the name Bitmap in the next function
@@ -68,43 +70,6 @@ private:
 	uint8_t getPixelComponentValue(size_t i, size_t j, RGB c) const;
 };
 
-/*std::ostream& operator << (std::ostream& os, const BitmapStatistics& bmSt);
-struct BitmapStatistics{
-	private:
-	const  Bitmap* 	  pbmp		= NULL;
-	double Average    [RGB_COMPONENTS_AMOUNT]  = {-1.0};
-	double Covariance [RGB_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{ 0.0, 0.0, 0.0},{ 0.0, 0.0, 0.0},{ 0.0, 0.0, 0.0}};
-	double Variance   [RGB_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{-1.0,-1.0,-1.0},{-1.0,-1.0,-1.0},{-1.0,-1.0,-1.0}};
-	double Correlation[RGB_COMPONENTS_AMOUNT][DIRECTIONS_AMOUNT]  = {{10.0,10.0,10.0},{10.0,10.0,10.0},{10.0,10.0,10.0}};
+} // namespace File
 
-	uint32_t histogram[RGB_COMPONENTS_AMOUNT][256] = {{0},{0},{0}};
-	bool	 histogramStablished = false;
-
-	double Entropy    [RGB_COMPONENTS_AMOUNT]  = { 0.0};
-	double XiSquare   [RGB_COMPONENTS_AMOUNT]  = { 0.0};
-
-	double average(    const Bitmap::RGB) const;			// -Average value of color in a range of pixels. Horizontal calculation
-	double covariance( const Bitmap::RGB, Bitmap::Direction dr, size_t offset) const;
-	double variance(   const Bitmap::RGB, Bitmap::Direction dr) const;
-	double correlation(const Bitmap::RGB, Bitmap::Direction dr, size_t offset) const;
-	double entropy(const Bitmap::RGB) const;
-	double xiSquare(const Bitmap::RGB)const;
-
-	void sethistogram();
-
-	public:
-	BitmapStatistics() {}
-	BitmapStatistics(const BitmapStatistics&);
-	BitmapStatistics(const Bitmap* pbmp_);
-	BitmapStatistics& operator = (const BitmapStatistics&);
-
-	double retreaveCorrelation(const Bitmap::RGB CID, Bitmap::Direction dr, double* xAxis_dest = NULL, double* yAxis_dest = NULL) const;
-	double retreaveEntropy(const Bitmap::RGB CID) const{ return this->Entropy[CID]; }
-	double retreaveXiSquare(const Bitmap::RGB CID) const{ return this->XiSquare[CID]; }
-	size_t pixelAmount() const{ return this->pbmp->PixelAmount(); }
-	void   writeHistogram(Bitmap::RGB CID, double destination[]) const{ for(int i = 0; i < 256; i++) destination[i] = this->histogram[CID][i]; }
-
-	friend std::ostream& operator << (std::ostream& os, const BitmapStatistics& bmSt);
-	void writeBmpName(char destination[]) const{ this->pbmp->writeBmpName(destination); }
-};*/
 #endif
