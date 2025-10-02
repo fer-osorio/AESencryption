@@ -62,6 +62,7 @@ public:
 	* @brief Applies an encryption/decryption algorithm to the file's data.
 	* @param algorithm An object that conforms to the Encryptor interface.
 	* * This method modifies the internal data buffer.
+	* @throws Throws exceptions if encryption fails
 	*/
 	void apply_encryption(const Encryptor& c);
 
