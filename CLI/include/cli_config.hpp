@@ -45,7 +45,7 @@ private:
     CryptoConfig config;
 
 public:
-    ArgumentParser(int argc, char** argv) : argc(argc), argv(argv) {}
+    ArgumentParser(int argc_, char** argv_);
 
     // Main parsing method
     CryptoConfig parse();
