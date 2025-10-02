@@ -3,7 +3,7 @@ include common.mk
 .PHONY: all clean data-encryption core file-handlers metrics-analysis tests #tools
 
 # Default target
-all: data-encryption core file-handlers metrics-analysis tests #tools
+all: data-encryption core file-handlers metrics-analysis tests cli
 
 # Component targets
 tests: file-handlers core data-encryption metrics-analysis
