@@ -14,16 +14,24 @@ UNIT_DIR = unit
 INTEGRATION_DIR = integration
 
 # Local includes and libraries
-INCLUDES = -I./include -I$(PROJECT_ROOT)/data-encryption/include
+INCLUDES = \
+    -I./include \
+    -I$(PROJECT_ROOT)/CLI/include \
+    -I$(PROJECT_ROOT)/file-handlers/include \
+    -I$(PROJECT_ROOT)/include \
+    -I$(PROJECT_ROOT)/data-encryption/include \
+    -I$(PROJECT_ROOT)/metrics-analysis/include
+
 LDFLAGS += -L$(PROJECT_ROOT)/lib
-LIBS = -laesencryption_cpp  -laesencryption_c  -lfilehandlers  -lmetricsanalysis
+LIBS = -lcli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetricsanalysis
 
 # Define required dependencies (library files)
 REQUIRED_DEPS = \
     $(PROJECT_ROOT)/lib/libaesencryption_c.a \
     $(PROJECT_ROOT)/lib/libaesencryption_cpp.a \
     $(PROJECT_ROOT)/lib/libfilehandlers.a \
-    $(PROJECT_ROOT)/lib/libmetricsanalysis.a
+    $(PROJECT_ROOT)/lib/libmetricsanalysis.a \
+    $(PROJECT_ROOT)/lib/libcli.a
 
 # Source files
 TEST_UTILS_SOURCES = $(wildcard $(SRCDIR)/*.cpp)
