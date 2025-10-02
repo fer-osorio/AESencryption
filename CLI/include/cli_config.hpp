@@ -34,6 +34,7 @@ struct CryptoConfig {
     bool validate();
 
     // Convert to crypto objects - the integration point!
+    // Consider: Throws std::runtime_error
     AESencryption::Key create_key() const;
 };
 
