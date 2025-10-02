@@ -90,7 +90,7 @@ endef
 define compile_c_rule
 	$(call print_building,"C object:\\n\\t\\t$(2)")
 	$(call create_dir,$(dir $(2)))
-	$(CC) $(CFLAGS) $(C_STANDARD) $(INCLUDES)  -MMD -MP -c $(1) -o $(2)
+	@$(CC) $(CFLAGS) $(C_STANDARD) $(INCLUDES)  -MMD -MP -c $(1) -o $(2)
 	$(call print_success,"Compiled:\\n\\t\\t$(2)")
 endef
 
@@ -99,22 +99,22 @@ endef
 define compile_cpp_rule
 	$(call print_building,"C++ object:\\n\\t\\t$(2)")
 	$(call create_dir,$(dir $(2)))
-	$(CXX) $(CXXFLAGS) $(CXX_STANDARD) $(INCLUDES) $(3) -MMD -MP -c $(1) -o $(2)
+	@$(CXX) $(CXXFLAGS) $(CXX_STANDARD) $(INCLUDES) $(3) -MMD -MP -c $(1) -o $(2)
 	$(call print_success,"Compiled:\\n\\t\\t$(2)")
 endef
 
 # Static library creation
 define create_static_lib
 	$(call print_building,"Static library:\\n\\t\\t$(1)")
-	ar $(STATIC_LIB_FLAGS) $(1) $(2)
-	ranlib $(1)
+	@ar $(STATIC_LIB_FLAGS) $(1) $(2)
+	@ranlib $(1)
 	$(call print_success,"Created static library:\\n\\t\\t$(1)")
 endef
 
 # Shared library creation
 define create_shared_lib
 	$(call print_building,"Shared library:\\n\\t\\t$(1)")
-	$(CXX) $(SHARED_LIB_FLAGS) -o $(1) $(2) $(LDFLAGS) $(LIBS)
+	@$(CXX) $(SHARED_LIB_FLAGS) -o $(1) $(2) $(LDFLAGS) $(LIBS)
 	$(call print_success,"Created shared library:\\n\\t\\t$(1)")
 endef
 
@@ -122,7 +122,7 @@ endef
 # Usage: $(call create_executable,executable,objects)
 define create_executable
 	$(call print_building,"Executable:\\n\\t\\t$(1)")
-	$(CXX) $(2) -o $(1) $(LDFLAGS) $(LIBS)
+	@$(CXX) $(2) -o $(1) $(LDFLAGS) $(LIBS)
 	$(call print_success,"Created executable:\\n\\t\\t$(1)")
 endef
 
