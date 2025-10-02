@@ -3,7 +3,7 @@
 #define CLI_CONFIG_HPP
 
 #include "../../include/cipher.hpp"
-#include <string>
+#include <filesystem> // For path handling
 #include <optional>
 #include <stdexcept>
 
@@ -18,9 +18,9 @@ struct CryptoConfig {
     };
 
     Operation operation;
-    std::string key_file;
-    std::string input_file;
-    std::string output_file;
+    std::filesystem::path key_file;
+    std::filesystem::path input_file;
+    std::filesystem::path output_file;
 
     // Optional parameters with defaults
     AESencryption::Key::LengthBits key_length = AESencryption::Key::LengthBits::_128;
@@ -41,11 +41,11 @@ struct CryptoConfig {
 class ArgumentParser {
 private:
     int argc;
-    char** argv;
+    const char** argv;
     CryptoConfig config;
 
 public:
-    ArgumentParser(int argc_, char** argv_);
+    ArgumentParser(int argc_, const char** argv_);
 
     // Main parsing method
     CryptoConfig parse();
