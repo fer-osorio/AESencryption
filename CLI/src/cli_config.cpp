@@ -45,7 +45,7 @@ AESencryption::Key CryptoConfig::create_key() const {
     }
 }
 
-ArgumentParser::ArgumentParser(int argc_, char** argv_) : argc(argc_), argv(argv_) {}
+ArgumentParser::ArgumentParser(int argc_, const char** argv_) : argc(argc_), argv(argv_) {}
 
 CryptoConfig ArgumentParser::parse() {
     if (argc < 2) {
