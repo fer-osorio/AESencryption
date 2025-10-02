@@ -25,11 +25,12 @@ metrics-analysis:
 	@$(MAKE) -C metrics-analysis
 
 clean:
-	@$(MAKE) -C data-encryption clean
-	@$(MAKE) -C src clean
-	@$(MAKE) -C file-handlers clean
-	@$(MAKE) -C metrics-analysis clean
 	@$(MAKE) -C tests clean
+	@$(MAKE) -C file-handlers clean
+	@$(MAKE) -C CLI clean
+	@$(MAKE) -C src clean
+	@$(MAKE) -C data-encryption clean
+	@$(MAKE) -C metrics-analysis clean
 	rm -rf lib/* bin/* obj/*
 
 install:
