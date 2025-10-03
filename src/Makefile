@@ -19,7 +19,7 @@ INCLUDES = -I./utils/ -I$(PROJECT_ROOT)/data-encryption/include -I$(PROJECT_ROOT
 SOURCES = $(call find_sources,$(SRCDIR),cpp)
 #$(info SOURCES=$(SOURCES))
 # Object files
-OBJECTS = $(call sources_to_objects,$(SOURCES),$(OBJDIR))
+OBJECTS = $(call sources_to_objects,$(SOURCES),$(OBJDIR),cpp)
 #$(info OBJECTS=$(OBJECTS))
 
 # Dependencies on other modules
