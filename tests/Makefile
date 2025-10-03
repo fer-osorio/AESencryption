@@ -54,7 +54,7 @@ INTEGRATION_TESTS = $(INTEGRATION_TEST_SOURCES:$(INTEGRATION_DIR)/%.cpp=$(BINDIR
 #$(info OBJECTS: $(OBJECTS))
 #$(info REQUIRED_DEPS: $(REQUIRED_DEPS))
 
-ALL_TESTS = $(UNIT_TESTS) #$(INTEGRATION_TESTS)
+ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS)
 
 .PHONY: all clean unit integration check-deps help debug-vars run-unit run-integration run-all
 
