@@ -70,7 +70,7 @@ CryptoConfig ArgumentParser::parse() {
         }
         else if (arg == "--mode" && i + 1 < argc) {
             std::string mode(argv[++i]);
-        if (mode == "ECB") {
+            if (mode == "ECB") {
                 this->config.operation_mode = AESencryption::Cipher::OperationMode::Identifier::ECB;
             } else if (mode == "CBC") {
                 this->config.operation_mode = AESencryption::Cipher::OperationMode::Identifier::CBC;
