@@ -59,10 +59,40 @@ static size_t getKeyExpansionLengthBlocksfromNk(enum Nk_t Nk){
   return getKeyExpansionLengthWordsfromNk(Nk) / NB;
 }
 
+// Check for compiler-specific endianness macros
+#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && defined(__ORDER_BIG_ENDIAN__)
+    // GCC, Clang
+    #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        #define IS_LITTLE_ENDIAN 1
+        #define ENDIAN_UNKNOWN 0
+    #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+        #define IS_LITTLE_ENDIAN 0
+        #define ENDIAN_UNKNOWN 0
+    #else
+        #error "Unsupported endianness"
+    #endif
+#elif defined(_WIN32) || defined(_WIN64)
+    // Windows is always little endian
+    #define IS_LITTLE_ENDIAN 1
+    #define ENDIAN_UNKNOWN 0
+#elif defined(__LITTLE_ENDIAN__) || defined(__ARMEL__) || defined(__THUMBEL__) || \
+      defined(__AARCH64EL__) || defined(_MIPSEL) || defined(__MIPSEL) || defined(__MIPSEL__)
+    #define IS_LITTLE_ENDIAN 1
+    #define ENDIAN_UNKNOWN 0
+#elif defined(__BIG_ENDIAN__) || defined(__ARMEB__) || defined(__THUMBEB__) || \
+      defined(__AARCH64EB__) || defined(_MIPSEB) || defined(__MIPSEB) || defined(__MIPSEB__)
+    #define IS_LITTLE_ENDIAN 0
+    #define ENDIAN_UNKNOWN 0
+#else
+    // Fallback: compile-time detection using union
+    #define ENDIAN_UNKNOWN 1
+#endif
+
 static bool usingLittleEndian(){
   Word_t val = {.uint32_ = 1};                                                                // Represents 0x00000001 in hexadecimal
   return val.uint08_[0] == 1;                                                  // Cast the address of the integer to a uint8_t pointer to access individual bytes
 }
+static int using_little_endian = -1;
 
 static void printWord(Word_t w) {
   uint32_t WL_1 = WORD_SIZE-1, i;
@@ -76,9 +106,16 @@ static void copyWord(const Word_t* orgin, Word_t* dest){
 }
 
 static void RotWord(Word_t* word) {
-  uint8_t temp = word->uint08_[0];                                              // As a byte array, the rotation must be performed to the left, but since integer
-  if(usingLittleEndian()) word->uint32_ >>= 8;                                  // types have endianess, the bit rotation must be perform according to it
+uint8_t temp = word->uint08_[0];
+#if ENDIAN_UNKNOWN
+  if(using_little_endian == -1) using_little_endian = usingLittleEndian();
+  if(using_little_endian) word->uint32_ >>= 8;
   else word->uint32_ <<= 8;
+#elif IS_LITTLE_ENDIAN
+  word->uint32_ >>= 8;
+#else
+  word->uint32_ <<= 8;
+#endif
   word->uint08_[WORD_LASTIND] = temp;
 }
 
@@ -213,24 +250,45 @@ static void SubBytes(Block_t* b) {                                              
   SubWord(&b->word_[3]);
 }
 
-static void ShiftRows(Block_t* b) {                                               // -Shift rows of the state array by different offset.
-  bool isLittleEndian = usingLittleEndian();                                    // isLittleEndian will determine the direction of the shift
+static void ShiftRows(Block_t* b) {                                             // -Shift rows of the state array by different offset.
+#if ENDIAN_UNKNOWN
+  if(using_little_endian == -1)
+    using_little_endian = usingLittleEndian();                                    // using_little_endian will determine the direction of the shift
+#endif
   // Shift of second row
   uint8_t temp1 = b->word_[1].uint08_[0];                                       // As a byte array, the rotation must be performed to the left, but since integer
-  if(isLittleEndian) b->word_[1].uint32_ >>= 8;                                 // types have endianess, the bit rotation must be perform according to it
+#if ENDIAN_UNKNOWN
+  if(using_little_endian) b->word_[1].uint32_ >>= 8;                                 // types have endianess, the bit rotation must be perform according to it
   else b->word_[1].uint32_ <<= 8;
+#elif IS_LITTLE_ENDIAN
+  b->word_[1].uint32_ >>= 8;
+#else
+  b->word_[1].uint32_ <<= 8;
+#endif
   b->word_[1].uint08_[WORD_LASTIND] = temp1;
 
   // Shift of third row
   uint16_t temp2 = b->word_[2].uint16_[0];
-  if(isLittleEndian) b->word_[2].uint32_ >>= 16;
+#if ENDIAN_UNKNOWN
+  if(using_little_endian) b->word_[2].uint32_ >>= 16;
   else b->word_[2].uint32_ <<= 16;
+#elif IS_LITTLE_ENDIAN
+  b->word_[2].uint32_ >>= 16;
+#else
+  b->word_[2].uint32_ <<= 16;
+#endif
   b->word_[2].uint16_[WORD_LASTIND_SHORT] = temp2;
 
   // Shift of fourth row
   uint8_t temp3 = b->word_[3].uint08_[WORD_LASTIND];                            // Three shift to the left is equivalent to one shift to the right
-  if(isLittleEndian) b->word_[3].uint32_ <<= 8;
+#if ENDIAN_UNKNOWN
+  if(using_little_endian) b->word_[3].uint32_ <<= 8;
   else b->word_[3].uint32_ >>= 8;
+#elif IS_LITTLE_ENDIAN
+  b->word_[3].uint32_ <<= 8;
+#else
+  b->word_[3].uint32_ >>= 8;
+#endif
   b->word_[3].uint08_[0] = temp3;
 }
 
@@ -599,24 +657,45 @@ enum ExceptionCode encryptBlock(const Block_t* input, const KeyExpansion_t* ke_p
 }
 
 static void InvShiftRows(Block_t* b) {                                            // -Shift rows of the state array by different offset.
-  bool isLittleEndian = usingLittleEndian();                                    // isLittleEndian will determine the direction of the shift
+#if ENDIAN_UNKNOWN
+  if(using_little_endian == -1)
+    using_little_endian = usingLittleEndian();                                    // using_little_endian will determine the direction of the shift
+#endif
 
   // Shift of second row
   uint8_t temp1 = b->word_[1].uint08_[WORD_LASTIND];                                          // As a byte array, the rotation must be performed to the left, but since integer
-  if(isLittleEndian) b->word_[1].uint32_ <<= 8;                                 // types have endianess, the bit rotation must be perform according to it
+#if ENDIAN_UNKNOWN
+  if(using_little_endian) b->word_[1].uint32_ <<= 8;                                 // types have endianess, the bit rotation must be perform according to it
   else b->word_[1].uint32_ >>= 8;
+#elif IS_LITTLE_ENDIAN
+  b->word_[1].uint32_ <<= 8;
+#else
+  b->word_[1].uint32_ >>= 8;
+#endif
   b->word_[1].uint08_[0] = temp1;
 
   // Shift of third row
   uint16_t temp2 = b->word_[2].uint16_[WORD_LASTIND_SHORT];
-  if(isLittleEndian) b->word_[2].uint32_ <<= 16;
+#if ENDIAN_UNKNOWN
+  if(using_little_endian) b->word_[2].uint32_ <<= 16;
   else b->word_[2].uint32_ >>= 16;
+#elif IS_LITTLE_ENDIAN
+  b->word_[2].uint32_ <<= 16;
+#else
+  b->word_[2].uint32_ >>= 16;
+#endif
   b->word_[2].uint16_[0] = temp2;
 
   // Shift of fourth row
   uint8_t temp3 = b->word_[3].uint08_[0];                                       // Three shift to the left is equivalent to one shift to the right
-  if(isLittleEndian) b->word_[3].uint32_ >>= 8;
+#if ENDIAN_UNKNOWN
+  if(using_little_endian) b->word_[3].uint32_ >>= 8;
   else b->word_[3].uint32_ <<= 8;
+#elif IS_LITTLE_ENDIAN
+  b->word_[3].uint32_ >>= 8;
+#else
+  b->word_[3].uint32_ <<= 8;
+#endif
   b->word_[3].uint08_[WORD_LASTIND] = temp3;
 }
 
