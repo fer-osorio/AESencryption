@@ -126,13 +126,13 @@ CryptoConfig ArgumentParser::get_config() const {
 }
 
 void ArgumentParser::print_help() const{
-    std::cout << "AES Encryption Tool\n\n"
+    std::cout << this->argv[0] << ". AES Encryption Tool\n\n"
               << "Usage:\n"
-              << "  Encryption: aes-encrypt --key <keyfile> --input <file> --output <file> [options]\n"
-              << "  Decryption: aes-decrypt --key <keyfile> --input <file> --output <file> [options]\n"
-              << "  Key Generation: aes-encrypt --generate-key --key-length <bits> --output <file>\n\n"
+              << "\tEncryption\t" << this->argv[0] << " --encrypt --key <keyfile> --input <file> --output <file> [options]\n"
+              << "\tDecryption\t" << this->argv[0] << " --decrypt --key <keyfile> --input <file> --output <file> [options]\n"
+              << "\tKey Generation:\t" << this->argv[0] << " --encrypt --generate-key --key-length <bits> --output <file>\n\n"
               << "Options:\n"
-              << "  --mode <ECB|CBC>         Operation mode (default: CBC)\n"
-              << "  --key-length <bits>      Key length: 128, 192, or 256 (default: 128)\n"
-              << "  --help                   Show this help message\n";
+              << "\t--mode <ECB|CBC>         Operation mode (default: CBC)\n"
+              << "\t--key-length <bits>      Key length: 128, 192, or 256 (default: 128)\n"
+              << "\t--help                   Show this help message\n";
 }
