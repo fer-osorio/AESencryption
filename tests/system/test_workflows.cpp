@@ -9,26 +9,26 @@
 #include <string>
 
 // Helper function to execute command line tool
-int SystemTestUtils::execute_cli_command(const std::string& command) {
+int CommandLineToolsTest::SystemUtils::execute_cli_command(const std::string& command) {
     return std::system(command.c_str());
 }
 
 // Helper to create test files
-void SystemTestUtils::create_test_file(const std::string& filename, const std::string& content) {
+void CommandLineToolsTest::SystemUtils::create_test_file(const std::string& filename, const std::string& content) {
     std::ofstream file(filename);
     file << content;
     file.close();
 }
 
 // Helper to read file content
-std::string SystemTestUtils::read_file_content(const std::string& filename) {
+std::string CommandLineToolsTest::SystemUtils::read_file_content(const std::string& filename) {
     std::ifstream file(filename);
     std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     return content;
 }
 
 // Helper to create test bitmap
-void SystemTestUtils::create_test_bitmap(const std::string& filename, size_t width, size_t height) {
+void CommandLineToolsTest::SystemUtils::create_test_bitmap(const std::string& filename, size_t width, size_t height) {
     // Create a simple test bitmap file
     std::ofstream file(filename, std::ios::binary);
 
@@ -52,7 +52,7 @@ void SystemTestUtils::create_test_bitmap(const std::string& filename, size_t wid
 
 
 // SYSTEM TEST 1: Complete Text File Encryption Workflow
-void commandLineTools_test::test_text_file_encryption_workflow() {
+bool CommandLineToolsTest::SystemTests::test_text_file_encryption_workflow() {
     TEST_SUITE("Text File Encryption E2E Workflow");
 
     // Setup: Create test environment
@@ -71,34 +71,34 @@ void commandLineTools_test::test_text_file_encryption_workflow() {
                                    "Numbers: 1234567890\n";
 
     // Step 1: Create original file
-    SystemTestUtils::create_test_file(original_file, test_content);
+    SystemUtils::create_test_file(original_file, test_content);
 
     // Step 2: Generate encryption key
     std::string gen_key_cmd = "BMP_ENCRYPTOR --generate-key --key-size 256 --output " + key_file;
-    int result1 = SystemTestUtils::execute_cli_command(gen_key_cmd);
+    int result1 = SystemUtils::execute_cli_command(gen_key_cmd);
     ASSERT_TRUE(result1 == 0, "Key generation should succeed");
     ASSERT_TRUE(std::filesystem::exists(key_file), "Key file should be created");
 
     // Step 3: Encrypt the file
     std::string encrypt_cmd = "BMP_ENCRYPTOR --encrypt --mode CBC --key " + key_file +
                              " --input " + original_file + " --output " + encrypted_file;
-    int result2 = SystemTestUtils::execute_cli_command(encrypt_cmd);
+    int result2 = SystemUtils::execute_cli_command(encrypt_cmd);
     ASSERT_TRUE(result2 == 0, "File encryption should succeed");
     ASSERT_TRUE(std::filesystem::exists(encrypted_file), "Encrypted file should be created");
 
     // Step 4: Verify encrypted file is different from original
-    std::string encrypted_content = SystemTestUtils::read_file_content(encrypted_file);
+    std::string encrypted_content = SystemUtils::read_file_content(encrypted_file);
     ASSERT_TRUE(encrypted_content != test_content, "Encrypted content should differ from original");
 
     // Step 5: Decrypt the file
     std::string decrypt_cmd = "BMP_ENCRYPTOR --decrypt --mode CBC --key " + key_file +
                              " --input " + encrypted_file + " --output " + decrypted_file;
-    int result3 = SystemTestUtils::execute_cli_command(decrypt_cmd);
+    int result3 = SystemUtils::execute_cli_command(decrypt_cmd);
     ASSERT_TRUE(result3 == 0, "File decryption should succeed");
     ASSERT_TRUE(std::filesystem::exists(decrypted_file), "Decrypted file should be created");
 
     // Step 6: Verify decrypted content matches original
-    std::string decrypted_content = SystemTestUtils::read_file_content(decrypted_file);
+    std::string decrypted_content = SystemUtils::read_file_content(decrypted_file);
     ASSERT_TRUE(decrypted_content == test_content, "Decrypted content should match original");
 
     // Cleanup
@@ -108,7 +108,7 @@ void commandLineTools_test::test_text_file_encryption_workflow() {
 }
 
 // SYSTEM TEST 2: Image File Encryption Workflow
-void commandLineTools_test::test_image_encryption_workflow() {
+bool CommandLineToolsTest::SystemTests::test_image_encryption_workflow() {
     TEST_SUITE("Image File Encryption E2E Workflow");
 
     const std::string test_dir = "./test_images/";
@@ -120,21 +120,21 @@ void commandLineTools_test::test_image_encryption_workflow() {
     const std::string key_file = test_dir + "image.key";
 
     // Create test bitmap
-    SystemTestUtils::create_test_bitmap(original_image, 100, 100);
+    SystemUtils::create_test_bitmap(original_image, 100, 100);
 
     // Generate key
     std::string gen_key_cmd = "BMP_ENCRYPTOR --generate-key --key-size 128 --output " + key_file;
-    ASSERT_TRUE(SystemTestUtils::execute_cli_command(gen_key_cmd) == 0, "Key generation should succeed");
+    ASSERT_TRUE(SystemUtils::execute_cli_command(gen_key_cmd) == 0, "Key generation should succeed");
 
     // Encrypt image
     std::string encrypt_cmd = "BMP_ENCRYPTOR --encrypt --mode ECB --key " + key_file +
                              " --input " + original_image + " --output " + encrypted_image + " --type bitmap";
-    ASSERT_TRUE(SystemTestUtils::execute_cli_command(encrypt_cmd) == 0, "Image encryption should succeed");
+    ASSERT_TRUE(SystemUtils::execute_cli_command(encrypt_cmd) == 0, "Image encryption should succeed");
 
     // Decrypt image
     std::string decrypt_cmd = "BMP_ENCRYPTOR --decrypt --mode ECB --key " + key_file +
                              " --input " + encrypted_image + " --output " + decrypted_image + " --type bitmap";
-    ASSERT_TRUE(SystemTestUtils::execute_cli_command(decrypt_cmd) == 0, "Image decryption should succeed");
+    ASSERT_TRUE(SystemUtils::execute_cli_command(decrypt_cmd) == 0, "Image decryption should succeed");
 
     // Verify file sizes match (for bitmap, this indicates structural integrity)
     auto original_size = std::filesystem::file_size(original_image);
@@ -157,7 +157,7 @@ void commandLineTools_test::test_image_encryption_workflow() {
 }
 
 // SYSTEM TEST 3: Error Handling and Edge Cases
-void commandLineTools_test::test_error_scenarios() {
+bool CommandLineToolsTest::SystemTests::test_error_scenarios() {
     TEST_SUITE("Error Scenario E2E Tests");
 
     const std::string test_dir = "./test_errors/";
@@ -170,37 +170,37 @@ void commandLineTools_test::test_error_scenarios() {
     const std::string key2 = test_dir + "key2.key";
     const std::string decrypted_file = test_dir + "decrypted.txt";
 
-    SystemTestUtils::create_test_file(test_file, "Test content");
+    SystemUtils::create_test_file(test_file, "Test content");
 
     // Generate two different keys
-    SystemTestUtils::execute_cli_command("BMP_ENCRYPTOR --generate-key --output " + key1);
-    SystemTestUtils::execute_cli_command("BMP_ENCRYPTOR --generate-key --output " + key2);
+    SystemUtils::execute_cli_command("BMP_ENCRYPTOR --generate-key --output " + key1);
+    SystemUtils::execute_cli_command("BMP_ENCRYPTOR --generate-key --output " + key2);
 
     // Encrypt with key1
     std::string encrypt_cmd = "BMP_ENCRYPTOR --encrypt --key " + key1 +
                              " --input " + test_file + " --output " + encrypted_file;
-    ASSERT_TRUE(SystemTestUtils::execute_cli_command(encrypt_cmd) == 0, "Encryption should succeed");
+    ASSERT_TRUE(SystemUtils::execute_cli_command(encrypt_cmd) == 0, "Encryption should succeed");
 
     // Try to decrypt with key2 (should fail or produce garbage)
     std::string decrypt_cmd = "BMP_ENCRYPTOR --decrypt --key " + key2 +
                              " --input " + encrypted_file + " --output " + decrypted_file;
-    int decrypt_result = SystemTestUtils::execute_cli_command(decrypt_cmd);
+    int decrypt_result = SystemUtils::execute_cli_command(decrypt_cmd);
 
     // Either command should fail, or decrypted content should be garbage
     if (decrypt_result == 0 && std::filesystem::exists(decrypted_file)) {
-        std::string decrypted_content = SystemTestUtils::read_file_content(decrypted_file);
+        std::string decrypted_content = SystemUtils::read_file_content(decrypted_file);
         ASSERT_TRUE(decrypted_content != "Test content", "Wrong key should not produce correct plaintext");
     } else {
         ASSERT_TRUE(decrypt_result != 0, "Decryption with wrong key should fail");
     }
 
     // Test 2: Non-existent file
-    int nonexistent_result = SystemTestUtils::execute_cli_command(
+    int nonexistent_result = SystemUtils::execute_cli_command(
         "BMP_ENCRYPTOR --encrypt --input nonexistent.txt --output out.aes");
     ASSERT_TRUE(nonexistent_result != 0, "Encrypting non-existent file should fail");
 
     // Test 3: Invalid key file
-    int invalid_key_result = SystemTestUtils::execute_cli_command(
+    int invalid_key_result = SystemUtils::execute_cli_command(
         "BMP_ENCRYPTOR --encrypt --key invalid.key --input " + test_file + " --output out.aes");
     ASSERT_TRUE(invalid_key_result != 0, "Using invalid key file should fail");
 
@@ -209,7 +209,7 @@ void commandLineTools_test::test_error_scenarios() {
 }
 
 // SYSTEM TEST 4: Performance and Large File Handling
-void commandLineTools_test::test_large_file_performance() {
+bool CommandLineToolsTest::SystemTests::test_large_file_performance() {
     TEST_SUITE("Large File Performance E2E Tests");
 
     const std::string test_dir = "./test_performance/";
@@ -230,14 +230,14 @@ void commandLineTools_test::test_large_file_performance() {
     large_test.close();
 
     // Generate key
-    SystemTestUtils::execute_cli_command("BMP_ENCRYPTOR --generate-key --output " + key_file);
+    SystemUtils::execute_cli_command("BMP_ENCRYPTOR --generate-key --output " + key_file);
 
     // Time the encryption
     auto start_time = std::chrono::high_resolution_clock::now();
 
     std::string encrypt_cmd = "BMP_ENCRYPTOR --encrypt --mode CBC --key " + key_file +
                              " --input " + large_file + " --output " + encrypted_file;
-    int encrypt_result = SystemTestUtils::execute_cli_command(encrypt_cmd);
+    int encrypt_result = SystemUtils::execute_cli_command(encrypt_cmd);
 
     auto encrypt_end = std::chrono::high_resolution_clock::now();
     auto encrypt_duration = std::chrono::duration_cast<std::chrono::milliseconds>(encrypt_end - start_time);
@@ -250,7 +250,7 @@ void commandLineTools_test::test_large_file_performance() {
 
     std::string decrypt_cmd = "BMP_ENCRYPTOR --decrypt --mode CBC --key " + key_file +
                              " --input " + encrypted_file + " --output " + decrypted_file;
-    int decrypt_result = SystemTestUtils::execute_cli_command(decrypt_cmd);
+    int decrypt_result = SystemUtils::execute_cli_command(decrypt_cmd);
 
     auto decrypt_end = std::chrono::high_resolution_clock::now();
     auto decrypt_duration = std::chrono::duration_cast<std::chrono::milliseconds>(decrypt_end - decrypt_start);
