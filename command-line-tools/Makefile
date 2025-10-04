@@ -5,39 +5,85 @@ include ../config.mk
 # Local configuration
 MODULE_NAME = $(notdir $(CURDIR))
 PROJECT_ROOT := $(call find-project-root)
-BINDIR = $(PROJECT_ROOT)/bin/$(MODULE_NAME)
-MODULE_DIRECTORIES := $(shell find . -type d -print0 | xargs -0 -n 1 basename)
-#TARGET_LIB = $(BINDIR)/libmetricsanalysis.a
-
-# Local source directory and object directory
-#SRCDIR = ./src
-OBJDIR = $(PROJECT_ROOT)/obj/$(MODULE_NAME)
-
-# Local includes
-INCDIR = include
-INCLUDES = -I$(PROJECT_ROOT)/$(INCDIR) $(PROJECT_ROOT)/file-handlers/$(INCDIR) $(PROJECT_ROOT)/command-line-tools/$(INCDIR)
-LIBS = -lcli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetricsanalysis
-
-# Source files
-SOURCES = $(call find_sources,./,cpp)
-OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
-
+MODULE_DIRECTORIES := $(shell find . -mindepth 1 -type d -print0 | xargs -0 -n 1 basename)
 # Dependencies on other modules
 DEPS =
 
-# Default target
-all: $(TARGET_LIB)
+# Binaries and objects directories
+BINDIR = $(PROJECT_ROOT)/bin/$(MODULE_NAME)
+OBJDIR = $(PROJECT_ROOT)/obj/$(MODULE_NAME)
 
-# Library target
-#$(TARGET_LIB): $(OBJECTS) | $(BINDIR) $(OBJDIR)
-#	$(call create_static_lib,$@,$(OBJECTS))
+# Local includes
+# Local includes and libraries
+INCLUDES = \
+    -I$(PROJECT_ROOT)/CLI/include \
+    -I$(PROJECT_ROOT)/file-handlers/include \
+    -I$(PROJECT_ROOT)/include \
+    -I$(PROJECT_ROOT)/data-encryption/include \
+    -I$(PROJECT_ROOT)/metrics-analysis/include
+
+LDFLAGS += -L$(PROJECT_ROOT)/lib
+LIBS = -lcli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetricsanalysis
+
+# Define required dependencies (library files)
+REQUIRED_DEPS = \
+    $(PROJECT_ROOT)/lib/libaesencryption_c.a \
+    $(PROJECT_ROOT)/lib/libaesencryption_cpp.a \
+    $(PROJECT_ROOT)/lib/libfilehandlers.a \
+    $(PROJECT_ROOT)/lib/libmetricsanalysis.a \
+    $(PROJECT_ROOT)/lib/libcli.a
+
+# Source files
+SOURCES = $(call find_local_sources,cpp)
+# Object files
+OBJECTS = $(foreach md,$(MODULE_DIRECTORIES),$(call sources_to_objects,$(filter $(md)/%,$(SOURCES)),$(OBJDIR)/$(md),cpp))
+# Binary files
+BINARIES = $(patsubst $(OBJDIR)/%.o,$(BINDIR)/%,$(OBJECTS))
+
+# Default target
+all: check-deps $(BINARIES)
+
+# Check dependencies
+check-deps:
+	$(call print_info,"Checking project dependencies...")
+	@missing_deps=""; \
+	for dep in $(REQUIRED_DEPS); do \
+		if [ ! -f "$$dep" ]; then \
+			missing_deps="$$missing_deps $$dep"; \
+		fi; \
+	done; \
+	if [ -n "$$missing_deps" ]; then \
+		echo -e "$(COLOR_RED)[ERROR]$(COLOR_NC) Missing dependencies:$$missing_deps"; \
+		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC) Build required modules first:"; \
+		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/data-encryption"; \
+		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/src"; \
+		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/file-handlers"; \
+		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/metrics-analysis"; \
+		echo -e "$(COLOR_YELLOW)[WARNING]$(COLOR_NC) Run 'make dependencies' if you want to build them automatically"; \
+		exit 1; \
+	else \
+		echo -e "$(COLOR_GREEN)[SUCCESS]$(COLOR_NC) All dependencies found"; \
+	fi
+
+# Build dependencies (optional - for convenience)
+dependencies:
+	$(call print_info,"Building project dependencies...")
+	@$(MAKE) -C $(PROJECT_ROOT)/data-encryption
+	@$(MAKE) -C $(PROJECT_ROOT)/src
+	@$(MAKE) -C $(PROJECT_ROOT)/file-handlers
+	@$(MAKE) -C $(PROJECT_ROOT)/metrics-analysis
+	@$(MAKE) -C $(PROJECT_ROOT)/CLI
+	$(call print_success,"All dependencies built successfully")
+
 
 # Build executables
-$(BINDIR)/%: $(OBJDIR)/%.o $(LIBS)
+$(BINDIR)/%: $(OBJDIR)/%.o | $(BINDIR) $(OBJDIR)
+	@mkdir -p $(dir $@)
 	$(call create_executable,$@,$^,)
 
 # Compilation rule for C++ files
 $(OBJDIR)/%.o: %.cpp | $(OBJDIR)
+	@mkdir -p $(dir $@)
 	$(call compile_cpp_rule,$<,$@,$(INCLUDES))
 
 # Directory creation
@@ -47,8 +93,10 @@ $(OBJDIR) $(BINDIR):
 # Clean target
 clean:
 	$(call clean_standard)
-	@rm -f $(TARGET_LIB)
+	@rm -f $(BINARIES)
 	$(call print_success,"Cleaned command-line-tools module")
+
+.PHONY: clean
 
 # Dependency inclusion
 $(eval $(include_deps))
