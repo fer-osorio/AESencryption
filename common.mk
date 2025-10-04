@@ -122,6 +122,7 @@ endef
 # Usage: $(call create_executable,executable,objects)
 define create_executable
 	$(call print_building,"Executable:\\n\\t\\t$(1)")
+	$(call create_dir,$(dir $(2)))
 	@$(CXX) $(2) -o $(1) $(LDFLAGS) $(LIBS)
 	$(call print_success,"Created executable:\\n\\t\\t$(1)")
 endef
