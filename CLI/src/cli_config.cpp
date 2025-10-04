@@ -130,7 +130,7 @@ void ArgumentParser::print_help() const{
               << "Usage:\n"
               << "\tEncryption\t" << this->argv[0] << " --encrypt --key <keyfile> --input <file> --output <file> [options]\n"
               << "\tDecryption\t" << this->argv[0] << " --decrypt --key <keyfile> --input <file> --output <file> [options]\n"
-              << "\tKey Generation:\t" << this->argv[0] << " --encrypt --generate-key --key-length <bits> --output <file>\n\n"
+              << "\tKey Generation:\t" << this->argv[0] << " --generate-key --key-length <bits> --output <file>\n\n"
               << "Options:\n"
               << "\t--mode <ECB|CBC>         Operation mode (default: CBC)\n"
               << "\t--key-length <bits>      Key length: 128, 192, or 256 (default: 128)\n"
