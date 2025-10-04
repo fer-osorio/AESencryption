@@ -8,7 +8,7 @@ namespace TestHelpers {
     class ArgvBuilder {
     private:
         std::vector<std::string> args_storage;
-        std::vector<char*> argv_ptrs;
+        std::vector<const char*> argv_ptrs;
 
     public:
         ArgvBuilder& add(const std::string& arg) {
@@ -16,7 +16,7 @@ namespace TestHelpers {
             return *this;
         }
 
-        char** build(int& argc) {
+        const char** build(int& argc) {
             argv_ptrs.clear();
             for (std::string& arg : args_storage) {
                 argv_ptrs.push_back(const_cast<char*>(arg.c_str()));
@@ -92,7 +92,7 @@ bool test_valid_encryption_arguments() {
     // Setup: Prepare command-line arguments
     int argc;
     TestHelpers::ArgvBuilder builder;
-    char** argv = builder
+    const char** argv = builder
         .add("aes-encryption")
         .add("--encrypt")
         .add("--key").add("test_key.bin")
@@ -135,7 +135,7 @@ bool test_argument_to_crypto_type_conversion() {
     {
         int argc;
         TestHelpers::ArgvBuilder builder;
-        char** argv = builder
+        const char** argv = builder
             .add("aes-encryption")
             .add("--encrypt")
             .add("--key").add("key.bin")
@@ -155,7 +155,7 @@ bool test_argument_to_crypto_type_conversion() {
     for (int bits : {128, 192, 256}) {
         int argc;
         TestHelpers::ArgvBuilder builder;
-        char** argv = builder
+        const char** argv = builder
             .add("aes-encryption")
             .add("--encrypt")
             .add("--key").add("key.bin")
@@ -188,7 +188,7 @@ bool test_invalid_arguments_prevent_crypto_initialization() {
     {
         int argc;
         TestHelpers::ArgvBuilder builder;
-        char** argv = builder
+        const char** argv = builder
             .add("aes-encryption")
             .add("--encrypt")
             .add("--key").add("key.bin")
@@ -210,7 +210,7 @@ bool test_invalid_arguments_prevent_crypto_initialization() {
     {
         int argc;
         TestHelpers::ArgvBuilder builder;
-        char** argv = builder
+        const char** argv = builder
             .add("aes-encryption")
             .add("--encrypt")
             .add("--key").add("key.bin")
@@ -255,7 +255,7 @@ bool test_missing_required_arguments() {
     {
         int argc;
         TestHelpers::ArgvBuilder builder;
-        char** argv = builder
+        const char** argv = builder
             .add("aes-encryption")
             .add("--encrypt")
             .add("--input").add("in.txt")
@@ -275,7 +275,7 @@ bool test_missing_required_arguments() {
     {
         int argc;
         TestHelpers::ArgvBuilder builder;
-        char** argv = builder
+        const char** argv = builder
             .add("aes-encryption")
             .add("--encrypt")
             .add("--key").add("key.bin")
@@ -294,7 +294,7 @@ bool test_missing_required_arguments() {
     // Test: No arguments at all
     {
         int argc = 1;
-        char* argv[] = {const_cast<char*>("aes-encryption")};
+        const char* argv[] = {"aes-encryption"};
 
         CLI::ArgumentParser parser(argc, argv);
         CLI::CryptoConfig config = parser.parse();
@@ -313,7 +313,7 @@ bool test_default_values() {
     // When mode is not specified, should default to CBC
     int argc;
     TestHelpers::ArgvBuilder builder;
-    char** argv = builder
+    const char** argv = builder
         .add("aes-encryption")
         .add("--encrypt")
         .add("--key").add("key.bin")
@@ -345,7 +345,7 @@ bool test_config_creates_functional_crypto_objects() {
     // For demonstration, we'll test the structure without file I/O
     int argc;
     TestHelpers::ArgvBuilder builder;
-    char** argv = builder
+    const char** argv = builder
         .add("aes-encryption")
         .add("--encrypt")
         .add("--generate-key")
@@ -378,7 +378,7 @@ bool test_argument_format_variations() {
     {
         int argc;
         TestHelpers::ArgvBuilder builder;
-        char** argv = builder
+        const char** argv = builder
             .add("aes-encryption")
             .add("--decrypt")   // Note: decrypt option
             .add("--key").add("key.bin")
