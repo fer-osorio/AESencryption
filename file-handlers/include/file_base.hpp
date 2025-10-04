@@ -59,12 +59,20 @@ public:
 	virtual bool save(const std::filesystem::path& output_path) const;
 
 	/**
-	* @brief Applies an encryption/decryption algorithm to the file's data.
+	* @brief Applies an encryption algorithm to the file's data.
 	* @param algorithm An object that conforms to the Encryptor interface.
 	* * This method modifies the internal data buffer.
 	* @throws Throws exceptions if encryption fails
 	*/
 	void apply_encryption(const Encryptor& c);
+
+	/**
+	* @brief Applies an decryption algorithm to the file's data.
+	* @param algorithm An object that conforms to the Encryptor interface.
+	* * This method modifies the internal data buffer.
+	* @throws Throws exceptions if decryption fails
+	*/
+	void apply_decryption(const Encryptor& c);
 
 	/**
 	* @brief Calculates various statistics on the current data buffer.
