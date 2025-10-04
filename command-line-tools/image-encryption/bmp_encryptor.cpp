@@ -16,6 +16,10 @@ int main(int argc, const char* argv[]){
             // Resource acquisition
             File::Bitmap bmp(cryp_conf.input_file);
             AESencryption::Cipher ciph(cryp_conf.create_key(), cryp_conf.operation_mode);
+            if(!bmp.load()){
+                std::cout << "Could not load bmp file\nExit";
+                return 1;
+            }
             // Data processing: Encryption
             if(cryp_conf.operation == CLI::CryptoConfig::Operation::ENCRYPT) bmp.apply_encryption(ciph);
             if(cryp_conf.operation == CLI::CryptoConfig::Operation::DECRYPT) bmp.apply_decryption(ciph);
