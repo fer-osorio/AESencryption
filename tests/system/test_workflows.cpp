@@ -1,61 +1,58 @@
 // System/E2E Testing Examples for AES File Encryption Tool
 // File: system/test_file_encryption_workflows.cpp
 
-#include "../../../include/test_framework.hpp"
+#include "../include/test_framework.hpp"
+#include "test_workflows.hpp"
 #include <filesystem>
 #include <fstream>
 #include <cstdlib>
 #include <string>
 
-#define BMP_ENCRYPTOR ../../../../bin/command-line-tools/image-encryption/bmp_encryptor
+// Helper function to execute command line tool
+int SystemTestUtils::execute_cli_command(const std::string& command) {
+    return std::system(command.c_str());
+}
 
-namespace SystemTestUtils {
-    // Helper function to execute command line tool
-    int execute_cli_command(const std::string& command) {
-        return std::system(command.c_str());
-    }
+// Helper to create test files
+void SystemTestUtils::create_test_file(const std::string& filename, const std::string& content) {
+    std::ofstream file(filename);
+    file << content;
+    file.close();
+}
 
-    // Helper to create test files
-    void create_test_file(const std::string& filename, const std::string& content) {
-        std::ofstream file(filename);
-        file << content;
-        file.close();
-    }
+// Helper to read file content
+std::string SystemTestUtils::read_file_content(const std::string& filename) {
+    std::ifstream file(filename);
+    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    return content;
+}
 
-    // Helper to read file content
-    std::string read_file_content(const std::string& filename) {
-        std::ifstream file(filename);
-        std::string content((std::istreambuf_iterator<char>(file)),
-                           std::istreambuf_iterator<char>());
-        return content;
-    }
+// Helper to create test bitmap
+void SystemTestUtils::create_test_bitmap(const std::string& filename, size_t width, size_t height) {
+    // Create a simple test bitmap file
+    std::ofstream file(filename, std::ios::binary);
 
-    // Helper to create test bitmap
-    void create_test_bitmap(const std::string& filename, size_t width, size_t height) {
-        // Create a simple test bitmap file
-        std::ofstream file(filename, std::ios::binary);
+    // BMP header (simplified)
+    uint32_t file_size = 54 + (width * height * 3);
+    file.write("BM", 2);  // Signature
+    file.write(reinterpret_cast<const char*>(&file_size), 4);
+    uint32_t reserved = 0;
+    file.write(reinterpret_cast<const char*>(&reserved), 4);
+    uint32_t offset = 54;
+    file.write(reinterpret_cast<const char*>(&offset), 4);
 
-        // BMP header (simplified)
-        uint32_t file_size = 54 + (width * height * 3);
-        file.write("BM", 2);  // Signature
-        file.write(reinterpret_cast<const char*>(&file_size), 4);
-        uint32_t reserved = 0;
-        file.write(reinterpret_cast<const char*>(&reserved), 4);
-        uint32_t offset = 54;
-        file.write(reinterpret_cast<const char*>(&offset), 4);
-
-        // Fill with test pattern
-        for (size_t i = 0; i < width * height; ++i) {
-            uint8_t pixel[3] = {static_cast<uint8_t>(i % 256),
-                               static_cast<uint8_t>((i * 2) % 256),
-                               static_cast<uint8_t>((i * 3) % 256)};
-            file.write(reinterpret_cast<const char*>(pixel), 3);
-        }
+    // Fill with test pattern
+    for (size_t i = 0; i < width * height; ++i) {
+        uint8_t pixel[3] = {static_cast<uint8_t>(i % 256),
+                           static_cast<uint8_t>((i * 2) % 256),
+                           static_cast<uint8_t>((i * 3) % 256)};
+        file.write(reinterpret_cast<const char*>(pixel), 3);
     }
 }
 
+
 // SYSTEM TEST 1: Complete Text File Encryption Workflow
-void test_text_file_encryption_workflow() {
+void commandLineTools_test::test_text_file_encryption_workflow() {
     TEST_SUITE("Text File Encryption E2E Workflow");
 
     // Setup: Create test environment
@@ -111,7 +108,7 @@ void test_text_file_encryption_workflow() {
 }
 
 // SYSTEM TEST 2: Image File Encryption Workflow
-void test_image_encryption_workflow() {
+void commandLineTools_test::test_image_encryption_workflow() {
     TEST_SUITE("Image File Encryption E2E Workflow");
 
     const std::string test_dir = "./test_images/";
@@ -160,7 +157,7 @@ void test_image_encryption_workflow() {
 }
 
 // SYSTEM TEST 3: Error Handling and Edge Cases
-void test_error_scenarios() {
+void commandLineTools_test::test_error_scenarios() {
     TEST_SUITE("Error Scenario E2E Tests");
 
     const std::string test_dir = "./test_errors/";
@@ -212,7 +209,7 @@ void test_error_scenarios() {
 }
 
 // SYSTEM TEST 4: Performance and Large File Handling
-void test_large_file_performance() {
+void commandLineTools_test::test_large_file_performance() {
     TEST_SUITE("Large File Performance E2E Tests");
 
     const std::string test_dir = "./test_performance/";
