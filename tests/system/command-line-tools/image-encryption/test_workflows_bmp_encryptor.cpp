@@ -1,13 +1,13 @@
 // System/E2E Testing Examples for AES File Encryption Tool
 // File: system/test_file_encryption_workflows.cpp
 
-#include "../../include/test_framework.hpp"
+#include "../../../include/test_framework.hpp"
 #include <filesystem>
 #include <fstream>
 #include <cstdlib>
 #include <string>
 
-#define BMP_ENCRYPTOR ../bin/command-line-tools/image-encryption/bmp_encryptor
+#define BMP_ENCRYPTOR ../../../../bin/command-line-tools/image-encryption/bmp_encryptor
 
 namespace SystemTestUtils {
     // Helper function to execute command line tool
@@ -77,13 +77,13 @@ void test_text_file_encryption_workflow() {
     SystemTestUtils::create_test_file(original_file, test_content);
 
     // Step 2: Generate encryption key
-    std::string gen_key_cmd = "./bin/aes-tool --generate-key --key-size 256 --output " + key_file;
+    std::string gen_key_cmd = "BMP_ENCRYPTOR --generate-key --key-size 256 --output " + key_file;
     int result1 = SystemTestUtils::execute_cli_command(gen_key_cmd);
     ASSERT_TRUE(result1 == 0, "Key generation should succeed");
     ASSERT_TRUE(std::filesystem::exists(key_file), "Key file should be created");
 
     // Step 3: Encrypt the file
-    std::string encrypt_cmd = "./bin/aes-tool --encrypt --mode CBC --key " + key_file +
+    std::string encrypt_cmd = "BMP_ENCRYPTOR --encrypt --mode CBC --key " + key_file +
                              " --input " + original_file + " --output " + encrypted_file;
     int result2 = SystemTestUtils::execute_cli_command(encrypt_cmd);
     ASSERT_TRUE(result2 == 0, "File encryption should succeed");
@@ -94,7 +94,7 @@ void test_text_file_encryption_workflow() {
     ASSERT_TRUE(encrypted_content != test_content, "Encrypted content should differ from original");
 
     // Step 5: Decrypt the file
-    std::string decrypt_cmd = "./bin/aes-tool --decrypt --mode CBC --key " + key_file +
+    std::string decrypt_cmd = "BMP_ENCRYPTOR --decrypt --mode CBC --key " + key_file +
                              " --input " + encrypted_file + " --output " + decrypted_file;
     int result3 = SystemTestUtils::execute_cli_command(decrypt_cmd);
     ASSERT_TRUE(result3 == 0, "File decryption should succeed");
@@ -126,16 +126,16 @@ void test_image_encryption_workflow() {
     SystemTestUtils::create_test_bitmap(original_image, 100, 100);
 
     // Generate key
-    std::string gen_key_cmd = "./bin/aes-tool --generate-key --key-size 128 --output " + key_file;
+    std::string gen_key_cmd = "BMP_ENCRYPTOR --generate-key --key-size 128 --output " + key_file;
     ASSERT_TRUE(SystemTestUtils::execute_cli_command(gen_key_cmd) == 0, "Key generation should succeed");
 
     // Encrypt image
-    std::string encrypt_cmd = "./bin/aes-tool --encrypt --mode ECB --key " + key_file +
+    std::string encrypt_cmd = "BMP_ENCRYPTOR --encrypt --mode ECB --key " + key_file +
                              " --input " + original_image + " --output " + encrypted_image + " --type bitmap";
     ASSERT_TRUE(SystemTestUtils::execute_cli_command(encrypt_cmd) == 0, "Image encryption should succeed");
 
     // Decrypt image
-    std::string decrypt_cmd = "./bin/aes-tool --decrypt --mode ECB --key " + key_file +
+    std::string decrypt_cmd = "BMP_ENCRYPTOR --decrypt --mode ECB --key " + key_file +
                              " --input " + encrypted_image + " --output " + decrypted_image + " --type bitmap";
     ASSERT_TRUE(SystemTestUtils::execute_cli_command(decrypt_cmd) == 0, "Image decryption should succeed");
 
@@ -176,16 +176,16 @@ void test_error_scenarios() {
     SystemTestUtils::create_test_file(test_file, "Test content");
 
     // Generate two different keys
-    SystemTestUtils::execute_cli_command("./bin/aes-tool --generate-key --output " + key1);
-    SystemTestUtils::execute_cli_command("./bin/aes-tool --generate-key --output " + key2);
+    SystemTestUtils::execute_cli_command("BMP_ENCRYPTOR --generate-key --output " + key1);
+    SystemTestUtils::execute_cli_command("BMP_ENCRYPTOR --generate-key --output " + key2);
 
     // Encrypt with key1
-    std::string encrypt_cmd = "./bin/aes-tool --encrypt --key " + key1 +
+    std::string encrypt_cmd = "BMP_ENCRYPTOR --encrypt --key " + key1 +
                              " --input " + test_file + " --output " + encrypted_file;
     ASSERT_TRUE(SystemTestUtils::execute_cli_command(encrypt_cmd) == 0, "Encryption should succeed");
 
     // Try to decrypt with key2 (should fail or produce garbage)
-    std::string decrypt_cmd = "./bin/aes-tool --decrypt --key " + key2 +
+    std::string decrypt_cmd = "BMP_ENCRYPTOR --decrypt --key " + key2 +
                              " --input " + encrypted_file + " --output " + decrypted_file;
     int decrypt_result = SystemTestUtils::execute_cli_command(decrypt_cmd);
 
@@ -199,12 +199,12 @@ void test_error_scenarios() {
 
     // Test 2: Non-existent file
     int nonexistent_result = SystemTestUtils::execute_cli_command(
-        "./bin/aes-tool --encrypt --input nonexistent.txt --output out.aes");
+        "BMP_ENCRYPTOR --encrypt --input nonexistent.txt --output out.aes");
     ASSERT_TRUE(nonexistent_result != 0, "Encrypting non-existent file should fail");
 
     // Test 3: Invalid key file
     int invalid_key_result = SystemTestUtils::execute_cli_command(
-        "./bin/aes-tool --encrypt --key invalid.key --input " + test_file + " --output out.aes");
+        "BMP_ENCRYPTOR --encrypt --key invalid.key --input " + test_file + " --output out.aes");
     ASSERT_TRUE(invalid_key_result != 0, "Using invalid key file should fail");
 
     std::filesystem::remove_all(test_dir);
@@ -233,12 +233,12 @@ void test_large_file_performance() {
     large_test.close();
 
     // Generate key
-    SystemTestUtils::execute_cli_command("./bin/aes-tool --generate-key --output " + key_file);
+    SystemTestUtils::execute_cli_command("BMP_ENCRYPTOR --generate-key --output " + key_file);
 
     // Time the encryption
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    std::string encrypt_cmd = "./bin/aes-tool --encrypt --mode CBC --key " + key_file +
+    std::string encrypt_cmd = "BMP_ENCRYPTOR --encrypt --mode CBC --key " + key_file +
                              " --input " + large_file + " --output " + encrypted_file;
     int encrypt_result = SystemTestUtils::execute_cli_command(encrypt_cmd);
 
@@ -251,7 +251,7 @@ void test_large_file_performance() {
     // Time the decryption
     auto decrypt_start = std::chrono::high_resolution_clock::now();
 
-    std::string decrypt_cmd = "./bin/aes-tool --decrypt --mode CBC --key " + key_file +
+    std::string decrypt_cmd = "BMP_ENCRYPTOR --decrypt --mode CBC --key " + key_file +
                              " --input " + encrypted_file + " --output " + decrypted_file;
     int decrypt_result = SystemTestUtils::execute_cli_command(decrypt_cmd);
 
