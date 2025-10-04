@@ -39,7 +39,19 @@ bool FileBase::save(const std::filesystem::path& output_path) const{
 }
 
 void FileBase::apply_encryption(const Encryptor& c){
-    c.encryption(this->data,this->data);
+    try{
+        c.encryption(this->data,this->data);
+    } catch(...){
+        throw;
+    }
+}
+
+void FileBase::apply_decryption(const Encryptor& c){
+    try{
+        c.decryption(this->data,this->data);
+    } catch(...){
+        throw;
+    }
 }
 
 DataRandomness FileBase::calculate_statistics() const{
