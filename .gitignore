@@ -37,5 +37,4 @@
 *.aes
 
 # Directories for binaries
-bin/*
-*/bin/*
+**/bin/
