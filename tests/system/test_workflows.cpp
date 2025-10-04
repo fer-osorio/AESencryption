@@ -266,15 +266,3 @@ void commandLineTools_test::test_large_file_performance() {
     std::filesystem::remove_all(test_dir);
     PRINT_RESULTS();
 }
-
-int main() {
-    std::cout << "=== System/E2E Testing for AES File Encryption Tool ===" << std::endl;
-
-    test_text_file_encryption_workflow();
-    test_image_encryption_workflow();
-    test_error_scenarios();
-    test_large_file_performance();
-
-    std::cout << "\n=== All System Tests Complete ===" << std::endl;
-    return 0;
-}
