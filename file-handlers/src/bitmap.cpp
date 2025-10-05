@@ -51,19 +51,22 @@ Bitmap::Bitmap(const std::filesystem::path& path) : FileBase(path){
     }
 }
 
-bool Bitmap::load(){
+void Bitmap::load(){
     std::ifstream file;
     file.open(this->file_path, std::ios::binary);
     if (!file.is_open()) {
-        return false;
+        throw std::runtime_error(
+            "In member function void Bitmap::load(): Could not open file."
+        );
     }
     file.seekg(this->fh.offset);
     this->data.resize(ih.SizeOfBitmap);
-    if(file.read(reinterpret_cast<char*>(this->data.data()), ih.SizeOfBitmap)){ // -Initializing bitmap data
-        return true;
+    if(!file.read(reinterpret_cast<char*>(this->data.data()), ih.SizeOfBitmap)){ // -Initializing bitmap data
+        this->data.clear();                                                         // Clear data on failure
+        throw std::runtime_error(
+            "In member function void Bitmap::load(): Could not open file."
+        );
     }
-    this->data.clear();                                                         // Clear data on failure
-    return false;
 }
 
 Bitmap::Bitmap(const Bitmap& bmp) : FileBase(bmp){
@@ -83,7 +86,7 @@ Bitmap::Bitmap(const Bitmap& bmp) : FileBase(bmp){
     this->data = bmp.data;
 }
 
-bool Bitmap::save(const std::filesystem::path& output_path) const{
+void Bitmap::save(const std::filesystem::path& output_path) const{
     std::ofstream file;
     file.open(output_path, std::ios::binary);
     if(file.is_open()) {
@@ -116,7 +119,6 @@ bool Bitmap::save(const std::filesystem::path& output_path) const{
     } else {
         throw std::runtime_error("File could not be written.");
     }
-    return true;
 }
 
 Bitmap& Bitmap::operator = (const Bitmap &bmp) {
