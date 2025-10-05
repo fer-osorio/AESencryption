@@ -83,6 +83,58 @@ bool TestSuite::assertNotNull(const void* ptr, const std::string& testName){
     }
 }
 
+template<typename ExceptionType>
+bool TestSuite::assertThrows(std::function<void()> func, const std::string& testName) {
+    testsRun++;
+    try {
+        func();  // Execute the function
+        // If we reach here, no exception was thrown - test fails
+        std::cout << "  ✗ FAILED: " << testName
+                  << " (Expected exception not thrown)" << std::endl;
+        failedTests.push_back(testName);
+        return false;
+    }
+    catch (const ExceptionType& e) {
+        // Correct exception type was thrown - test passes
+        testsPassed++;
+        std::cout << "  ✓ PASSED: " << testName
+                  << " (Caught expected exception: " << e.what() << ")" << std::endl;
+        return true;
+    }
+    catch (const std::exception& e) {
+        // Wrong exception type was thrown - test fails
+        std::cout << "  ✗ FAILED: " << testName
+                  << " (Wrong exception type: " << e.what() << ")" << std::endl;
+        failedTests.push_back(testName);
+        return false;
+    }
+    catch (...) {
+        // Unknown exception type - test fails
+        std::cout << "  ✗ FAILED: " << testName
+                  << " (Unknown exception type)" << std::endl;
+        failedTests.push_back(testName);
+        return false;
+    }
+}
+
+// Overload for any exception (not type-specific)
+bool TestSuite::assertThrows(std::function<void()> func, const std::string& testName) {
+    testsRun++;
+    try {
+        func();
+        std::cout << "  ✗ FAILED: " << testName
+                  << " (Expected exception not thrown)" << std::endl;
+        failedTests.push_back(testName);
+        return false;
+    }
+    catch (...) {
+        testsPassed++;
+        std::cout << "  ✓ PASSED: " << testName
+                  << " (Exception thrown as expected)" << std::endl;
+        return true;
+    }
+}
+
 bool TestSuite::runTest(std::function<bool ()> testFunc, const std::string& testName){
     bool success = false;
     this->testsRun++;
