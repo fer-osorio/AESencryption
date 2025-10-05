@@ -14,7 +14,7 @@ void FileBase::load() {
     file.open(this->file_path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
         throw std::runtime_error(
-            "In member function void FileBase::load(). Could not open file."
+            "In member function void FileBase::load(): Could not open file."
         );
     }
     std::streamsize size = file.tellg();
@@ -23,7 +23,7 @@ void FileBase::load() {
     if (!file.read(reinterpret_cast<char*>(this->data.data()), size)) {
         this->data.clear(); // Clear data on failure
         throw std::runtime_error(
-            "In member function void FileBase::load(). Could not read file."
+            "In member function void FileBase::load(): Could not read file."
         );
     }
 }
@@ -33,12 +33,12 @@ void FileBase::save(const std::filesystem::path& output_path) const{
     file.open(this->file_path, std::ios::binary);
     if(!file.is_open()) {
         throw std::runtime_error(
-            "In member function bool FileBase::save(const std::filesystem::path& output_path) const. Could not open file."
+            "In member function bool FileBase::save(const std::filesystem::path& output_path) const: Could not open file."
         );
     }
     if(!file.write(reinterpret_cast<const char*>(this->data.data()), this->data.size())){
         throw std::runtime_error(
-            "In member function bool FileBase::save(const std::filesystem::path& output_path) const. Could not write file."
+            "In member function bool FileBase::save(const std::filesystem::path& output_path) const: Could not write file."
         );
     }
 }
