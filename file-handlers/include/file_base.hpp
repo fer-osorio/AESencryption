@@ -45,18 +45,18 @@ public:
 
 	/**
 	* @brief Loads the file content from the stored path into the data buffer.
-	* @return True if loading was successful, false otherwise.
+	* @throws runtime_error if loading fail.
 	* * Marked as 'virtual' so derived classes can provide specialized
 	* loading mechanisms (e.g., text vs. binary mode).
 	*/
-	virtual bool load();
+	virtual void load();
 
 	/**
 	* @brief Saves the current data buffer to a specified path.
 	* @param output_path The path to save the file to.
-	* @return True if saving was successful, false otherwise.
+	* @throws runtime_error if saving fail.
 	*/
-	virtual bool save(const std::filesystem::path& output_path) const;
+	virtual void save(const std::filesystem::path& output_path) const;
 
 	/**
 	* @brief Applies an encryption algorithm to the file's data.
