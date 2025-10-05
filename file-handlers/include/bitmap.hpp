@@ -1,4 +1,5 @@
-// -Set of structures representing files. The intention is to handle files for its encryption
+// -Handling bitmap format images.
+
 #ifndef _INCLUDED_FILE_
 #define _INCLUDED_FILE_
 
@@ -6,17 +7,16 @@
 
 namespace File {
 
-//#define NAME_MAX_LEN 4096
-
-class Bitmap;									// -The intention is to use the name Bitmap in the next function
+class Bitmap;									// -Forward declaration. Intention is to use Bitmap name in output stream function
 std::ostream& operator << (std::ostream& st, const Bitmap& bmp);		// -What we want is to make this function visible inside the name space scope
-class Bitmap : public FileBase {							// -Handling bitmap format images.
+
+class Bitmap : public FileBase {
 public:
 	enum struct RGB{ Red, Green, Blue, Color_amount};
 	enum struct Direction{ horizontal, vertical, diagonal, direction_amount };
 	static const char*const RGBlabels[static_cast<unsigned>(RGB::Color_amount)];
 	static const char*const DirectionLabels[static_cast<unsigned>(Direction::direction_amount)];
-private:
+
 	struct RGBcolor {
 		uint8_t red;
 		uint8_t green;
@@ -30,7 +30,7 @@ private:
 		uint16_t reserved1;						// Dependent on the originator application
 		uint16_t reserved2;						// Dependent on the originator application
 		uint32_t offset;						// Starting address of the image data
-	} fh = {0,0,0,0,0,0};
+	};
 
 	struct ImageHeader {
 		uint32_t size;							// Size of this header
@@ -44,9 +44,12 @@ private:
 		int	 VertResolution; 					// Vertical pixel per meter
 		uint32_t ColorsUsed;						// Colors in the color palette, 0 to default
 		uint32_t ColorsImportant;					// Zero when every color is important
-	} ih = {0,0,0,0,0,0,0,0,0,0,0};
+	};
 	#pragma pack(pop)
 
+private:
+	FileHeader fh = {0,0,0,0,0,0};
+	ImageHeader ih = {0,0,0,0,0,0,0,0,0,0,0};
 	size_t pixelAmount;
 	size_t bytesPerPixel;
 	size_t widthInBytes;
