@@ -58,8 +58,8 @@ public:
 	explicit Bitmap(const std::filesystem::path& path);
 	Bitmap(const Bitmap& bmp);
 
-	bool load() override;
-	bool save(const std::filesystem::path& output_path) const override;
+	void load() override;
+	void save(const std::filesystem::path& output_path) const override;
 
 	Bitmap& operator = (const Bitmap& bmp);
 	friend std::ostream& operator << (std::ostream& st, const Bitmap& bmp);
