@@ -9,33 +9,38 @@ using namespace File;
 // Constructor implementation
 FileBase::FileBase(const std::filesystem::path& path) : file_path(path) {}
 
-bool FileBase::load() {
+void FileBase::load() {
     std::ifstream file;
     file.open(this->file_path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
-        return false;
+        throw std::runtime_error(
+            "In member function void FileBase::load(). Could not open file."
+        );
     }
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
     this->data.resize(size);
-    if (file.read(reinterpret_cast<char*>(this->data.data()), size)) {
-        return true;
+    if (!file.read(reinterpret_cast<char*>(this->data.data()), size)) {
+        this->data.clear(); // Clear data on failure
+        throw std::runtime_error(
+            "In member function void FileBase::load(). Could not read file."
+        );
     }
-    this->data.clear(); // Clear data on failure
-    return false;
 }
 
-bool FileBase::save(const std::filesystem::path& output_path) const{
+void FileBase::save(const std::filesystem::path& output_path) const{
     std::ofstream file;
     file.open(this->file_path, std::ios::binary);
     if(!file.is_open()) {
-        return false;
+        throw std::runtime_error(
+            "In member function bool FileBase::save(const std::filesystem::path& output_path) const. Could not open file."
+        );
     }
-    if(file.write(reinterpret_cast<const char*>(this->data.data()), this->data.size())){
-        file.close();
-        return true;
+    if(!file.write(reinterpret_cast<const char*>(this->data.data()), this->data.size())){
+        throw std::runtime_error(
+            "In member function bool FileBase::save(const std::filesystem::path& output_path) const. Could not write file."
+        );
     }
-    return false;
 }
 
 void FileBase::apply_encryption(const Encryptor& c){
