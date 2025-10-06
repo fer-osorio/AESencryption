@@ -11,23 +11,22 @@ namespace fs = std::filesystem;
 // Test Suite Functions
 // ============================================================================
 
-bool test_Constructors(TestFramework::TestSuite& suite, File::BitmapTestFixture& fixture) {
-    std::cout << "\n=== Constructor Tests ===" << std::endl;
-    bool success = true;
+bool test_Constructors(File::BitmapTestFixture& fixture) {
+    TEST_SUITE("Constructor Tests");
 
     // Test 1: Valid path constructor
-    success &= success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         File::Bitmap bmp(fixture.validBmpPath);
         return true; // Should not throw
     }, "Constructor with valid path");
 
     // Test 2: Construct nonexistent file throws exception
-    success &= ASSERT_THROWS(std::runtime_error, [&]() {
+    ASSERT_THROWS(std::runtime_error, [&]() {
         File::Bitmap bmp(fixture.nonexistentPath);
     }, "Construct nonexistent file throws");
 
     // Test 2: Copy constructor
-    success &= success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         File::Bitmap bmp1(fixture.validBmpPath);
         bmp1.load();
         File::Bitmap bmp2(bmp1);
@@ -37,15 +36,15 @@ bool test_Constructors(TestFramework::TestSuite& suite, File::BitmapTestFixture&
             ASSERT_TRUE(bmp1 == bmp2, "Copy is equal to original");
     }, "Copy constructor preserves data");
 
-    return success;
+    PRINT_RESULTS();
+    return SUITE_PASSED();
 }
 
-bool test_LoadOperations(TestFramework::TestSuite& suite, File::BitmapTestFixture& fixture) {
-    std::cout << "\n=== Load Operation Tests ===" << std::endl;
-    bool success = true;
+bool test_LoadOperations(File::BitmapTestFixture& fixture) {
+    TEST_SUITE("Load Operation Tests");
 
     // Test 1: Load valid bitmap
-    success &= success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         File::Bitmap bmp(fixture.validBmpPath);
         bmp.load();
         return
@@ -55,40 +54,40 @@ bool test_LoadOperations(TestFramework::TestSuite& suite, File::BitmapTestFixtur
     }, "Load valid 24-bit bitmap");
 
     // Test 2: Load small bitmap
-    success &= success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         File::Bitmap bmp(fixture.smallBmpPath);
         bmp.load();
         return ASSERT_EQUAL(4, static_cast<int>(bmp.PixelAmount()), "2x2 image has 4 pixels");
     }, "Load small 2x2 bitmap");
 
     // Test 3: Load large bitmap
-    success &= success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         File::Bitmap bmp(fixture.largeBmpPath);
         bmp.load();
         return ASSERT_EQUAL(10000, static_cast<int>(bmp.PixelAmount()), "100x100 image has 10000 pixels");
     }, "Load large 100x100 bitmap");
 
     // Test 4: Load file with wrong magic bytes throws
-    success &= ASSERT_THROWS(std::runtime_error, [&]() {
+    ASSERT_THROWS(std::runtime_error, [&]() {
         File::Bitmap bmp(fixture.wrongMagicPath);
         bmp.load();
     }, "Load wrong magic bytes throws");
 
     // Test 5: Load corrupt header throws
-    success &= ASSERT_THROWS_ANY([&]() {
+    ASSERT_THROWS_ANY([&]() {
         File::Bitmap bmp(fixture.corruptHeaderPath);
         bmp.load();
     }, "Load corrupt header throws");
 
-    return success;
+    PRINT_RESULTS();
+    return SUITE_PASSED();
 }
 
-bool test_SaveOperations(TestFramework::TestSuite& suite, File::BitmapTestFixture& fixture) {
-    std::cout << "\n=== Save Operation Tests ===" << std::endl;
-    bool success = true;
+bool test_SaveOperations(File::BitmapTestFixture& fixture) {
+    TEST_SUITE("Save Operation Tests");
 
     // Test 1: Save and reload bitmap
-    success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         File::Bitmap bmp(fixture.validBmpPath);
         bmp.load();
 
@@ -111,28 +110,28 @@ bool test_SaveOperations(TestFramework::TestSuite& suite, File::BitmapTestFixtur
     }, "Save and reload preserves data");
 
     // Test 2: Save to invalid directory throws
-    success &= ASSERT_THROWS(std::runtime_error, [&]() {
+    ASSERT_THROWS(std::runtime_error, [&]() {
         File::Bitmap bmp(fixture.validBmpPath);
         bmp.load();
         bmp.save("/invalid/nonexistent/directory/output.bmp");
     }, "Save to invalid directory throws");
 
     // Test 3: Save without loading throws
-    success &= ASSERT_THROWS(std::logic_error, [&]() {
+    ASSERT_THROWS(std::logic_error, [&]() {
         File::Bitmap bmp(fixture.validBmpPath);
         // Don't call load()
         bmp.save(fixture.testDataDir / "should_fail.bmp");
     }, "Save without load throws");
 
-    return success;
+    PRINT_RESULTS();
+    return SUITE_PASSED();
 }
 
-bool test_AssignmentOperators(TestFramework::TestSuite& suite, File::BitmapTestFixture& fixture) {
-    std::cout << "\n=== Assignment Operator Tests ===" << std::endl;
-    bool success = true;
+bool test_AssignmentOperators(File::BitmapTestFixture& fixture) {
+    TEST_SUITE("Assignment Operator Tests");
 
     // Test 1: Assignment operator
-    success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         File::Bitmap bmp1(fixture.validBmpPath);
         File::Bitmap bmp2(fixture.smallBmpPath);
         bmp1.load();
@@ -147,7 +146,7 @@ bool test_AssignmentOperators(TestFramework::TestSuite& suite, File::BitmapTestF
     }, "Assignment operator copies data");
 
     // Test 2: Self-assignment
-    success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         File::Bitmap bmp(fixture.validBmpPath);
         bmp.load();
 
@@ -157,15 +156,15 @@ bool test_AssignmentOperators(TestFramework::TestSuite& suite, File::BitmapTestF
         return ASSERT_EQUAL(originalPixels, bmp.PixelAmount(), "Self-assignment preserves data");
     }, "Self-assignment is safe");
 
-    return success;
+    PRINT_RESULTS();
+    return SUITE_PASSED();
 }
 
-bool test_EqualityOperators(TestFramework::TestSuite& suite, File::BitmapTestFixture& fixture) {
-    std::cout << "\n=== Equality Operator Tests ===" << std::endl;
-    bool success = true;
+bool test_EqualityOperators(File::BitmapTestFixture& fixture) {
+    TEST_SUITE("Equality Operator Tests");
 
     // Test 1: Same file loaded twice is equal
-    success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         File::Bitmap bmp1(fixture.validBmpPath);
         File::Bitmap bmp2(fixture.validBmpPath);
         bmp1.load();
@@ -176,7 +175,7 @@ bool test_EqualityOperators(TestFramework::TestSuite& suite, File::BitmapTestFix
     }, "Same file equality");
 
     // Test 2: Different files are not equal
-    success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         File::Bitmap bmp1(fixture.validBmpPath);
         File::Bitmap bmp2(fixture.smallBmpPath);
         bmp1.load();
@@ -187,7 +186,7 @@ bool test_EqualityOperators(TestFramework::TestSuite& suite, File::BitmapTestFix
     }, "Different files inequality");
 
     // Test 3: Copy is equal to original
-    success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         File::Bitmap bmp1(fixture.validBmpPath);
         bmp1.load();
 
@@ -196,15 +195,15 @@ bool test_EqualityOperators(TestFramework::TestSuite& suite, File::BitmapTestFix
         return ASSERT_TRUE(bmp1 == bmp2, "Copy equals original");
     }, "Copy equality");
 
-    return success;
+    PRINT_RESULTS();
+    return SUITE_PASSED();
 }
 
-bool test_StreamOutput(TestFramework::TestSuite& suite, File::BitmapTestFixture& fixture) {
-    std::cout << "\n=== Stream Output Tests ===" << std::endl;
-    bool success = true;
+bool test_StreamOutput(File::BitmapTestFixture& fixture) {
+    TEST_SUITE("Stream Output Tests");
 
     // Test 1: Stream output produces content
-    success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         File::Bitmap bmp(fixture.validBmpPath);
         bmp.load();
         std::ostringstream oss;
@@ -217,15 +216,15 @@ bool test_StreamOutput(TestFramework::TestSuite& suite, File::BitmapTestFixture&
             ASSERT_TRUE(output.find("Bitmap") != std::string::npos || output.length() > 10, "Stream output contains data");
     }, "Stream output operator works");
 
-    return success;
+    PRINT_RESULTS();
+    return SUITE_PASSED();
 }
 
-bool test_EdgeCases(TestFramework::TestSuite& suite, File::BitmapTestFixture& fixture) {
-    std::cout << "\n=== Edge Case Tests ===" << std::endl;
-    bool success = true;
+bool test_EdgeCases(File::BitmapTestFixture& fixture) {
+    TEST_SUITE("Edge Case Tests");
 
     // Test 1: Multiple loads on same object
-    success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         File::Bitmap bmp(fixture.validBmpPath);
 
         bmp.load();
@@ -237,7 +236,7 @@ bool test_EdgeCases(TestFramework::TestSuite& suite, File::BitmapTestFixture& fi
     }, "Multiple loads on same bitmap");
 
     // Test 2: Load, modify path, load again
-    success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         File::Bitmap bmp1(fixture.smallBmpPath);
         bmp1.load();
         size_t smallPixels = bmp1.PixelAmount();
@@ -250,15 +249,15 @@ bool test_EdgeCases(TestFramework::TestSuite& suite, File::BitmapTestFixture& fi
         return ASSERT_TRUE(largePixels > smallPixels, "Different files have different sizes");
     }, "Different bitmaps have different data");
 
-    return success;
+    PRINT_RESULTS();
+    return SUITE_PASSED();
 }
 
-bool test_MemorySafety(TestFramework::TestSuite& suite, File::BitmapTestFixture& fixture) {
-    std::cout << "\n=== Memory Safety Tests ===" << std::endl;
-    bool success = true;
+bool test_MemorySafety(File::BitmapTestFixture& fixture) {
+    TEST_SUITE("Memory Safety Tests");
 
     // Test 1: Destructor doesn't crash after load
-    success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         {
             File::Bitmap bmp(fixture.validBmpPath);
             bmp.load();
@@ -268,7 +267,7 @@ bool test_MemorySafety(TestFramework::TestSuite& suite, File::BitmapTestFixture&
     }, "Destructor after load");
 
     // Test 2: Destructor doesn't crash without load
-    success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         {
             File::Bitmap bmp(fixture.validBmpPath);
             // Destructor called without load
@@ -277,49 +276,69 @@ bool test_MemorySafety(TestFramework::TestSuite& suite, File::BitmapTestFixture&
     }, "Destructor without load");
 
     // Test 3: Multiple copies and assignments
-    success &= RUN_TEST([&]() -> bool {
+    RUN_TEST([&]() -> bool {
         File::Bitmap bmp1(fixture.validBmpPath);
         bmp1.load();
-
         {
             File::Bitmap bmp2(bmp1);
             File::Bitmap bmp3(fixture.smallBmpPath);
             bmp3 = bmp2;
             // bmp2 and bmp3 destructors called here
         }
-
         // Original still valid
         return ASSERT_TRUE(bmp1.PixelAmount() > 0, "Original still valid after copies destroyed");
     }, "Multiple copies memory safety");
 
-    return success;
+    PRINT_RESULTS();
+    return SUITE_PASSED();
 }
 
 // ============================================================================
-// Main Test Runner
+// Principal Test Runner
 // ============================================================================
-int main() {
-    std::cout << "========================================" << std::endl;
-    std::cout << "  BITMAP CLASS COMPREHENSIVE TEST SUITE" << std::endl;
-    std::cout << "========================================" << std::endl;
+bool runAllTests(){
+    std::cout << "================================================================================" << std::endl;
+    std::cout << "                 BITMAP CLASS COMPREHENSIVE TEST SUITE                          " << std::endl;
+    std::cout << "================================================================================" << std::endl;
 
     TEST_SUITE("Bitmap Comprehensive Tests");
     File::BitmapTestFixture fixture;
 
     // Run all test categories
-    test_Constructors(suite, fixture);
-    test_LoadOperations(suite, fixture);
-    test_SaveOperations(suite, fixture);
-    test_AssignmentOperators(suite, fixture);
-    test_EqualityOperators(suite, fixture);
-    test_StreamOutput(suite, fixture);
-    test_EdgeCases(suite, fixture);
-    test_MemorySafety(suite, fixture);
+    RUN_TEST([&]() ->bool {
+        return test_Constructors(fixture);
+    },"Constructors");
+
+    RUN_TEST([&]() ->bool {
+        return test_LoadOperations(fixture);
+    },"LoadOperations");
+    RUN_TEST([&]() ->bool {
+        return test_SaveOperations(fixture);
+    },"Save Operations");
+    RUN_TEST([&]() ->bool {
+        return test_AssignmentOperators(fixture);
+    },"Assignment Operators");
+    RUN_TEST([&]() ->bool {
+        return test_EqualityOperators(fixture);
+    },"Equality Operators");
+    RUN_TEST([&]() ->bool {
+        return test_StreamOutput(fixture);
+    },"Stream Output");
+    RUN_TEST([&]() ->bool {
+        return test_EdgeCases(fixture);
+    },"Edge Cases");
+    RUN_TEST([&]() ->bool {
+        return test_MemorySafety(fixture);
+    },"Memory Safety");
 
     // Print final results
     std::cout << "\n========================================" << std::endl;
     PRINT_RESULTS();
     std::cout << "========================================" << std::endl;
 
-    return suite.allPassed() ? 0 : 1;
+    return SUITE_PASSED();
+}
+
+int main() {
+    return runAllTests() ? 0 : 1;
 }
