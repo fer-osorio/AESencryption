@@ -35,7 +35,7 @@ private:
 	void createWrongMagicBitmap(const fs::path& path);
 
 	// Helper functions to write binary data
-	void writeInt16(std::ofstream& file, int16_t value);
+	static void writeInt16(std::ofstream& file, int16_t value);
 
-	void writeInt32(std::ofstream& file, int32_t value);
+	static void writeInt32(std::ofstream& file, int32_t value);
 };  // class BitmapTestFixture
