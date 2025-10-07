@@ -14,7 +14,6 @@ void BitmapTestFixture::setupTestEnvironment() {
     if (!fs::exists(testDataDir)) {
         fs::create_directory(testDataDir);
     }
-
     // Create test BMP files
     createValidBitmap(validBmpPath, 10, 10);
     createValidBitmap(smallBmpPath, 2, 2);
@@ -27,7 +26,7 @@ void BitmapTestFixture::cleanupTestEnvironment() {
     // Clean up test files
     if (fs::exists(testDataDir)) {
         for (auto& entry : fs::directory_iterator(testDataDir)) {
-            if (entry.path().filename() != ".gitkeep") {
+            if (entry.path().filename() != ".gitkeep") {    // Avoid delete directories tracked by git
                 fs::remove(entry.path());
             }
         }
