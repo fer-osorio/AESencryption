@@ -21,10 +21,37 @@ public:
 	bool assertEqual(int expected, int actual, const std::string& testName);
 	bool assertBytesEqual(const uint8_t* expected, const uint8_t* actual, size_t len, const std::string& testName);
 	bool assertNotNull(const void* ptr, const std::string& testName);
+
 	// Template method to test if a function throws a specific exception
 	template<typename ExceptionType>
-	bool assertThrows(std::function<void()> func, const std::string& testName);
-
+	bool assertThrows(std::function<void()> func, const std::string& testName) {
+		testsRun++;
+		try {
+			func();  // Execute the function
+			// If we reach here, no exception was thrown - test fails
+			std::cout << "\033[31m  ✗ " << testName << " - FAILED\033[0m (Expected exception not thrown)" << std::endl;
+			failedTests.push_back(testName);
+			return false;
+		}
+		catch (const ExceptionType& e) {
+			// Correct exception type was thrown - test passes
+			testsPassed++;
+			std::cout << "\033[32m  ✓ " << testName << "\033[0m (Caught expected exception: " << e.what() << ")" << std::endl;
+			return true;
+		}
+		catch (const std::exception& e) {
+			// Wrong exception type was thrown - test fails
+			std::cout << "\033[31m  ✗ " << testName << " - FAILED\033[0m (Wrong exception type: " << e.what() << ")" << std::endl;
+			failedTests.push_back(testName);
+			return false;
+		}
+		catch (...) {
+			// Unknown exception type - test fails
+			std::cout << "\033[31m  ✗ " << testName << " - FAILED\033[0m (Unknown exception type)" << std::endl;
+			failedTests.push_back(testName);
+			return false;
+		}
+	}
 	// Overload for any exception (not type-specific)
 	bool assertThrows(std::function<void()> func, const std::string& testName);
 
