@@ -18,34 +18,24 @@ Bitmap::Bitmap(const std::filesystem::path& path) : FileBase(path){
     file.open(path, std::ios::binary);
     int i, j, sz = 0;
     if(file.is_open()) {
-        file.read(this->fh.bm, 2);
-        if(this->fh.bm[0] == 'B' && this->fh.bm[1] == 'M') {
-            // -File Header.
-            file.read(reinterpret_cast<char*>(&this->fh.size), 4);
-            file.read(reinterpret_cast<char*>(&this->fh.reserved1), 2);
-            file.read(reinterpret_cast<char*>(&this->fh.reserved2), 2);
-            file.read(reinterpret_cast<char*>(&this->fh.offset), 4);
-
-            // -Image Header.
-            file.read(reinterpret_cast<char*>(&this->ih.size), 4);
-            file.read(reinterpret_cast<char*>(&this->ih.Width), 4);
-            file.read(reinterpret_cast<char*>(&this->ih.Height), 4);
-            file.read(reinterpret_cast<char*>(&this->ih.Planes), 2);
-            file.read(reinterpret_cast<char*>(&this->ih.BitsPerPixel), 2);
-            file.read(reinterpret_cast<char*>(&this->ih.Compression), 4);
-            file.read(reinterpret_cast<char*>(&this->ih.SizeOfBitmap), 4);
-            file.read(reinterpret_cast<char*>(&this->ih.HorzResolution), 4);
-            file.read(reinterpret_cast<char*>(&this->ih.VertResolution), 4);
-            file.read(reinterpret_cast<char*>(&this->ih.ColorsUsed), 4);
-            file.read(reinterpret_cast<char*>(&this->ih.ColorsImportant), 4);
-            this->pixelAmount = static_cast<size_t>(this->ih.Height) * static_cast<size_t>(this->ih.Width);
-            this->bytesPerPixel = this->ih.BitsPerPixel / 8;
-            this->widthInBytes = this->ih.Width*this->bytesPerPixel;
+        // -File Header.
+        if(!file.read(reinterpret_cast<char*>(&this->fh), sizeof(FileHeader) ) ){
             file.close();
-        } else {
+            throw std::runtime_error("Could not read file header.");
+        }
+        if(this->fh.bm[0] != 'B' || this->fh.bm[1] != 'M') {
             file.close();
             throw std::runtime_error("Not a valid bitmap file.");
         }
+        // -Image Header.
+        if(!file.read(reinterpret_cast<char*>(&this->ih), sizeof(ImageHeader) ) ){
+            file.close();
+            throw std::runtime_error("Could not read image header.");
+        }
+        this->pixelAmount = static_cast<size_t>(this->ih.Height) * static_cast<size_t>(this->ih.Width);
+        this->bytesPerPixel = this->ih.BitsPerPixel / 8;
+        this->widthInBytes = this->ih.Width*this->bytesPerPixel;
+        file.close();
     } else {
         throw std::runtime_error("File could not be opened.");
     }
@@ -89,6 +79,11 @@ Bitmap::Bitmap(const Bitmap& bmp) : FileBase(bmp){
 
 void Bitmap::save(const std::filesystem::path& output_path) const{
     std::ofstream file;
+    if (this->data.empty()) {
+        throw std::logic_error(
+            "In member function void Bitmap::save(const std::filesystem::path& output_path) const: Trying to save empty bitmap."
+        );
+    }
     file.open(output_path, std::ios::binary);
     if(file.is_open()) {
         if(this->fh.bm[0] == 'B' && this->fh.bm[1] == 'M') {
