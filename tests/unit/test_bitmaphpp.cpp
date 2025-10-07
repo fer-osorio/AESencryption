@@ -11,6 +11,24 @@ namespace fs = std::filesystem;
 // Test Suite Functions
 // ============================================================================
 
+bool test_Constructors(File::BitmapTestFixture& fixture);
+bool test_LoadOperations(File::BitmapTestFixture& fixture);
+bool test_SaveOperations(File::BitmapTestFixture& fixture);
+bool test_AssignmentOperators(File::BitmapTestFixture& fixture);
+bool test_EqualityOperators(File::BitmapTestFixture& fixture);
+bool test_StreamOutput(File::BitmapTestFixture& fixture);
+bool test_EdgeCases(File::BitmapTestFixture& fixture);
+bool test_MemorySafety(File::BitmapTestFixture& fixture);
+
+// ============================================================================
+// Principal Test Runner
+// ============================================================================
+bool runAllTests();
+
+int main() {
+    return runAllTests() ? 0 : 1;
+}
+
 bool test_Constructors(File::BitmapTestFixture& fixture) {
     TEST_SUITE("Constructor Tests");
 
@@ -293,9 +311,6 @@ bool test_MemorySafety(File::BitmapTestFixture& fixture) {
     return SUITE_PASSED();
 }
 
-// ============================================================================
-// Principal Test Runner
-// ============================================================================
 bool runAllTests(){
     std::cout << "================================================================================" << std::endl;
     std::cout << "                 BITMAP CLASS COMPREHENSIVE TEST SUITE                          " << std::endl;
@@ -303,42 +318,44 @@ bool runAllTests(){
 
     TEST_SUITE("Bitmap Comprehensive Tests");
     File::BitmapTestFixture fixture;
-
+    std::cout << "\n";
     // Run all test categories
     RUN_TEST([&]() ->bool {
         return test_Constructors(fixture);
     },"Constructors");
-
+    std::cout << "================================================================================\n\n";
     RUN_TEST([&]() ->bool {
         return test_LoadOperations(fixture);
     },"LoadOperations");
+    std::cout << "================================================================================\n\n";
     RUN_TEST([&]() ->bool {
         return test_SaveOperations(fixture);
     },"Save Operations");
+    std::cout << "================================================================================\n\n";
     RUN_TEST([&]() ->bool {
         return test_AssignmentOperators(fixture);
     },"Assignment Operators");
+    std::cout << "================================================================================\n\n";
     RUN_TEST([&]() ->bool {
         return test_EqualityOperators(fixture);
     },"Equality Operators");
+    std::cout << "================================================================================\n\n";
     RUN_TEST([&]() ->bool {
         return test_StreamOutput(fixture);
     },"Stream Output");
+    std::cout << "================================================================================\n\n";
     RUN_TEST([&]() ->bool {
         return test_EdgeCases(fixture);
     },"Edge Cases");
+    std::cout << "================================================================================\n\n";
     RUN_TEST([&]() ->bool {
         return test_MemorySafety(fixture);
     },"Memory Safety");
 
     // Print final results
-    std::cout << "\n========================================" << std::endl;
+    std::cout << "\n================================================================================" << std::endl;
     PRINT_RESULTS();
-    std::cout << "========================================" << std::endl;
+    std::cout << "================================================================================" << std::endl;
 
     return SUITE_PASSED();
-}
-
-int main() {
-    return runAllTests() ? 0 : 1;
 }
