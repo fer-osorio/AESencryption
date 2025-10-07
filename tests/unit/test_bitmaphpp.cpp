@@ -25,7 +25,7 @@ bool test_Constructors(File::BitmapTestFixture& fixture) {
         File::Bitmap bmp(fixture.nonexistentPath);
     }, "Construct nonexistent file throws");
 
-    // Test 2: Copy constructor
+    // Test 3: Copy constructor
     RUN_TEST([&]() -> bool {
         File::Bitmap bmp1(fixture.validBmpPath);
         bmp1.load();
@@ -35,6 +35,18 @@ bool test_Constructors(File::BitmapTestFixture& fixture) {
             ASSERT_EQUAL(bmp1.dataSize(), bmp2.dataSize(), "Copy has same data size") &&
             ASSERT_TRUE(bmp1 == bmp2, "Copy is equal to original");
     }, "Copy constructor preserves data");
+
+    // Test 4: Constructor: File with wrong magic bytes throws
+    ASSERT_THROWS(std::runtime_error, [&]() {
+        File::Bitmap bmp(fixture.wrongMagicPath);
+        bmp.load();
+    }, "Load wrong magic bytes throws");
+
+    // Test 5: Constructor: corrupt header throws
+    ASSERT_THROWS_ANY([&]() {
+        File::Bitmap bmp(fixture.corruptHeaderPath);
+        bmp.load();
+    }, "Constructor: corrupt header throws");
 
     PRINT_RESULTS();
     return SUITE_PASSED();
@@ -66,18 +78,6 @@ bool test_LoadOperations(File::BitmapTestFixture& fixture) {
         bmp.load();
         return ASSERT_EQUAL(10000, static_cast<int>(bmp.PixelAmount()), "100x100 image has 10000 pixels");
     }, "Load large 100x100 bitmap");
-
-    // Test 4: Load file with wrong magic bytes throws
-    ASSERT_THROWS(std::runtime_error, [&]() {
-        File::Bitmap bmp(fixture.wrongMagicPath);
-        bmp.load();
-    }, "Load wrong magic bytes throws");
-
-    // Test 5: Load corrupt header throws
-    ASSERT_THROWS_ANY([&]() {
-        File::Bitmap bmp(fixture.corruptHeaderPath);
-        bmp.load();
-    }, "Load corrupt header throws");
 
     PRINT_RESULTS();
     return SUITE_PASSED();
