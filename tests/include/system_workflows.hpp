@@ -1,4 +1,4 @@
-#include "../include/test_framework.hpp"
+#include "test_framework.hpp"
 #include <filesystem>
 #include <fstream>
 
@@ -18,22 +18,36 @@ namespace SystemUtils {
 	void create_test_bitmap(const std::string& filename, size_t width, size_t height);
 } // namespace SystemTestUtil
 
+namespace fs = std::filesystem;
+
 class SystemTests {
 private:
 	const std::string executable_path;
 
-public:
+	// Test file paths
+	const fs::path testDataDir = "test_data";
+	const fs::path validPath = testDataDir / "valid";
+	const fs::path smallPath = testDataDir / "small";
+	const fs::path largePath = testDataDir / "large";
+	const fs::path nonexistentPath = testDataDir / "does_not_exist";
+
 	// SYSTEM TEST 1: Complete Text File Encryption Workflow
-	bool test_text_file_encryption_workflow();
+	static bool test_text_file_encryption_workflow();
 
 	// SYSTEM TEST 2: Image File Encryption Workflow
-	bool test_image_encryption_workflow();
+	static bool test_image_encryption_workflow();
 
 	// SYSTEM TEST 3: Error Handling and Edge Cases
 	bool test_error_scenarios();
 
 	// SYSTEM TEST 4: Performance and Large File Handling
 	bool test_large_file_performance();
+public:
+	// SYSTEM TEST 1: Complete Text File Encryption Workflow
+	static SystemTests test_text_file_encryption();
+
+	// SYSTEM TEST 2: Image File Encryption Workflow
+	static SystemTests test_image_encryption();
 }; // class SystemTests
 
 } // namespace CommandLineToolsTest
