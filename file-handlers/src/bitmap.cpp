@@ -119,13 +119,8 @@ void Bitmap::save(const std::filesystem::path& output_path) const{
 
 Bitmap& Bitmap::operator = (const Bitmap &bmp) {
     if(this != &bmp) {                                                          // -Guarding against self assignment
-        this->fh.bm[0] = bmp.fh.bm[0];                                          // -Copying file header.
-        this->fh.bm[1] = bmp.fh.bm[1];                                          // ...
-        this->fh.size = bmp.fh.size;                                            // ...
-        this->fh.reserved1 = bmp.fh.reserved1;                                  // ...
-        this->fh.reserved2 = bmp.fh.reserved2;                                  // ...
-        this->fh.offset = bmp.fh.offset;                                        // ...
-
+        FileBase::operator=(bmp);
+        memcpy(&this->fh, &bmp.fh, sizeof(FileHeader) );                        // -Copying file header.
         this->ih = bmp.ih;                                                      // -Copying image header. Using the default member to member copy.
         this->pixelAmount = bmp.pixelAmount;
         this->bytesPerPixel = bmp.bytesPerPixel;
@@ -181,7 +176,7 @@ bool Bitmap::operator == (const Bitmap &bmp) const{
     this->ih.ColorsImportant== bmp.ih.ColorsImportant;
 
     if(!equal) return false;
-    return this->data == bmp.data;
+    return equal && this->data == bmp.data;
 }
 
 bool Bitmap::operator != (const Bitmap &bmp) const{
