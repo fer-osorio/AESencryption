@@ -1,5 +1,6 @@
 // Comprehensive unit test suite for Bitmap class
 #include "../../file-handlers/include/bitmap.hpp"
+#include "../include/bitmap_fixture.hpp"
 #include "../include/test_framework.hpp"
 #include <filesystem>
 #include <fstream>
@@ -11,14 +12,14 @@ namespace fs = std::filesystem;
 // Test Suite Functions
 // ============================================================================
 
-bool test_Constructors(File::BitmapTestFixture& fixture);
-bool test_LoadOperations(File::BitmapTestFixture& fixture);
-bool test_SaveOperations(File::BitmapTestFixture& fixture);
-bool test_AssignmentOperators(File::BitmapTestFixture& fixture);
-bool test_EqualityOperators(File::BitmapTestFixture& fixture);
-bool test_StreamOutput(File::BitmapTestFixture& fixture);
-bool test_EdgeCases(File::BitmapTestFixture& fixture);
-bool test_MemorySafety(File::BitmapTestFixture& fixture);
+bool test_Constructors(BitmapTestFixture& fixture);
+bool test_LoadOperations(BitmapTestFixture& fixture);
+bool test_SaveOperations(BitmapTestFixture& fixture);
+bool test_AssignmentOperators(BitmapTestFixture& fixture);
+bool test_EqualityOperators(BitmapTestFixture& fixture);
+bool test_StreamOutput(BitmapTestFixture& fixture);
+bool test_EdgeCases(BitmapTestFixture& fixture);
+bool test_MemorySafety(BitmapTestFixture& fixture);
 
 // ============================================================================
 // Principal Test Runner
@@ -29,7 +30,7 @@ int main() {
     return runAllTests() ? 0 : 1;
 }
 
-bool test_Constructors(File::BitmapTestFixture& fixture) {
+bool test_Constructors(BitmapTestFixture& fixture) {
     TEST_SUITE("Constructor Tests");
 
     // Test 1: Valid path constructor
@@ -70,7 +71,7 @@ bool test_Constructors(File::BitmapTestFixture& fixture) {
     return SUITE_PASSED();
 }
 
-bool test_LoadOperations(File::BitmapTestFixture& fixture) {
+bool test_LoadOperations(BitmapTestFixture& fixture) {
     TEST_SUITE("Load Operation Tests");
 
     // Test 1: Load valid bitmap
@@ -101,7 +102,7 @@ bool test_LoadOperations(File::BitmapTestFixture& fixture) {
     return SUITE_PASSED();
 }
 
-bool test_SaveOperations(File::BitmapTestFixture& fixture) {
+bool test_SaveOperations(BitmapTestFixture& fixture) {
     TEST_SUITE("Save Operation Tests");
 
     // Test 1: Save and reload bitmap
@@ -145,7 +146,7 @@ bool test_SaveOperations(File::BitmapTestFixture& fixture) {
     return SUITE_PASSED();
 }
 
-bool test_AssignmentOperators(File::BitmapTestFixture& fixture) {
+bool test_AssignmentOperators(BitmapTestFixture& fixture) {
     TEST_SUITE("Assignment Operator Tests");
 
     // Test 1: Assignment operator
@@ -178,7 +179,7 @@ bool test_AssignmentOperators(File::BitmapTestFixture& fixture) {
     return SUITE_PASSED();
 }
 
-bool test_EqualityOperators(File::BitmapTestFixture& fixture) {
+bool test_EqualityOperators(BitmapTestFixture& fixture) {
     TEST_SUITE("Equality Operator Tests");
 
     // Test 1: Same file loaded twice is equal
@@ -217,7 +218,7 @@ bool test_EqualityOperators(File::BitmapTestFixture& fixture) {
     return SUITE_PASSED();
 }
 
-bool test_StreamOutput(File::BitmapTestFixture& fixture) {
+bool test_StreamOutput(BitmapTestFixture& fixture) {
     TEST_SUITE("Stream Output Tests");
 
     // Test 1: Stream output produces content
@@ -238,7 +239,7 @@ bool test_StreamOutput(File::BitmapTestFixture& fixture) {
     return SUITE_PASSED();
 }
 
-bool test_EdgeCases(File::BitmapTestFixture& fixture) {
+bool test_EdgeCases(BitmapTestFixture& fixture) {
     TEST_SUITE("Edge Case Tests");
 
     // Test 1: Multiple loads on same object
@@ -271,7 +272,7 @@ bool test_EdgeCases(File::BitmapTestFixture& fixture) {
     return SUITE_PASSED();
 }
 
-bool test_MemorySafety(File::BitmapTestFixture& fixture) {
+bool test_MemorySafety(BitmapTestFixture& fixture) {
     TEST_SUITE("Memory Safety Tests");
 
     // Test 1: Destructor doesn't crash after load
@@ -317,7 +318,7 @@ bool runAllTests(){
     std::cout << "================================================================================" << std::endl;
 
     TEST_SUITE("Bitmap Comprehensive Tests");
-    File::BitmapTestFixture fixture;
+    BitmapTestFixture fixture;
     std::cout << "\n";
     // Run all test categories
     RUN_TEST([&]() ->bool {
