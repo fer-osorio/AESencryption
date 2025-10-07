@@ -283,7 +283,7 @@ void BitmapTestFixture::createCorruptBitmap(const fs::path& path) {
     file.put('B');
     file.put('M');
     // Write garbage data
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 51; i++) {
         file.put(static_cast<char>(i % 256));
     }
     file.close();
