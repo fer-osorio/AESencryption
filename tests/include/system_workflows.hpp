@@ -13,9 +13,6 @@ namespace SystemUtils {
 
 	// Helper to read file content
 	std::string read_file_content(const std::string& filename);
-
-	// Helper to create test bitmap
-	void create_test_bitmap(const std::string& filename, size_t width, size_t height);
 } // namespace SystemTestUtil
 
 namespace fs = std::filesystem;
