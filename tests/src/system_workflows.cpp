@@ -28,54 +28,6 @@ std::string CommandLineToolsTest::SystemUtils::read_file_content(const std::stri
     return content;
 }
 
-// Helper to create test bitmap
-void CommandLineToolsTest::SystemUtils::create_test_bitmap(const std::string& filename, size_t width, size_t height) {
-    std::ofstream file(path, std::ios::binary);
-    if (!file) return;
-
-    // Calculate sizes
-    int rowSize = ((width * 3 + 3) / 4) * 4; // Row size must be multiple of 4
-    int imageSize = rowSize * height;
-    int fileSize = 54 + imageSize; // 14 (file header) + 40 (info header) + image data
-
-    // BMP File Header (14 bytes)
-    file.put('B');
-    file.put('M');
-    writeInt32(file, fileSize);
-    writeInt16(file, 0); // reserved1
-    writeInt16(file, 0); // reserved2
-    writeInt32(file, 54); // offset to pixel data
-
-    // DIB Header (BITMAPINFOHEADER - 40 bytes)
-    writeInt32(file, 40); // header size
-    writeInt32(file, width);
-    writeInt32(file, height);
-    writeInt16(file, 1); // color planes
-    writeInt16(file, 24); // bits per pixel
-    writeInt32(file, 0); // no compression
-    writeInt32(file, imageSize);
-    writeInt32(file, 2835); // horizontal resolution (72 DPI)
-    writeInt32(file, 2835); // vertical resolution (72 DPI)
-    writeInt32(file, 0); // colors in palette
-    writeInt32(file, 0); // important colors
-
-    // Pixel data (BGR format with padding)
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            file.put(static_cast<uint8_t>(x * 255 / width)); // Blue
-            file.put(static_cast<uint8_t>(y * 255 / height)); // Green
-            file.put(static_cast<uint8_t>(128)); // Red (constant)
-        }
-        // Add padding to make row size multiple of 4
-        for (int p = 0; p < (rowSize - width * 3); p++) {
-            file.put(0);
-        }
-    }
-
-    file.close();
-}
-
-
 // SYSTEM TEST 1: Complete Text File Encryption Workflow
 bool CommandLineToolsTest::SystemTests::test_text_file_encryption_workflow() {
     TEST_SUITE("Text File Encryption E2E Workflow");
