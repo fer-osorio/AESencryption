@@ -15,21 +15,76 @@ int CommandLineToolsTest::SystemUtils::execute_cli_command(const std::string& co
 }
 
 // Helper to create test files
-void CommandLineToolsTest::SystemUtils::create_test_file(const std::string& filename, const std::string& content) {
-    std::ofstream file(filename);
+void CommandLineToolsTest::SystemUtils::create_file(const std::string& filepath, const std::string& content, bool isBinary) {
+    std::ofstream file;
+    if(isBinary) file.open(filepath, std::ios::binary);
+    else file.open(filepath);
+    if(!file){
+        throw std::runtime_error("Failed to create file: " + filepath);
+    }
     file << content;
     file.close();
 }
 
 // Helper to read file content
-std::string CommandLineToolsTest::SystemUtils::read_file_content(const std::string& filename) {
-    std::ifstream file(filename);
-    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+std::vector<uint8_t> CommandLineToolsTest::SystemUtils::read_file(const std::string& filepath, bool isBinary) {
+    std::ifstream file;
+    if(isBinary) file.open(filepath, std::ios::binary);
+    else file.open(filepath);
+    if(!file){
+        throw std::runtime_error("Failed to open file: " + filepath);
+    }
+    size_t size = std::filesystem::file_size(filepath);
+    std::vector<uint8_t> content(size);
+    if (!file.read(reinterpret_cast<char*>(content.data()), size)) {
+        throw std::runtime_error("Failed to read file: " + filepath);
+    }
     return content;
 }
 
+std::string CommandLineToolsTest::SystemUtils::toFileExtension(FileFormat ff){
+    switch(ff){
+        case FileFormat::UNKNOWN:
+            return std::string("");
+        case FileFormat::BINARY:
+            return std::string("bin");
+        case FileFormat::TEXT:
+            return std::string("txt");
+        case FileFormat::BITMAP:
+            return std::string("bmp");
+    }
+}
+
+void CommandLineToolsTest::SystemTests::setupTestEnvironment(FileFormat ff){
+    // Create test data directory
+    if (!fs::exists(this->testDataDir)) {
+        fs::create_directory(this->testDataDir);
+    }
+    // Valid and large test file paths
+    this->validPath += SystemUtils::toFileExtension(ff);
+    //BitmapTestFixture::createValidBitmap(this->validPath, 128, 128);
+    this->largePath += SystemUtils::toFileExtension(ff);
+    //BitmapTestFixture::createValidBitmap(this->largePath, 1024, 1024);
+    // Non-existent test file path
+    this->nonexistentPath += SystemUtils::toFileExtension(ff);
+    // Encrypted and decrypted file paths
+    this->encryptedPath += SystemUtils::toFileExtension(ff);
+    this->decryptedPath += SystemUtils::toFileExtension(ff);
+}
+
+void CommandLineToolsTest::SystemTests::cleanupTestEnvironment(){
+    // Clean up test files
+    if (fs::exists(this->testDataDir)) {
+        for (auto& entry : fs::directory_iterator(this->testDataDir)) {
+            if (entry.path().filename() != ".gitkeep") {    // Avoid delete directories tracked by git
+                fs::remove(entry.path());
+            }
+        }
+    }
+}
+
 // SYSTEM TEST 1: Complete Text File Encryption Workflow
-bool CommandLineToolsTest::SystemTests::test_text_file_encryption_workflow() {
+bool CommandLineToolsTest::SystemTests::test_text_file_encryption_workflow(FileFormat ff) {
     TEST_SUITE("Text File Encryption E2E Workflow");
     bool success = true;
 
@@ -50,7 +105,7 @@ bool CommandLineToolsTest::SystemTests::test_text_file_encryption_workflow() {
         "Numbers: 1234567890\n";
 
     // Step 1: Create original file
-    SystemUtils::create_test_file(original_file, test_content);
+    SystemUtils::create_file(original_file, test_content);
 
     // Step 2: Generate encryption key
     std::string gen_key_cmd = this->executable_path + " --generate-key --key-size 256 --output " + key_file;
@@ -151,7 +206,7 @@ bool CommandLineToolsTest::SystemTests::test_error_scenarios() {
     const std::string key2 = test_dir + "key2.key";
     const std::string decrypted_file = test_dir + "decrypted.txt";
 
-    SystemUtils::create_test_file(test_file, "Test content");
+    SystemUtils::create_file(test_file, "Test content");
 
     // Generate two different keys
     SystemUtils::execute_cli_command(this->executable_path + " --generate-key --output " + key1);
