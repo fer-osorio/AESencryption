@@ -38,6 +38,21 @@ void CommandLineToolsTest::SystemUtils::create_binary_file(const std::string& fi
     file.close();
 }
 
+// Helper to create binary files
+void CommandLineToolsTest::SystemUtils::create_binary_file(const std::string& filepath, std::function<uint8_t(size_t)> generator, size_t file_size) {
+    std::ofstream file;
+    file.open(filepath, std::ios::binary);
+    if(!file){
+        throw std::runtime_error("Failed to create file: " + filepath);
+    }
+    std::vector<uint8_t> content(file_size);
+    for(size_t i = 0; i < file_size; i++) content[i] = generator(i);
+    if(!file.write(reinterpret_cast<const char*>(content.data()), content.size()) ){
+        throw std::runtime_error("Failed to write file: " + filepath);
+    }
+    file.close();
+}
+
 // Helper to read file content
 std::vector<uint8_t> CommandLineToolsTest::SystemUtils::read_file(const std::string& filepath, bool isBinary) {
     std::ifstream file;
@@ -83,23 +98,38 @@ void CommandLineToolsTest::SystemTests::setupTestEnvironment(FileFormat ff){
         this->encryptedPath += "." + SystemUtils::toFileExtension(ff);
         this->decryptedPath += "." + SystemUtils::toFileExtension(ff);
     }
-    if(ff == FileFormat::BINARY || ff == FileFormat::TEXT){
-        SystemUtils::create_text_file(
-            this->validPath,
-            "Everything that you thought had meaning: every hope, dream, or moment of happiness. "
-            "None of it matters as you lie bleeding out on the battlefield. None of it changes "
-            "what a speeding rock does to a body, we all die. But does that mean our lives are "
-            "meaningless? Does that mean that there was no point in our being born? Would you "
-            "say that of our slain comrades? What about their lives? Were they meaningless?... "
-            "They were not! Their memory serves as an example to us all! The courageous fallen! "
-            "The anguished fallen! Their lives have meaning because we the living refuse to forget "
-            "them! And as we ride to certain death, we trust our successors to do the same for us! "
-            "Because my soldiers do not buckle or yield when faced with the cruelty of this world! "
-            "My soldiers push forward! My soldiers scream out! My soldiers RAAAAAGE!\n"
-            "\n\t~ Erwin's famous and final speech as he leads the Survey Corps on a suicide charge.",
-            ff == FileFormat::BINARY
-        );
-        const std::vector<char> large_file_content(0x100000);   // Array with 2^20 bytes (One Megabyte)
+    switch(ff){
+        case FileFormat::UNKNOWN:
+        case FileFormat::BINARY: {
+            auto generator = [](size_t i) -> uint8_t{
+                    return i & 0xFF;                                            // Equivalent to i % 256
+            };
+            SystemUtils::create_binary_file(this->validPath, generator, 1024);  // Building valid file
+            SystemUtils::create_binary_file(this->largePath, generator, 1024*1024*3); // Building large file
+            break;
+            }
+        case FileFormat::TEXT: {
+            SystemUtils::create_text_file(                                      // Building valid file
+                this->validPath,
+                "Everything that you thought had meaning: every hope, dream, or moment of happiness. "
+                "None of it matters as you lie bleeding out on the battlefield. None of it changes "
+                "what a speeding rock does to a body, we all die. But does that mean our lives are "
+                "meaningless? Does that mean that there was no point in our being born? Would you "
+                "say that of our slain comrades? What about their lives? Were they meaningless?... "
+                "They were not! Their memory serves as an example to us all! The courageous fallen! "
+                "The anguished fallen! Their lives have meaning because we the living refuse to forget "
+                "them! And as we ride to certain death, we trust our successors to do the same for us! "
+                "Because my soldiers do not buckle or yield when faced with the cruelty of this world! "
+                "My soldiers push forward! My soldiers scream out! My soldiers RAAAAAGE!\n"
+                "\n\t~ Erwin's famous and final speech as he leads the Survey Corps on a suicide charge."
+            );
+            const std::vector<char> large_file_content(1024*1024*3, 'z');       // Building large file
+            SystemUtils::create_text_file(this->largePath, std::string(large_file_content.data(), large_file_content.size()) );
+            }
+        case FileFormat::BITMAP:
+            BitmapTestFixture::createValidBitmap(this->validPath, 32, 32);      // Building valid file
+            BitmapTestFixture::createValidBitmap(this->largePath, 1024, 1024);  // Building large file
+            break;
     }
 }
 
