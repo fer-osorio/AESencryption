@@ -21,6 +21,9 @@ namespace SystemUtils {
 	// Helper to create binary files
 	void create_binary_file(const std::string& filepath, const std::vector<uint8_t>& content);
 
+	// Helper to create binary files
+	void create_binary_file(const std::string& filepath, std::function<uint8_t(size_t)> generator, size_t file_size);
+
 	// Helper to read file content
 	std::vector<uint8_t> read_file(const std::string& filepath, bool isBinary);
 
