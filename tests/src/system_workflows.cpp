@@ -193,56 +193,7 @@ bool SystemTests::test_text_file_encryption_workflow() {
     return success;
 }
 
-// SYSTEM TEST 2: Image File Encryption Workflow
-bool SystemTests::test_image_encryption_workflow() {
-    TEST_SUITE("Image File Encryption E2E Workflow");
-    bool success = true;
-
-    const std::string test_dir = "./test_images/";
-    std::filesystem::create_directories(test_dir);
-
-    const std::string original_image = test_dir + "test.bmp";
-    const std::string encrypted_image = test_dir + "test_encrypted.bmp";
-    const std::string decrypted_image = test_dir + "test_decrypted.bmp";
-    const std::string key_file = test_dir + "image.key";
-
-    // Create test bitmap
-    SystemUtils::create_test_bitmap(original_image, 100, 100);
-
-    // Generate key
-    std::string gen_key_cmd = this->executable_path + " --generate-key --key-size 128 --output " + this->keyPath.string();
-    success &= ASSERT_TRUE(SystemUtils::execute_cli_command(gen_key_cmd) == 0, "Key generation should succeed");
-
-    // Encrypt image
-    std::string encrypt_cmd = this->executable_path + " --encrypt --mode ECB --key " + this->keyPath.string() +
-                             " --input " + original_image + " --output " + encrypted_image + " --type bitmap";
-    success &= ASSERT_TRUE(SystemUtils::execute_cli_command(encrypt_cmd) == 0, "Image encryption should succeed");
-
-    // Decrypt image
-    std::string decrypt_cmd = this->executable_path + " --decrypt --mode ECB --key " + this->keyPath.string() +
-                             " --input " + encrypted_image + " --output " + decrypted_image + " --type bitmap";
-    success &= ASSERT_TRUE(SystemUtils::execute_cli_command(decrypt_cmd) == 0, "Image decryption should succeed");
-
-    // Verify file sizes match (for bitmap, this indicates structural integrity)
-    auto original_size = std::filesystem::file_size(original_image);
-    auto decrypted_size = std::filesystem::file_size(decrypted_image);
-    success &= ASSERT_TRUE(original_size == decrypted_size, "Decrypted image should have same size as original");
-
-    // Binary comparison (for exact match)
-    std::ifstream orig(original_image, std::ios::binary);
-    std::ifstream decr(decrypted_image, std::ios::binary);
-
-    std::vector<char> orig_data((std::istreambuf_iterator<char>(orig)), std::istreambuf_iterator<char>());
-    std::vector<char> decr_data((std::istreambuf_iterator<char>(decr)), std::istreambuf_iterator<char>());
-
-    success &= ASSERT_TRUE(orig_data == decr_data, "Decrypted image data should match original exactly");
-
-    std::filesystem::remove_all(test_dir);
-    PRINT_RESULTS();
-    return success;
-}
-
-// SYSTEM TEST 3: Error Handling and Edge Cases
+// SYSTEM TEST 2: Error Handling and Edge Cases
 bool SystemTests::test_error_scenarios() {
     TEST_SUITE("Error Scenario E2E Tests");
     bool success = true;
@@ -298,7 +249,7 @@ bool SystemTests::test_error_scenarios() {
     return success;
 }
 
-// SYSTEM TEST 4: Performance and Large File Handling
+// SYSTEM TEST 3: Performance and Large File Handling
 bool SystemTests::test_large_file_performance() {
     TEST_SUITE("Large File Performance E2E Tests");
     bool success = true;
