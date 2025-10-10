@@ -6,8 +6,6 @@ include ../config.mk
 MODULE_NAME = $(notdir $(CURDIR))
 PROJECT_ROOT := $(call find-project-root)
 MODULE_DIRECTORIES := $(shell find . -mindepth 1 -type d -print0 | xargs -0 -n 1 basename)
-# Dependencies on other modules
-DEPS =
 
 # Binaries and objects directories
 BINDIR = $(PROJECT_ROOT)/bin/$(MODULE_NAME)
