@@ -14,15 +14,27 @@ int CommandLineToolsTest::SystemUtils::execute_cli_command(const std::string& co
     return std::system(command.c_str());
 }
 
-// Helper to create test files
-void CommandLineToolsTest::SystemUtils::create_file(const std::string& filepath, const std::string& content, bool isBinary) {
+// Helper to create text files
+void CommandLineToolsTest::SystemUtils::create_text_file(const std::string& filepath, const std::string& content) {
     std::ofstream file;
-    if(isBinary) file.open(filepath, std::ios::binary);
-    else file.open(filepath);
+    file.open(filepath);
     if(!file){
         throw std::runtime_error("Failed to create file: " + filepath);
     }
     file << content;
+    file.close();
+}
+
+// Helper to create binary files
+void CommandLineToolsTest::SystemUtils::create_binary_file(const std::string& filepath, const std::vector<uint8_t>& content) {
+    std::ofstream file;
+    file.open(filepath, std::ios::binary);
+    if(!file){
+        throw std::runtime_error("Failed to create file: " + filepath);
+    }
+    if(!file.write(reinterpret_cast<const char*>(content.data()), content.size()) ){
+        throw std::runtime_error("Failed to write file: " + filepath);
+    }
     file.close();
 }
 
@@ -60,16 +72,35 @@ void CommandLineToolsTest::SystemTests::setupTestEnvironment(FileFormat ff){
     if (!fs::exists(this->testDataDir)) {
         fs::create_directory(this->testDataDir);
     }
-    // Valid and large test file paths
-    this->validPath += SystemUtils::toFileExtension(ff);
-    //BitmapTestFixture::createValidBitmap(this->validPath, 128, 128);
-    this->largePath += SystemUtils::toFileExtension(ff);
-    //BitmapTestFixture::createValidBitmap(this->largePath, 1024, 1024);
-    // Non-existent test file path
-    this->nonexistentPath += SystemUtils::toFileExtension(ff);
-    // Encrypted and decrypted file paths
-    this->encryptedPath += SystemUtils::toFileExtension(ff);
-    this->decryptedPath += SystemUtils::toFileExtension(ff);
+    if(ff != FileFormat::UNKNOWN){
+        // Valid and large test file paths
+        this->validPath += "." + SystemUtils::toFileExtension(ff);
+        this->largePath += "." + SystemUtils::toFileExtension(ff);
+        //BitmapTestFixture::createValidBitmap(this->largePath, 1024, 1024);
+        // Non-existent test file path
+        this->nonexistentPath += "." + SystemUtils::toFileExtension(ff);
+        // Encrypted and decrypted file paths
+        this->encryptedPath += "." + SystemUtils::toFileExtension(ff);
+        this->decryptedPath += "." + SystemUtils::toFileExtension(ff);
+    }
+    if(ff == FileFormat::BINARY || ff == FileFormat::TEXT){
+        SystemUtils::create_text_file(
+            this->validPath,
+            "Everything that you thought had meaning: every hope, dream, or moment of happiness. "
+            "None of it matters as you lie bleeding out on the battlefield. None of it changes "
+            "what a speeding rock does to a body, we all die. But does that mean our lives are "
+            "meaningless? Does that mean that there was no point in our being born? Would you "
+            "say that of our slain comrades? What about their lives? Were they meaningless?... "
+            "They were not! Their memory serves as an example to us all! The courageous fallen! "
+            "The anguished fallen! Their lives have meaning because we the living refuse to forget "
+            "them! And as we ride to certain death, we trust our successors to do the same for us! "
+            "Because my soldiers do not buckle or yield when faced with the cruelty of this world! "
+            "My soldiers push forward! My soldiers scream out! My soldiers RAAAAAGE!\n"
+            "\n\t~ Erwin's famous and final speech as he leads the Survey Corps on a suicide charge.",
+            ff == FileFormat::BINARY
+        );
+        const std::vector<char> large_file_content(0x100000);   // Array with 2^20 bytes (One Megabyte)
+    }
 }
 
 void CommandLineToolsTest::SystemTests::cleanupTestEnvironment(){
@@ -99,10 +130,17 @@ bool CommandLineToolsTest::SystemTests::test_text_file_encryption_workflow(FileF
 
     // Test data
     const std::string test_content =
-        "This is a test file for AES encryption.\n"
-        "It contains multiple lines of text.\n"
-        "Special characters: !@#$%^&*()_+{}|:<>?\n"
-        "Numbers: 1234567890\n";
+        "Everything that you thought had meaning: every hope, dream, or moment of happiness. "
+        "None of it matters as you lie bleeding out on the battlefield. None of it changes "
+        "what a speeding rock does to a body, we all die. But does that mean our lives are "
+        "meaningless? Does that mean that there was no point in our being born? Would you "
+        "say that of our slain comrades? What about their lives? Were they meaningless?... "
+        "They were not! Their memory serves as an example to us all! The courageous fallen! "
+        "The anguished fallen! Their lives have meaning because we the living refuse to forget "
+        "them! And as we ride to certain death, we trust our successors to do the same for us! "
+        "Because my soldiers do not buckle or yield when faced with the cruelty of this world! "
+        "My soldiers push forward! My soldiers scream out! My soldiers RAAAAAGE!\n"
+        "\n\t~ Erwin's famous and final speech as he leads the Survey Corps on a suicide charge.";
 
     // Step 1: Create original file
     SystemUtils::create_file(original_file, test_content);
