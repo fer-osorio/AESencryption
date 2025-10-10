@@ -198,53 +198,49 @@ bool SystemTests::test_error_scenarios() {
     TEST_SUITE("Error Scenario E2E Tests");
     bool success = true;
 
-    const std::string test_dir = "./test_errors/";
-    std::filesystem::create_directories(test_dir);
-
-    // Test 1: Wrong key for decryption
-    const std::string test_file = test_dir + "test.txt";
-    const std::string encrypted_file = test_dir + "encrypted.aes";
-    const std::string key1 = test_dir + "key1.key";
-    const std::string key2 = test_dir + "key2.key";
-    const std::string decrypted_file = test_dir + "decrypted.txt";
-
-    SystemUtils::create_file(test_file, "Test content");
+    const fs::path second_key = this->testDataDir / "second_key.bin";
 
     // Generate two different keys
-    SystemUtils::execute_cli_command(this->executable_path + " --generate-key --output " + key1);
-    SystemUtils::execute_cli_command(this->executable_path + " --generate-key --output " + key2);
+    SystemUtils::execute_cli_command(this->executable_path + " --generate-key --output " + this->keyPath.string());
+    SystemUtils::execute_cli_command(this->executable_path + " --generate-key --output " + second_key.string());
 
     // Encrypt with key1
     std::string encrypt_cmd =
-        this->executable_path + " --encrypt --key " + key1 + " --input " + test_file + " --output " + this->encryptedPath.string();
+        this->executable_path + " --encrypt --key " + this->keyPath.string() +
+        " --input " + this->originalValidPath.string() +
+        " --output " + this->encryptedOriginalValidPath.string();
     success &= ASSERT_TRUE(SystemUtils::execute_cli_command(encrypt_cmd) == 0, "Encryption should succeed");
 
-    // Try to decrypt with key2 (should fail or produce garbage)
-    std::string decrypt_cmd = this->executable_path + " --decrypt --key " + key2 +
-                             " --input " + this->encryptedPath.string() + " --output " + decrypted_file;
+    // Try to decrypt with second_key (should fail or produce garbage)
+    std::string decrypt_cmd = this->executable_path + " --decrypt --key " + second_key.string() +
+        " --input " + this->encryptedOriginalValidPath.string() +" --output " + this->decryptedOriginalValidPath.string();
     int decrypt_result = SystemUtils::execute_cli_command(decrypt_cmd);
 
     // Either command should fail, or decrypted content should be garbage
-    if (decrypt_result == 0 && std::filesystem::exists(decrypted_file)) {
-        std::string decrypted_content = SystemUtils::read_file_content(decrypted_file);
-        success &= ASSERT_TRUE(decrypted_content != "Test content", "Wrong key should not produce correct plaintext");
+    if (decrypt_result == 0 && std::filesystem::exists(this->decryptedOriginalValidPath)) {
+        std::vector<uint8_t> original_content = SystemUtils::read_file(
+            this->OriginalValidPath.string(), this->ff_ != FileFormat::TEXT
+        );
+        std::vector<uint8_t> decrypted_content = SystemUtils::read_file(
+            this->decryptedOriginalValidPath.string(), this->ff_ != FileFormat::TEXT
+        );
+        success &= ASSERT_TRUE(decrypted_content != original_content, "Wrong key should not produce correct plaintext");
     } else {
         success &= ASSERT_TRUE(decrypt_result != 0, "Decryption with wrong key should fail");
     }
 
     // Test 2: Non-existent file
     int nonexistent_result = SystemUtils::execute_cli_command(
-        this->executable_path + " --encrypt --input nonexistent.txt --output out.aes"
+        this->executable_path + " --encrypt --input " + this->nonexistentPath.string() + " --output nonexistent_out.bin"
     );
     success &= ASSERT_TRUE(nonexistent_result != 0, "Encrypting non-existent file should fail");
 
     // Test 3: Invalid key file
     int invalid_key_result = SystemUtils::execute_cli_command(
-        this->executable_path + " --encrypt --key invalid.key --input " + test_file + " --output out.aes"
+        this->executable_path + " --encrypt --key invalid.key --input " + this->originalValidPath.string() + " --output out.aes"
     );
     success &= ASSERT_TRUE(invalid_key_result != 0, "Using invalid key file should fail");
 
-    std::filesystem::remove_all(test_dir);
     PRINT_RESULTS();
     return success;
 }
@@ -278,7 +274,7 @@ bool SystemTests::test_large_file_performance() {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     std::string encrypt_cmd = this->executable_path + " --encrypt --mode CBC --key " + this->keyPath.string() +
-                             " --input " + large_file + " --output " + this->encryptedPath.string();
+                             " --input " + large_file + " --output " + this->encryptedOriginalValidPath.string();
     int encrypt_result = SystemUtils::execute_cli_command(encrypt_cmd);
 
     auto encrypt_end = std::chrono::high_resolution_clock::now();
@@ -291,7 +287,7 @@ bool SystemTests::test_large_file_performance() {
     auto decrypt_start = std::chrono::high_resolution_clock::now();
 
     std::string decrypt_cmd = this->executable_path + " --decrypt --mode CBC --key " + this->keyPath.string() +
-                             " --input " + this->encryptedPath.string() + " --output " + decrypted_file;
+                             " --input " + this->encryptedOriginalValidPath.string() + " --output " + decrypted_file;
     int decrypt_result = SystemUtils::execute_cli_command(decrypt_cmd);
 
     auto decrypt_end = std::chrono::high_resolution_clock::now();
