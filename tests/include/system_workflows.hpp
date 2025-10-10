@@ -36,36 +36,34 @@ namespace fs = std::filesystem;
 class SystemTests {
 private:
 	const std::string executable_path;
+	const FileFormat ff_;
 
 	// Test file paths
 	const fs::path testDataDir = "test_data";
-	fs::path validPath = testDataDir / "valid";
-	fs::path largePath = testDataDir / "large";
+	fs::path originalValidPath = testDataDir / "original_valid";
+	fs::path originalLargePath = testDataDir / "original_large";
 	fs::path nonexistentPath = testDataDir / "does_not_exist";
-	fs::path encryptedPath = testDataDir / "encrypted";
-	fs::path decryptedPath = testDataDir / "decrypted";
-	fs::path keyPath = testDataDir / "key.bin";
+	fs::path encryptedOriginalValidPath = testDataDir / "encrypted_original_valid";
+	fs::path decryptedOriginalValidPath = testDataDir / "decrypted_original_valid";
+	fs::path encryptedOriginalLargePath = testDataDir / "encrypted_original_large";
+	fs::path decryptedOriginalLargePath = testDataDir / "decrypted_original_large";
+	const fs::path keyPath = testDataDir / "key.bin";
 
 	void setupTestEnvironment(FileFormat ff);
 	void cleanupTestEnvironment();
 
-	// SYSTEM TEST 1: Complete Text File Encryption Workflow
-	bool test_text_file_encryption_workflow(FileFormat);
+public:
+	SystemTests(const std::string executable_path_, FileFormat ff);
+	~SystemTests();
 
-	// SYSTEM TEST 2: Image File Encryption Workflow
-	bool test_image_encryption_workflow();
+	// SYSTEM TEST 1: Complete Text File Encryption Workflow
+	bool test_text_file_encryption_workflow();
 
 	// SYSTEM TEST 3: Error Handling and Edge Cases
 	bool test_error_scenarios();
 
 	// SYSTEM TEST 4: Performance and Large File Handling
 	bool test_large_file_performance();
-public:
-	// SYSTEM TEST 1: Complete Text File Encryption Workflow
-	static SystemTests test_text_file_encryption();
-
-	// SYSTEM TEST 2: Image File Encryption Workflow
-	static SystemTests test_image_encryption();
 }; // class SystemTests
 
 } // namespace CommandLineToolsTest
