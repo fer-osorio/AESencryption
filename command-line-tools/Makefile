@@ -34,7 +34,9 @@ REQUIRED_DEPS = \
 # Source files
 SOURCES = $(call find_local_sources,cpp)
 # Object files
-OBJECTS = $(foreach md,$(MODULE_DIRECTORIES),$(call sources_to_objects,$(filter $(md)/%,$(SOURCES)),$(OBJDIR)/$(md),cpp))
+OBJECTS = $(foreach md,$(MODULE_DIRECTORIES), \
+        $(call sources_to_objects,$(filter $(md)/%,$(SOURCES)),$(OBJDIR)/$(md),cpp) \
+)
 # Binary files
 BINARIES = $(patsubst $(OBJDIR)/%.o,$(BINDIR)/%,$(OBJECTS))
 
