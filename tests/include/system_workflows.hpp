@@ -57,7 +57,7 @@ public:
 	~SystemTests();
 
 	// SYSTEM TEST 1: Complete Text File Encryption Workflow
-	bool test_text_file_encryption_workflow();
+	bool test_file_encryption_workflow();
 
 	// SYSTEM TEST 2: Error Handling and Edge Cases
 	bool test_error_scenarios();

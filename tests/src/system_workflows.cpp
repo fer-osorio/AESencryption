@@ -154,7 +154,7 @@ SystemTests::~SystemTests(){
 }
 
 // SYSTEM TEST 1: Complete Text File Encryption Workflow
-bool SystemTests::test_text_file_encryption_workflow() {
+bool SystemTests::test_file_encryption_workflow() {
     TEST_SUITE("Text File Encryption E2E Workflow");
     bool success = true;
 
