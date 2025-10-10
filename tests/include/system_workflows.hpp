@@ -59,10 +59,10 @@ public:
 	// SYSTEM TEST 1: Complete Text File Encryption Workflow
 	bool test_text_file_encryption_workflow();
 
-	// SYSTEM TEST 3: Error Handling and Edge Cases
+	// SYSTEM TEST 2: Error Handling and Edge Cases
 	bool test_error_scenarios();
 
-	// SYSTEM TEST 4: Performance and Large File Handling
+	// SYSTEM TEST 3: Performance and Large File Handling
 	bool test_large_file_performance();
 }; // class SystemTests
 
