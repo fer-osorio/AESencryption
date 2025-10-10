@@ -274,7 +274,7 @@ bool SystemTests::test_large_file_performance() {
     // Time the encryption
     auto start_time = std::chrono::high_resolution_clock::now();
     std::string encrypt_cmd = this->executable_path + " --encrypt --mode CBC --key " + this->keyPath.string() +
-        " --input " + large_file +
+        " --input " + this->originalLargePath.string() +
         " --output " + this->encryptedOriginalValidPath.string();
     int encrypt_result = SystemUtils::execute_cli_command(
         encrypt_cmd
