@@ -9,13 +9,15 @@
 #include <cstdlib>
 #include <string>
 
+using namespace CommandLineToolsTest;
+
 // Helper function to execute command line tool
-int CommandLineToolsTest::SystemUtils::execute_cli_command(const std::string& command) {
+int SystemUtils::execute_cli_command(const std::string& command) {
     return std::system(command.c_str());
 }
 
 // Helper to create text files
-void CommandLineToolsTest::SystemUtils::create_text_file(const std::string& filepath, const std::string& content) {
+void SystemUtils::create_text_file(const std::string& filepath, const std::string& content) {
     std::ofstream file;
     file.open(filepath);
     if(!file){
@@ -26,7 +28,7 @@ void CommandLineToolsTest::SystemUtils::create_text_file(const std::string& file
 }
 
 // Helper to create binary files
-void CommandLineToolsTest::SystemUtils::create_binary_file(const std::string& filepath, const std::vector<uint8_t>& content) {
+void SystemUtils::create_binary_file(const std::string& filepath, const std::vector<uint8_t>& content) {
     std::ofstream file;
     file.open(filepath, std::ios::binary);
     if(!file){
@@ -39,7 +41,7 @@ void CommandLineToolsTest::SystemUtils::create_binary_file(const std::string& fi
 }
 
 // Helper to create binary files
-void CommandLineToolsTest::SystemUtils::create_binary_file(const std::string& filepath, std::function<uint8_t(size_t)> generator, size_t file_size) {
+void SystemUtils::create_binary_file(const std::string& filepath, std::function<uint8_t(size_t)> generator, size_t file_size) {
     std::ofstream file;
     file.open(filepath, std::ios::binary);
     if(!file){
@@ -54,7 +56,7 @@ void CommandLineToolsTest::SystemUtils::create_binary_file(const std::string& fi
 }
 
 // Helper to read file content
-std::vector<uint8_t> CommandLineToolsTest::SystemUtils::read_file(const std::string& filepath, bool isBinary) {
+std::vector<uint8_t> SystemUtils::read_file(const std::string& filepath, bool isBinary) {
     std::ifstream file;
     if(isBinary) file.open(filepath, std::ios::binary);
     else file.open(filepath);
@@ -69,7 +71,7 @@ std::vector<uint8_t> CommandLineToolsTest::SystemUtils::read_file(const std::str
     return content;
 }
 
-std::string CommandLineToolsTest::SystemUtils::toFileExtension(FileFormat ff){
+std::string SystemUtils::toFileExtension(FileFormat ff){
     switch(ff){
         case FileFormat::UNKNOWN:
             return std::string("");
@@ -82,21 +84,20 @@ std::string CommandLineToolsTest::SystemUtils::toFileExtension(FileFormat ff){
     }
 }
 
-void CommandLineToolsTest::SystemTests::setupTestEnvironment(FileFormat ff){
+void SystemTests::setupTestEnvironment(FileFormat ff){
     // Create test data directory
     if (!fs::exists(this->testDataDir)) {
         fs::create_directory(this->testDataDir);
     }
     if(ff != FileFormat::UNKNOWN){
         // Valid and large test file paths
-        this->validPath += "." + SystemUtils::toFileExtension(ff);
-        this->largePath += "." + SystemUtils::toFileExtension(ff);
-        //BitmapTestFixture::createValidBitmap(this->largePath, 1024, 1024);
+        this->originalValidPath += "." + SystemUtils::toFileExtension(ff);
+        this->originalLargePath += "." + SystemUtils::toFileExtension(ff);
         // Non-existent test file path
         this->nonexistentPath += "." + SystemUtils::toFileExtension(ff);
         // Encrypted and decrypted file paths
-        this->encryptedPath += "." + SystemUtils::toFileExtension(ff);
-        this->decryptedPath += "." + SystemUtils::toFileExtension(ff);
+        this->encryptedOriginalValidPath += "." + SystemUtils::toFileExtension(ff);
+        this->decryptedOriginalValidPath += "." + SystemUtils::toFileExtension(ff);
     }
     switch(ff){
         case FileFormat::UNKNOWN:
@@ -104,13 +105,13 @@ void CommandLineToolsTest::SystemTests::setupTestEnvironment(FileFormat ff){
             auto generator = [](size_t i) -> uint8_t{
                     return i & 0xFF;                                            // Equivalent to i % 256
             };
-            SystemUtils::create_binary_file(this->validPath, generator, 1024);  // Building valid file
-            SystemUtils::create_binary_file(this->largePath, generator, 1024*1024*3); // Building large file
+            SystemUtils::create_binary_file(this->originalValidPath, generator, 1024);  // Building valid file
+            SystemUtils::create_binary_file(this->originalLargePath, generator, 1024*1024*3); // Building large file
             break;
             }
         case FileFormat::TEXT: {
             SystemUtils::create_text_file(                                      // Building valid file
-                this->validPath,
+                this->originalValidPath,
                 "Everything that you thought had meaning: every hope, dream, or moment of happiness. "
                 "None of it matters as you lie bleeding out on the battlefield. None of it changes "
                 "what a speeding rock does to a body, we all die. But does that mean our lives are "
@@ -124,16 +125,16 @@ void CommandLineToolsTest::SystemTests::setupTestEnvironment(FileFormat ff){
                 "\n\t~ Erwin's famous and final speech as he leads the Survey Corps on a suicide charge."
             );
             const std::vector<char> large_file_content(1024*1024*3, 'z');       // Building large file
-            SystemUtils::create_text_file(this->largePath, std::string(large_file_content.data(), large_file_content.size()) );
+            SystemUtils::create_text_file(this->originalLargePath, std::string(large_file_content.data(), large_file_content.size()) );
             }
         case FileFormat::BITMAP:
-            BitmapTestFixture::createValidBitmap(this->validPath, 32, 32);      // Building valid file
-            BitmapTestFixture::createValidBitmap(this->largePath, 1024, 1024);  // Building large file
+            BitmapTestFixture::createValidBitmap(this->originalValidPath, 32, 32);      // Building valid file
+            BitmapTestFixture::createValidBitmap(this->originalLargePath, 1024, 1024);  // Building large file
             break;
     }
 }
 
-void CommandLineToolsTest::SystemTests::cleanupTestEnvironment(){
+void SystemTests::cleanupTestEnvironment(){
     // Clean up test files
     if (fs::exists(this->testDataDir)) {
         for (auto& entry : fs::directory_iterator(this->testDataDir)) {
@@ -144,74 +145,56 @@ void CommandLineToolsTest::SystemTests::cleanupTestEnvironment(){
     }
 }
 
+SystemTests::SystemTests(const std::string executable_path_, FileFormat ff): executable_path(executable_path_), ff_(ff) {
+    this->setupTestEnvironment(ff);
+}
+
+SystemTests::~SystemTests(){
+    this->cleanupTestEnvironment();
+}
+
 // SYSTEM TEST 1: Complete Text File Encryption Workflow
-bool CommandLineToolsTest::SystemTests::test_text_file_encryption_workflow(FileFormat ff) {
+bool SystemTests::test_text_file_encryption_workflow() {
     TEST_SUITE("Text File Encryption E2E Workflow");
     bool success = true;
 
-    // Setup: Create test environment
-    const std::string test_dir = "./test_temp/";
-    std::filesystem::create_directories(test_dir);
-
-    const std::string original_file = test_dir + "original.txt";
-    const std::string encrypted_file = test_dir + "encrypted.aes";
-    const std::string decrypted_file = test_dir + "decrypted.txt";
-    const std::string key_file = test_dir + "test.key";
-
-    // Test data
-    const std::string test_content =
-        "Everything that you thought had meaning: every hope, dream, or moment of happiness. "
-        "None of it matters as you lie bleeding out on the battlefield. None of it changes "
-        "what a speeding rock does to a body, we all die. But does that mean our lives are "
-        "meaningless? Does that mean that there was no point in our being born? Would you "
-        "say that of our slain comrades? What about their lives? Were they meaningless?... "
-        "They were not! Their memory serves as an example to us all! The courageous fallen! "
-        "The anguished fallen! Their lives have meaning because we the living refuse to forget "
-        "them! And as we ride to certain death, we trust our successors to do the same for us! "
-        "Because my soldiers do not buckle or yield when faced with the cruelty of this world! "
-        "My soldiers push forward! My soldiers scream out! My soldiers RAAAAAGE!\n"
-        "\n\t~ Erwin's famous and final speech as he leads the Survey Corps on a suicide charge.";
-
-    // Step 1: Create original file
-    SystemUtils::create_file(original_file, test_content);
-
     // Step 2: Generate encryption key
-    std::string gen_key_cmd = this->executable_path + " --generate-key --key-size 256 --output " + key_file;
+    std::string gen_key_cmd = this->executable_path + " --generate-key --key-size 256 --output " + this->keyPath.string();
     int result1 = SystemUtils::execute_cli_command(gen_key_cmd);
     success &= ASSERT_TRUE(result1 == 0, "Key generation should succeed");
-    success &= ASSERT_TRUE(std::filesystem::exists(key_file), "Key file should be created");
+    success &= ASSERT_TRUE(std::filesystem::exists(this->keyPath), "Key file should be created");
 
     // Step 3: Encrypt the file
     std::string encrypt_cmd =
-        this->executable_path + " --encrypt --mode CBC --key " + key_file + " --input " + original_file + " --output " + encrypted_file;
+        this->executable_path + " --encrypt --mode CBC --key " + this->keyPath.string() +
+        " --input " + this->originalValidPath.string() + " --output " + this->encryptedOriginalValidPath.string();
     int result2 = SystemUtils::execute_cli_command(encrypt_cmd);
     success &= ASSERT_TRUE(result2 == 0, "File encryption should succeed");
-    success &= ASSERT_TRUE(std::filesystem::exists(encrypted_file), "Encrypted file should be created");
+    success &= ASSERT_TRUE(std::filesystem::exists(this->encryptedOriginalValidPath), "Encrypted file should be created");
 
     // Step 4: Verify encrypted file is different from original
-    std::string encrypted_content = SystemUtils::read_file_content(encrypted_file);
+    std::vector<uint8_t> test_content = SystemUtils::read_file(this->originalValidPath, this->ff_ != FileFormat::TEXT);
+    std::vector<uint8_t> encrypted_content = SystemUtils::read_file(this->encryptedOriginalValidPath, this->ff_ != FileFormat::TEXT);
     success &= ASSERT_TRUE(encrypted_content != test_content, "Encrypted content should differ from original");
 
     // Step 5: Decrypt the file
     std::string decrypt_cmd
-        = this->executable_path + " --decrypt --mode CBC --key " + key_file + " --input " + encrypted_file + " --output " + decrypted_file;
+        = this->executable_path + " --decrypt --mode CBC --key " + this->keyPath.string() +
+        " --input " + this->encryptedOriginalValidPath.string() + " --output " + this->decryptedOriginalValidPath.string();
     int result3 = SystemUtils::execute_cli_command(decrypt_cmd);
     success &= ASSERT_TRUE(result3 == 0, "File decryption should succeed");
-    success &= ASSERT_TRUE(std::filesystem::exists(decrypted_file), "Decrypted file should be created");
+    success &= ASSERT_TRUE(std::filesystem::exists(this->decryptedOriginalValidPath), "Decrypted file should be created");
 
     // Step 6: Verify decrypted content matches original
-    std::string decrypted_content = SystemUtils::read_file_content(decrypted_file);
+    std::vector<uint8_t> decrypted_content = SystemUtils::read_file(this->decryptedOriginalValidPath, this->ff_ != FileFormat::TEXT);
     success &= ASSERT_TRUE(decrypted_content == test_content, "Decrypted content should match original");
-
-    // Cleanup
-    std::filesystem::remove_all(test_dir);
 
     PRINT_RESULTS();
     return success;
 }
 
 // SYSTEM TEST 2: Image File Encryption Workflow
-bool CommandLineToolsTest::SystemTests::test_image_encryption_workflow() {
+bool SystemTests::test_image_encryption_workflow() {
     TEST_SUITE("Image File Encryption E2E Workflow");
     bool success = true;
 
@@ -227,16 +210,16 @@ bool CommandLineToolsTest::SystemTests::test_image_encryption_workflow() {
     SystemUtils::create_test_bitmap(original_image, 100, 100);
 
     // Generate key
-    std::string gen_key_cmd = this->executable_path + " --generate-key --key-size 128 --output " + key_file;
+    std::string gen_key_cmd = this->executable_path + " --generate-key --key-size 128 --output " + this->keyPath.string();
     success &= ASSERT_TRUE(SystemUtils::execute_cli_command(gen_key_cmd) == 0, "Key generation should succeed");
 
     // Encrypt image
-    std::string encrypt_cmd = this->executable_path + " --encrypt --mode ECB --key " + key_file +
+    std::string encrypt_cmd = this->executable_path + " --encrypt --mode ECB --key " + this->keyPath.string() +
                              " --input " + original_image + " --output " + encrypted_image + " --type bitmap";
     success &= ASSERT_TRUE(SystemUtils::execute_cli_command(encrypt_cmd) == 0, "Image encryption should succeed");
 
     // Decrypt image
-    std::string decrypt_cmd = this->executable_path + " --decrypt --mode ECB --key " + key_file +
+    std::string decrypt_cmd = this->executable_path + " --decrypt --mode ECB --key " + this->keyPath.string() +
                              " --input " + encrypted_image + " --output " + decrypted_image + " --type bitmap";
     success &= ASSERT_TRUE(SystemUtils::execute_cli_command(decrypt_cmd) == 0, "Image decryption should succeed");
 
@@ -260,7 +243,7 @@ bool CommandLineToolsTest::SystemTests::test_image_encryption_workflow() {
 }
 
 // SYSTEM TEST 3: Error Handling and Edge Cases
-bool CommandLineToolsTest::SystemTests::test_error_scenarios() {
+bool SystemTests::test_error_scenarios() {
     TEST_SUITE("Error Scenario E2E Tests");
     bool success = true;
 
@@ -282,12 +265,12 @@ bool CommandLineToolsTest::SystemTests::test_error_scenarios() {
 
     // Encrypt with key1
     std::string encrypt_cmd =
-        this->executable_path + " --encrypt --key " + key1 + " --input " + test_file + " --output " + encrypted_file;
+        this->executable_path + " --encrypt --key " + key1 + " --input " + test_file + " --output " + this->encryptedPath.string();
     success &= ASSERT_TRUE(SystemUtils::execute_cli_command(encrypt_cmd) == 0, "Encryption should succeed");
 
     // Try to decrypt with key2 (should fail or produce garbage)
     std::string decrypt_cmd = this->executable_path + " --decrypt --key " + key2 +
-                             " --input " + encrypted_file + " --output " + decrypted_file;
+                             " --input " + this->encryptedPath.string() + " --output " + decrypted_file;
     int decrypt_result = SystemUtils::execute_cli_command(decrypt_cmd);
 
     // Either command should fail, or decrypted content should be garbage
@@ -316,7 +299,7 @@ bool CommandLineToolsTest::SystemTests::test_error_scenarios() {
 }
 
 // SYSTEM TEST 4: Performance and Large File Handling
-bool CommandLineToolsTest::SystemTests::test_large_file_performance() {
+bool SystemTests::test_large_file_performance() {
     TEST_SUITE("Large File Performance E2E Tests");
     bool success = true;
 
@@ -338,13 +321,13 @@ bool CommandLineToolsTest::SystemTests::test_large_file_performance() {
     large_test.close();
 
     // Generate key
-    SystemUtils::execute_cli_command(this->executable_path + " --generate-key --output " + key_file);
+    SystemUtils::execute_cli_command(this->executable_path + " --generate-key --output " + this->keyPath.string());
 
     // Time the encryption
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    std::string encrypt_cmd = this->executable_path + " --encrypt --mode CBC --key " + key_file +
-                             " --input " + large_file + " --output " + encrypted_file;
+    std::string encrypt_cmd = this->executable_path + " --encrypt --mode CBC --key " + this->keyPath.string() +
+                             " --input " + large_file + " --output " + this->encryptedPath.string();
     int encrypt_result = SystemUtils::execute_cli_command(encrypt_cmd);
 
     auto encrypt_end = std::chrono::high_resolution_clock::now();
@@ -356,8 +339,8 @@ bool CommandLineToolsTest::SystemTests::test_large_file_performance() {
     // Time the decryption
     auto decrypt_start = std::chrono::high_resolution_clock::now();
 
-    std::string decrypt_cmd = this->executable_path + " --decrypt --mode CBC --key " + key_file +
-                             " --input " + encrypted_file + " --output " + decrypted_file;
+    std::string decrypt_cmd = this->executable_path + " --decrypt --mode CBC --key " + this->keyPath.string() +
+                             " --input " + this->encryptedPath.string() + " --output " + decrypted_file;
     int decrypt_result = SystemUtils::execute_cli_command(decrypt_cmd);
 
     auto decrypt_end = std::chrono::high_resolution_clock::now();
