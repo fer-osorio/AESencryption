@@ -82,6 +82,7 @@ std::string SystemUtils::toFileExtension(FileFormat ff){
         case FileFormat::BITMAP:
             return std::string("bmp");
     }
+    return std::string("");
 }
 
 void SystemTests::setupTestEnvironment(FileFormat ff){
@@ -102,7 +103,7 @@ void SystemTests::setupTestEnvironment(FileFormat ff){
     switch(ff){
         case FileFormat::UNKNOWN:
         case FileFormat::BINARY: {
-            auto generator = [](size_t i) -> uint8_t{
+            auto generator = [](size_t i) noexcept -> uint8_t{
                     return i & 0xFF;                                            // Equivalent to i % 256
             };
             SystemUtils::create_binary_file(this->originalValidPath, generator, 1024);  // Building valid file
@@ -127,6 +128,7 @@ void SystemTests::setupTestEnvironment(FileFormat ff){
             const std::vector<char> large_file_content(1024*1024*3, 'z');       // Building large file
             SystemUtils::create_text_file(this->originalLargePath, std::string(large_file_content.data(), large_file_content.size()) );
             }
+            break;
         case FileFormat::BITMAP:
             BitmapTestFixture::createValidBitmap(this->originalValidPath, 32, 32);      // Building valid file
             BitmapTestFixture::createValidBitmap(this->originalLargePath, 1024, 1024);  // Building large file
