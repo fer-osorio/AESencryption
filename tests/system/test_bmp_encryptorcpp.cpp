@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <string>
 
-#define BMP_ENCRYPTOR ../../../../bin/command-line-tools/image-encryption/bmp_encryptor
+#define BMP_ENCRYPTOR ../../bin/command-line-tools/image-encryption/bmp_encryptor
 
 namespace cltt = CommandLineToolsTest;
 
