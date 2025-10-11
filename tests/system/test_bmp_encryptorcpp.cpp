@@ -1,6 +1,6 @@
 // System/E2E Testing Examples for AES File Encryption Tool
 
-#include "../../../include/system_workflows.hpp"
+#include "../include/system_workflows.hpp"
 #include <filesystem>
 #include <fstream>
 #include <cstdlib>
