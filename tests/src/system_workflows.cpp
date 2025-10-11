@@ -162,7 +162,7 @@ bool SystemTests::test_file_encryption_workflow() {
 
     // Step 2: Generate encryption key
     std::string gen_key_cmd =
-        this->executable_path + " --generate-key --key-size 256 --output " + this->keyPath.string();
+        this->executable_path + " --generate-key --key-length 256 --output " + this->keyPath.string();
     int result1 = SystemUtils::execute_cli_command(
         gen_key_cmd
     );
@@ -277,7 +277,7 @@ bool SystemTests::test_large_file_performance() {
     auto start_time = std::chrono::high_resolution_clock::now();
     std::string encrypt_cmd = this->executable_path + " --encrypt --mode CBC --key " + this->keyPath.string() +
         " --input " + this->originalLargePath.string() +
-        " --output " + this->encryptedOriginalValidPath.string();
+        " --output " + this->encryptedOriginalLargePath.string();
     int encrypt_result = SystemUtils::execute_cli_command(
         encrypt_cmd
     );
@@ -285,13 +285,17 @@ bool SystemTests::test_large_file_performance() {
     auto encrypt_duration = std::chrono::duration_cast<std::chrono::milliseconds>(encrypt_end - start_time);
 
     success &= ASSERT_TRUE(encrypt_result == 0, "Large file encryption should succeed");
-    success &= ASSERT_TRUE(encrypt_duration.count() < 10000, "3MB encryption should complete within 10 seconds");
+    success &= ASSERT_TRUE(
+        encrypt_duration.count() < 10000,
+        "3MB encryption should complete within 10 seconds (lasted " +
+        std::to_string(encrypt_duration.count()) + " milliseconds)"
+    );
 
     // Time the decryption
     auto decrypt_start = std::chrono::high_resolution_clock::now();
     std::string decrypt_cmd = this->executable_path + " --decrypt --mode CBC --key " + this->keyPath.string() +
-        " --input " + this->encryptedOriginalValidPath.string() +
-        " --output " + this->decryptedOriginalValidPath.string();
+        " --input " + this->encryptedOriginalLargePath.string() +
+        " --output " + this->decryptedOriginalLargePath.string();
     int decrypt_result = SystemUtils::execute_cli_command(
         decrypt_cmd
     );
@@ -299,7 +303,11 @@ bool SystemTests::test_large_file_performance() {
     auto decrypt_duration = std::chrono::duration_cast<std::chrono::milliseconds>(decrypt_end - decrypt_start);
 
     success &= ASSERT_TRUE(decrypt_result == 0, "Large file decryption should succeed");
-    success &= ASSERT_TRUE(decrypt_duration.count() < 10000, "1MB decryption should complete within 10 seconds");
+    success &= ASSERT_TRUE(
+        decrypt_duration.count() < 10000,
+        "3MB decryption should complete within 10 seconds (lasted " +
+        std::to_string(decrypt_duration.count()) + " milliseconds)"
+    );
 
     // Verify integrity
     auto original_size = std::filesystem::file_size(this->originalLargePath);
