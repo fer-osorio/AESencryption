@@ -6,8 +6,12 @@ include ../config.mk
 MODULE_NAME = $(notdir $(CURDIR))
 PROJECT_ROOT := $(call find-project-root)
 MODULE_DIRECTORIES := $(shell find . -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 basename)
-$(info MODULE_DIRECTORIES:          $(MODULE_DIRECTORIES))
-$(info )
+MAKEFILE_DEBUG =? FALSE
+ifeq ($(MAKEFILE_DEBUG),TRUE)
+    $(info MODULE_DIRECTORIES:          $(MODULE_DIRECTORIES))
+    $(info )
+endif
+SRCDIR = src
 
 # Tests directories
 UNIT_DIR = unit
@@ -17,8 +21,10 @@ TEST_DIRS = $(UNIT_DIR) $(INTEGRATION_DIR) $(SYSTEM_DIR)
 
 # Test categories
 TEST_CATEGORIES = $(shell echo $(TEST_DIRS) | tr '[:lower:]' '[:upper:]')
-$(info TEST_CATEGORIES :          $(TEST_CATEGORIES))
-$(info )
+ifeq ($(MAKEFILE_DEBUG),TRUE)
+    $(info TEST_CATEGORIES :          $(TEST_CATEGORIES))
+    $(info )
+endif
 
 # Binaries and objects directories
 BINDIR = $(PROJECT_ROOT)/bin/$(MODULE_NAME)
@@ -46,20 +52,39 @@ REQUIRED_DEPS = \
 
 # Source files
 SOURCES = $(call find_local_sources,cpp)
-$(info SOURCES:          $(notdir $(SOURCES)))
-$(info )
+ifeq ($(MAKEFILE_DEBUG),TRUE)
+    $(info SOURCES:          $(notdir $(SOURCES)))
+    $(info )
+endif
+
+TEST_UTILS_SOURCES = $(wildcard $(SRCDIR)/*.cpp)
+ifeq ($(MAKEFILE_DEBUG),TRUE)
+    $(info TEST_UTILS_SOURCES:          $(notdir $(TEST_UTILS_SOURCES)))
+    $(info )
+endif
+TEST_UTILS_OBJECTS = $(TEST_UTILS_SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/$(SRCDIR)/%.o)
+ifeq ($(MAKEFILE_DEBUG),TRUE)
+    $(info TEST_UTILS_OBJECTS:          $(notdir $(TEST_UTILS_OBJECTS)))
+    $(info )
+endif
+
 # Object files
 OBJECTS = $(foreach md,$(MODULE_DIRECTORIES), \
         $(call sources_to_objects,$(filter $(md)/%,$(SOURCES)),$(OBJDIR)/$(md),cpp) \
 )
-$(info OBJECTS:          $(notdir $(OBJECTS)))
-$(info )
+ifeq ($(MAKEFILE_DEBUG),TRUE)
+    $(info OBJECTS:          $(notdir $(OBJECTS)))
+    $(info )
+endif
+
 # Binary files
 BINARIES = $(foreach td,$(TEST_DIRS), \
         $(call objects_to_binaries,$(filter $(OBJDIR)/$(td)/%,$(OBJECTS)),$(BINDIR)/$(td)) \
 )
-$(info BINARIES:         $(notdir $(BINARIES)))
-$(info )
+ifeq ($(MAKEFILE_DEBUG),TRUE)
+    $(info BINARIES:         $(notdir $(BINARIES)))
+    $(info )
+endif
 
 # Usage $(eval $(call filter_tests,TEST_CATEGORY))
 # Example: TEST_CATEGORY = UNIT, then the output is
@@ -75,15 +100,17 @@ $(foreach tc,$(TEST_CATEGORIES), \
 
 ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(SYSTEM_TESTS)
 
-$(info UNIT_TESTS:        $(notdir $(UNIT_TESTS)))
-$(info )
-$(info INTEGRATION_TESTS: $(notdir $(INTEGRATION_TESTS)))
-$(info )
-$(info SYSTEM_TESTS:      $(notdir $(SYSTEM_TESTS)))
-$(info )
-$(info ALL_TESTS:         $(notdir $(ALL_TESTS)))
-
-$(error Debuggin. Stop.)
+ifeq ($(MAKEFILE_DEBUG),TRUE)
+    $(info UNIT_TESTS:        $(notdir $(UNIT_TESTS)))
+    $(info )
+    $(info INTEGRATION_TESTS: $(notdir $(INTEGRATION_TESTS)))
+    $(info )
+    $(info SYSTEM_TESTS:      $(notdir $(SYSTEM_TESTS)))
+    $(info )
+    $(info ALL_TESTS:         $(notdir $(ALL_TESTS)))
+    $(info )
+endif
+#$(error Debuggin. Stop.)
 
 .PHONY: all clean unit integration system check-deps help debug-vars run-unit run-integration run-all
 
@@ -128,42 +155,48 @@ unit: check-deps $(UNIT_TESTS)
 # Integration tests
 integration: check-deps $(INTEGRATION_TESTS)
 
-# Unit tests
+# System tests
 system: check-deps $(SYSTEM_TESTS)
 
+# Usage $(eval $(call build_test_category_executables,test_category))
 define build_test_category_executables
-$(BINDIR)/$($(1)_DIR)/test_%: $(OBJDIR)/$($(1)_DIR)/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR)/$($(1)_DIR) $(OBJDIR)
-	$(call print_building,"$(1) test executable: $@")
-	$(call create_executable,$@,$^)
-	$(call print_success,"Built $(1) test: $@")
+$$(BINDIR)/$$($(1)_DIR)/test_%: $$(OBJDIR)/$$($(1)_DIR)/test_%.o $$(TEST_UTILS_OBJECTS) | $$(BINDIR)/$$($(1)_DIR) $$(OBJDIR)
+	$(call print_building,"$(1) test executable: $$@")
+	$(call create_executable,$$@,$$^)
+	$(call print_success,"Built $(1) test: $$@")
 endef
 
 # Build individual unit test
-$(BINDIR)/$(UNIT_DIR)/test_%: $(OBJDIR)/$(UNIT_DIR)/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR)/$(UNIT_DIR) $(OBJDIR)
-	$(call print_building,"Unit test executable: $@")
-	$(call create_executable,$@,$^)
-	$(call print_success,"Built unit test: $@")
+$(eval $(call build_test_category_executables,UNIT))
 
 # Build individual integration test
-$(BINDIR)/$(INTEGRATION_DIR)/test_%: $(OBJDIR)/$(INTEGRATION_DIR)/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR)/$(INTEGRATION_DIR) $(OBJDIR)
-	$(call print_building,"Integration test executable: $@")
-	$(call create_executable,$@,$^)
-	$(call print_success,"Built integration test: $@")
+$(eval $(call build_test_category_executables,INTEGRATION))
 
-# Compile unit test objects using common.mk function
-$(OBJDIR)/$(UNIT_DIR)/%.o: $(UNIT_DIR)/%.cpp | $(OBJDIR)/$(UNIT_DIR)
-	$(call compile_cpp_rule,$<,$@)
+# Build individual system test
+$(eval $(call build_test_category_executables,SYSTEM))
 
-# Compile integration test objects using common.mk function
-$(OBJDIR)/$(INTEGRATION_DIR)/%.o: $(INTEGRATION_DIR)/%.cpp | $(OBJDIR)/$(INTEGRATION_DIR)
-	$(call compile_cpp_rule,$<,$@)
+# Usage $(eval $(call compile_test_category_objects,test_category))
+define compile_test_category_objects
+$$(OBJDIR)/$$($(1)_DIR)/%.o: $$($(1)_DIR)/%.cpp | $$(OBJDIR)/$$($(1)_DIR)
+	$(call compile_cpp_rule,$$<,$$@)
+endef
 
-# Compile test utility objects using common.mk function
+# Compile unit test objects
+$(eval $(call compile_test_category_objects,UNIT))
+
+# Compile integration test objects
+$(eval $(call compile_test_category_objects,INTEGRATION))
+
+# Compile integration test objects
+$(eval $(call compile_test_category_objects,SYSTEM))
+
+# Compile test utility objects
 $(OBJDIR)/$(SRCDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)/$(SRCDIR)
 	$(call compile_cpp_rule,$<,$@)
 
 # Create directories (handled by common.mk functions, but kept for explicit dependencies)
-$(OBJDIR) $(BINDIR)/$(INTEGRATION_DIR) $(BINDIR)/$(UNIT_DIR) $(OBJDIR)/$(SRCDIR) $(OBJDIR)/$(UNIT_DIR) $(OBJDIR)/$(INTEGRATION_DIR):
+$(OBJDIR)/$(SRCDIR) $(OBJDIR)/$(UNIT_DIR) $(OBJDIR)/$(INTEGRATION_DIR) $(OBJDIR)/$(SYSTEM_DIR) \
+$(BINDIR)/$(INTEGRATION_DIR) $(BINDIR)/$(UNIT_DIR) $(BINDIR)/$(SYSTEM_DIR):
 	$(call create_dir,$@)
 
 # Run tests with improved output
