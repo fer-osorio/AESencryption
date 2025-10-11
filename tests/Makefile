@@ -3,15 +3,26 @@ include ../common.mk
 include ../config.mk
 
 # Local configuration
-MODULE_NAME = tests
+MODULE_NAME = $(notdir $(CURDIR))
 PROJECT_ROOT := $(call find-project-root)
+MODULE_DIRECTORIES := $(shell find . -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 basename)
+$(info MODULE_DIRECTORIES:          $(MODULE_DIRECTORIES))
+$(info )
 
-# Local directories
-SRCDIR = src
-OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
-BINDIR = bin
+# Tests directories
 UNIT_DIR = unit
 INTEGRATION_DIR = integration
+SYSTEM_DIR = system
+TEST_DIRS = $(UNIT_DIR) $(INTEGRATION_DIR) $(SYSTEM_DIR)
+
+# Test categories
+TEST_CATEGORIES = $(shell echo $(TEST_DIRS) | tr '[:lower:]' '[:upper:]')
+$(info TEST_CATEGORIES :          $(TEST_CATEGORIES))
+$(info )
+
+# Binaries and objects directories
+BINDIR = $(PROJECT_ROOT)/bin/$(MODULE_NAME)
+OBJDIR = $(PROJECT_ROOT)/obj/$(MODULE_NAME)
 
 # Local includes and libraries
 INCLUDES = \
@@ -34,29 +45,47 @@ REQUIRED_DEPS = \
     $(PROJECT_ROOT)/lib/libcli.a
 
 # Source files
-TEST_UTILS_SOURCES = $(wildcard $(SRCDIR)/*.cpp)
-UNIT_TEST_SOURCES = $(wildcard $(UNIT_DIR)/*.cpp)
-INTEGRATION_TEST_SOURCES = $(wildcard $(INTEGRATION_DIR)/*.cpp)
-SOURCES = $(TEST_UTILS_SOURCES) $(UNIT_TEST_SOURCES) $(INTEGRATION_TEST_SOURCES)
-
+SOURCES = $(call find_local_sources,cpp)
+$(info SOURCES:          $(notdir $(SOURCES)))
+$(info )
 # Object files
-TEST_UTILS_OBJECTS = $(TEST_UTILS_SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/$(SRCDIR)/%.o)
-UNIT_TEST_OBJECTS = $(UNIT_TEST_SOURCES:$(UNIT_DIR)/%.cpp=$(OBJDIR)/$(UNIT_DIR)/%.o)
-INTEGRATION_TEST_OBJECTS = $(INTEGRATION_TEST_SOURCES:$(INTEGRATION_DIR)/%.cpp=$(OBJDIR)/$(INTEGRATION_DIR)/%.o)
-OBJECTS = $(TEST_UTILS_OBJECTS) $(UNIT_TEST_OBJECTS) $(INTEGRATION_TEST_OBJECTS)
+OBJECTS = $(foreach md,$(MODULE_DIRECTORIES), \
+        $(call sources_to_objects,$(filter $(md)/%,$(SOURCES)),$(OBJDIR)/$(md),cpp) \
+)
+$(info OBJECTS:          $(notdir $(OBJECTS)))
+$(info )
+# Binary files
+BINARIES = $(foreach td,$(TEST_DIRS), \
+        $(call objects_to_binaries,$(filter $(OBJDIR)/$(td)/%,$(OBJECTS)),$(BINDIR)/$(td)) \
+)
+$(info BINARIES:         $(notdir $(BINARIES)))
+$(info )
+
+# Usage $(eval $(call filter_tests,TEST_CATEGORY))
+# Example: TEST_CATEGORY = UNIT, then the output is
+# UNIT_TESTS = $(filter $(BINDIR)/$(UNIT_DIR)/%,$(BINARIES))
+define filter_tests
+$(1)_TESTS = $$(filter $$(BINDIR)/$$($(1)_DIR)/%,$$(BINARIES))
+endef
 
 # Test executables
-UNIT_TESTS = $(UNIT_TEST_SOURCES:$(UNIT_DIR)/%.cpp=$(BINDIR)/$(UNIT_DIR)/%)
-INTEGRATION_TESTS = $(INTEGRATION_TEST_SOURCES:$(INTEGRATION_DIR)/%.cpp=$(BINDIR)/$(INTEGRATION_DIR)/%)
+$(foreach tc,$(TEST_CATEGORIES), \
+        $(eval $(call filter_tests,$(tc))) \
+)
 
-#$(info LDFLAGS: $(LDFLAGS))
-#$(info SOURCES: $(SOURCES))
-#$(info OBJECTS: $(OBJECTS))
-#$(info REQUIRED_DEPS: $(REQUIRED_DEPS))
+ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(SYSTEM_TESTS)
 
-ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS)
+$(info UNIT_TESTS:        $(notdir $(UNIT_TESTS)))
+$(info )
+$(info INTEGRATION_TESTS: $(notdir $(INTEGRATION_TESTS)))
+$(info )
+$(info SYSTEM_TESTS:      $(notdir $(SYSTEM_TESTS)))
+$(info )
+$(info ALL_TESTS:         $(notdir $(ALL_TESTS)))
 
-.PHONY: all clean unit integration check-deps help debug-vars run-unit run-integration run-all
+$(error Debuggin. Stop.)
+
+.PHONY: all clean unit integration system check-deps help debug-vars run-unit run-integration run-all
 
 # Default target
 all: check-deps $(ALL_TESTS)
@@ -99,6 +128,16 @@ unit: check-deps $(UNIT_TESTS)
 # Integration tests
 integration: check-deps $(INTEGRATION_TESTS)
 
+# Unit tests
+system: check-deps $(SYSTEM_TESTS)
+
+define build_test_category_executables
+$(BINDIR)/$($(1)_DIR)/test_%: $(OBJDIR)/$($(1)_DIR)/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR)/$($(1)_DIR) $(OBJDIR)
+	$(call print_building,"$(1) test executable: $@")
+	$(call create_executable,$@,$^)
+	$(call print_success,"Built $(1) test: $@")
+endef
+
 # Build individual unit test
 $(BINDIR)/$(UNIT_DIR)/test_%: $(OBJDIR)/$(UNIT_DIR)/test_%.o $(TEST_UTILS_OBJECTS) | $(BINDIR)/$(UNIT_DIR) $(OBJDIR)
 	$(call print_building,"Unit test executable: $@")
@@ -111,16 +150,16 @@ $(BINDIR)/$(INTEGRATION_DIR)/test_%: $(OBJDIR)/$(INTEGRATION_DIR)/test_%.o $(TES
 	$(call create_executable,$@,$^)
 	$(call print_success,"Built integration test: $@")
 
-# Compile test utility objects using common.mk function
-$(OBJDIR)/$(SRCDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)/$(SRCDIR)
-	$(call compile_cpp_rule,$<,$@)
-
 # Compile unit test objects using common.mk function
 $(OBJDIR)/$(UNIT_DIR)/%.o: $(UNIT_DIR)/%.cpp | $(OBJDIR)/$(UNIT_DIR)
 	$(call compile_cpp_rule,$<,$@)
 
 # Compile integration test objects using common.mk function
 $(OBJDIR)/$(INTEGRATION_DIR)/%.o: $(INTEGRATION_DIR)/%.cpp | $(OBJDIR)/$(INTEGRATION_DIR)
+	$(call compile_cpp_rule,$<,$@)
+
+# Compile test utility objects using common.mk function
+$(OBJDIR)/$(SRCDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)/$(SRCDIR)
 	$(call compile_cpp_rule,$<,$@)
 
 # Create directories (handled by common.mk functions, but kept for explicit dependencies)
