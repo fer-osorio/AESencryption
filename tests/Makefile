@@ -27,8 +27,8 @@ ifeq ($(MAKEFILE_DEBUG),TRUE)
 endif
 
 # Binaries and objects directories
-BINDIR = $(PROJECT_ROOT)/bin/$(MODULE_NAME)
-OBJDIR = $(PROJECT_ROOT)/obj/$(MODULE_NAME)
+BINDIR = bin
+OBJDIR = obj
 
 # Local includes and libraries
 INCLUDES = \
@@ -195,6 +195,7 @@ $(OBJDIR)/$(SRCDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)/$(SRCDIR)
 	$(call compile_cpp_rule,$<,$@)
 
 # Create directories (handled by common.mk functions, but kept for explicit dependencies)
+$(OBJDIR) $(BINDIR) \
 $(OBJDIR)/$(SRCDIR) $(OBJDIR)/$(UNIT_DIR) $(OBJDIR)/$(INTEGRATION_DIR) $(OBJDIR)/$(SYSTEM_DIR) \
 $(BINDIR)/$(INTEGRATION_DIR) $(BINDIR)/$(UNIT_DIR) $(BINDIR)/$(SYSTEM_DIR):
 	$(call create_dir,$@)
@@ -267,6 +268,8 @@ debug-vars:
 	@for test in $(UNIT_TESTS); do echo "  $$test"; done
 	@echo -e "$(COLOR_CYAN)INTEGRATION_TESTS:$(COLOR_NC)"
 	@for test in $(INTEGRATION_TESTS); do echo "  $$test"; done
+	@echo -e "$(COLOR_CYAN)SYSTEM_TESTS:$(COLOR_NC)"
+	@for test in $(SYSTEM_TESTS); do echo "  $$test"; done
 	@echo -e "$(COLOR_CYAN)TEST_UTILS_OBJECTS:$(COLOR_NC)"
 	@for obj in $(TEST_UTILS_OBJECTS); do echo "  $$obj"; done
 	@echo -e "$(COLOR_CYAN)PROJECT_ROOT:$(COLOR_NC) $(PROJECT_ROOT)"
