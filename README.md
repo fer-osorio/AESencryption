@@ -1,245 +1,225 @@
-#  AES
+# AESencryption
 
-AES (Advance Encryption Standard) implementation in C++, applied to the encryption of BMP images and text files.
+A modular C/C++ library for AES-based file encryption with integrated statistical quality analysis.
 
-Mail me at aosorios1502@alumno.ipn.mx and alexis.fernando.osorio.sarabio@gmail.com for questions and comments.
+## Overview
 
-#  Overview
+AESencryption provides both a robust encryption library and a framework for building file-encryption applications. What sets it apart is its built-in capability to measure encryption quality through statistical methods, ensuring your encrypted data exhibits proper randomness characteristics.
 
-Implementation of symmetric block cipher AES (published by [NIST](https://www.nist.gov/)) in a name space called AES. Specification
-of this standard can be found [here](https://www.nist.gov/publications/advanced-encryption-standard-aes-0). Then, AES class,
-together with other structures, is used to encrypt Text files and BMP images.
+**Key Features:**
+- AES encryption (128/192/256-bit keys) with ECB and CBC modes
+- File format handlers (BMP, text, extensible to others)
+- Statistical analysis of encryption quality
+- C library core with C++ wrapper classes
+- Command-line tools for immediate use
 
-At the moment (21 of November, 2024), the supported operation modes are:
+## Quick Start
 
-- ECB [Electronic Code Book]
-- CBC [Cipher Block Chaining]
-- PVS [Pi Variable Sbox] (experimental, not specified in the NIST standard)
+### Building the Project
 
-And all key length specified in the standard (that is: 128, 192 and 256 bits) are supported. Also, the supported files are
+```bash
+# Clone the repository
+git clone <repository-url>
+cd AESencryption
 
-- Text files (.txt)
-- Bitmap images (.bmp)
+# Build all components
+make
 
-## Important notes:
-* AES name space does not implement any method to obtain secure cryptographic keys.
-* Padding problem for the ECB and CBC mode is solved with a method not specified in the NIST standard.
-
-#   Usage
-
-##  Creating a Cipher object
-Before encrypting anything, we need to establish a cryptographic key length, a cryptographic key and a operation mode. All this
-objects are specified inside a structure called **Key** inside the same name space **AES**. A **Key** object can be created by
-
-1. Using ``Key(const char* const _key, Length, OperationMode);``. This establish all attributes manually.
-2. Using ``Key(const char*const fname)``. This builds the key from a binary file.
-
-### The binary file for Key structure.
-As you can notice in [AES.hpp](Source/AES.hpp), ``Key`` structure posses ``void save(const char* const fname)const; `` function, 
-this function saves the relevant information carried by the ``Key`` object that invoked it. The structure of the resultingbinary
-file is:
-
-1. The first 6 bytes correspondes to the characters 'A''E''S''K''E''Y'.
-2. The following 3 (bytes 7, 8, 9) characters corresponds to the operation mode.
-3. The next 2 (bytes 10, 11) bytes represent the length of the key in bits.
-4. Denoting the length of the key in bytes as lengthBytes, from the byte 11 to the byte lengthBytes+11 is written the actual key.
-5. If the operation mode is "CBC", then the next 16 bytes (bytes lengthBytes+11 to lengthBytes+27) represent the initial vector.
-
-The ``Key`` structure is necessary to create a Cipher object because the unique constructor it has (apart from default constructor
-and copy constructor) is ``Cipher(const Key&)``. The intention of this is to have a well constructed cryptographic key before use it
-to encrypt.
-
-### In summary, to create a Cipher object:
-1. Create a ``Key`` object, either manually or from a file.
-2. Use the constructor ``Cipher(const Key&)``.
-
-**Important note**: The default constructor for Cipher, ``Chipher()``, sets each byte of key and key expansion as zero, so is
-mandatory to not use this constructor for nothing more than type declaration.
-
-## Encryption and decryption
-
-Once we have a Cipher object, for encryption of an array named ```data``` with ``size`` bytes it is only necessary to invoke the
-member function 
-
-```
-void encrypt(char*const data, unsigned size)const
+# Build specific components
+make data-encryption  # Core AES implementation (C)
+make core            # C++ wrapper classes
+make file-handlers   # File format support
+make tests           # Test suite
 ```
 
-Same for decryption
+**Requirements:**
+- GCC or Clang with C11/C++17 support
+- GNU Make
+- Linux (primary), cross-platform support in progress
 
-```
-void decrypt(char*const data, unsigned size)const
-```
+### Encrypting Your First File
 
-Encryption and decryption process will succeed if and only if the Cipher objects used in each end have the same key.
+```bash
+# Using the command-line tool (after building)
+bin/command-line-tools/image-encryption/bmp_encryptor --encrypt --key <keyfile> --input <file> --output <file>
 
-***Important note***: Each of the two functions above will act on the bytes pointed by **data** without creating a copy of the
-original content.
-
-### Encrypting and decrypting files.
-
-To this end, ``File`` name space has ``encrypt`` and ``decrypt`` functions; they can accept a file structure and a Cipher object
-as arguments. In higher detail,
-
-```
-friend void encrypt(Bitmap& bmp, AES::Cipher& e)
+# If the key file it doesn't exist, an exception is thrown asking to create a key first
 ```
 
-encrypts ``bmp`` Bitmap file using the Cipher object ``e``. Notice this last function is a friend of class ``Bitmap``, this has
-two intentions: First, to be capable to encrypt the bmp file data while maintaining its attributes private, and second, to have
-the possibility of encrypt several files with one single Cipher object.
+### Using as a Library (C++)
 
-Similarly, function
-```
-friend void decrypt(Bitmap& bmp, AES::Cipher& e)
-```
-decrypts ``bmp`` Bitmap file using Cipher object ``e``.
+```cpp
+#include "cipher.hpp"
+#include "key.hpp"
 
-The same is true for the rest of the files supported.
+using namespace AESencryption;
 
-```
-friend void encrypt(TXT& txt, AES::Cipher& e)
-```
+// Create a 256-bit key
+Key key(Key::LengthBits::_256);
 
-```
-friend void decrypt(TXT& txt, AES::Cipher& e)
-```
+// Create cipher with CBC mode
+Cipher cipher(key, Cipher::OperationMode::Identifier::CBC);
 
-# PVS operation mode
+// Encrypt data
+std::vector<uint8_t> plaintext = /* your data */;
+std::vector<uint8_t> ciphertext;
+cipher.encryption(plaintext, ciphertext);
 
-This is an experimental operation mode. It uses the digits of the number pi together with the key to generate a round key with size
-equal to the size of the data to encrypt and a dynamic Sbox. To describe the algorithm, we will need some notation.
-
-- ``piRoundkey``:   Round key mentioned above
-- ``dinSubBytes``:  Similar to SubBytes function specified in NIST standard, but using the dynamic Sbox mentioned above.
-- ``data``:         Data byte array
-- ``size``:         Data size
-- ``BLOCK_SIZE``:   Size of blocks specified in NIST standard, its value is 16
-
-I will borrow some notation from C programming language; when doubts arise in the meaning of some particular section of code,
-suppose it has the same meaning as if it were a peace of code in C. The algorithm for PVS operation mode for encryption is:
-
-```
-// Pseudo code for encryption with PVS mode
-encryptPVS(data, size) {
-    for(i = 0; i < size; i++)   data[i] ^= this->piRoundkey[i];
-    for(i = 0; i < size; i+= BLOCK_SIZE) dinSubBytes(&data[i]);
-    encryptECB(data, size);
-}
+// Save key for later use
+key.save("mykey.bin");
 ```
 
-Were ``encryptECB`` corresponds to AES encryption under ECB operation mode. Notice how we are supposing that ``size`` is a multiple of
-``BLOCK_SIZE``, in a real implementation we have to attend this case.
-The algorithm for decryption is very similar, as you can notice:
-
-- ``dinSubBytesInv``:   Corresponds with the inverse function of ``dinSubBytes``.
+## Project Structure
 
 ```
-// Pseudo code for decryption with PVS mode
-decryptPVS(data, size) {
-    decryptECB(data, size);
-    for(i = 0; i < size; i+= BLOCK_SIZE) ``dinSubBytesInv``(&data[i]);
-    for(i = 0; i < size; i++)   data[i] ^= this->piRoundkey[i];
-}
+AESencryption/
+├── data-encryption/    # Core AES implementation (C)
+├── src/core/          # C++ wrapper classes (Key, Cipher)
+├── file-handlers/     # File format support (BMP, text)
+├── metrics-analysis/  # Statistical quality measurement
+├── CLI/               # Command-line interface utilities
+├── command-line-tools/# Ready-to-use encryption tools
+├── tests/             # Unit, integration, and system tests
+├── include/           # Public API headers
+├── lib/               # Generated static libraries
+└── bin/               # Generated executables
 ```
 
-It can be said that what decryption does is to apply the inverses of process in encryption in reveres order.
-
-To create the functions ``dinSubBytes`` adn dinSubBytesInv, it is enough to calculate the arrays ``dinSbox`` ans its inverse dinSboxInv, The algorithm for the creation of
-the arrays ``piRoundkey``, ``dinSbox`` and dinSboxInv is the following:
-
-- ``SBOX_SIZE``:    Size of Sbox, fixed to 256
-- ``dinSbox``:      Array of 256 elements representing the dynamic Sbox
-- ``key``:          Cryptographic key
-- ``pi``:           array containing the digits of the number pi, this array has the same size than ``data``
-- ``NUM_SIZE``:     Size in bytes of the numbers we will be handling, fixed to 32 (equivalent to 256 bits)
-- ``prkSize``:      Round key size, initialized as 0.
-- ``size``:         Size desired for ``piRoundkey`` array
-- ``a``,``b``:      Two 256 bits (32 bytes) unsigned numbers
-- ``c``:            A 512 bits (64 bytes) unsigned number
-- ``unWSBoxSz``:    Unwritten SBox size, amount of entries not defined yet. Initialized as ``SBOX_SIZE``
-- ``buffer``:       Array that will be used in the creation of new Sbox
-- ``uNum256bit``:   Funtion: takes an 256 bits array and interprets it as a 256 bits number
-
+**Module Dependencies:**
 ```
-// Pseudo code for creation of PiRoundkey and dinamic Sbox with inverse
-setPiRoundKeyAndDinSbox(key, size) {
-    a = uNum256bit(key), b = 0, c = 0;
-    prkSize = 0;
-    unWSBoxSz = SBOX_SIZE;
-    for(i = 0; prkSize < size; i += NUM_SIZE) {                                 // -Beginning with the creation of piRoundkey array
-        b = uNum256bit(&pi[i]);                                                 // -Basically, take a chunck of 256 bits from pi array and treat it as a number
-        c = a*b;                                                                // -Product with the number created from key
-        for(j = 0 ; j < 2*NUM_SIZE; j++)                                        // -Writing the result on piRoundkey array. Remember, the product of two 256 bits
-            piRoundkey[prkSize++] = c[j];                                       //  (32 bytes) numbers results on a 512 bits (64 bytes) number
-    }
-    for(i = 0; i < SBOX_SIZE; i++) buffer[i] = i;                               // -Filling buffer with 1, 2, ..., 255
-        for(i = size-1, j = 0; unWSBoxSz > 0; i--, j++, unWSBoxSz--) {          // -Creating dinamic Sbox
-            k = piRoundkey[i] % unWSBoxSz;                                      // -Selecting a 'random' number and applying mod unWSBoxSz
-            this->dinSBox[j] = buffer[k];                                       // -Selecting and available entry
-            buffer[k] = buffer[unWSBoxSz - 1];                                  // -Substituting old value with one not used yet
-        }
-    for(i = 0; i < SBOX_SIZE; i++ ) this->dinSboxInv[dinSBox[i]] = i;           // -Building dinamic Sbox inverse
-}
+command-line-tools → file-handlers → core → data-encryption
+                                   ↘ metrics-analysis
+tests → all modules
 ```
 
-#  Compilation
+## Architecture Highlights
 
-### Before doing anything, I am assuming:
+### Modular Design
+- **C core** (`data-encryption`): Pure AES implementation, no dependencies
+- **C++ wrapper** (`src/core`): Object-oriented interface with RAII guarantees
+- **Extensibility**: Implement `Encryptor` interface to support new encryption schemes
+- **File handlers**: Abstract `FileBase` class for format-specific encryption
 
-1. You have installed GNU ``g++`` compiler.
-2. The command-line interface software GNU ``Make`` is installed in your computer.
+### Encryption Quality Analysis
+The `metrics-analysis` module measures randomness properties of encrypted data:
+- Statistical distribution tests
+- Entropy calculations
+- Pattern detection
 
-In order to check if you have ``g++`` available you can run:
+This helps verify that your encryption produces properly randomized output.
 
-- For Windows:
-    - Open command prompt; one way to do this is searching *cmd* in Start menu.
-    - Type ``g++ --version`` and press enter.
+## Documentation
 
-- For macOS and Linux:
-    - Open terminal application.
-    - Type ``g++ --version`` and press enter.
+- **[Building](docs/BUILDING.md)** - Detailed build instructions and troubleshooting *(coming soon)*
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and module interactions *(coming soon)*
+- **[API Reference](docs/api/)** - Detailed API documentation *(coming soon)*
+- **[Testing](docs/TESTING.md)** - Test strategy and execution *(coming soon)*
 
-If you do not have this compiler installed, I strongly recommend you to install the GNU compiler collection (GCC). Installation
-instructions can be found here:
-[Linux](https://www.geeksforgeeks.org/how-to-install-gcc-compiler-on-linux/), 
-[MacOS](https://cs.millersville.edu/~gzoppetti/InstallingGccMac.html),
-[Windows](https://www.ibm.com/docs/en/devops-test-embedded/9.0.0?topic=overview-installing-recommended-gnu-compiler-windows).
+### Module Documentation
+Each module contains its own README with specific usage instructions:
+- `data-encryption/README.md` - Core AES algorithm details
+- `file-handlers/README.md` - Supported formats and extending handlers
+- `metrics-analysis/README.md` - Statistical methods and interpretation
 
-To verify if you hame GNU ``make`` installed:
+## Testing
 
-- For Linux and macOS:
-    - Open terminal application.
-    - Type ``make --version``
+```bash
+# Build and run all tests
+make tests
+./bin/test_runner
 
-To install GNU ``make``, you can follow the instructions of the following links:
-[Windows](https://stackoverflow.com/a/57042516), 
-[MacOS](https://ipv6.rs/tutorial/macOS/GNU_Make/)
-
-## Use make commands
-
-**Note**: Executables will be located in [Executables](Apps/Executables) directory.
-
-Use ``make`` commands to build the executables.
-
-1. ``make AESencryption.exe`` to build executable for encryption.
-2. ``make AESdecryption.exe`` to build executable for decryption.
-3. ``make`` to build both.
-
-Optionally, you can run the following commands on your terminal (command prompt on Windows)
-
-For AESencryption.exe:
-```
-# This is, literally, the command that "make AESencryption.exe" calls.
-g++ -o Apps/Executables/AESencryption.exe -Wall -Weffc++ -Wextra -Wsign-conversion -pedantic-errors -ggdb
--fno-omit-frame-pointer -O2 -std=c++2a Apps/encryption.cpp Apps/Settings.cpp Source/*.cpp
+# Run specific test categories
+./bin/test_runner --unit
+./bin/test_runner --integration
+./bin/test_runner --system
 ```
 
-For AESdecryption.exe:
-```
-# This is, literally, the command that "make AESdecryption.exe" calls.
-g++ -o Apps/Executables/AESdecryption.exe -Wall -Weffc++ -Wextra -Wsign-conversion -pedantic-errors -ggdb
--fno-omit-frame-pointer -O2 -std=c++2a Apps/decryption.cpp Apps/Settings.cpp Source/*.cpp
+The test suite includes:
+- **Unit tests**: Individual component validation
+- **Integration tests**: Module interaction verification
+- **System tests**: End-to-end workflow testing
+- **NIST test vectors**: Compliance with FIPS 197 and SP 800-38A standards
+
+## Current Status
+
+**Stable:**
+- ✅ AES-128/192/256 encryption and decryption
+- ✅ ECB and CBC operation modes
+- ✅ BMP file encryption
+- ✅ Comprehensive test coverage with NIST vectors
+
+**In Progress:**
+- 🚧 Cross-platform support (Windows, macOS)
+- 🚧 Documentation completion
+- 🚧 Additional file format handlers
+
+**Planned:**
+- 📋 System-wide installation support
+- 📋 Semantic versioning and stable API guarantees
+- 📋 Additional operation modes (CTR, GCM)
+
+## Platform Support
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| Linux    | ✅ Full | Primary development platform |
+| macOS    | 🚧 Experimental | Basic functionality working |
+| Windows  | 🚧 Planned | Cross-compilation support in progress |
+
+## Examples
+
+### Encrypting a Bitmap Image
+
+```bash
+# Encrypt
+./bin/bmp_encryptor encrypt photo.bmp encrypted.bmp key.bin
+
+# Decrypt
+./bin/bmp_encryptor decrypt encrypted.bmp decrypted.bmp key.bin
+
+# Verify they match
+diff photo.bmp decrypted.bmp
 ```
 
-These last two commands are convenient if you do not have ``make`` installed.
+### Custom Cipher Configuration
+
+```cpp
+#include "cipher.hpp"
+#include "key.hpp"
+#include <vector>
+
+using namespace AESencryption;
+
+// Load existing key from file
+Key key("saved_key.bin");
+
+// Create cipher with specific operation mode
+Cipher cipher(key, Cipher::OperationMode::Identifier::CBC);
+
+// Set custom initialization vector for CBC
+std::vector<uint8_t> iv = {/* 16 bytes */};
+cipher.setInitialVectorForTesting(iv);  // Production API coming soon
+
+// Use cipher for encryption
+std::vector<uint8_t> data = /* ... */;
+std::vector<uint8_t> encrypted;
+cipher.encryption(data, encrypted);
+```
+
+## Contributing
+
+This project is currently in active development. Contributions, suggestions, and feedback are welcome! As the project matures, formal contribution guidelines will be established.
+
+## License
+
+See [LICENSE](LICENSE) for details.
+
+## Acknowledgments
+
+- AES algorithm implementation follows NIST FIPS 197 specification
+- Test vectors derived from NIST Special Publication 800-38A
+- Inspired by the need for transparent, analyzable encryption implementations
+
+---
+
+**Note:** This project is under active development. APIs may change as the project evolves toward a stable 1.0 release. For questions or issues, please open an issue on the repository.
