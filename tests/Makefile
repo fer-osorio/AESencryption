@@ -200,29 +200,34 @@ $(OBJDIR)/$(SRCDIR) $(OBJDIR)/$(UNIT_DIR) $(OBJDIR)/$(INTEGRATION_DIR) $(OBJDIR)
 $(BINDIR)/$(INTEGRATION_DIR) $(BINDIR)/$(UNIT_DIR) $(BINDIR)/$(SYSTEM_DIR):
 	$(call create_dir,$@)
 
+# Usage $(eval $(call run_tests,category))
+define run_tests
+@failed=0; \
+for test in $($(1)_TESTS); do \
+	if [ -f "$$test" ]; then \
+		$(call echo_building,"Executing: $$test"); \
+		if ./$$test; then \
+			$(call echo_success,"PASSED: $$test"); \
+		else \
+			$(call echo_error,"FAILED: $$test"); \
+			failed=1; \
+		fi; \
+	else \
+		$(call echo_warning,"Test executable not found: $$test"); \
+	fi; \
+done; \
+if [ $$failed -eq 0 ]; then \
+	$(call echo_success,"All $(1) tests passed!"); \
+else \
+	$(call echo_error,"Some $(1) tests failed!"); \
+	exit 1; \
+fi
+endef
+
 # Run tests with improved output
 run-unit: unit
 	$(call print_info,"Running unit tests...")
-	@failed=0; \
-	for test in $(UNIT_TESTS); do \
-		if [ -f "$$test" ]; then \
-			$(call echo_building,"Executing: $$test"); \
-			if ./$$test; then \
-				$(call echo_success,"PASSED: $$test"); \
-			else \
-				$(call echo_error,"FAILED: $$test"); \
-				failed=1; \
-			fi; \
-		else \
-			$(call echo_warning,"Test executable not found: $$test"); \
-		fi; \
-	done; \
-	if [ $$failed -eq 0 ]; then \
-		$(call echo_success,"All unit tests passed!"); \
-	else \
-		$(call echo_error,"Some unit tests failed!"); \
-		exit 1; \
-	fi
+	$(call run_tests,UNIT)
 
 run-integration: integration
 	$(call print_info,"Running integration tests...")
