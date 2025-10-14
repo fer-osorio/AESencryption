@@ -49,8 +49,7 @@ bin/command-line-tools/image-encryption/bmp_encryptor --encrypt --key <keyfile> 
 ### Using as a Library (C++)
 
 ```cpp
-#include "cipher.hpp"
-#include "key.hpp"
+#include "cipher.hpp"  // key.hpp and encryptor.hpp files are already included in cipher.hpp
 
 using namespace AESencryption;
 
@@ -62,7 +61,7 @@ Cipher cipher(key, Cipher::OperationMode::Identifier::CBC);
 
 // Encrypt data
 std::vector<uint8_t> plaintext = /* your data */;
-std::vector<uint8_t> ciphertext;
+std::vector<uint8_t> ciphertext(plaintext.size());
 cipher.encryption(plaintext, ciphertext);
 
 // Save key for later use
@@ -102,9 +101,9 @@ tests → all modules
 
 ### Encryption Quality Analysis
 The `metrics-analysis` module measures randomness properties of encrypted data:
-- Statistical distribution tests
+- Chi-square goodness-of-fit test
 - Entropy calculations
-- Pattern detection
+- Data correlation
 
 This helps verify that your encryption produces properly randomized output.
 
@@ -116,22 +115,20 @@ This helps verify that your encryption produces properly randomized output.
 - **[Testing](docs/TESTING.md)** - Test strategy and execution *(coming soon)*
 
 ### Module Documentation
-Each module contains its own README with specific usage instructions:
-- `data-encryption/README.md` - Core AES algorithm details
-- `file-handlers/README.md` - Supported formats and extending handlers
-- `metrics-analysis/README.md` - Statistical methods and interpretation
+*(coming soon)*
 
 ## Testing
 
 ```bash
 # Build and run all tests
 make tests
-./bin/test_runner
+cd tests
+make run-all
 
 # Run specific test categories
-./bin/test_runner --unit
-./bin/test_runner --integration
-./bin/test_runner --system
+make run-unit
+make run-integration
+make run-system
 ```
 
 The test suite includes:
@@ -154,8 +151,6 @@ The test suite includes:
 - 🚧 Additional file format handlers
 
 **Planned:**
-- 📋 System-wide installation support
-- 📋 Semantic versioning and stable API guarantees
 - 📋 Additional operation modes (CTR, GCM)
 
 ## Platform Support
@@ -163,19 +158,22 @@ The test suite includes:
 | Platform | Status | Notes |
 |----------|--------|-------|
 | Linux    | ✅ Full | Primary development platform |
-| macOS    | 🚧 Experimental | Basic functionality working |
-| Windows  | 🚧 Planned | Cross-compilation support in progress |
+| macOS    | 🚧 Experimental | Cross-compilation support in progress |
+| Windows  | 🚧 Experimental | Cross-compilation support in progress |
 
 ## Examples
 
 ### Encrypting a Bitmap Image
 
 ```bash
+Generate 192-bits key
+bin/command-line-tools/image-encryption/bmp_encryptor --generate-key --key-length 192 --output key.bin
+
 # Encrypt
-./bin/bmp_encryptor encrypt photo.bmp encrypted.bmp key.bin
+bin/command-line-tools/image-encryption/bmp_encryptor --encrypt --key key.bin --input photo.bmp --output encrypted.bmp
 
 # Decrypt
-./bin/bmp_encryptor decrypt encrypted.bmp decrypted.bmp key.bin
+bin/command-line-tools/image-encryption/bmp_encryptor --decrypt --key key.bin --input encrypted.bmp --output decrypted.bmp
 
 # Verify they match
 diff photo.bmp decrypted.bmp
@@ -190,19 +188,15 @@ diff photo.bmp decrypted.bmp
 
 using namespace AESencryption;
 
-// Load existing key from file
-Key key("saved_key.bin");
+// Build 128-bits key automatically
+Key key(Key::LengthBits:::_128);
 
 // Create cipher with specific operation mode
 Cipher cipher(key, Cipher::OperationMode::Identifier::CBC);
 
-// Set custom initialization vector for CBC
-std::vector<uint8_t> iv = {/* 16 bytes */};
-cipher.setInitialVectorForTesting(iv);  // Production API coming soon
-
 // Use cipher for encryption
 std::vector<uint8_t> data = /* ... */;
-std::vector<uint8_t> encrypted;
+std::vector<uint8_t> encrypted(data.size());
 cipher.encryption(data, encrypted);
 ```
 
