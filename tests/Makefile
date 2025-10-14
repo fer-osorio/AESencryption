@@ -200,7 +200,7 @@ $(OBJDIR)/$(SRCDIR) $(OBJDIR)/$(UNIT_DIR) $(OBJDIR)/$(INTEGRATION_DIR) $(OBJDIR)
 $(BINDIR)/$(INTEGRATION_DIR) $(BINDIR)/$(UNIT_DIR) $(BINDIR)/$(SYSTEM_DIR):
 	$(call create_dir,$@)
 
-# Usage $(eval $(call run_tests,category))
+# Usage $(call run_tests,category)
 define run_tests
 @failed=0; \
 for test in $($(1)_TESTS); do \
@@ -231,28 +231,13 @@ run-unit: unit
 
 run-integration: integration
 	$(call print_info,"Running integration tests...")
-	@failed=0; \
-	for test in $(INTEGRATION_TESTS); do \
-		if [ -f "$$test" ]; then \
-			$(call echo_building,"Executing: $$test"); \
-			if ./$$test; then \
-				$(call echo_success,"PASSED: $$test"); \
-			else \
-				$(call echo_error,"FAILED: $$test"); \
-				failed=1; \
-			fi; \
-		else \
-			$(call echo_warning,"Test executable not found: $$test"); \
-		fi; \
-	done; \
-	if [ $$failed -eq 0 ]; then \
-		$(call echo_success,"All integration tests passed!"); \
-	else \
-		$(call echo_error,"Some integration tests failed!"); \
-		exit 1; \
-	fi
+	$(call run_tests,INTEGRATION)
 
-run-all: run-unit run-integration
+run-system: system
+	$(call print_info,"Running system tests...")
+	$(call run_tests,SYSTEM)
+
+run-all: run-unit run-integration run-system
 	$(call print_success,"All tests completed successfully!")
 
 clean:
@@ -285,25 +270,27 @@ debug-vars:
 help:
 	$(call print_info,"Test Makefile Help")
 	@echo -e "$(COLOR_BLUE)Available targets:$(COLOR_NC)"
-	@echo -e "  all           - Build all tests (default)"
-	@echo -e "  unit          - Build only unit tests"
-	@echo -e "  integration   - Build only integration tests"
-	@echo -e "  check-deps    - Check if dependencies exist"
-	@echo -e "  dependencies  - Build project dependencies (optional)"
-	@echo -e "  run-unit      - Build and run unit tests"
-	@echo -e "  run-integration - Build and run integration tests"
-	@echo -e "  run-all       - Build and run all tests"
-	@echo -e "  clean         - Clean all build artifacts"
-	@echo -e "  debug-vars    - Show makefile variables"
-	@echo -e "  help          - Show this help"
+	@echo -e "  all              - Build all tests (default)"
+	@echo -e "  unit             - Build only unit tests"
+	@echo -e "  integration      - Build only integration tests"
+	@echo -e "  system           - Build only system tests"
+	@echo -e "  check-deps       - Check if dependencies exist"
+	@echo -e "  dependencies     - Build project dependencies (optional)"
+	@echo -e "  run-unit         - Build and run unit tests"
+	@echo -e "  run-integration  - Build and run integration tests"
+	@echo -e "  run-system       - Build and run integration tests"
+	@echo -e "  run-all          - Build and run all tests"
+	@echo -e "  clean            - Clean all build artifacts"
+	@echo -e "  debug-vars       - Show makefile variables"
+	@echo -e "  help             - Show this help"
 	@echo -e ""
 	@echo -e "$(COLOR_BLUE)Usage examples:$(COLOR_NC)"
-	@echo -e "  make                   # Build all tests (checks deps first)"
-	@echo -e "  make check-deps        # Only check dependencies"
-	@echo -e "  make dependencies      # Build missing dependencies"
-	@echo -e "  make run-unit          # Build and run unit tests"
-	@echo -e "  make clean all         # Clean and rebuild"
-	@echo -e "  make debug-vars        # Show variables for debugging"
+	@echo -e "  make               # Build all tests (checks deps first)"
+	@echo -e "  make check-deps    # Only check dependencies"
+	@echo -e "  make dependencies  # Build missing dependencies"
+	@echo -e "  make run-unit      # Build and run unit tests"
+	@echo -e "  make clean all     # Clean and rebuild"
+	@echo -e "  make debug-vars    # Show variables for debugging"
 
 # Include dependency files
 $(eval $(call include_deps))
