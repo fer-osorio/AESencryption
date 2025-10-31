@@ -31,7 +31,7 @@ DataRandomness::DataRandomness(const std::vector<std::byte>& data) : data_size(d
 	if(data.empty()) {
 	    throw std::runtime_error("Empty data set.");
 	}
-	this->rmetrics = new RandMetrics;
+	this->rmetrics = new RandomnessMetrics;
 	for(const std::byte& byte : data) {				// Establishing the frequency of each of the possible values for a byte.
 		byteValueFrequence[static_cast<uint8_t>(byte)]++;
 	}

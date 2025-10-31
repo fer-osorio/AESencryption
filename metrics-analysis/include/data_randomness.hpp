@@ -4,12 +4,12 @@
 
 class DataRandomness{								// -Specialized to handle data from raw bytes
 private:
-	struct RandMetrics{
+	struct RandomnessMetrics{
 		double Entropy;
 		double ChiSquare;
 		double CorrelationAdjacentByte;
 	};
-	struct RandMetrics* rmetrics = NULL;
+	struct RandomnessMetrics* rmetrics = NULL;
 	size_t data_size = 0;
 	size_t byteValueFrequence[256];
 
