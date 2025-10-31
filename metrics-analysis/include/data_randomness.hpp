@@ -1,9 +1,8 @@
 #include<cstddef>
 #include<stdint.h>
 #include<vector>
-#include"statistical_metrics.hpp"
 
-class DataRandomness: StatisticalMetrics {								// -Specialized to handle data from raw bytes
+class DataRandomness {								// -Specialized to handle data from raw bytes
 private:
 	struct RandomnessMetrics{
 		double Entropy;
