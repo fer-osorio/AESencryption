@@ -75,12 +75,10 @@ public:
 	void apply_decryption(const Encryptor& c);
 
 	/**
-	* @brief Calculates various statistics on the current data buffer.
+	* @brief Calculates various randomness statistics on the current data buffer.
 	* @return A DataRandomness struct containing the results.
-	* * Marked as 'virtual' because subclasses might want to add more
-	* specific statistics (e.g., word count for a text file).
 	*/
-	virtual DataRandomness calculate_statistics() const;
+	DataRandomness calculate_randomness() const;
 
 	// --- Accessors (Getters) ---
 
