@@ -59,7 +59,7 @@ void FileBase::apply_decryption(const Encryptor& c){
     }
 }
 
-DataRandomness FileBase::calculate_statistics() const{
+DataRandomness FileBase::calculate_randomness() const{
     return DataRandomness(reinterpret_cast<const std::vector<std::byte>&>(this->data));
 }
 
