@@ -43,17 +43,17 @@ void FileBase::save(const std::filesystem::path& output_path) const{
     }
 }
 
-void FileBase::apply_encryption(const Encryptor& c){
+void FileBase::apply_encryption(const Encryptor& algorithm){
     try{
-        c.encryption(this->data,this->data);
+        algorithm.encryption(this->data,this->data);
     } catch(...){
         throw;
     }
 }
 
-void FileBase::apply_decryption(const Encryptor& c){
+void FileBase::apply_decryption(const Encryptor& algorithm){
     try{
-        c.decryption(this->data,this->data);
+        algorithm.decryption(this->data,this->data);
     } catch(...){
         throw;
     }

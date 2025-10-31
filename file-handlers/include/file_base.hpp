@@ -64,7 +64,7 @@ public:
 	* * This method modifies the internal data buffer.
 	* @throws Throws exceptions if encryption fails
 	*/
-	void apply_encryption(const Encryptor& c);
+	void apply_encryption(const Encryptor& algorithm);
 
 	/**
 	* @brief Applies an decryption algorithm to the file's data.
@@ -72,7 +72,7 @@ public:
 	* * This method modifies the internal data buffer.
 	* @throws Throws exceptions if decryption fails
 	*/
-	void apply_decryption(const Encryptor& c);
+	void apply_decryption(const Encryptor& algorithm);
 
 	/**
 	* @brief Calculates various randomness statistics on the current data buffer.
