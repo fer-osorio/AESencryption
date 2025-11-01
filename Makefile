@@ -16,7 +16,7 @@ file-handlers: core metrics-analysis
 	@$(MAKE) -C file-handlers
 
 cli: core
-	@$(MAKE) -C CLI
+	@$(MAKE) -C crypto-cli
 
 core: data-encryption
 	@$(MAKE) -C src
@@ -32,7 +32,7 @@ clean:
 	@$(MAKE) -C command-line-tools clean
 	@$(MAKE) -C tests clean
 	@$(MAKE) -C file-handlers clean
-	@$(MAKE) -C CLI clean
+	@$(MAKE) -C crypto-cli clean
 	@$(MAKE) -C src clean
 	@$(MAKE) -C data-encryption clean
 	@$(MAKE) -C metrics-analysis clean

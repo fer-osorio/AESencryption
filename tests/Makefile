@@ -33,7 +33,7 @@ OBJDIR = obj
 # Local includes and libraries
 INCLUDES = \
     -I./include \
-    -I$(PROJECT_ROOT)/CLI/include \
+    -I$(PROJECT_ROOT)/crypto-cli/include \
     -I$(PROJECT_ROOT)/file-handlers/include \
     -I$(PROJECT_ROOT)/include \
     -I$(PROJECT_ROOT)/data-encryption/include \
@@ -146,7 +146,7 @@ dependencies:
 	@$(MAKE) -C $(PROJECT_ROOT)/src
 	@$(MAKE) -C $(PROJECT_ROOT)/file-handlers
 	@$(MAKE) -C $(PROJECT_ROOT)/metrics-analysis
-	@$(MAKE) -C $(PROJECT_ROOT)/CLI
+	@$(MAKE) -C $(PROJECT_ROOT)/crypto-cli
 	$(call print_success,"All dependencies built successfully")
 
 # Unit tests
