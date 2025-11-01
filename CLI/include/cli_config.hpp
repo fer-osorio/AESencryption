@@ -4,8 +4,6 @@
 
 #include "../../include/cipher.hpp"
 #include <filesystem> // For path handling
-#include <optional>
-#include <stdexcept>
 
 namespace CLI {
 
@@ -58,4 +56,4 @@ private:
 
 } // namespace CLI
 
-#endif
+#endif  // CLI_CONFIG_HPP
