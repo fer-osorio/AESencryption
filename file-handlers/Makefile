@@ -21,10 +21,10 @@ INCDIR = include
 INCLUDES = -I./$(INCDIR) -I../$(INCDIR) -I../metrics-analysis/$(INCDIR)
 
 # Dependencies on other modules
-DEPS =$(LIBDIR)/libaesencryption_cpp.a
+DEPS = $(LIBDIR)/libaesencryption_cpp.a $(LIBDIR)/libmetricsanalysis.a
 
 # External libraries needed
-LIBS = -L$(LIBDIR) -laesencryption_cpp
+LIBS = -L$(LIBDIR) -laesencryption_cpp lmetricsanalysis
 
 # Default target
 all: $(TARGET_LIB)
