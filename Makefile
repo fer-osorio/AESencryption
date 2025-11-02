@@ -1,5 +1,3 @@
-include common.mk
-
 .PHONY: all clean data-encryption core file-handlers metrics-analysis tests command-line-tools
 
 # Default target
