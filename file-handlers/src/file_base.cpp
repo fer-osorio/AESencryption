@@ -2,7 +2,6 @@
 #include"../../include/encryptor.hpp"
 #include"../../metrics-analysis/include/data_randomness.hpp"
 #include<fstream>
-#include<cmath>
 
 using namespace File;
 

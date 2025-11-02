@@ -2,10 +2,7 @@
 #define FILE_BASE_HPP
 
 #include<vector>
-#include<string>
 #include<filesystem> // For path handling
-#include<map>
-#include<stdexcept>  // For exceptions
 
 // Forward declaration of the Encryptor interface.
 class Encryptor;
