@@ -21,7 +21,7 @@ INCLUDES = \
     -I$(PROJECT_ROOT)/metrics-analysis/include
 
 LDFLAGS += -L$(PROJECT_ROOT)/lib
-LIBS = -lcli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetricsanalysis
+LIBS = -lcryptocli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetricsanalysis
 
 # Define required dependencies (library files)
 REQUIRED_DEPS = \
@@ -29,7 +29,7 @@ REQUIRED_DEPS = \
     $(PROJECT_ROOT)/lib/libaesencryption_cpp.a \
     $(PROJECT_ROOT)/lib/libfilehandlers.a \
     $(PROJECT_ROOT)/lib/libmetricsanalysis.a \
-    $(PROJECT_ROOT)/lib/libcli.a
+    $(PROJECT_ROOT)/lib/libcryptocli.a
 
 # Source files
 SOURCES = $(call find_local_sources,cpp)
