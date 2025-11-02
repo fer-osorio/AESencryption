@@ -12,8 +12,7 @@ void DataRandomness::get_byteValueFrequence(const std::vector<std::byte>& data, 
         for(const std::byte& byte : data) {				                            // Establishing the frequency of each of the possible values for a byte.
 		    this->byteValueFrequence[static_cast<uint8_t>(byte)]++;
 	    }
-	}
-	else {
+	}else {
 	    size_t sz = data.size(), i = start < sz ? start : start % sz;
 	    for(; i < sz; i += jump_size){
 	        this->byteValueFrequence[static_cast<uint8_t>(data[i])]++;
