@@ -5,7 +5,7 @@
 #include "../../include/cipher.hpp"
 #include <filesystem> // For path handling
 
-namespace CryptoCLI {
+namespace CLIConfig {
 
 // Configuration structure - the integration point
 struct CryptoConfig {
@@ -54,6 +54,6 @@ private:
     void print_help() const;
 };
 
-} // namespace CLI
+} // namespace CLIConfig
 
 #endif  // CLI_CONFIG_HPP
