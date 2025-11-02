@@ -3,10 +3,10 @@ include ../common.mk
 include ../config.mk
 
 # Local configuration
-MODULE_NAME = CLI
+MODULE_NAME = $(notdir $(CURDIR))
 PROJECT_ROOT := $(call find-project-root)
 LIBDIR = $(PROJECT_ROOT)/lib
-TARGET_LIB = $(LIBDIR)/libcli.a
+TARGET_LIB = $(LIBDIR)/libcryptocli.a
 
 # Local source directory and object directory
 SRCDIR = src
