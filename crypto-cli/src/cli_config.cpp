@@ -1,6 +1,6 @@
 #include "../include/cli_config.hpp"
 
-using namespace CryptoCLI;
+using namespace CLIConfig;
 
 bool CryptoConfig::validate() {
     // Check required fields based on operation
