@@ -23,11 +23,11 @@ private:
 	static double calculateCorrelationSubArray(const std::vector<std::byte>& data, size_t start, size_t jump_size, size_t offset);
 
 	DataRandomness() = default;						// -Private constructor, only accessible inside the class
-	DataRandomness(const DataRandomness&);					// -Not allowing copy contructor or
-	DataRandomness& operator = (const DataRandomness&);			//  copy assigment
+	DataRandomness& operator = (const DataRandomness&);			// -Not allowing copy assigment
 
 public:
 	explicit DataRandomness(const std::vector<std::byte>& data);
+	DataRandomness(const DataRandomness&);
 	~DataRandomness();
 
 	static double calculateCorrelation(const std::vector<std::byte>& data, size_t offset);
