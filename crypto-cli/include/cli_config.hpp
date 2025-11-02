@@ -23,6 +23,7 @@ struct CryptoConfig {
     // Optional parameters with defaults
     AESencryption::Key::LengthBits key_length = AESencryption::Key::LengthBits::_128;
     AESencryption::Cipher::OperationMode::Identifier operation_mode = AESencryption::Cipher::OperationMode::Identifier::CBC;
+    bool show_metrics = false;
 
     // Validation flags
     bool is_valid = false;
