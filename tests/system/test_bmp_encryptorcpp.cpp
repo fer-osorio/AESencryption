@@ -22,18 +22,24 @@ int main() {
     std::cout << "=== System/E2E Testing for AES File Encryption Tool ===" << std::endl;
 
     std::filesystem::path bmp_encryptor_path = findProjectRoot() / BMP_ENCRYPTOR;
+    bool allTestsSucceed = true;
 
     try{
         cltt::SystemTests st(bmp_encryptor_path.string(), cltt::FileFormat::BITMAP);
-        st.test_file_encryption_workflow();
-        st.test_error_scenarios();
-        st.test_large_file_performance();
+        allTestsSucceed &= st.test_file_encryption_workflow();
+        allTestsSucceed &= st.test_error_scenarios();
+        allTestsSucceed &= st.test_large_file_performance();
     } catch(const std::exception& e){
         std::cerr << e.what();
     }
 
-    std::cout << "\n=== All System Tests Complete ===" << std::endl;
-    return 0;
+    if(allTestsSucceed){
+        std::cout << "\n===================== All System Tests Succeed =====================" << std::endl;
+        return 0;
+    } else{
+        std::cout << "\n===================== Some System Tests Failed =====================" << std::endl;
+        return 1;
+    }
 }
 
 const std::filesystem::path findProjectRoot() {
