@@ -4,23 +4,36 @@ using namespace CLIConfig;
 
 bool CryptoConfig::validate() {
     // Check required fields based on operation
-    if (this->operation == Operation::ENCRYPT || this->operation == Operation::DECRYPT) {
-        if (this->key_file.empty()) {
-            this->error_message = "Key file is required for encryption/decryption";
-            return false;
-        }
+    switch (this->operation) {
+        case Operation::ENCRYPT:
+        case Operation::DECRYPT:
+            if (this->key_file.empty()) {
+                this->error_message = "Key file is required for encryption/decryption";
+                return false;
+            }
+            if (this->input_file.empty()) {
+                this->error_message = "Input file is required";
+                return false;
+            }
+            if (this->output_file.empty()) {
+                this->error_message = "Output file is required";
+                return false;
+            }
+            break;
+        case Operation::GENERATE_KEY:
+            if (this->output_file.empty()) {
+                this->error_message = "Output file is required for key generation";
+                return false;
+            }
+            break;
+    }
+    if(this->show_metrics){
         if (this->input_file.empty()) {
             this->error_message = "Input file is required";
             return false;
         }
         if (this->output_file.empty()) {
             this->error_message = "Output file is required";
-            return false;
-        }
-    }
-    if (this->operation == Operation::GENERATE_KEY) {
-        if (this->output_file.empty()) {
-            this->error_message = "Output file is required for key generation";
             return false;
         }
     }
@@ -104,6 +117,9 @@ CryptoConfig ArgumentParser::parse() {
         else if (arg == "--decrypt") {
             this->config.operation = CryptoConfig::Operation::DECRYPT;
         }
+        else if (arg == "--show-metrics") {
+            this->config.show_metrics = true;
+        }
         else if (arg == "--help") {
             print_help();
             this->config.is_valid = false;
@@ -134,5 +150,6 @@ void ArgumentParser::print_help() const{
               << "Options:\n"
               << "\t--mode <ECB|CBC>         Operation mode (default: CBC)\n"
               << "\t--key-length <bits>      Key length: 128, 192, or 256 (default: 128)\n"
+              << "\t--show-metrics           Show statistical metrics from input and output\n"
               << "\t--help                   Show this help message\n";
 }
