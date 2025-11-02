@@ -1,5 +1,6 @@
 #include"../include/data_randomness.hpp"
 #include<cmath>		// For abs, sqrt, ...
+#include <cstring>
 #include<stdexcept>
 
 DataRandomness::~DataRandomness(){
@@ -94,6 +95,15 @@ DataRandomness::DataRandomness(const std::vector<std::byte>& data) : data_size(d
 	this->calculate_entropy();
 	this->calculate_ChiSquare();
 	this->rmetrics->CorrelationAdjacentByte = this->calculateCorrelation(data, 1);
+}
+
+DataRandomness::DataRandomness(const DataRandomness& source){
+	if(source.rmetrics != nullptr){
+		this->rmetrics = new RandomnessMetrics;
+		*(this->rmetrics) = *(source.rmetrics);
+	}
+	this->data_size = source.data_size;
+	memcpy(this->byteValueFrequence,source.byteValueFrequence,256);
 }
 
 double DataRandomness::calculateCorrelation(const std::vector<std::byte>& data, size_t offset) {
