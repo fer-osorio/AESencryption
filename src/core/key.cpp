@@ -2,7 +2,6 @@
 #include<string>
 #include<cstring>
 #include<random>
-#include<exception>
 #include"../../data-encryption/include/constants.h"
 #include"../../include/key.hpp"
 #include"../utils/print_bytes.hpp"
@@ -65,7 +64,7 @@ Key::Key(const char*const fname): lenBits(LengthBits::_128), lenBytes(BLOCK_SIZE
                     this->lenBits = static_cast<LengthBits>(keyLen);
                 else {
                     throw std::runtime_error(
-                        "In file Source/AES.cpp, function Key::Key(const char*const fname):"
+                        "In file src/core/key.cpp, function Key::Key(const char*const fname):"
                         + std::to_string(static_cast<int>(keyLen)) + " is not a valid length (in bits) for key.\n"
                     );
                 }
@@ -76,20 +75,20 @@ Key::Key(const char*const fname): lenBits(LengthBits::_128), lenBytes(BLOCK_SIZE
                     delete[] this->data;
                     this->data = nullptr;
                     throw std::runtime_error(
-                        "In file Source/AES.cpp, function Key::Key(const char*const fname): "
+                        "In file src/core/key.cpp, function Key::Key(const char*const fname): "
                         "File is truncated or corrupted. Expected " + std::to_string(this->lenBytes) +
                         " bytes of key data, but could only read " + std::to_string(file.gcount()) + " bytes.\n"
                     );
                 }
            } else {
                 throw std::runtime_error(
-                    "In file Source/AES.cpp, function Key::Key(const char*const fname): String "
+                    "In file src/core/key.cpp, function Key::Key(const char*const fname): String "
                     + std::string(fname) + " does not represent a valid AES key file.\n"
                 );
            }
     } else {
         throw std::runtime_error(
-            "In file Source/AES.cpp, function Key::Key(const char*const fname): Failed to open " + std::string(fname)
+            "In file src/core/key.cpp, function Key::Key(const char*const fname): Failed to open " + std::string(fname)
         );
     }
 }
