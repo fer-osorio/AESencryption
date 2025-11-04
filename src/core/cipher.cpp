@@ -82,13 +82,28 @@ static size_t getKeyExpansionByteLenFromNr(size_t Nr){
 
 Cipher::OperationMode::OperationMode(){}
 
+static constexpr uint64_t KEY_EXPANSION_LENGTH_128_UINT64 = KEY_EXPANSION_LENGTH_128_BYTES / 8;
 Cipher::OperationMode::OperationMode(Identifier ID) : ID_(ID){
     switch(ID){
         case Identifier::ECB:
             break;
-        case Identifier::CBC:
+        case Identifier::CBC: {
+            union {
+                uint8_t  data08[KEY_EXPANSION_LENGTH_128_BYTES];
+                uint64_t data64[KEY_EXPANSION_LENGTH_128_UINT64];
+            } dummyKeyExpansion;
+            uint64_t initialValue = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+            for(size_t i = 0; i < KEY_EXPANSION_LENGTH_128_UINT64; i++) dummyKeyExpansion.data64[i] = initialValue++;
+            union {
+                uint8_t  data08[BLOCK_SIZE];
+                uint64_t data64[2];
+            } dummyBlock;
+            dummyBlock.data64[0] = initialValue++;
+            dummyBlock.data64[1] = initialValue;
             this->IV_ = new InitVector;
+            encryptECB(dummyBlock.data08, BLOCK_SIZE, dummyKeyExpansion.data08, 128, this->IV_->data);
             break;
+        }
         case Identifier::Unknown:
             break;
     }
@@ -146,8 +161,7 @@ Cipher::Config::Config(OperationMode optMode, Key::LengthBits klb):
     operationMode(optMode),
     Nk_(getNkfromLenbit(klb)),
     Nr(getNrFromNk(this->Nk_)),
-    keyExpansionLengthBytes(getKeyExpansionByteLenFromNr(this->Nr)){
-}
+    keyExpansionLengthBytes(getKeyExpansionByteLenFromNr(this->Nr)){}
 
 Cipher::OperationMode::Identifier Cipher::Config::getOperationModeID() const{
     return this->operationMode.getOperationModeID();
@@ -173,13 +187,14 @@ bool Cipher::Config::setInitialVector(const std::vector<uint8_t>& source){
     return this->operationMode.setInitialVector(source);
 }
 
-Cipher::Cipher(): config(OperationMode::Identifier::ECB, Key::LengthBits::_128) {
+Cipher::Cipher(): config(OperationMode(OperationMode::Identifier::ECB), Key::LengthBits::_128) {
     size_t keyExpLen = this->config.getKeyExpansionLengthBytes();
     this->keyExpansion = new uint8_t[keyExpLen];
     for(size_t i = 0; i < keyExpLen; i++) this->keyExpansion[i] = 0;            // -Building key expansion with zeros
 }
 
-Cipher::Cipher(const Key::LengthBits lenBits, const OperationMode::Identifier optModeID): config(optModeID, lenBits){
+Cipher::Cipher(const Key::LengthBits lenBits, const OperationMode::Identifier optModeID):
+    config(optModeID, lenBits) {
     this->buildKeyExpansion();
 }
 
