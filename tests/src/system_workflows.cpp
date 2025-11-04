@@ -157,7 +157,7 @@ SystemTests::~SystemTests(){
 
 // SYSTEM TEST 1: Complete Text File Encryption Workflow
 bool SystemTests::test_file_encryption_workflow() {
-    TEST_SUITE("Text File Encryption E2E Workflow");
+    TEST_SUITE("File Encryption E2E Workflow");
     bool success = true;
 
     // Step 2: Generate encryption key
@@ -198,6 +198,21 @@ bool SystemTests::test_file_encryption_workflow() {
     // Step 6: Verify decrypted content matches original
     std::vector<uint8_t> decrypted_content = SystemUtils::read_file(this->decryptedOriginalValidPath, this->ff_ != FileFormat::TEXT);
     success &= ASSERT_TRUE(decrypted_content == test_content, "Decrypted content should match original");
+    if(!(decrypted_content == test_content)){
+        std::cout << "Original size: " << test_content.size() << std::endl;
+        std::cout << "Decrypted size: " << decrypted_content.size() << std::endl;
+
+        if (test_content.size() == decrypted_content.size()) {
+            for (size_t i = 0; i < test_content.size(); i++) {
+                if (test_content[i] != decrypted_content[i]) {
+                    std::cout << "First mismatch at byte " << i << std::endl;
+                    std::cout << "Original: " << std::hex << (int)test_content[i] << std::endl;
+                    std::cout << "Decrypted: " << std::hex << (int)decrypted_content[i] << std::endl;
+                    break;
+                }
+            }
+        }
+    }
 
     PRINT_RESULTS();
     return success;
