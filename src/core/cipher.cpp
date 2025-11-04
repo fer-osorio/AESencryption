@@ -95,7 +95,7 @@ Cipher::OperationMode::OperationMode(Identifier ID) : ID_(ID){
 }
 
 Cipher::OperationMode::OperationMode(const OperationMode& optMode): ID_(optMode.ID_){
-    if(optMode.IV_ != nullptr){
+    if(optMode.IV_ != nullptr) {
         this->IV_ = new InitVector;
         std::memcpy(this->IV_->data, optMode.IV_, BLOCK_SIZE);
     }
@@ -176,10 +176,14 @@ bool Cipher::Config::setInitialVector(const std::vector<uint8_t>& source){
 Cipher::Cipher(): config(OperationMode::Identifier::ECB, Key::LengthBits::_128) {
     size_t keyExpLen = this->config.getKeyExpansionLengthBytes();
     this->keyExpansion = new uint8_t[keyExpLen];
-    for(size_t i = 0; i < keyExpLen; i++) this->keyExpansion[i] = 0;            // -Since the default key constitutes of just zeros, key expansion is also just zeros
+    for(size_t i = 0; i < keyExpLen; i++) this->keyExpansion[i] = 0;            // -Building key expansion with zeros
 }
 
-Cipher::Cipher(const Key& k, const OperationMode::Identifier optModeID): key(k), config(optModeID, k.getLenBits()) {
+Cipher::Cipher(const Key::LengthBits lenBits, const OperationMode::Identifier optModeID): config(optModeID, lenBits){
+    this->buildKeyExpansion();
+}
+
+Cipher::Cipher(const Key& k, const OperationMode& optMode): key(k), config(optMode,k.getLenBits()) {
     this->buildKeyExpansion();
 }
 
