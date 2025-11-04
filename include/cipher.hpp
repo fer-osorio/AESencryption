@@ -65,24 +65,30 @@ private:
 	Cipher();								// -The default constructor will set the key expansion as zero in every element.
 
 public:
-	Cipher(const Key&, const OperationMode::Identifier);
-	Cipher(const Cipher& a);
+	/**
+	 * @brief Builds totally new Cipher object (New key, new initial vector if required) with passed parameters
+	 */
+	Cipher(const Key::LengthBits, const OperationMode::Identifier);
+
+	/**
+	 * @brief Builds Cipher with the given key, operation mode and additional required vectors if any.
+	 */
+	Cipher(const Key&, const OperationMode&);
+	Cipher(const Cipher&);
 	~Cipher();
 
 	Cipher& operator = (const Cipher& a);
 	friend std::ostream& operator << (std::ostream& st, const Cipher& c);
 
-	/*
-	 * Encrypts data contatined in data vector using the key in cipher this object
-	 * Interface with Encryptor object
-	 * Consider: Throws std::invalid_argument, EncryptionException, AESException
+	/**
+	 * @brief Encrypts data contained in input vector and writes the result in output vector
+	 * @throws std::invalid_argument, EncryptionException, AESException
 	 * */
 	void encryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output) const override;
 
-	/*
-	 * Decrypts data contatined in data vector using the key in cipher this object
-	 * Interface with Encryptor object
-	 * Consider: Throws std::invalid_argument, EncryptionException, AESException
+	/**
+	 * @brief Decrypts data contained in input vector and writes the result in output vector
+	 * @throws std::invalid_argument, EncryptionException, AESException
 	 * */
 	void decryption(const std::vector<uint8_t>& input, std::vector<uint8_t>& output) const override;
 
