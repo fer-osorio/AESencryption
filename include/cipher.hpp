@@ -30,7 +30,7 @@ public:
 		InitVector* IV_ = nullptr;						// -Initial vector in case of CBC operation mode
 	public:
 		OperationMode();
-		OperationMode(Identifier);
+		explicit OperationMode(Identifier);
 		OperationMode(const OperationMode&);
 		OperationMode& operator=(const OperationMode&);
 		~OperationMode();

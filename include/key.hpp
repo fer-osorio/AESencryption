@@ -25,7 +25,7 @@ private:
 	// The following private constructor can only be acceced by Cipher class, the intention is to have well-constructed keys for the user.
 	Key();
 public:
-	Key(LengthBits);
+	explicit Key(LengthBits);
 	/*
 	 * Consider: Throws exception when the size of the passed vector argument key_ is insuficient
 	 * */
@@ -33,7 +33,7 @@ public:
 	/*
 	 * Consider: Throws exception when file does not exist or when file is not valid
 	 * */
-	Key(const char*const fname);						// -Building from binary file.
+	explicit Key(const char*const fname);						// -Building from binary file.
 	Key(const Key&);
 	~Key();
 
