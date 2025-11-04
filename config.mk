@@ -12,7 +12,7 @@ CC = gcc
 
 # Compiler configuration
 # Base flags
-BASE_CFLAGS = -Wall -Wextra -Wpedantic -Wformat=2 -Wcast-align -Wcast-qual \
+BASE_CFLAGS = -Wall -Wextra -Wpedantic -Wformat=2 -Wcast-align -Wcast-qual -Wstrict-aliasing=2 \
               -Wdisabled-optimization -Winit-self -Wlogical-op -Wmissing-declarations \
               -Wmissing-include-dirs -Wredundant-decls -Wshadow -Wstrict-overflow=5 \
               -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option
@@ -47,17 +47,21 @@ BUILD_TYPE ?= debug
 
 # Build type specific flags
 ifeq ($(BUILD_TYPE),debug)
-    CFLAGS   = $(BASE_CFLAGS) $(DEBUG) $(NO_OPTIMIZE)
-    CXXFLAGS = $(BASE_CXXFLAGS) $(DEBUG) $(NO_OPTIMIZE)
-    LDFLAGS  = $(MEMORY_DEBUG_FLAGS)
+    CFLAGS   ?= $(BASE_CFLAGS) $(DEBUG) $(NO_OPTIMIZE)
+    CXXFLAGS ?= $(BASE_CXXFLAGS) $(DEBUG) $(NO_OPTIMIZE)
+    LDFLAGS  ?= $(MEMORY_DEBUG_FLAGS)
 else ifeq ($(BUILD_TYPE),test)
-    CFLAGS = $(BASE_CFLAGS) -g $(NO_OPTIMIZE) $(COVERAGE_FLAGS)
-    CXXFLAGS = $(BASE_CXXFLAGS) -g $(NO_OPTIMIZE) $(COVERAGE_FLAGS)
-    LDFLAGS = $(COVERAGE_FLAGS)
+    CFLAGS ?= $(BASE_CFLAGS) -g $(NO_OPTIMIZE) $(COVERAGE_FLAGS)
+    CXXFLAGS ?= $(BASE_CXXFLAGS) -g $(NO_OPTIMIZE) $(COVERAGE_FLAGS)
+    LDFLAGS ?= $(COVERAGE_FLAGS)
 else ifeq ($(BUILD_TYPE),profile)
-    CFLAGS = $(BASE_CFLAGS) -g $(OPTIMIZE) $(PROFILING_FLAGS)
-    CXXFLAGS = $(BASE_CXXFLAGS) -g $(OPTIMIZE) $(PROFILING_FLAGS)
-    LDFLAGS = $(PROFILING_FLAGS)
+    CFLAGS ?= $(BASE_CFLAGS) -g $(OPTIMIZE) $(PROFILING_FLAGS)
+    CXXFLAGS ?= $(BASE_CXXFLAGS) -g $(OPTIMIZE) $(PROFILING_FLAGS)
+    LDFLAGS ?= $(PROFILING_FLAGS)
+else # release
+    CFLAGS ?= $(BASE_CFLAGS) -O3 -DNDEBUG -march=native -flto
+    CXXFLAGS ?= $(BASE_CXXFLAGS) -O3 -DNDEBUG -march=native -flto
+    LDFLAGS ?= -flto
 endif
 
 # Library flags
