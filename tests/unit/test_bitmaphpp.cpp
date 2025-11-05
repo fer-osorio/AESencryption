@@ -3,7 +3,6 @@
 #include "../include/bitmap_fixture.hpp"
 #include "../include/test_framework.hpp"
 #include <filesystem>
-#include <fstream>
 #include <sstream>
 
 namespace fs = std::filesystem;
