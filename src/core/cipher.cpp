@@ -199,7 +199,7 @@ Cipher::Cipher(): config(OperationMode(OperationMode::Identifier::ECB), Key::Len
 }
 
 Cipher::Cipher(const Key::LengthBits lenBits, const OperationMode::Identifier optModeID):
-    config(optModeID, lenBits) {
+    config(OperationMode(optModeID), lenBits) {
     this->buildKeyExpansion();
 }
 
@@ -257,7 +257,7 @@ std::ostream& AESencryption::operator<<(std::ostream& ost, const Cipher& c) {
     return ost;
 }
 
-Cipher::OperationMode Cipher::buildOperationMode(const OperationMode::Identifier optModeID){
+/*Cipher::OperationMode Cipher::buildOperationMode(const OperationMode::Identifier optModeID){
     switch(optModeID){
         case OperationMode::Identifier::ECB:
             return OperationMode(optModeID);
@@ -278,7 +278,7 @@ Cipher::OperationMode Cipher::buildOperationMode(const OperationMode::Identifier
             return OperationMode(optModeID);
     }
     return OperationMode(optModeID);
-}
+}*/
 
 void Cipher::buildKeyExpansion() {
     // Validate input first at C++ level for better error messages
@@ -467,7 +467,7 @@ void Cipher::decryption(const std::vector<uint8_t>& input, std::vector<uint8_t>&
 void Cipher::saveKey(const char*const fname) const{
     this->key.save(fname);
 }
-Cipher::OperationMode Cipher::getOptModeID() const{
+Cipher::OperationMode::Identifier Cipher::getOptModeID() const{
     return this->config.getOperationModeID();
 }
 
