@@ -35,11 +35,15 @@ public:
 		OperationMode& operator=(const OperationMode&);
 		~OperationMode();
 
-		static OperationMode buildInCBCmode(const InitVector& IVsource);
-
 		Identifier getOperationModeID() const;
 		const uint8_t* getIVpointerData() const;
 		bool setInitialVector(const std::vector<uint8_t>& source);
+
+		static const char* identifier_to_string(Identifier);
+		static Identifier string_to_identifier(const std::string&);
+
+		void save(const std::string& filepath) const;
+		static OperationMode loadFromFile(const std::string& filepath);
 	};
 	struct Config{
 	private:
