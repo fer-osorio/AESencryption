@@ -60,7 +60,7 @@ bool test_successful_operations(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
     try {
         // Test operation mode
         AESKEY key(example->getKeyAsVector(), klb);
-        AESCIPHER ciph(key, mode);
+        AESCIPHER ciph(key, AESCIPHER::OperationMode(mode));
         ciph.setInitialVectorForTesting(std::vector<uint8_t>(NIST::getInitializationVectorAsStdVector()));
 
         // Verify key expansion is initialized
@@ -100,7 +100,7 @@ bool test_empty_vector_exceptions(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
     bool success = true;
 
     AESKEY key(klb);
-    AESCIPHER cipher(key, mode);
+    AESCIPHER cipher(key, AESCIPHER::OperationMode(mode));
 
     std::vector<uint8_t> input(NIST_TEXTSIZE);
     std::vector<uint8_t> output(NIST_TEXTSIZE);
@@ -162,7 +162,7 @@ bool test_invalid_size_exceptions(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
     bool success = true;
 
     AESKEY key(klb);
-    AESCIPHER cipher(key, mode);
+    AESCIPHER cipher(key, AESCIPHER::OperationMode(mode));
 
     std::vector<uint8_t> invalid_input(15);
     std::vector<uint8_t> output(NIST_TEXTSIZE);
@@ -199,7 +199,7 @@ bool test_exception_safety(AESKEY_LENBITS klb, AESCIPHER_OPTMODE mode) {
     bool success = true;
 
     AESKEY key(klb);
-    AESCIPHER cipher(key, mode);
+    AESCIPHER cipher(key, AESCIPHER::OperationMode(mode));
 
     uint8_t input[NIST_TEXTSIZE];
     uint8_t output[NIST_TEXTSIZE];
@@ -237,7 +237,9 @@ bool test_cbc_mode_iv_handling(AESKEY_LENBITS klb) {
 
     try {
         AESencryption::Key cbc_key(klb);
-        AESCIPHER cbc_cipher(cbc_key, AESCIPHER_OPTMODE::CBC);
+        AESCIPHER cbc_cipher(
+            cbc_key, AESCIPHER::OperationMode(AESCIPHER_OPTMODE::CBC)
+        );
 
         std::vector<uint8_t> input(NIST_TEXTSIZE);
         std::vector<uint8_t> output(NIST_TEXTSIZE);
