@@ -5,6 +5,7 @@
 #include"../utils/print_bytes.hpp"
 #include<cstring>
 #include<chrono>
+#include<fstream>
 
 struct AESencryption::InitVector{
     uint8_t data[BLOCK_SIZE];
@@ -150,15 +151,106 @@ bool Cipher::OperationMode::setInitialVector(const std::vector<uint8_t>& source)
     return true;
 }
 
+const char* Cipher::OperationMode::identifier_to_string(Identifier ID){
+    switch(ID) {
+        case Identifier::Unknown:
+            return "Unknown";
+        case Identifier::ECB:
+            return "ECB";
+        case Identifier::CBC:
+            return "CBC";
+    }
+}
+
+Cipher::OperationMode::Identifier Cipher::OperationMode::string_to_identifier(const std::string& str){
+    if(str == "ECB")
+        return Identifier::ECB;
+    if(str == "CBC")
+        return Identifier::CBC;
+
+    return Identifier::Unknown;
+}
+
+void Cipher::OperationMode::save(const std::string& filepath) const{
+    if(this->IV_ == nullptr) return;
+    std::ofstream file;
+    file.open(filepath, std::ios::binary);
+    if(file.is_open()) {
+        char metadata[10] = "OM";
+        strcat(metadata, identifier_to_string(this->ID_));
+        file.write(metadata, 5);
+        switch(this->ID_) {
+            case Identifier::Unknown:
+                break;
+            case Identifier::ECB:
+                break;
+            case Identifier::CBC:
+                file.write(reinterpret_cast<const char*>(&this->IV_->data), BLOCK_SIZE);
+                break;
+        }
+        if (!file) {
+            throw std::runtime_error(
+                "In function void void Cipher::OperationMode::save(const std::string& filepath): "
+                "Failed to write operation mode data to file: " + filepath
+            );
+        }
+    } else {
+        throw std::runtime_error(
+            "In function void Cipher::OperationMode::save(const std::string& filepath): Failed to write "
+            + std::string(filepath) + " file.\n"
+        );
+    }
+}
+
+Cipher::OperationMode Cipher::OperationMode::loadFromFile(const std::string& filepath) {
+    std::ifstream file;
+    file.open(filepath, std::ios::binary);
+    char metadata[5];
+    Cipher::OperationMode optmode_out;
+
+    if(file.is_open()){
+        file.read(const_cast<char*>(metadata), static_cast<std::streamsize>(5)); // -Determining if file is a .data file
+        if(memcmp(metadata, "OM", 2) == 0) {
+            char optmode_str[4];
+            file.read(optmode_str, 3); optmode_str[3] = 0;
+            optmode_out.ID_ = string_to_identifier(optmode_str);
+            switch(optmode_out.ID_){
+                case Identifier::Unknown:
+                    break;
+                case Identifier::ECB:
+                    break;
+                case Identifier::CBC:
+                    file.read(reinterpret_cast<char*>(optmode_out.IV_->data),BLOCK_SIZE);
+                    if (!file || file.gcount() != BLOCK_SIZE) {
+                        //delete[] this->data;
+                        //this->data = nullptr;
+                        throw std::runtime_error(
+                            "In file src/core/cipher.cpp, function void Cipher::OperationMode::loadInitialVector(const std::string& filepath) const: File is truncated or corrupted. Expected " + std::to_string(BLOCK_SIZE) + " bytes of key data, but could only read " + std::to_string(file.gcount()) + " bytes.\n"
+                        );
+                    }
+            }
+        } else{
+            throw std::runtime_error(
+                "In file src/core/cipher.cpp, function void Cipher::OperationMode::loadFromFile(const std::string& filepath) const: String " + filepath + " does not represent a valid operation mode file.\n"
+            );
+        }
+    } else{
+        throw std::runtime_error(
+            "In file src/core/key.cpp, function void Cipher::OperationMode::loadFromFile(const std::string& filepath) const: Failed to open " + filepath
+        );
+    }
+    return optmode_out;
+}
+
 Cipher::OperationMode::~OperationMode(){
     if(this->IV_ != nullptr) delete this->IV_;
 }
 
-Cipher::OperationMode Cipher::OperationMode::buildInCBCmode(const InitVector& IVsource){
+/*Cipher::OperationMode Cipher::OperationMode::buildInCBCmode(const InitVector& IVsource){
     OperationMode optMode(OperationMode::Identifier::CBC);
     std::memcpy(optMode.IV_->data, IVsource.data, BLOCK_SIZE);
     return optMode;
-}
+}*/
 
 Cipher::Config::Config(): Nk_(NK128), Nr(NR128), keyExpansionLengthBytes(KEY_EXPANSION_LENGTH_128_BYTES) {}
 
