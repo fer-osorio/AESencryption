@@ -6,10 +6,10 @@
 #include "../../include/key.hpp"
 #include "../include/NIST_SP_800-38A_TestVectors.hpp"
 #include <cstring>
-#include <stdexcept>
 
 #define AESKEY AESencryption::Key
 #define AESENC_KEYLEN AESencryption::Key::LengthBits
+#define AESCIPHER AESencryption::Cipher
 #define AESENC_OPTMODE AESencryption::Cipher::OperationMode::Identifier
 
 bool test_specific_exception_code_mapping(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
@@ -97,7 +97,7 @@ bool test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     size_t ke_lenbytes = getKeyExpansionLengthBytesfromKeylenBits(static_cast<enum KeylenBits_t>(keylen));
     std::vector<uint8_t> dumm(keylen/8, 1);
     AESKEY key(dumm, klb);
-    AESencryption::Cipher cipher(key, mode);
+    AESencryption::Cipher cipher(key, AESCIPHER::OperationMode(mode));
 
     success &= ASSERT_TRUE(
         cipher.isKeyExpansionInitialized(),
@@ -152,7 +152,7 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
 
         // C++ wrapper implementation
         AESKEY cpp_key(example->getKeyAsVector(), klb);
-        AESencryption::Cipher cpp_cipher(cpp_key, mode);
+        AESencryption::Cipher cpp_cipher(cpp_key, AESCIPHER::OperationMode(mode));
 
         enum ExceptionCode c_result = [&]() -> enum ExceptionCode{
             switch(mode){
