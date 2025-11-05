@@ -110,7 +110,7 @@ public:
 
 
 	void saveKey(const char*const fname) const;
-	OperationMode getOptModeID() const;
+	OperationMode::Identifier getOptModeID() const;
 
 	// For testing purposes
 	const uint8_t* getKeyExpansionForTesting() const;
@@ -119,13 +119,13 @@ public:
 	bool setInitialVectorForTesting(const std::vector<uint8_t>& source);
 
 	private:
-	OperationMode buildOperationMode(const OperationMode::Identifier);
+	//OperationMode buildOperationMode(const OperationMode::Identifier);
 	/*
 	 * Creates key expansion
 	 * Consider: Trows KeyExpansionException
 	 * */
 	void buildKeyExpansion();
-	void formInitialVector();						// -Creates initial vector and writes it on destination array
+	//void formInitialVector();						// -Creates initial vector and writes it on destination array
 };
 };
 #endif
