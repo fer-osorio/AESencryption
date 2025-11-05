@@ -155,7 +155,7 @@ void Key::save(const char*const fname) const {
     }
     } else {
         throw std::runtime_error(
-            "In file Source/AES.cpp, function void Key::save(const char* const fname): Failed to write "
+            "In function void Key::save(const char* const fname): Failed to write "
             + std::string(fname) + " file.\n"
         );
     }
