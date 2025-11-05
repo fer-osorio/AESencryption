@@ -19,7 +19,7 @@ struct CryptoConfig {
     std::filesystem::path key_file;
     std::filesystem::path input_file;
     std::filesystem::path output_file;
-    std::filesystem::path IV_file; // Initial vector, in case of CBC mode
+    std::filesystem::path mode_file; // Initial vector, in case of CBC mode
 
     // Optional parameters with defaults
     AESencryption::Key::LengthBits key_length = AESencryption::Key::LengthBits::_128;

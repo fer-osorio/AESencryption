@@ -20,8 +20,8 @@ bool CryptoConfig::validate() {
                 return false;
             }
             if(this->operation == Operation::DECRYPT){
-                if(this->operation_mode == AESencryption::Cipher::OperationMode::Identifier::CBC){
-                    this->error_message = "For CBC operation mode, initail vector file is required";
+                if(this->mode_file.empty() && this->operation_mode != AESencryption::Cipher::OperationMode::Identifier::ECB){
+                    this->error_message = "Missing initial vector, nonce, counter or oder required data";
                     return false;
                 }
             }
@@ -87,8 +87,8 @@ CryptoConfig ArgumentParser::parse() {
         else if (arg == "--output" && i + 1 < argc) {
             this->config.output_file = argv[++i];
         }
-        else if (arg == "--iv" && i + 1 < argc) {
-            this->config.IV_file = argv[++i];
+        else if (arg == "--mode-required" && i + 1 < argc) {
+            this->config.mode_file = argv[++i];
         }
         else if (arg == "--mode" && i + 1 < argc) {
             std::string mode(argv[++i]);
@@ -154,12 +154,13 @@ void ArgumentParser::print_help() const{
     std::cout << this->argv[0] << ". AES Encryption Tool\n\n"
               << "Usage:\n"
               << "\tEncryption\t" << this->argv[0] << " --encrypt --key <keyfile> --input <file> --output <file> [options]\n"
-              << "\tDecryption\t" << this->argv[0] << " --decrypt --key <keyfile> --input <file> --output <file> [require-vectors] [options]\n"
+              << "\tDecryption\t" << this->argv[0] << " --decrypt --key <keyfile> --input <file> --output <file> --mode-file <file> [options]\n"
               << "\tKey Generation:\t" << this->argv[0] << " --generate-key --key-length <bits> --output <file>\n\n"
               << "Options:\n"
               << "\t--key-length <bits>      Key length: 128, 192, or 256 (default: 128)\n"
               << "\t--mode <ECB|CBC>         Operation mode (default: CBC)\n"
-              << "\t--iv <file>              Initial vector\n"
               << "\t--show-metrics           Show statistical metrics from input and output\n"
-              << "\t--help                   Show this help message\n";
+              << "\t--help                   Show this help message\n"
+              << "Required vectors\n"
+              << "\t--mode-required <file>   Required data for specific operation mode\n";
 }
