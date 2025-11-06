@@ -87,7 +87,7 @@ CryptoConfig ArgumentParser::parse() {
         else if (arg == "--output" && i + 1 < argc) {
             this->config.output_file = argv[++i];
         }
-        else if (arg == "--mode-required" && i + 1 < argc) {
+        else if (arg == "--mode-data" && i + 1 < argc) {
             this->config.mode_file = argv[++i];
         }
         else if (arg == "--mode" && i + 1 < argc) {
@@ -159,8 +159,7 @@ void ArgumentParser::print_help() const{
               << "Options:\n"
               << "\t--key-length <bits>      Key length: 128, 192, or 256 (default: 128)\n"
               << "\t--mode <ECB|CBC>         Operation mode (default: CBC)\n"
+              << "\t--mode-data <file>       Required data for specific operation mode\n"
               << "\t--show-metrics           Show statistical metrics from input and output\n"
-              << "\t--help                   Show this help message\n"
-              << "Required vectors\n"
-              << "\t--mode-required <file>   Required data for specific operation mode\n";
+              << "\t--help                   Show this help message\n";
 }
