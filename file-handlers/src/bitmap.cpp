@@ -1,8 +1,6 @@
 #include"../include/bitmap.hpp"
 #include<fstream>
 #include<cstring>
-#include<cmath>
-#include<exception>
 
 using namespace File;
 
