@@ -60,6 +60,7 @@ public:
 		size_t getKeyExpansionLengthBytes() const;
 		const uint8_t* getIVpointerData() const;
 		bool setInitialVector(const std::vector<uint8_t>& source);
+		void saveOperationMode(const std::string& filepath) const;
 	};
 private:
 	Key key = Key();
@@ -113,7 +114,9 @@ public:
 	void decrypt(const uint8_t*const data, size_t size, uint8_t*const output)const;
 
 
-	void saveKey(const char*const fname) const;
+	void saveKey(const std::string& filepath) const;
+	void saveOperationMode(const std::string& filepath) const;
+
 	OperationMode::Identifier getOptModeID() const;
 
 	// For testing purposes

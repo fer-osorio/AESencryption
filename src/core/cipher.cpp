@@ -284,6 +284,14 @@ bool Cipher::Config::setInitialVector(const std::vector<uint8_t>& source){
     return this->operationMode.setInitialVector(source);
 }
 
+void Cipher::Config::saveOperationMode(const std::string& filepath) const{
+    try {
+        this->operationMode.save(filepath);
+    } catch(const std::exception& e){
+        throw;
+    }
+}
+
 Cipher::Cipher(): config(OperationMode(OperationMode::Identifier::ECB), Key::LengthBits::_128) {
     size_t keyExpLen = this->config.getKeyExpansionLengthBytes();
     this->keyExpansion = new uint8_t[keyExpLen];
@@ -556,9 +564,22 @@ void Cipher::decryption(const std::vector<uint8_t>& input, std::vector<uint8_t>&
     }
 }
 
-void Cipher::saveKey(const char*const fname) const{
-    this->key.save(fname);
+void Cipher::saveKey(const std::string& filepath) const{
+    try{
+        this->key.save(filepath);
+    }catch(const std::exception& e){
+        throw;
+    }
 }
+
+void Cipher::saveOperationMode(const std::string& filepath) const{
+    try{
+        this->config.saveOperationMode(filepath);
+    }catch(const std::exception& e){
+        throw;
+    }
+}
+
 Cipher::OperationMode::Identifier Cipher::getOptModeID() const{
     return this->config.getOperationModeID();
 }
