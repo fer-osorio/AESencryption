@@ -51,11 +51,11 @@ Key::Key(const Key& k): lenBits(k.lenBits), lenBytes(k.lenBytes) {
 constexpr static const char* keyFileHeaderID = "AESKEY";
 constexpr const size_t headerLen = 6;
 
-Key::Key(const char*const fname): lenBits(LengthBits::_128), lenBytes(BLOCK_SIZE) {
+Key::Key(const std::string& filepath): lenBits(LengthBits::_128), lenBytes(BLOCK_SIZE) {
     char headerID[headerLen];
     uint16_t keyLen;
     std::ifstream file;
-    file.open(fname, std::ios::binary);
+    file.open(filepath, std::ios::binary);
     if(file.is_open()) {
         file.read(const_cast<char*>(headerID), static_cast<std::streamsize>(headerLen)); // -Determining if file is a .data file
         if(memcmp(headerID, "AESKEY", headerLen) == 0) {
@@ -64,7 +64,7 @@ Key::Key(const char*const fname): lenBits(LengthBits::_128), lenBytes(BLOCK_SIZE
                     this->lenBits = static_cast<LengthBits>(keyLen);
                 else {
                     throw std::runtime_error(
-                        "In file src/core/key.cpp, function Key::Key(const char*const fname):"
+                        "In file src/core/key.cpp, function Key::Key(const std::string& filepath):"
                         + std::to_string(static_cast<int>(keyLen)) + " is not a valid length (in bits) for key.\n"
                     );
                 }
@@ -75,20 +75,20 @@ Key::Key(const char*const fname): lenBits(LengthBits::_128), lenBytes(BLOCK_SIZE
                     delete[] this->data;
                     this->data = nullptr;
                     throw std::runtime_error(
-                        "In file src/core/key.cpp, function Key::Key(const char*const fname): "
+                        "In file src/core/key.cpp, function Key::Key(const std::string& filepath): "
                         "File is truncated or corrupted. Expected " + std::to_string(this->lenBytes) +
                         " bytes of key data, but could only read " + std::to_string(file.gcount()) + " bytes.\n"
                     );
                 }
            } else {
                 throw std::runtime_error(
-                    "In file src/core/key.cpp, function Key::Key(const char*const fname): String "
-                    + std::string(fname) + " does not represent a valid AES key file.\n"
+                    "In file src/core/key.cpp, function Key::Key(const std::string& filepath): String "
+                    + filepath + " does not represent a valid AES key file.\n"
                 );
            }
     } else {
         throw std::runtime_error(
-            "In file src/core/key.cpp, function Key::Key(const char*const fname): Failed to open " + std::string(fname)
+            "In file src/core/key.cpp, function Key::Key(const std::string& filepath): Failed to open " + filepath
         );
     }
 }
@@ -140,23 +140,23 @@ std::ostream& AESencryption::operator<<(std::ostream& ost, const Key& k) {
     return ost;
 }
 
-void Key::save(const char*const fname) const {
+void Key::save(const std::string& filepath) const {
     std::ofstream file;
-    file.open(fname, std::ios::binary);
+    file.open(filepath, std::ios::binary);
     if(file.is_open()) {
         file.write(keyFileHeaderID, headerLen);                                                 // -File type
         file.write(reinterpret_cast<const char*>(&this->lenBits), 2);           // -Key lenBits in bits
         file.write(reinterpret_cast<char*>(this->data), static_cast<std::streamsize>(this->lenBytes));
         if (!file) {
             throw std::runtime_error(
-            "In function void Key::save(const char*const fname) const: "
-            "Failed to write key data to file: " + std::string(fname)
+            "In function void Key::save(const std::string& filepath) const: "
+            "Failed to write key data to file: " + filepath
         );
     }
     } else {
         throw std::runtime_error(
-            "In function void Key::save(const char* const fname): Failed to write "
-            + std::string(fname) + " file.\n"
+            "In function void Key::save(const char* const filepath): Failed to write "
+            + filepath + " file.\n"
         );
     }
 }

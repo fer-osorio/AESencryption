@@ -33,7 +33,7 @@ public:
 	/*
 	 * Consider: Throws exception when file does not exist or when file is not valid
 	 * */
-	explicit Key(const char*const fname);						// -Building from binary file.
+	explicit Key(const std::string& filepath);						// -Building from binary file.
 	Key(const Key&);
 	~Key();
 
@@ -47,7 +47,7 @@ public:
 
 	const uint8_t* getDataForTesting() const;
 
-	void save(const char*const fname) const;				// -Saving information in a binary file.
+	void save(const std::string& filepath) const;				// -Saving information in a binary file.
 private:
 	// -Writes key in destination. Warning: We're supposing we have enough space in
 	//  destination array.
