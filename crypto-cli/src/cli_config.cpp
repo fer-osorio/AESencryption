@@ -64,6 +64,20 @@ AESencryption::Key CryptoConfig::create_key() const {
     }
 }
 
+AESencryption::Cipher::OperationMode CryptoConfig::create_optmode() const{
+    if(!this->is_valid){
+        throw std::runtime_error("Cannot create operation mode object from invalid configuration");
+    }
+    if(!this->mode_file.empty()){
+        try{
+            return AESencryption::Cipher::OperationMode::loadFromFile(this->mode_file);
+        } catch(const std::exception& e){
+            throw;
+        }
+    }
+    return AESencryption::Cipher::OperationMode(this->operation_mode);
+}
+
 ArgumentParser::ArgumentParser(int argc_, const char** argv_) : argc(argc_), argv(argv_) {}
 
 CryptoConfig ArgumentParser::parse() {
@@ -154,7 +168,7 @@ void ArgumentParser::print_help() const{
     std::cout << this->argv[0] << ". AES Encryption Tool\n\n"
               << "Usage:\n"
               << "\tEncryption\t" << this->argv[0] << " --encrypt --key <keyfile> --input <file> --output <file> [options]\n"
-              << "\tDecryption\t" << this->argv[0] << " --decrypt --key <keyfile> --input <file> --output <file> --mode-file <file> [options]\n"
+              << "\tDecryption\t" << this->argv[0] << " --decrypt --key <keyfile> --input <file> --output <file> --mode-data <file> [options]\n"
               << "\tKey Generation:\t" << this->argv[0] << " --generate-key --key-length <bits> --output <file>\n\n"
               << "Options:\n"
               << "\t--key-length <bits>      Key length: 128, 192, or 256 (default: 128)\n"
