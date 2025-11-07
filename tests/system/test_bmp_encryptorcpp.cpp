@@ -31,6 +31,7 @@ int main() {
         allTestsSucceed &= st.test_large_file_performance();
     } catch(const std::exception& e){
         std::cerr << e.what();
+        return 1;
     }
 
     if(allTestsSucceed){
