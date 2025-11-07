@@ -210,7 +210,7 @@ Cipher::OperationMode Cipher::OperationMode::loadFromFile(const std::string& fil
     Cipher::OperationMode optmode_out;
 
     if(file.is_open()){
-        file.read(const_cast<char*>(metadata), static_cast<std::streamsize>(5)); // -Determining if file is a .data file
+        file.read(const_cast<char*>(metadata), static_cast<std::streamsize>(2)); // -Determining if file is a Operation Mode file
         if(memcmp(metadata, "OM", 2) == 0) {
             char optmode_str[4];
             file.read(optmode_str, 3); optmode_str[3] = 0;
@@ -221,6 +221,7 @@ Cipher::OperationMode Cipher::OperationMode::loadFromFile(const std::string& fil
                 case Identifier::ECB:
                     break;
                 case Identifier::CBC:
+                    if(optmode_out.IV_ == nullptr) optmode_out.IV_ = new InitVector;
                     file.read(reinterpret_cast<char*>(optmode_out.IV_->data),BLOCK_SIZE);
                     if (!file || file.gcount() != BLOCK_SIZE) {
                         //delete[] this->data;
