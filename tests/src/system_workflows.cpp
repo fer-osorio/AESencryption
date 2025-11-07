@@ -206,8 +206,8 @@ bool SystemTests::test_file_encryption_workflow() {
             for (size_t i = 0; i < test_content.size(); i++) {
                 if (test_content[i] != decrypted_content[i]) {
                     std::cout << "First mismatch at byte " << i << std::endl;
-                    std::cout << "Original: " << std::hex << (int)test_content[i] << std::endl;
-                    std::cout << "Decrypted: " << std::hex << (int)decrypted_content[i] << std::endl;
+                    std::cout << "Original: " << std::hex << static_cast<int>(test_content[i]) << std::endl;
+                    std::cout << "Decrypted: " << std::hex << static_cast<int>(decrypted_content[i]) << std::endl;
                     break;
                 }
             }
