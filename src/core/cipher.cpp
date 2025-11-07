@@ -160,6 +160,7 @@ const char* Cipher::OperationMode::identifier_to_string(Identifier ID){
         case Identifier::CBC:
             return "CBC";
     }
+    return "Unknown";
 }
 
 Cipher::OperationMode::Identifier Cipher::OperationMode::string_to_identifier(const std::string& str){
