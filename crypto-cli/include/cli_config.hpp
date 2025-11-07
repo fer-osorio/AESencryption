@@ -19,7 +19,7 @@ struct CryptoConfig {
     std::filesystem::path key_file;
     std::filesystem::path input_file;
     std::filesystem::path output_file;
-    std::filesystem::path mode_file; // Initial vector, in case of CBC mode
+    std::filesystem::path mode_file; // File containing necessary data for the operation mode
 
     // Optional parameters with defaults
     AESencryption::Key::LengthBits key_length = AESencryption::Key::LengthBits::_128;
@@ -33,9 +33,10 @@ struct CryptoConfig {
     // Validation method
     bool validate();
 
-    // Convert to crypto objects - the integration point!
+    // Convert to crypto objects - the integration point
     // Consider: Throws std::runtime_error
     AESencryption::Key create_key() const;
+    AESencryption::Cipher::OperationMode create_optmode() const;
 };
 
 // Argument parser - Component A
