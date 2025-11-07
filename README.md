@@ -156,6 +156,29 @@ Each module contains its own README with specific usage examples:
 - **Build tools**: GNU Make 4.0+
 - **Platform**: Linux (primary), macOS and Windows support in progress
 
+#### Debug Build Dependencies (default)
+The default `BUILD_TYPE=debug` enables memory sanitizers which require additional runtime libraries:
+
+**Debian/Ubuntu:**
+```bash
+sudo apt-get install libasan6 libubsan1 liblsan0
+```
+
+**Fedora/RHEL:**
+```bash
+sudo dnf install libasan libubsan liblsan
+```
+
+**Arch Linux:**
+```bash
+# Included with gcc package
+```
+
+**Alternative:** Build without sanitizers:
+```bash
+make BUILD_TYPE=release  # No sanitizer dependencies needed
+```
+
 ## Platform Support
 
 | Platform | Status            | Notes                          |
