@@ -166,8 +166,12 @@ bool SystemTests::test_file_encryption_workflow() {
     int result1 = SystemUtils::execute_cli_command(
         gen_key_cmd
     );
-    success &= ASSERT_TRUE(result1 == 0, "Key generation should succeed");
-    success &= ASSERT_TRUE(std::filesystem::exists(this->keyPath), "Key file should be created");
+    success &= ASSERT_TRUE(
+        result1 == 0, "Key generation should succeed"
+    );
+    success &= ASSERT_TRUE(
+        std::filesystem::exists(this->keyPath), "Key file should be created"
+    );
 
     // Step 3: Encrypt the file
     std::string encrypt_cmd =
@@ -176,28 +180,46 @@ bool SystemTests::test_file_encryption_workflow() {
     int result2 = SystemUtils::execute_cli_command(
         encrypt_cmd
     );
-    success &= ASSERT_TRUE(result2 == 0, "File encryption should succeed");
-    success &= ASSERT_TRUE(std::filesystem::exists(this->encryptedOriginalValidPath), "Encrypted file should be created");
+
+    success &= ASSERT_TRUE(
+        result2 == 0, "File encryption should succeed"
+    );
+    success &= ASSERT_TRUE(
+        std::filesystem::exists(this->encryptedOriginalValidPath), "Encrypted file should be created"
+    );
 
     // Step 4: Verify encrypted file is different from original
     std::vector<uint8_t> test_content = SystemUtils::read_file(this->originalValidPath, this->ff_ != FileFormat::TEXT);
     std::vector<uint8_t> encrypted_content = SystemUtils::read_file(this->encryptedOriginalValidPath, this->ff_ != FileFormat::TEXT);
-    success &= ASSERT_TRUE(encrypted_content != test_content, "Encrypted content should differ from original");
+
+    success &= ASSERT_TRUE(
+        encrypted_content != test_content, "Encrypted content should differ from original"
+    );
 
     // Step 5: Decrypt the file
     std::string decrypt_cmd =
         this->executable_path + " --decrypt --mode CBC --key " + this->keyPath.string() +
         " --input " + this->encryptedOriginalValidPath.string() +
-        " --output " + this->decryptedOriginalValidPath.string();
+        " --output " + this->decryptedOriginalValidPath.string() +
+        " --mode-data " + this->encryptedOriginalValidPath.string() + ".optmode";
     int result3 = SystemUtils::execute_cli_command(
         decrypt_cmd
     );
-    success &= ASSERT_TRUE(result3 == 0, "File decryption should succeed");
-    success &= ASSERT_TRUE(std::filesystem::exists(this->decryptedOriginalValidPath), "Decrypted file should be created");
+
+    success &= ASSERT_TRUE(
+        result3 == 0, "File decryption should succeed"
+    );
+    success &= ASSERT_TRUE(
+        std::filesystem::exists(this->decryptedOriginalValidPath), "Decrypted file should be created"
+    );
 
     // Step 6: Verify decrypted content matches original
     std::vector<uint8_t> decrypted_content = SystemUtils::read_file(this->decryptedOriginalValidPath, this->ff_ != FileFormat::TEXT);
-    success &= ASSERT_TRUE(decrypted_content == test_content, "Decrypted content should match original");
+
+    success &= ASSERT_TRUE(
+        decrypted_content == test_content, "Decrypted content should match original"
+    );
+
     if(!(decrypted_content == test_content)){
         std::cout << "Original size: " << test_content.size() << std::endl;
         std::cout << "Decrypted size: " << decrypted_content.size() << std::endl;
@@ -288,46 +310,62 @@ bool SystemTests::test_large_file_performance() {
         this->executable_path + " --generate-key --output " + this->keyPath.string()
     );
 
-    // Time the encryption
-    auto start_time = std::chrono::high_resolution_clock::now();
+
     std::string encrypt_cmd = this->executable_path + " --encrypt --mode CBC --key " + this->keyPath.string() +
         " --input " + this->originalLargePath.string() +
         " --output " + this->encryptedOriginalLargePath.string();
+
+    // Time the encryption
+    auto start_time = std::chrono::high_resolution_clock::now();
     int encrypt_result = SystemUtils::execute_cli_command(
         encrypt_cmd
     );
     auto encrypt_end = std::chrono::high_resolution_clock::now();
     auto encrypt_duration = std::chrono::duration_cast<std::chrono::milliseconds>(encrypt_end - start_time);
 
-    success &= ASSERT_TRUE(encrypt_result == 0, "Large file encryption should succeed");
     success &= ASSERT_TRUE(
-        encrypt_duration.count() < 10000,
-        "3MB encryption should complete within 10 seconds (lasted " +
-        std::to_string(encrypt_duration.count()) + " milliseconds)"
+        encrypt_result == 0, "Large file encryption should succeed"
     );
+    if(encrypt_result == 0) {
+        success &= ASSERT_TRUE(
+            encrypt_duration.count() < 10000,
+            "3MB encryption should complete within 10 seconds (lasted " +
+            std::to_string(encrypt_duration.count()) + " milliseconds)"
+        );
+    }
+
+    std::string decrypt_cmd = this->executable_path +
+        " --decrypt --mode CBC --key " + this->keyPath.string() +
+        " --input " + this->encryptedOriginalLargePath.string() +
+        " --output " + this->decryptedOriginalLargePath.string() +
+        " --mode-data " + this->encryptedOriginalValidPath.string() + ".optmode";
 
     // Time the decryption
     auto decrypt_start = std::chrono::high_resolution_clock::now();
-    std::string decrypt_cmd = this->executable_path + " --decrypt --mode CBC --key " + this->keyPath.string() +
-        " --input " + this->encryptedOriginalLargePath.string() +
-        " --output " + this->decryptedOriginalLargePath.string();
     int decrypt_result = SystemUtils::execute_cli_command(
         decrypt_cmd
     );
     auto decrypt_end = std::chrono::high_resolution_clock::now();
     auto decrypt_duration = std::chrono::duration_cast<std::chrono::milliseconds>(decrypt_end - decrypt_start);
 
-    success &= ASSERT_TRUE(decrypt_result == 0, "Large file decryption should succeed");
     success &= ASSERT_TRUE(
-        decrypt_duration.count() < 10000,
-        "3MB decryption should complete within 10 seconds (lasted " +
-        std::to_string(decrypt_duration.count()) + " milliseconds)"
+        decrypt_result == 0, "Large file decryption should succeed"
     );
+    if(decrypt_result == 0) {
+        success &= ASSERT_TRUE(
+            decrypt_duration.count() < 10000,
+            "3MB decryption should complete within 10 seconds (lasted " +
+            std::to_string(decrypt_duration.count()) + " milliseconds)"
+        );
+    }
 
     // Verify integrity
     auto original_size = std::filesystem::file_size(this->originalLargePath);
     auto decrypted_size = std::filesystem::file_size(this->decryptedOriginalLargePath);
-    success &= ASSERT_TRUE(original_size == decrypted_size, "Large file should maintain size after roundtrip");
+
+    success &= ASSERT_TRUE(
+        original_size == decrypted_size, "Large file should maintain size after roundtrip"
+    );
 
     PRINT_RESULTS();
     return success;
