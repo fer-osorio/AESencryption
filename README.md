@@ -179,6 +179,11 @@ sudo dnf install libasan libubsan liblsan
 make BUILD_TYPE=release  # No sanitizer dependencies needed
 ```
 
+### Optional Tools
+
+- **Valgrind** (for memory testing)
+- **lcov** (for coverage reports)
+
 ## Platform Support
 
 | Platform | Status            | Notes                          |
