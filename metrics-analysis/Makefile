@@ -9,11 +9,9 @@ LIBDIR = $(PROJECT_ROOT)/lib
 TARGET_LIB = $(LIBDIR)/libmetricsanalysis.a
 
 # Local source directory and object directory
-SRCDIR = ./src
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
 
 # Local includes
-INCDIR = include
 INCLUDES = -I$(INCDIR)
 
 # Source files

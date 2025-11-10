@@ -9,11 +9,9 @@ LIBDIR = $(PROJECT_ROOT)/lib
 TARGET_LIB = $(LIBDIR)/libaesencryption_c.a
 
 # Local source directory and object directory
-SRCDIR = src
 OBJDIR = $(PROJECT_ROOT)/obj/data-encryption
 
 # Local includes (private headers)
-INCDIR = include
 INCLUDES = -I$(INCDIR)
 
 # Source files and objects
