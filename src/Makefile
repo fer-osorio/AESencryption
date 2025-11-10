@@ -3,7 +3,7 @@ include ../common.mk
 include ../config.mk
 
 # Local configuration
-MODULE_NAME = src
+MODULE_NAME = core
 PROJECT_ROOT := $(call find-project-root)
 LIBDIR = $(PROJECT_ROOT)/lib
 TARGET_LIB = $(LIBDIR)/libaesencryption_cpp.a

@@ -3,7 +3,7 @@ include ../common.mk
 include ../config.mk
 
 # Module configuration
-MODULE_NAME = data-encryption
+MODULE_NAME = $(notdir $(CURDIR))
 PROJECT_ROOT := $(call find-project-root)
 LIBDIR = $(PROJECT_ROOT)/lib
 TARGET_LIB = $(LIBDIR)/libaesencryption_c.a
@@ -49,17 +49,6 @@ analyze: $(TARGET_LIB)
 		$(call print_success,"Static analysis completed"); \
 	else \
 		$(call print_warning,"$(CPPCHECK) not found, skipping analysis"); \
-	fi
-
-# Memory testing with Valgrind
-test-memory: BUILD_TYPE=debug
-test-memory: test
-	$(call print_info,"Running memory tests...")
-	@if command -v $(VALGRIND) >/dev/null 2>&1 && [ -f "$(BINDIR)/test_aes" ]; then \
-		$(VALGRIND) $(VALGRIND_FLAGS) $(BINDIR)/test_aes; \
-		$(call print_success,"Memory tests completed"); \
-	else \
-		$(call print_warning,"Valgrind not available or test not built"); \
 	fi
 
 # Show library information

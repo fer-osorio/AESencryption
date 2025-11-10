@@ -9,7 +9,6 @@ LIBDIR = $(PROJECT_ROOT)/lib
 TARGET_LIB = $(LIBDIR)/libcryptocli.a
 
 # Local source directory and object directory
-SRCDIR = src
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
 
 # Source files
@@ -17,7 +16,6 @@ SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Local includes (in addition to common includes)
-INCDIR = include
 INCLUDES = -I./$(INCDIR) -I$(PROJECT_ROOT)/$(INCDIR)
 
 # Dependencies on other modules
