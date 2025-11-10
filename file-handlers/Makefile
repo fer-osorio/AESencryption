@@ -38,9 +38,9 @@ check-deps:
 		fi; \
 	done; \
 	if [ -n "$$missing_deps" ]; then \
-		$(call print_error,"Missing dependencies:$$missing_deps"); \
-		$(call print_info,"Build required modules first:"); \
-		$(call print_info,"  make -C ../src"); \
+		$(call echo_error,"Missing dependencies:$$missing_deps"); \
+		$(call echo_info,"Build required modules first:"); \
+		$(call echo_info,"  make -C ../src"); \
 		exit 1; \
 	fi
 
