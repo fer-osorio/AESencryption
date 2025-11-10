@@ -46,8 +46,8 @@ LIBS = -lcryptocli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetr
 REQUIRED_DEPS = \
     $(PROJECT_ROOT)/lib/libaesencryption_c.a \
     $(PROJECT_ROOT)/lib/libaesencryption_cpp.a \
-    $(PROJECT_ROOT)/lib/libfilehandlers.a \
     $(PROJECT_ROOT)/lib/libmetricsanalysis.a \
+    $(PROJECT_ROOT)/lib/libfilehandlers.a \
     $(PROJECT_ROOT)/lib/libcryptocli.a
 
 # Source files
@@ -144,8 +144,8 @@ dependencies:
 	$(call print_info,"Building project dependencies...")
 	@$(MAKE) -C $(PROJECT_ROOT)/data-encryption
 	@$(MAKE) -C $(PROJECT_ROOT)/src
-	@$(MAKE) -C $(PROJECT_ROOT)/file-handlers
 	@$(MAKE) -C $(PROJECT_ROOT)/metrics-analysis
+	@$(MAKE) -C $(PROJECT_ROOT)/file-handlers
 	@$(MAKE) -C $(PROJECT_ROOT)/crypto-cli
 	$(call print_success,"All dependencies built successfully")
 
