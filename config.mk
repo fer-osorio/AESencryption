@@ -68,3 +68,6 @@ endif
 STATIC_LIB_FLAGS = rcs
 SHARED_LIB_FLAGS = -shared -fPIC
 
+# Default source and include directories
+SRCDIR = src
+INCDIR = include
