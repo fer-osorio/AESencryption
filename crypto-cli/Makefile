@@ -29,18 +29,14 @@ all: $(TARGET_LIB)
 
 # Check dependencies
 check-deps:
-	@missing_deps=""; \
-	for dep in $(DEPS); do \
-		if [ ! -f "$$dep" ]; then \
-			missing_deps="$$missing_deps $$dep"; \
-		fi; \
-	done; \
-	if [ -n "$$missing_deps" ]; then \
-		$(call print_error,"Missing dependencies:$$missing_deps"); \
-		$(call print_info,"Build required modules first:"); \
-		$(call print_info,"  make -C ../src"); \
-		exit 1; \
-	fi
+	$(call check_dependencies)
+
+# Build dependencies (optional - for convenience)
+dependencies:
+# 	$(call print_info,"Building project dependencies...")
+	@$(MAKE) -C $(PROJECT_ROOT)/src
+	$(call print_success,"All dependencies built successfully")
+
 
 # Library target
 $(TARGET_LIB): check-deps $(OBJECTS) | $(LIBDIR) $(OBJDIR)

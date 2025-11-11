@@ -33,11 +33,12 @@ all: $(TARGET_LIB)
 
 # Check dependencies
 check-deps:
-	@if [ ! -f "$(LIBDIR)/libaesencryption_c.a" ]; then \
-		$(call print_error,"Dependency libaesencryption_c.a not found. Build data-encryption first."); \
-		$(call print_info,"Run: make -C ../data-encryption"); \
-		exit 1; \
-	fi
+	$(call check_dependencies)
+
+dependencies:
+	$(call print_info,"Building project dependencies...")
+	@$(MAKE) -C $(PROJECT_ROOT)/data-encryption
+	$(call print_success,"All dependencies built successfully")
 
 # Library target
 $(TARGET_LIB): check-deps $(OBJECTS) | $(OBJDIR) $(LIBDIR)
