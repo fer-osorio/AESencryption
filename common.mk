@@ -167,6 +167,26 @@ define clean_dir
 	@rm -rf $(1)
 endef
 
+# Checs dependencies.
+#Usage: $(call check_dependencies)
+define check_dependencies
+	$(call print_info,"Checking project dependencies...")
+	@missing_deps=""; \
+	for dep in $(DEPS); do \
+		if [ ! -f "$$dep" ]; then \
+			missing_deps="$$missing_deps $$dep \n"; \
+		fi; \
+	done; \
+	if [ -n "$$missing_deps" ]; then \
+		$(call echo_error,"Missing dependencies:\\n $$missing_deps"); \
+		$(call echo_info,"Build required modules first."); \
+		$(call echo_warning,"Run 'make dependencies' if you want to build them automatically."); \
+		exit 1; \
+	else \
+		echo -e "$(COLOR_GREEN)[SUCCESS]$(COLOR_NC) All dependencies found"; \
+	fi
+endef
+
 # Clean dependency files from directory
 # Usage: $(call clean_deps,directory_path)
 define clean_deps
