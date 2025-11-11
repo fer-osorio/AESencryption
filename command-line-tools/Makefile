@@ -45,25 +45,7 @@ all: check-deps $(BINARIES)
 
 # Check dependencies
 check-deps:
-	$(call print_info,"Checking project dependencies...")
-	@missing_deps=""; \
-	for dep in $(REQUIRED_DEPS); do \
-		if [ ! -f "$$dep" ]; then \
-			missing_deps="$$missing_deps $$dep"; \
-		fi; \
-	done; \
-	if [ -n "$$missing_deps" ]; then \
-		echo -e "$(COLOR_RED)[ERROR]$(COLOR_NC) Missing dependencies:$$missing_deps"; \
-		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC) Build required modules first:"; \
-		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/data-encryption"; \
-		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/src"; \
-		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/file-handlers"; \
-		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/metrics-analysis"; \
-		echo -e "$(COLOR_YELLOW)[WARNING]$(COLOR_NC) Run 'make dependencies' if you want to build them automatically"; \
-		exit 1; \
-	else \
-		echo -e "$(COLOR_GREEN)[SUCCESS]$(COLOR_NC) All dependencies found"; \
-	fi
+	$(call check_dependencies)
 
 # Build dependencies (optional - for convenience)
 dependencies:
