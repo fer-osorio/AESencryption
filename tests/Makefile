@@ -6,12 +6,12 @@ include ../config.mk
 MODULE_NAME = $(notdir $(CURDIR))
 PROJECT_ROOT := $(call find-project-root)
 MODULE_DIRECTORIES := $(shell find . -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 basename)
+
 MAKEFILE_DEBUG =? FALSE
 ifeq ($(MAKEFILE_DEBUG),TRUE)
     $(info MODULE_DIRECTORIES:          $(MODULE_DIRECTORIES))
     $(info )
 endif
-SRCDIR = src
 
 # Tests directories
 UNIT_DIR = unit
@@ -26,10 +26,6 @@ ifeq ($(MAKEFILE_DEBUG),TRUE)
     $(info )
 endif
 
-# Binaries and objects directories
-BINDIR = bin
-OBJDIR = obj
-
 # Local includes and libraries
 INCLUDES = \
     -I./include \
@@ -43,7 +39,7 @@ LDFLAGS += -L$(PROJECT_ROOT)/lib
 LIBS = -lcryptocli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetricsanalysis
 
 # Define required dependencies (library files)
-REQUIRED_DEPS = \
+DEPS = \
     $(PROJECT_ROOT)/lib/libaesencryption_c.a \
     $(PROJECT_ROOT)/lib/libaesencryption_cpp.a \
     $(PROJECT_ROOT)/lib/libmetricsanalysis.a \
@@ -62,6 +58,7 @@ ifeq ($(MAKEFILE_DEBUG),TRUE)
     $(info TEST_UTILS_SOURCES:          $(notdir $(TEST_UTILS_SOURCES)))
     $(info )
 endif
+
 TEST_UTILS_OBJECTS = $(TEST_UTILS_SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/$(SRCDIR)/%.o)
 ifeq ($(MAKEFILE_DEBUG),TRUE)
     $(info TEST_UTILS_OBJECTS:          $(notdir $(TEST_UTILS_OBJECTS)))
@@ -119,25 +116,7 @@ all: check-deps $(ALL_TESTS)
 
 # Check dependencies
 check-deps:
-	$(call print_info,"Checking project dependencies...")
-	@missing_deps=""; \
-	for dep in $(REQUIRED_DEPS); do \
-		if [ ! -f "$$dep" ]; then \
-			missing_deps="$$missing_deps $$dep"; \
-		fi; \
-	done; \
-	if [ -n "$$missing_deps" ]; then \
-		echo -e "$(COLOR_RED)[ERROR]$(COLOR_NC) Missing dependencies:$$missing_deps"; \
-		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC) Build required modules first:"; \
-		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/data-encryption"; \
-		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/src"; \
-		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/file-handlers"; \
-		echo -e "$(COLOR_BLUE)[INFO]$(COLOR_NC)   make -C $(PROJECT_ROOT)/metrics-analysis"; \
-		echo -e "$(COLOR_YELLOW)[WARNING]$(COLOR_NC) Run 'make dependencies' if you want to build them automatically"; \
-		exit 1; \
-	else \
-		echo -e "$(COLOR_GREEN)[SUCCESS]$(COLOR_NC) All dependencies found"; \
-	fi
+	$(call check_dependencies)
 
 # Build dependencies (optional - for convenience)
 dependencies:
@@ -252,8 +231,8 @@ clean:
 # Debug target - shows variables with better formatting
 debug-vars:
 	$(call print_info,"Makefile Variables:")
-	@echo -e "$(COLOR_CYAN)REQUIRED_DEPS:$(COLOR_NC)"
-	@for dep in $(REQUIRED_DEPS); do echo "  $$dep"; done
+	@echo -e "$(COLOR_CYAN)DEPS:$(COLOR_NC)"
+	@for dep in $(DEPS); do echo "  $$dep"; done
 	@echo -e "$(COLOR_CYAN)UNIT_TESTS:$(COLOR_NC)"
 	@for test in $(UNIT_TESTS); do echo "  $$test"; done
 	@echo -e "$(COLOR_CYAN)INTEGRATION_TESTS:$(COLOR_NC)"
