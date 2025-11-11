@@ -71,3 +71,5 @@ SHARED_LIB_FLAGS = -shared -fPIC
 # Default source and include directories
 SRCDIR = src
 INCDIR = include
+BINDIR = bin
+OBJDIR = obj
