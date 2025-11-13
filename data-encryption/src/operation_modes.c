@@ -5,6 +5,44 @@
 #include<time.h>
 
 /*
+ * Structure: Handling pointer to input data array
+ * Each block has 16 bytes of size
+ * Argument tailSize is equal to size % 16
+ * Argument currentPossition allows movement through the data array
+ * Consider: The data pointed is non-mutable.
+ */
+struct InputStream{
+  const uint8_t*const start;
+  const size_t size;
+  const size_t sizeInBlocks;
+  const size_t tailSize;
+  const uint8_t* currentPossition;
+};
+
+/*
+ * Structure: Handling pointer to output data array
+ * Each block has 16 bytes of size
+ * Argument tailSize is equal to size % 16
+ * Argument currentPossition allows movement through the data array
+ * Consider: Data can be written through the pointer currentPossition.
+ */
+struct OutputStream{
+  const uint8_t*const start;
+  const size_t size;
+  const size_t sizeInBlocks;
+  const size_t tailSize;
+  uint8_t* currentPossition;
+};
+
+/*
+ * Structure: Handling input and output data streams simultaneously
+ */
+struct InputOutputStream{
+  struct InputStream inputstream;
+  struct OutputStream outputstream;
+};
+
+/*
  * Handling pointers that represent the directions of input and output
  * */
 struct InputOutputHandler{
