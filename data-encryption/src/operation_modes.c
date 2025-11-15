@@ -4,85 +4,118 @@
 #include<string.h>
 #include<time.h>
 
-/*
- * Structure: Handling pointer to input data array
+/**
+ * @struct Stream
+ * @brief Handling pointer to data array intended for input or output stream
+ *
  * Each block has 16 bytes of size
- * Argument tailSize is equal to size % 16
- * Argument currentPossition allows movement through the data array
- * Consider: The data pointed is non-mutable (has no write permission, only read permission)
+ *
+ * @warning: Only data stream information. No mutable object with only writing permission.
  */
-struct InputStream {
-  const uint8_t*const start;
-  const size_t size;
-  const size_t sizeInBlocks;
-  const size_t tailSize;
-  const uint8_t* currentPossition;
+struct Stream{
+  // Convenient-to-know points of the stream.
+  const uint8_t*const start;        ///<  Start of stream
+  const uint8_t*const end;          ///<  End of stream
+  const uint8_t*const lastBlock;    ///<  Points to the last block of the stream (each block has 16 bytes)
+  // Stream size information
+  const size_t size;                ///<  Stream size
+  const size_t sizeInBlocks;        ///<  Stream size in blocks
+  const size_t tailSize;            ///<  Non-zero for streams with non-multiple BLOCK_SIZE sizes.
 };
 
-/*
- * Signals if data pointed by ioh->input has a size smaller than BLOCK_SIZE.
- * */
-static enum ExceptionCode InputStreamValidate(const struct InputStream* is){
-  if(is->start == NULL) return NullInput;
-  if(is->size < BLOCK_SIZE) return InvalidInputSize;
-  return NoException;
-}
-
-/*
- * Initialize struct InputStream instance
+/**
+ * @brief Initialize struct Stream instance
+ * @warning Does not integrate explicit stream validation
  */
-static struct InputStream InputStreamInitialize(const uint8_t*const start, const size_t size){
-  struct InputStream is = {start, size, size / BLOCK_SIZE, size % BLOCK_SIZE, start};
+static struct Stream StreamInitialize(const uint8_t*const start, const size_t size){
+  size_t sizeInBlocks_ = size / BLOCK_SIZE;
+  struct Stream is = {
+    start,                  // start
+    start + size,           // end
+    start + sizeInBlocks_,  // lastBlock
+    size,                   // size
+    sizeInBlocks_,          // sizeInBlocks
+    size % BLOCK_SIZE       // tailSize
+  };
   return is;
 }
 
-/*
- * Move current position of InputStream instance one block forward.
- * Consider: No out-of-bounds checking
+/**
+ * @brief Signals if data pointed by s->input is NULL or has a size smaller than BLOCK_SIZE.
+ * */
+static enum ExceptionCode StreamValidate(const struct Stream* s){
+  if(s->start == NULL) return NullInput;
+  if(s->size < BLOCK_SIZE) return InvalidInputSize;
+  return NoException;
+}
+
+/**
+ * @struct InputSteam structure
+ * @brief Handling data arrays as input streams.
+ * @warning No writing permission, only reading through currentPossition object
+ */
+struct InputStream {
+  struct Stream info;                 ///< Stream information
+  const uint8_t* currentPossition;    ///< For reading operation, pointer to the data intended for reading.
+};
+
+/**
+ * @brief Initialize struct OutputStream instance
+ * @warning Does not integrate explicit stream validation
+ */
+static struct InputStream InputStreamInitialize(const uint8_t*const start, const size_t size){
+  struct InputStream is = {
+    StreamInitialize(start, size),
+    start
+  };
+  return is;
+}
+
+/**
+ * @brief Move current position of InputStream instance one block forward.
+ * @warning Does not signal out-of-bounds operations, it only does nothing in those cases
  */
 static void InputStreamMoveForwardOneBlock(struct InputStream* is){
-  is->currentPossition += BLOCK_SIZE;
+  if(is->currentPossition < is->info.lastBlock) is->currentPossition += BLOCK_SIZE;
 }
 
 /**
  * @brief Reads BLOCK_SIZE bytes from the data pointed by the current position of the input stream and writes a block with them.
  * @param is The input stream
- * @param dest The block to be written
+ * @param dest The block where the read data will be written
  */
 static void InputStreamReadBlockMoveForward(Block_t* dest, struct InputStream* is){
   BlockWriteFromBytes(is->currentPossition, dest);
   InputStreamMoveForwardOneBlock(is);
 }
 
-/*
- * Structure: Handling pointer to output data array
- * Each block has 16 bytes of size
- * Argument tailSize is equal to size % 16
- * Argument currentPossition allows movement through the data array
- * Consider: Data can be written through the pointer currentPossition (Intended only for writing, not reading)
+/**
+ * @struct OutputStream structure
+ * @warning Reading and writing permission through the currentPossition pointer (intended for writing).
  */
 struct OutputStream{
-  const uint8_t*const start;
-  const size_t size;
-  const size_t sizeInBlocks;
-  const size_t tailSize;
-  uint8_t* currentPossition;
+  struct Stream info;
+  uint8_t* currentPossition;    ///< * For writing operation, pointer to the place where the data will be written.
 };
 
-/*
- * Initialize struct OutputStream instance
+/**
+ * @brief Initialize struct InputStream instance
+ * @warning Does not integrate explicit stream validation
  */
 static struct OutputStream OutputStreamInitialize(uint8_t*const start, const size_t size){
-  struct OutputStream os = {start, size, size / BLOCK_SIZE, size % BLOCK_SIZE, start};
+  struct OutputStream os = {
+    StreamInitialize(start, size),
+    start
+  };
   return os;
 }
 
-/*
- * Move current position of OutputStream instance one block forward.
- * Consider: No out-of-bounds checking
+/**
+ * @brief Move current position of OutputStream instance one block forward.
+ * @warning Does not signal out-of-bounds operations, it only does nothing in those cases
  */
 static void OutputStreamMoveForwardOneBlock(struct OutputStream* os){
-  os->currentPossition += BLOCK_SIZE;
+  if(os->currentPossition < os->info.lastBlock) os->currentPossition += BLOCK_SIZE;
 }
 
 /**
@@ -119,7 +152,7 @@ static void decryptBlockMoveForward(const KeyExpansion_t* ke_p, struct InputStre
 static void encryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, struct OutputStream* os){
   Block_t* buffer = BlockMemoryAllocationZero();
   // Encrypting the blocks
-  for(size_t i = 0; i < is->sizeInBlocks; i++) {
+  for(size_t i = 0; i < is->info.sizeInBlocks; i++) {
     encryptBlockMoveForward(ke_p, is, buffer, os);
   }
   BlockDelete(&buffer);
@@ -154,7 +187,7 @@ enum ExceptionCode encryptECB(const uint8_t*const input, size_t size, const uint
 static void decryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, struct OutputStream* os){
   Block_t* buffer = BlockMemoryAllocationZero();
   // Encrypting the blocks
-  for(size_t i = 0; i < is->sizeInBlocks; i++) {
+  for(size_t i = 0; i < is->info.sizeInBlocks; i++) {
     decryptBlockMoveForward(ke_p, is, buffer, os);
   }
   BlockDelete(&buffer);
@@ -171,9 +204,10 @@ enum ExceptionCode decryptECB(const uint8_t*const input, size_t size, const uint
   // Validating resources size
   if(size == 0) return ZeroLength;
   if(size % BLOCK_SIZE != 0) return InvalidInputSize;
-
+  // Building key expansion
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   if(ke_p == NULL) return NullKeyExpansion;
+  // Creating streams
   struct InputStream is = InputStreamInitialize(input, size);
   struct OutputStream os = OutputStreamInitialize(output, size);
   decryptECB__(ke_p, &is, &os);
@@ -192,8 +226,8 @@ static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
   BlockXORequalBytes(buffer, IV);
   encryptBlockMoveForward(ke_p, is, buffer, os);
   outputPreviousBlock = is->currentPossition;
-  for(i = 1; i < is->sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
-    BlockXORequalBytes(buffer, IV);
+  for(i = 1; i < is->info.sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
+    BlockXORequalBytes(buffer, outputPreviousBlock);
     encryptBlockMoveForward(ke_p, is, buffer, os);
     outputPreviousBlock = is->currentPossition;
   }
