@@ -9,9 +9,9 @@
  * Each block has 16 bytes of size
  * Argument tailSize is equal to size % 16
  * Argument currentPossition allows movement through the data array
- * Consider: The data pointed is non-mutable.
+ * Consider: The data pointed is non-mutable (has no write permission, only read permission)
  */
-struct InputStream{
+struct InputStream {
   const uint8_t*const start;
   const size_t size;
   const size_t sizeInBlocks;
@@ -20,11 +20,46 @@ struct InputStream{
 };
 
 /*
+ * Signals if data pointed by ioh->input has a size smaller than BLOCK_SIZE.
+ * */
+static enum ExceptionCode InputStreamValidate(const struct InputStream* is){
+  if(is->start == NULL) return NullInput;
+  if(is->size < BLOCK_SIZE) return InvalidInputSize;
+  return NoException;
+}
+
+/*
+ * Initialize struct InputStream instance
+ */
+static struct InputStream InputStreamInitialize(const uint8_t*const start, const size_t size){
+  struct InputStream is = {start, size, size / BLOCK_SIZE, size % BLOCK_SIZE, start};
+  return is;
+}
+
+/*
+ * Move current position of InputStream instance one block forward.
+ * Consider: No out-of-bounds checking
+ */
+static void InputStreamMoveForwardOneBlock(struct InputStream* is){
+  is->currentPossition += BLOCK_SIZE;
+}
+
+/**
+ * @brief Reads BLOCK_SIZE bytes from the data pointed by the current position of the input stream and writes a block with them.
+ * @param is The input stream
+ * @param dest The block to be written
+ */
+static void InputStreamReadBlockMoveForward(Block_t* dest, struct InputStream* is){
+  BlockWriteFromBytes(is->currentPossition, dest);
+  InputStreamMoveForwardOneBlock(is);
+}
+
+/*
  * Structure: Handling pointer to output data array
  * Each block has 16 bytes of size
  * Argument tailSize is equal to size % 16
  * Argument currentPossition allows movement through the data array
- * Consider: Data can be written through the pointer currentPossition.
+ * Consider: Data can be written through the pointer currentPossition (Intended only for writing, not reading)
  */
 struct OutputStream{
   const uint8_t*const start;
@@ -35,86 +70,80 @@ struct OutputStream{
 };
 
 /*
- * Structure: Handling input and output data streams simultaneously
+ * Initialize struct OutputStream instance
  */
-struct InputOutputStream{
-  struct InputStream inputstream;
-  struct OutputStream outputstream;
-};
-
-/*
- * Handling pointers that represent the directions of input and output
- * */
-struct InputOutputHandler{
-  const uint8_t*const input;
-  uint8_t*const output;
-  const size_t size;
-  const size_t sizeInBlocks;
-  const size_t tailSize;
-  const uint8_t* inputCurrentPossition;
-  uint8_t* outputCurrentPossition;
-};
-
-static struct InputOutputHandler InputOutputHandlerInitialize(const uint8_t*const input, uint8_t*const output, const size_t size){
-  struct InputOutputHandler ioh = {input, output, size, size / BLOCK_SIZE, size % BLOCK_SIZE, input, output};
-  return ioh;
-}
-
-static void InputOutputHandlerMoveTowards(struct InputOutputHandler* ioh_p, size_t index){
-  ioh_p->inputCurrentPossition = ioh_p->input + index;
-  ioh_p->outputCurrentPossition = ioh_p->output + index;
-}
-
-static void InputOutputHandlerMoveForwardOneBlock(struct InputOutputHandler* ioh){
-  ioh->inputCurrentPossition += BLOCK_SIZE;
-  ioh->outputCurrentPossition += BLOCK_SIZE;
+static struct OutputStream OutputStreamInitialize(uint8_t*const start, const size_t size){
+  struct OutputStream os = {start, size, size / BLOCK_SIZE, size % BLOCK_SIZE, start};
+  return os;
 }
 
 /*
- * Signals if data pointed by ioh->input has a size smaller than BLOCK_SIZE.
- * */
-static bool InputOutputHandlerIsSmallerThanBlock(const struct InputOutputHandler* ioh){
-  return ioh->input == NULL || ioh->size < BLOCK_SIZE || ioh->sizeInBlocks == 0;
+ * Move current position of OutputStream instance one block forward.
+ * Consider: No out-of-bounds checking
+ */
+static void OutputStreamMoveForwardOneBlock(struct OutputStream* os){
+  os->currentPossition += BLOCK_SIZE;
 }
 
-/*
- * Implementation of ECB encryption operation mode.
- * */
-static void encryptECB__(const KeyExpansion_t* ke_p, struct InputOutputHandler* ioh_p){
-  if(InputOutputHandlerIsSmallerThanBlock(ioh_p)) return;                         // -Not handling the case size < BLOCK_SIZE
-  // Encrypt first block
-  Block_t* buffer = BlockMemoryAllocationFromBytes(ioh_p->input);
+/**
+ * @brief Writes BLOCK_SIZE bytes on the bytes pointed by the current position of the output stream using the input Block.
+ * @param os The output stream
+ * @param input Block where the data comes from
+ */
+static void OutputStreamWriteBlockMoveForward(struct OutputStream* os, Block_t* origin){
+  bytesFromBlock(origin, os->currentPossition);
+  OutputStreamMoveForwardOneBlock(os);
+}
+
+/**
+ * @brief Writes block pointed by buffer, encrypts it using ke_p key expansion and writes the result on the output stream.
+ */
+static void encryptBlockMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, Block_t* buffer, struct OutputStream* os){
+  InputStreamReadBlockMoveForward(buffer, is);
   encryptBlock(buffer, ke_p, buffer, false);
-  bytesFromBlock(buffer,ioh_p->outputCurrentPossition);
-  // Encrypting rest of the blocks
-  for(size_t i = 1; i < ioh_p->sizeInBlocks; i++) {
-    InputOutputHandlerMoveForwardOneBlock(ioh_p);
-    BlockWriteFromBytes(ioh_p->inputCurrentPossition, buffer);
-    encryptBlock(buffer, ke_p, buffer, false);
-    bytesFromBlock (buffer,ioh_p->outputCurrentPossition);
-  }
-  // -Handling the case where input size is not multiple of BLOCK_SIZE. This is not specified in the NIST standard.
-  if(ioh_p->tailSize != 0) {
-    BlockWriteFromBytes(ioh_p->inputCurrentPossition + ioh_p->tailSize, buffer);
-    encryptBlock(buffer, ke_p, buffer, false);
-    bytesFromBlock (buffer,ioh_p->outputCurrentPossition + ioh_p->tailSize);
+  OutputStreamWriteBlockMoveForward(os, buffer);
+}
+
+/**
+ * @brief Writes block pointed by buffer, decrypts it using ke_p key expansion and writes the result on the output stream.
+ */
+static void decryptBlockMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, Block_t* buffer, struct OutputStream* os){
+  InputStreamReadBlockMoveForward(buffer, is);
+  decryptBlock(buffer, ke_p, buffer, false);
+  OutputStreamWriteBlockMoveForward(os, buffer);
+}
+
+/**
+ * @brief Implementation of ECB encryption operation mode. Supposes the input parameters are already validated.
+ * */
+static void encryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, struct OutputStream* os){
+  Block_t* buffer = BlockMemoryAllocationZero();
+  // Encrypting the blocks
+  for(size_t i = 0; i < is->sizeInBlocks; i++) {
+    encryptBlockMoveForward(ke_p, is, buffer, os);
   }
   BlockDelete(&buffer);
 }
 
-/*
- * Builds KeyExpansion_t and InputOutput objects, then implements ECB encryption operation mode.
+/**
+ * @brief Builds KeyExpansion_t and InputOutput objects, then implements ECB encryption operation mode.
  * */
 enum ExceptionCode encryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
+  // Validating the existence of the resources
   if(input == NULL) return NullInput;
-  if(size == 0) return ZeroLength;
-  if(size < BLOCK_SIZE) return InvalidInputSize;
   if(output == NULL) return NullOutput;
   if(keyexpansion == NULL) return NullSource;
+  // Validating resources size
+  if(size == 0) return ZeroLength;
+  if(size % BLOCK_SIZE != 0) return InvalidInputSize;
+  // Creating key expansion
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   if(ke_p == NULL) return NullKeyExpansion;
-  struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
-  encryptECB__(ke_p, &ioh);
+  // Creating streams
+  struct InputStream is = InputStreamInitialize(input, size);
+  struct OutputStream os = OutputStreamInitialize(output, size);
+  // Encryption
+  encryptECB__(ke_p, &is, &os);
   KeyExpansionDelete(&ke_p);
   return NoException;
 }
@@ -122,26 +151,11 @@ enum ExceptionCode encryptECB(const uint8_t*const input, size_t size, const uint
 /*
  * Implementation of ECB decryption operation mode.
  * */
-static void decryptECB__(const KeyExpansion_t* ke_p, struct InputOutputHandler* ioh_p){
-  if(InputOutputHandlerIsSmallerThanBlock(ioh_p)) return;                       // -Not handling the case size < BLOCK_SIZE
-  Block_t* buffer;
-
-  // -Handling the case where input size is not multiple of BLOCK_SIZE. This is not specified in the NIST standard.
-  if(ioh_p->tailSize != 0) {
-    buffer = BlockMemoryAllocationFromBytes(ioh_p->input + (ioh_p->size - BLOCK_SIZE)); // Go to the end and come bakc one block
-    decryptBlock(buffer, ke_p, buffer, false);                                  // Decrypt the "tail block"
-    bytesFromBlock(buffer, ioh_p->outputCurrentPossition + (ioh_p->size - BLOCK_SIZE)); // Write on output
-    BlockWriteFromBytes(ioh_p->input, buffer);                                  // Come back to the begining
-  } else {
-    buffer = BlockMemoryAllocationFromBytes(ioh_p->input);
-  }
-  decryptBlock(buffer, ke_p, buffer, false);
-  bytesFromBlock (buffer,ioh_p->outputCurrentPossition);
-  for(size_t i = 1; i < ioh_p->sizeInBlocks; i++) {
-    InputOutputHandlerMoveForwardOneBlock(ioh_p);
-    BlockWriteFromBytes(ioh_p->inputCurrentPossition, buffer);
-    decryptBlock(buffer, ke_p, buffer, false);
-    bytesFromBlock (buffer,ioh_p->outputCurrentPossition);
+static void decryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, struct OutputStream* os){
+  Block_t* buffer = BlockMemoryAllocationZero();
+  // Encrypting the blocks
+  for(size_t i = 0; i < is->sizeInBlocks; i++) {
+    decryptBlockMoveForward(ke_p, is, buffer, os);
   }
   BlockDelete(&buffer);
 }
@@ -150,48 +164,38 @@ static void decryptECB__(const KeyExpansion_t* ke_p, struct InputOutputHandler* 
  * Builds KeyExpansion_t and InputOutput objects, then implements ECB decryption operation mode.
  * */
 enum ExceptionCode decryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
+  // Validating the existence of the resources
   if(input == NULL) return NullInput;
-  if(size == 0) return ZeroLength;
-  if(size < BLOCK_SIZE) return InvalidInputSize;
   if(output == NULL) return NullOutput;
   if(keyexpansion == NULL) return NullSource;
+  // Validating resources size
+  if(size == 0) return ZeroLength;
+  if(size % BLOCK_SIZE != 0) return InvalidInputSize;
+
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   if(ke_p == NULL) return NullKeyExpansion;
-  struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
-  decryptECB__(ke_p, &ioh);
+  struct InputStream is = InputStreamInitialize(input, size);
+  struct OutputStream os = OutputStreamInitialize(output, size);
+  decryptECB__(ke_p, &is, &os);
   KeyExpansionDelete(&ke_p);
   return NoException;
 }
 
-/*
- * Implementation of CBC encryption operation mode.
+
+/**
+ * @brief Implementation of CBC encryption operation mode. Supposes the input parameters are already validated.
  * */
-static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputOutputHandler* ioh_p){
-  if(InputOutputHandlerIsSmallerThanBlock(ioh_p)) return;                         // -Not handling the case size < BLOCK_SIZE
+static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputStream* is, struct OutputStream* os){
   const uint8_t* outputPreviousBlock = NULL;
-  Block_t* buffer = BlockMemoryAllocationFromBytes(ioh_p->input);
+  Block_t* buffer = BlockMemoryAllocationZero();
   size_t i;
   BlockXORequalBytes(buffer, IV);
-  encryptBlock(buffer, ke_p, buffer, false);
-  bytesFromBlock(buffer, ioh_p->outputCurrentPossition);
-  for(i = 1; i < ioh_p->sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
-    outputPreviousBlock = ioh_p->outputCurrentPossition;
-    InputOutputHandlerMoveForwardOneBlock(ioh_p);
-    BlockWriteFromBytes(ioh_p->inputCurrentPossition, buffer);
-    BlockXORequalBytes(buffer, outputPreviousBlock);
-    encryptBlock(buffer, ke_p, buffer, false);
-    bytesFromBlock(buffer, ioh_p->outputCurrentPossition);
-  }
-  // -Handling the case where input size is not multiple of BLOCK_SIZE. This is not specified in the NIST standard. Not specified in the NIST standard.
-  if(ioh_p->tailSize != 0) {
-    const uint8_t* inputTailBlock = ioh_p->inputCurrentPossition + ioh_p->tailSize;
-    uint8_t* outputTailBlock = ioh_p->outputCurrentPossition + ioh_p->tailSize;
-    outputPreviousBlock = ioh_p->outputCurrentPossition;
-    InputOutputHandlerMoveForwardOneBlock(ioh_p);
-    for(i = 0; i < ioh_p->tailSize; i++) ioh_p->outputCurrentPossition[i] ^= outputPreviousBlock[i];
-    BlockWriteFromBytes(inputTailBlock, buffer);
-    encryptBlock(buffer, ke_p, buffer, false);
-    bytesFromBlock(buffer, outputTailBlock);
+  encryptBlockMoveForward(ke_p, is, buffer, os);
+  outputPreviousBlock = is->currentPossition;
+  for(i = 1; i < is->sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
+    BlockXORequalBytes(buffer, IV);
+    encryptBlockMoveForward(ke_p, is, buffer, os);
+    outputPreviousBlock = is->currentPossition;
   }
   BlockDelete(&buffer);
 }
@@ -200,16 +204,22 @@ static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
  * Builds KeyExpansion_t and InputOutput objects, then implements CBC encryption operation mode.
  * */
 enum ExceptionCode encryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
-  if(input == NULL) return NullInput;
-  if(size == 0) return ZeroLength;
-  if(size < BLOCK_SIZE) return InvalidInputSize;
+  // Validating resource existence
+  if(input  == NULL) return NullInput;
   if(output == NULL) return NullOutput;
-  if(IV == NULL) return NullInitialVector;
+  if(IV     == NULL) return NullInitialVector;
   if(keyexpansion == NULL) return NullSource;
+  // Validating resource sizes
+  if(size == 0) return ZeroLength;
+  if(size % BLOCK_SIZE != 0) return InvalidInputSize;
+  // Building key expansion
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   if(ke_p == NULL) return NullKeyExpansion;
-  struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
-  encryptCBC__(ke_p, IV, &ioh);
+  // Creating streams
+  struct InputStream is = InputStreamInitialize(input, size);
+  struct OutputStream os = OutputStreamInitialize(output, size);
+  // Encryption
+  encryptCBC__(ke_p, IV, &is, &os);
   KeyExpansionDelete(&ke_p);
   return NoException;
 }
