@@ -12,7 +12,7 @@
  *
  * Each block has 16 bytes of size
  *
- * @warning: Only data stream information. No mutable object with only writing permission.
+ * @warning: Only data stream information. Not intended for reading or writing.
  */
 struct Stream{
   // Convenient-to-know points of the stream.
@@ -34,7 +34,7 @@ static struct Stream StreamInitialize(const uint8_t*const start, const size_t si
   struct Stream is = {
     start,                  // start
     start + size,           // end
-    start + sizeInBlocks_,  // lastBlock
+    start + (sizeInBlocks_ > 0 ? (sizeInBlocks_ - 1)*BLOCK_SIZE : 0),  // lastBlock
     size,                   // size
     sizeInBlocks_,          // sizeInBlocks
     size % BLOCK_SIZE       // tailSize
@@ -159,7 +159,8 @@ static void OutputStreamMoveBackwardsOneBlock(struct OutputStream* os){
  * @brief Moves currentPossition towards last block.
  */
 static void OutputStreamMoveTowardsLastBlock(struct OutputStream* os){
-  os->currentPossition = (uint8_t*)((size_t)os->info.start + (size_t)os->info.sizeInBlocks*BLOCK_SIZE);
+  os->currentPossition =
+    (uint8_t*)((size_t)os->info.start + (os->info.sizeInBlocks > 0 ? (os->info.sizeInBlocks - 1)*BLOCK_SIZE : 0));
 }
 
 /**
@@ -177,8 +178,8 @@ static void OutputStreamWriteBlockMoveForward(struct OutputStream* os, Block_t* 
  * @param is The input stream.
  * @param dest The block where the read data will be written.
  */
-static void OutputStreamWriteBlockMoveBackwards(Block_t* dest, struct OutputStream* os){
-  BlockWriteFromBytes(os->currentPossition, dest);
+static void OutputStreamWriteBlockMoveBackwards(const Block_t* source, struct OutputStream* os){
+  bytesFromBlock(source, os->currentPossition);
   OutputStreamMoveBackwardsOneBlock(os);
 }
 
@@ -271,6 +272,17 @@ enum ExceptionCode decryptECB(const uint8_t*const input, size_t size, const uint
   return NoException;
 }
 
+/**
+ * @brief Writes block pointed by buffer, xor with xorarg, encrypts it using ke_p and writes the result on the output stream.
+ * @warning Moves is and os parameters one block forward
+ */
+static void xorEncryptMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, Block_t* buffer, const uint8_t* xorarg, struct OutputStream* os){
+  InputStreamReadBlockMoveForward(buffer, is);
+  BlockXORequalBytes(buffer, xorarg);
+  encryptBlock(buffer, ke_p, buffer, false);
+  OutputStreamWriteBlockMoveForward(os, buffer);
+}
+
 
 /**
  * @brief Implementation of CBC encryption operation mode.
@@ -280,13 +292,17 @@ static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
   const uint8_t* outputPreviousBlock = NULL;
   Block_t* buffer = BlockMemoryAllocationZero();
   size_t i;
-  BlockXORequalBytes(buffer, IV);
-  encryptBlockMoveForward(ke_p, is, buffer, os);
-  outputPreviousBlock = is->currentPossition;
+  // First step of CBC encryption mode
+  xorEncryptMoveForward(ke_p, is, buffer, IV, os);
+  outputPreviousBlock = os->info.start;
+  // BlockXORequalBytes(buffer, IV);
+  //encryptBlockMoveForward(ke_p, is, buffer, os);
   for(i = 1; i < is->info.sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
-    BlockXORequalBytes(buffer, outputPreviousBlock);
-    encryptBlockMoveForward(ke_p, is, buffer, os);
-    outputPreviousBlock = is->currentPossition;
+    xorEncryptMoveForward(ke_p, is, buffer, outputPreviousBlock, os);
+    outputPreviousBlock += BLOCK_SIZE;
+    //BlockXORequalBytes(buffer, outputPreviousBlock);
+    //outputPreviousBlock = is->currentPossition;
+    //encryptBlockMoveForward(ke_p, is, buffer, os);
   }
   BlockDelete(&buffer);
 }
@@ -332,15 +348,14 @@ static void decryptXorMoveBackwards(const KeyExpansion_t* ke_p, struct InputStre
  * */
 static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputStream* is, struct OutputStream* os){
   Block_t* buffer = BlockMemoryAllocationZero();
-  size_t i;
   // Initializing streams
   InputStreamMoveTowardsLastBlock(is);
   OutputStreamMoveTowardsLastBlock(os);
   // Initializing stream for previous block
   const uint8_t* previousBlock = (const uint8_t*)((size_t)is->currentPossition - BLOCK_SIZE);
-  for(i = 1; i < is->info.sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
+  for(size_t i = 1; i < is->info.sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
     decryptXorMoveBackwards(ke_p, is, buffer, previousBlock, os);
-    previousBlock = (const uint8_t*)((size_t)is->currentPossition - BLOCK_SIZE);
+    previousBlock = (const uint8_t*)((size_t)previousBlock - BLOCK_SIZE);
   }
   decryptXorMoveBackwards(ke_p, is, buffer, IV, os);
   BlockDelete(&buffer);
