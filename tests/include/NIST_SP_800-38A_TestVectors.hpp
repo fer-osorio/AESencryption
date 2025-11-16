@@ -15,7 +15,6 @@
 #include "common_aes_vectors.hpp"
 #include <memory>
 #include <functional>
-#include <map>
 
 // =============================================================================
 // Mode-Specific Definitions and Base Classes
