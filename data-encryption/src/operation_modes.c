@@ -214,23 +214,28 @@ static void encryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, str
   BlockDelete(&buffer);
 }
 
+#define VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output) \
+  if(input == NULL) return NullInput; \
+  if(output == NULL) return NullOutput; \
+  if(keyexpansion == NULL) return NullSource; \
+  if(size == 0) return ZeroLength; \
+  if(size % BLOCK_SIZE != 0) return InvalidInputSize;
+
+#define BUILD_KEYEXPANSION_FROMBYTES(ke_p,source) \
+  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(source, keylenbits); \
+  if(ke_p == NULL) return NullKeyExpansion;
+
+#define BUILD_STREAMS(is,os) \
+  struct InputStream is = InputStreamInitialize(input, size); \
+  struct OutputStream os = OutputStreamInitialize(output, size);
+
 /**
  * @brief Builds KeyExpansion_t and InputOutput objects, then implements ECB encryption operation mode.
  * */
 enum ExceptionCode encryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
-  // Validating the existence of the resources
-  if(input == NULL) return NullInput;
-  if(output == NULL) return NullOutput;
-  if(keyexpansion == NULL) return NullSource;
-  // Validating resources size
-  if(size == 0) return ZeroLength;
-  if(size % BLOCK_SIZE != 0) return InvalidInputSize;
-  // Creating key expansion
-  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
-  if(ke_p == NULL) return NullKeyExpansion;
-  // Creating streams
-  struct InputStream is = InputStreamInitialize(input, size);
-  struct OutputStream os = OutputStreamInitialize(output, size);
+  VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_STREAMS(is,os)
   // Encryption
   encryptECB__(ke_p, &is, &os);
   KeyExpansionDelete(&ke_p);
@@ -254,19 +259,9 @@ static void decryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, str
  * @brief Builds KeyExpansion_t and InputOutput objects, then implements ECB decryption operation mode.
  * */
 enum ExceptionCode decryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
-  // Validating the existence of the resources
-  if(input == NULL) return NullInput;
-  if(output == NULL) return NullOutput;
-  if(keyexpansion == NULL) return NullSource;
-  // Validating resources size
-  if(size == 0) return ZeroLength;
-  if(size % BLOCK_SIZE != 0) return InvalidInputSize;
-  // Building key expansion
-  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
-  if(ke_p == NULL) return NullKeyExpansion;
-  // Creating streams
-  struct InputStream is = InputStreamInitialize(input, size);
-  struct OutputStream os = OutputStreamInitialize(output, size);
+  VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_STREAMS(is,os)
   decryptECB__(ke_p, &is, &os);
   KeyExpansionDelete(&ke_p);
   return NoException;
@@ -311,20 +306,10 @@ static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
  * @brief Builds KeyExpansion_t and InputOutput objects, then implements CBC encryption operation mode.
  * */
 enum ExceptionCode encryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
-  // Validating resource existence
-  if(input  == NULL) return NullInput;
-  if(output == NULL) return NullOutput;
-  if(IV     == NULL) return NullInitialVector;
-  if(keyexpansion == NULL) return NullSource;
-  // Validating resource sizes
-  if(size == 0) return ZeroLength;
-  if(size % BLOCK_SIZE != 0) return InvalidInputSize;
-  // Building key expansion
-  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
-  if(ke_p == NULL) return NullKeyExpansion;
-  // Creating streams
-  struct InputStream is = InputStreamInitialize(input, size);
-  struct OutputStream os = OutputStreamInitialize(output, size);
+  VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
+  if(IV == NULL) return NullInitialVector;
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_STREAMS(is,os)
   // Encryption
   encryptCBC__(ke_p, IV, &is, &os);
   KeyExpansionDelete(&ke_p);
@@ -366,20 +351,10 @@ static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
  * Builds KeyExpansion_t and InputOutput objects, then implements CBC decryption operation mode.
  * */
 enum ExceptionCode decryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
-  // Validating resource existence
-  if(input  == NULL) return NullInput;
-  if(output == NULL) return NullOutput;
-  if(IV     == NULL) return NullInitialVector;
-  if(keyexpansion == NULL) return NullSource;
-  // Validating resource sizes
-  if(size == 0) return ZeroLength;
-  if(size % BLOCK_SIZE != 0) return InvalidInputSize;
-  // Building key expansion
-  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
-  if(ke_p == NULL) return NullKeyExpansion;
-  // Creating streams
-  struct InputStream is = InputStreamInitialize(input, size);
-  struct OutputStream os = OutputStreamInitialize(output, size);
+  VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
+  if(IV == NULL) return NullInitialVector;
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_STREAMS(is,os)
   // Encryption
   decryptCBC__(ke_p, IV, &is, &os);
   KeyExpansionDelete(&ke_p);
