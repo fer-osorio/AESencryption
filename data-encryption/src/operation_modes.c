@@ -159,7 +159,7 @@ static void OutputStreamMoveBackwardsOneBlock(struct OutputStream* os){
  * @brief Moves currentPossition towards last block.
  */
 static void OutputStreamMoveTowardsLastBlock(struct OutputStream* os){
-  os->currentPossition = (uint8_t*)os->info.lastBlock;
+  os->currentPossition = (uint8_t*)((size_t)os->info.start + (size_t)os->info.sizeInBlocks*BLOCK_SIZE);
 }
 
 /**
