@@ -1,8 +1,10 @@
-#include"../include/constants.h"
-#include"../include/AES.h"
-#include"../include/operation_modes.h"
-#include<string.h>
-#include<time.h>
+#include "../include/constants.h"
+#include "../include/AES.h"
+#include "../include/operation_modes.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <time.h>
 
 /**
  * @struct Stream
@@ -80,13 +82,39 @@ static void InputStreamMoveForwardOneBlock(struct InputStream* is){
 }
 
 /**
- * @brief Reads BLOCK_SIZE bytes from the data pointed by the current position of the input stream and writes a block with them.
+ * @brief Move current position of InputStream instance one block backwards.
+ * @warning Does not signal out-of-bounds operations, it only does nothing in those cases
+ */
+static void InputStreamMoveBackwardsOneBlock(struct InputStream* is){
+  if(is->currentPossition > is->info.start)
+    is->currentPossition = (const uint8_t*)((size_t)is->currentPossition - BLOCK_SIZE);
+}
+
+/**
+ * @brief Moves currentPossition towards last block.
+ */
+static void InputStreamMoveTowardsLastBlock(struct InputStream* is){
+  is->currentPossition = is->info.lastBlock;
+}
+
+/**
+ * @brief Reads BLOCK_SIZE bytes from the data pointed by the current position of the input stream and writes a block with them, then moves one block forward.
  * @param is The input stream
  * @param dest The block where the read data will be written
  */
 static void InputStreamReadBlockMoveForward(Block_t* dest, struct InputStream* is){
   BlockWriteFromBytes(is->currentPossition, dest);
   InputStreamMoveForwardOneBlock(is);
+}
+
+/**
+ * @brief Reads BLOCK_SIZE bytes from the data pointed by the current position of the input stream and writes a block with them, then moves one block backwards.
+ * @param is The input stream.
+ * @param dest The block where the read data will be written.
+ */
+static void InputStreamReadBlockMoveBackwards(Block_t* dest, struct InputStream* is){
+  BlockWriteFromBytes(is->currentPossition, dest);
+  InputStreamMoveBackwardsOneBlock(is);
 }
 
 /**
@@ -99,7 +127,7 @@ struct OutputStream{
 };
 
 /**
- * @brief Initialize struct InputStream instance
+ * @brief Initialize struct OutputStream instance
  * @warning Does not integrate explicit stream validation
  */
 static struct OutputStream OutputStreamInitialize(uint8_t*const start, const size_t size){
@@ -119,7 +147,23 @@ static void OutputStreamMoveForwardOneBlock(struct OutputStream* os){
 }
 
 /**
- * @brief Writes BLOCK_SIZE bytes on the bytes pointed by the current position of the output stream using the input Block.
+ * @brief Move current position of OutputStream instance one block backwards.
+ * @warning Does not signal out-of-bounds operations, it only does nothing in those cases
+ */
+static void OutputStreamMoveBackwardsOneBlock(struct OutputStream* os){
+  if(os->currentPossition > os->info.start)
+    os->currentPossition = (uint8_t*)((size_t)os->currentPossition - BLOCK_SIZE);
+}
+
+/**
+ * @brief Moves currentPossition towards last block.
+ */
+static void OutputStreamMoveTowardsLastBlock(struct OutputStream* os){
+  os->currentPossition = (uint8_t*)os->info.lastBlock;
+}
+
+/**
+ * @brief Writes BLOCK_SIZE bytes on the bytes pointed by the current position of the output stream using the input Block, then moves forward one block.
  * @param os The output stream
  * @param input Block where the data comes from
  */
@@ -129,7 +173,17 @@ static void OutputStreamWriteBlockMoveForward(struct OutputStream* os, Block_t* 
 }
 
 /**
- * @brief Writes block pointed by buffer, encrypts it using ke_p key expansion and writes the result on the output stream.
+ * @brief Writes BLOCK_SIZE bytes on the bytes pointed by the current position of the output stream using the input Block, then moves backwards one block.
+ * @param is The input stream.
+ * @param dest The block where the read data will be written.
+ */
+static void OutputStreamWriteBlockMoveBackwards(Block_t* dest, struct OutputStream* os){
+  BlockWriteFromBytes(os->currentPossition, dest);
+  OutputStreamMoveBackwardsOneBlock(os);
+}
+
+/**
+ * @brief Writes block pointed by buffer, encrypts it using ke_p key expansion, writes the result on the output stream and moves one block forward.
  */
 static void encryptBlockMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, Block_t* buffer, struct OutputStream* os){
   InputStreamReadBlockMoveForward(buffer, is);
@@ -147,7 +201,8 @@ static void decryptBlockMoveForward(const KeyExpansion_t* ke_p, struct InputStre
 }
 
 /**
- * @brief Implementation of ECB encryption operation mode. Supposes the input parameters are already validated.
+ * @brief Implementation of ECB encryption operation mode.
+ * @warning Supposes the input parameters are already validated.
  * */
 static void encryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, struct OutputStream* os){
   Block_t* buffer = BlockMemoryAllocationZero();
@@ -181,8 +236,9 @@ enum ExceptionCode encryptECB(const uint8_t*const input, size_t size, const uint
   return NoException;
 }
 
-/*
- * Implementation of ECB decryption operation mode.
+/**
+ * @brief Implementation of ECB decryption operation mode.
+ * @warning Supposes the input parameters are already validated.
  * */
 static void decryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, struct OutputStream* os){
   Block_t* buffer = BlockMemoryAllocationZero();
@@ -193,8 +249,8 @@ static void decryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, str
   BlockDelete(&buffer);
 }
 
-/*
- * Builds KeyExpansion_t and InputOutput objects, then implements ECB decryption operation mode.
+/**
+ * @brief Builds KeyExpansion_t and InputOutput objects, then implements ECB decryption operation mode.
  * */
 enum ExceptionCode decryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
   // Validating the existence of the resources
@@ -217,7 +273,8 @@ enum ExceptionCode decryptECB(const uint8_t*const input, size_t size, const uint
 
 
 /**
- * @brief Implementation of CBC encryption operation mode. Supposes the input parameters are already validated.
+ * @brief Implementation of CBC encryption operation mode.
+ * @warning Supposes the input parameters are already validated.
  * */
 static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputStream* is, struct OutputStream* os){
   const uint8_t* outputPreviousBlock = NULL;
@@ -234,8 +291,8 @@ static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
   BlockDelete(&buffer);
 }
 
-/*
- * Builds KeyExpansion_t and InputOutput objects, then implements CBC encryption operation mode.
+/**
+ * @brief Builds KeyExpansion_t and InputOutput objects, then implements CBC encryption operation mode.
  * */
 enum ExceptionCode encryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
   // Validating resource existence
@@ -258,78 +315,58 @@ enum ExceptionCode encryptCBC(const uint8_t*const input, size_t size, const uint
   return NoException;
 }
 
-/*
- * Build Block_t with input, build Block_t with XORsource, xors both blocks and decrypt the result.
- * */
-static void decryptXorBlockBytes(const uint8_t*const input, const KeyExpansion_t* ke_p, const uint8_t* XORsource, uint8_t* output){
-  Block_t* buffer = BlockMemoryAllocationFromBytes(input);
+/**
+ * @brief Writes block pointed by buffer, decrypts it using ke_p, xor with xorarg and writes the result on the output stream.
+ * @warning Moves is and os parameters one block backwards
+ */
+static void decryptXorMoveBackwards(const KeyExpansion_t* ke_p, struct InputStream* is, Block_t* buffer, const uint8_t* xorarg,struct OutputStream* os){
+  InputStreamReadBlockMoveBackwards(buffer, is);
   decryptBlock(buffer, ke_p, buffer, false);
-  BlockXORequalBytes(buffer, XORsource);
-  bytesFromBlock(buffer, output);
-  BlockDelete(&buffer);
+  BlockXORequalBytes(buffer, xorarg);
+  OutputStreamWriteBlockMoveBackwards(buffer, os);
 }
 
-/*
- * Implements xorEncryptBlockBytes on ioh object.
+/**
+ * @brief Implementation of CBC decryption operation mode.
+ * @warning Supposes the input parameters are already validated.
  * */
-static void InputOutputHandlerDecryptXorBlockBytes(const struct InputOutputHandler* ioh, const uint8_t *XORsource, const KeyExpansion_t* ke_p){
-  decryptXorBlockBytes(ioh->inputCurrentPossition, ke_p, XORsource, ioh->outputCurrentPossition);
-}
-
-/*
- * Implementation of CBC decryption operation mode.
- * */
-static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputOutputHandler* ioh_p) {
-  if(InputOutputHandlerIsSmallerThanBlock(ioh_p)) return;                         // -Not handling the case size < BLOCK_SIZE
-
-  size_t i = (ioh_p->sizeInBlocks - 1)*BLOCK_SIZE, j;
-  const uint8_t* inputPreviousBlock = NULL;
+static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputStream* is, struct OutputStream* os){
   Block_t* buffer = BlockMemoryAllocationZero();
-
-  InputOutputHandlerMoveTowards(ioh_p, i);
-
-  // -Handling the case where input size is not multiple of BLOCK_SIZE. This is not specified in the NIST standard. Not specified in the NIST standard.
-  if(ioh_p->tailSize != 0) {
-    // Decrypting tail block
-    BlockWriteFromBytes(ioh_p->inputCurrentPossition + ioh_p->tailSize, buffer);
-    decryptBlock(buffer, ke_p, buffer, false);
-    bytesFromBlock(buffer, ioh_p->outputCurrentPossition + ioh_p->tailSize);
-    // Xor tail
-    inputPreviousBlock = ioh_p->inputCurrentPossition;
-    InputOutputHandlerMoveForwardOneBlock(ioh_p);
-    for(i = 0; i < ioh_p->tailSize; i++) ioh_p->outputCurrentPossition[i] ^= inputPreviousBlock[i];
+  size_t i;
+  // Initializing streams
+  InputStreamMoveTowardsLastBlock(is);
+  OutputStreamMoveTowardsLastBlock(os);
+  // Initializing stream for previous block
+  const uint8_t* previousBlock = (const uint8_t*)((size_t)is->currentPossition - BLOCK_SIZE);
+  for(i = 1; i < is->info.sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
+    decryptXorMoveBackwards(ke_p, is, buffer, previousBlock, os);
+    previousBlock = (const uint8_t*)((size_t)is->currentPossition - BLOCK_SIZE);
   }
-  j = i >= BLOCK_SIZE ? i - BLOCK_SIZE : 0;
-  for(; i >= BLOCK_SIZE; i -= BLOCK_SIZE, j -= BLOCK_SIZE) {                    // -Encryption of the rest of the blocks.
-    InputOutputHandlerMoveTowards(ioh_p, i);
-    inputPreviousBlock = ioh_p->input + j;
-    BlockWriteFromBytes(ioh_p->inputCurrentPossition, buffer);
-    decryptBlock(buffer, ke_p, buffer, false);
-    BlockXORequalBytes(buffer, inputPreviousBlock);
-    bytesFromBlock(buffer, ioh_p->outputCurrentPossition);
-  }
-  // Decryption of last block.
-  BlockWriteFromBytes(ioh_p->input, buffer);                                    // At this point ioh_p->inputCurrentPossition == ioh_p->input
-  decryptBlock(buffer, ke_p, buffer, false);
-  BlockXORequalBytes(buffer, IV);
-  bytesFromBlock(buffer, ioh_p->output);
+  decryptXorMoveBackwards(ke_p, is, buffer, IV, os);
   BlockDelete(&buffer);
 }
+
 
 /*
  * Builds KeyExpansion_t and InputOutput objects, then implements CBC decryption operation mode.
  * */
 enum ExceptionCode decryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
-  if(input == NULL) return NullInput;
-  if(size == 0) return ZeroLength;
-  if(size < BLOCK_SIZE) return InvalidInputSize;
+  // Validating resource existence
+  if(input  == NULL) return NullInput;
   if(output == NULL) return NullOutput;
-  if(IV == NULL) return NullInitialVector;
+  if(IV     == NULL) return NullInitialVector;
   if(keyexpansion == NULL) return NullSource;
+  // Validating resource sizes
+  if(size == 0) return ZeroLength;
+  if(size % BLOCK_SIZE != 0) return InvalidInputSize;
+  // Building key expansion
   ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(keyexpansion, keylenbits);
   if(ke_p == NULL) return NullKeyExpansion;
-  struct InputOutputHandler ioh = InputOutputHandlerInitialize(input, output, size);
-  decryptCBC__(ke_p, IV, &ioh);
+  // Creating streams
+  struct InputStream is = InputStreamInitialize(input, size);
+  struct OutputStream os = OutputStreamInitialize(output, size);
+  // Encryption
+  decryptCBC__(ke_p, IV, &is, &os);
   KeyExpansionDelete(&ke_p);
   return NoException;
 }
