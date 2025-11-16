@@ -60,7 +60,7 @@ bool TestSuite::assertBytesEqual(const uint8_t* expected, const uint8_t* actual,
         // Show first differing bytes for debugging
         for(size_t i = 0; i < len; i++) {
             if(expected[i] != actual[i]) {
-                std::cout << "\tFirst difference at byte number" << i
+                std::cout << "\tFirst difference at byte number " << i
                           << ": expected 0x" << std::hex << static_cast<int>(expected[i])
                           << ", got 0x" << static_cast<int>(actual[i]) << std::dec << std::endl;
                 break;
