@@ -6,6 +6,7 @@
  */
 
 #include "../include/NIST_SP_800-38A_TestVectors.hpp"
+#include <map>
 
 namespace NISTSP800_38A_Examples {
 
