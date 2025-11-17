@@ -11,7 +11,6 @@ extern "C" {
 #include<stdint.h>
 
 typedef union Word_ Word_t;
-//typedef Word_t* Word_t_ptr;
 typedef union Block_ Block_t;
 typedef Block_t* ptrBlock_t;
 typedef struct KeyExpansion_ KeyExpansion_t;
@@ -53,9 +52,14 @@ ptrBlock_t BlockMemoryAllocationZero();
 void printBlock(const Block_t* b, const char* rowHeaders[4]);
 
 /*
- * This function has the same efect than apply the sequence: b = BlockFromBytes(byteBlock), then XORblocks(input, b, input)
+ * Rewrites input block with the xor of the same input and the bytes pointed by byteBlock
  * */
 void BlockXORequalBytes(Block_t* input, const uint8_t byteBlock[]);
+
+/*
+ * Rewrites input byte block with the xor of the same input and the bytes pointed by byteBlock
+ * */
+void bytesXORequalBlock(uint8_t input[], const Block_t* block);
 
 /*
  * Builds key expansion object and returns a pointer to it.
@@ -79,11 +83,6 @@ void KeyExpansionWriteBytes(const KeyExpansion_t* source, uint8_t* dest);
  * Consider: Allocates memory using malloc.
  * */
 ptrKeyExpansion_t KeyExpansionFromBytes(const uint8_t source[], size_t keylenbits);
-
-/*
- * Returns a pointer of type char* to the first element of the key expansion
- * */
-const uint8_t* KeyExpansionReturnBytePointerToData(const KeyExpansion_t*const ke_p);
 
 /*
  * Build key expansion and writes it on the bytes pointed by dest pointer.
