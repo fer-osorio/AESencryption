@@ -238,6 +238,25 @@ void BlockXORequalBytes(Block_t* input, const uint8_t byteBlock[]){
   input->uint08_[15] ^= byteBlock[15];
 }
 
+void bytesXORequalBlock(uint8_t input[], const Block_t* block){
+  input[0] ^= block->uint08_[0];
+  input[1] ^= block->uint08_[4];
+  input[2] ^= block->uint08_[8];
+  input[3] ^= block->uint08_[12];
+  input[4] ^= block->uint08_[1];
+  input[5] ^= block->uint08_[5];
+  input[6] ^= block->uint08_[9];
+  input[7] ^= block->uint08_[13];
+  input[8] ^= block->uint08_[2];
+  input[9] ^= block->uint08_[6];
+  input[10] ^= block->uint08_[10];
+  input[11] ^= block->uint08_[14];
+  input[12] ^= block->uint08_[3];
+  input[13] ^= block->uint08_[7];
+  input[14] ^= block->uint08_[11];
+  input[15] ^= block->uint08_[15];
+}
+
 static void copyBlock(const Block_t* source, Block_t* destination) {
   destination->uint64_[0] = source->uint64_[0];
   destination->uint64_[1] = source->uint64_[1];
@@ -532,10 +551,6 @@ ptrKeyExpansion_t KeyExpansionFromBytes(const uint8_t source[], size_t keylenbit
     BlockWriteFromBytes(source + j,output->dataBlocks + i);
   }
   return output;
-}
-
-const uint8_t* KeyExpansionReturnBytePointerToData(const KeyExpansion_t*const ke_p){
-  return (uint8_t*)ke_p->dataBlocks;
 }
 
 enum ExceptionCode KeyExpansionBuildWrite(const uint8_t* key, size_t keylenbits, uint8_t* dest, bool debug){
