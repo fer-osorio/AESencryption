@@ -59,7 +59,7 @@ void BlockXORequalBytes(Block_t* input, const uint8_t byteBlock[]);
 /*
  * Rewrites input byte block with the xor of the same input and the bytes pointed by byteBlock
  * */
-void bytesXORequalBlock(uint8_t input[], const Block_t* block);
+void bytesXORBlock(const uint8_t input[], const Block_t* block, uint8_t output[]);
 
 /*
  * Builds key expansion object and returns a pointer to it.

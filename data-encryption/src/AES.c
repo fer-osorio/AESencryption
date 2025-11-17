@@ -238,23 +238,23 @@ void BlockXORequalBytes(Block_t* input, const uint8_t byteBlock[]){
   input->uint08_[15] ^= byteBlock[15];
 }
 
-void bytesXORequalBlock(uint8_t input[], const Block_t* block){
-  input[0] ^= block->uint08_[0];
-  input[1] ^= block->uint08_[4];
-  input[2] ^= block->uint08_[8];
-  input[3] ^= block->uint08_[12];
-  input[4] ^= block->uint08_[1];
-  input[5] ^= block->uint08_[5];
-  input[6] ^= block->uint08_[9];
-  input[7] ^= block->uint08_[13];
-  input[8] ^= block->uint08_[2];
-  input[9] ^= block->uint08_[6];
-  input[10] ^= block->uint08_[10];
-  input[11] ^= block->uint08_[14];
-  input[12] ^= block->uint08_[3];
-  input[13] ^= block->uint08_[7];
-  input[14] ^= block->uint08_[11];
-  input[15] ^= block->uint08_[15];
+void bytesXORBlock(const uint8_t input[], const Block_t* block, uint8_t output[]){
+  output[0] = input[0] ^ block->uint08_[0];
+  output[1] = input[1] ^ block->uint08_[4];
+  output[2] = input[2] ^ block->uint08_[8];
+  output[3] = input[3] ^ block->uint08_[12];
+  output[4] = input[4] ^ block->uint08_[1];
+  output[5] = input[5] ^ block->uint08_[5];
+  output[6] = input[6] ^ block->uint08_[9];
+  output[7] = input[7] ^ block->uint08_[13];
+  output[8] = input[8] ^ block->uint08_[2];
+  output[9] = input[9] ^ block->uint08_[6];
+  output[10] = input[10] ^ block->uint08_[10];
+  output[11] = input[11] ^ block->uint08_[14];
+  output[12] = input[12] ^ block->uint08_[3];
+  output[13] = input[13] ^ block->uint08_[7];
+  output[14] = input[14] ^ block->uint08_[11];
+  output[15] = input[15] ^ block->uint08_[15];
 }
 
 static void copyBlock(const Block_t* source, Block_t* destination) {
