@@ -290,14 +290,9 @@ static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
   // First step of CBC encryption mode
   xorEncryptMoveForward(ke_p, is, buffer, IV, os);
   outputPreviousBlock = os->info.start;
-  // BlockXORequalBytes(buffer, IV);
-  //encryptBlockMoveForward(ke_p, is, buffer, os);
   for(i = 1; i < is->info.sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
     xorEncryptMoveForward(ke_p, is, buffer, outputPreviousBlock, os);
     outputPreviousBlock += BLOCK_SIZE;
-    //BlockXORequalBytes(buffer, outputPreviousBlock);
-    //outputPreviousBlock = is->currentPossition;
-    //encryptBlockMoveForward(ke_p, is, buffer, os);
   }
   BlockDelete(&buffer);
 }
@@ -338,11 +333,11 @@ static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
   OutputStreamMoveTowardsLastBlock(os);
   // Initializing stream for previous block
   const uint8_t* previousBlock = (const uint8_t*)((size_t)is->currentPossition - BLOCK_SIZE);
-  for(size_t i = 1; i < is->info.sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
+  for(size_t i = 1; i < is->info.sizeInBlocks; i++) {
     decryptXorMoveBackwards(ke_p, is, buffer, previousBlock, os);
     previousBlock = (const uint8_t*)((size_t)previousBlock - BLOCK_SIZE);
   }
-  decryptXorMoveBackwards(ke_p, is, buffer, IV, os);
+  decryptXorMoveBackwards(ke_p, is, buffer, IV, os);  // Decryption of first block
   BlockDelete(&buffer);
 }
 
@@ -359,4 +354,44 @@ enum ExceptionCode decryptCBC(const uint8_t*const input, size_t size, const uint
   decryptCBC__(ke_p, IV, &is, &os);
   KeyExpansionDelete(&ke_p);
   return NoException;
+}
+
+/**
+ * @brief Single encryption step for the OFB operation mode.
+ *
+ * Encrypts block pointed by keystream, then xors is the with the bytes pointed by is->currentPossition. Writes the result in
+ * os->currentPossition
+ *
+ * @param[in] ke_p Pointer to the expanded key schedule
+ * @param[in,out] is Input stream from which the plain text will be read
+ * @param[in,out] keystream The feed back block utilized for the xoring with the plain text
+ * @param[out] os Output stream where the cipher text will be written
+ * @warning Moves all the streams parameters (is, os) one block forward. It also supposes a well-initialized keystream.
+ */
+static void applyOFBencryptionStepMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, Block_t* keystream, struct OutputStream* os){
+  encryptBlock(keystream, ke_p, keystream, false);
+  bytesXORBlock(is->currentPossition, keystream, os->currentPossition);
+  InputStreamMoveForwardOneBlock(is);
+  OutputStreamMoveForwardOneBlock(os);
+}
+
+
+/**
+ * @brief Implementation of OFB operation mode for encryption.
+ */
+static void encryptOFB__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputStream* is, struct OutputStream* os){
+  Block_t* keystream = BlockMemoryAllocationFromBytes(IV);
+  for(size_t i = 0; i < is->info.sizeInBlocks; i++) { // -Encryption of the stream.
+    applyOFBencryptionStepMoveForward(ke_p, is, keystream, os);
+  }
+  BlockDelete(&keystream);
+}
+
+/**
+ * @brief Implementation of OFB operation mode for decryption.
+ *
+ * For OFB, encryption and decryption coincide.
+ */
+static void decryptOFB__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputStream* is, struct OutputStream* os){
+  encryptOFB__(ke_p, IV, is, os);
 }
