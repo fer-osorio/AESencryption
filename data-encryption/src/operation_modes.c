@@ -268,13 +268,18 @@ enum ExceptionCode decryptECB(const uint8_t*const input, size_t size, const uint
 }
 
 /**
- * @brief Writes block pointed by buffer, xor with xorarg, encrypts it using ke_p and writes the result on the output stream.
- * @warning Moves is and os parameters one block forward
+ * @brief Writes block pointed by buffer, xor with previousCipherBlock, encrypts it using ke_p and writes the result on the output stream.
+ * @param[in] ke_p Expanded key used for encryption
+ * @param[in,out] is Input stream where the data comes from, is->current position is moved one block forward
+ * @param[in,out] buffer Block where the encryption operation will be performed.
+ * @param[in,out] previousCipherBlock Pointer to previous cipher block.
+ * @param[out] os Stream where the cipher text will be written.
  */
-static void xorEncryptMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, Block_t* buffer, const uint8_t* xorarg, struct OutputStream* os){
+static void applyCBCencryptionStepMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, Block_t* buffer, const uint8_t** previousCipherBlock, struct OutputStream* os){
   InputStreamReadBlockMoveForward(buffer, is);
-  BlockXORequalBytes(buffer, xorarg);
+  BlockXORequalBytes(buffer, *previousCipherBlock);
   encryptBlock(buffer, ke_p, buffer, false);
+  *previousCipherBlock = os->currentPossition;
   OutputStreamWriteBlockMoveForward(os, buffer);
 }
 
@@ -283,16 +288,15 @@ static void xorEncryptMoveForward(const KeyExpansion_t* ke_p, struct InputStream
  * @brief Implementation of CBC encryption operation mode.
  * @warning Supposes the input parameters are already validated.
  * */
-static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputStream* is, struct OutputStream* os){
-  const uint8_t* outputPreviousBlock = NULL;
+static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t*const IV, struct InputStream* is, struct OutputStream* os){
+  const uint8_t* previousCipherBlock = NULL;
   Block_t* buffer = BlockMemoryAllocationZero();
   size_t i;
   // First step of CBC encryption mode
-  xorEncryptMoveForward(ke_p, is, buffer, IV, os);
-  outputPreviousBlock = os->info.start;
+  previousCipherBlock = IV;
+  applyCBCencryptionStepMoveForward(ke_p, is, buffer, &previousCipherBlock, os);
   for(i = 1; i < is->info.sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
-    xorEncryptMoveForward(ke_p, is, buffer, outputPreviousBlock, os);
-    outputPreviousBlock += BLOCK_SIZE;
+    applyCBCencryptionStepMoveForward(ke_p, is, buffer, &previousCipherBlock, os);
   }
   BlockDelete(&buffer);
 }
@@ -312,13 +316,17 @@ enum ExceptionCode encryptCBC(const uint8_t*const input, size_t size, const uint
 }
 
 /**
- * @brief Writes block pointed by buffer, decrypts it using ke_p, xor with xorarg and writes the result on the output stream.
- * @warning Moves is and os parameters one block backwards
+ * @brief Writes block pointed by buffer, decrypts it using the expanded key pointed by ke_p , xor with the block of bytes pointed by previousCipherBlock, and writes the result on the output stream.
+ * @param[in] ke_p Expanded key used for encryption
+ * @param[in,out] is Input stream where the data comes from, is->current position is moved one block forward
+ * @param[in,out] buffer Block where the encryption operation will be performed.
+ * @param[in,out] previousCipherBlock Pointer to previous cipher block.
+ * @param[out] os Stream where the cipher text will be written.
  */
-static void decryptXorMoveBackwards(const KeyExpansion_t* ke_p, struct InputStream* is, Block_t* buffer, const uint8_t* xorarg,struct OutputStream* os){
+static void applyCBCdecryptionStepMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, Block_t* buffer, struct OutputStream* os){
   InputStreamReadBlockMoveBackwards(buffer, is);
   decryptBlock(buffer, ke_p, buffer, false);
-  BlockXORequalBytes(buffer, xorarg);
+  BlockXORequalBytes(buffer, (const uint8_t*)((size_t)is->currentPossition));
   OutputStreamWriteBlockMoveBackwards(buffer, os);
 }
 
@@ -326,18 +334,23 @@ static void decryptXorMoveBackwards(const KeyExpansion_t* ke_p, struct InputStre
  * @brief Implementation of CBC decryption operation mode.
  * @warning Supposes the input parameters are already validated.
  * */
-static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputStream* is, struct OutputStream* os){
+static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t*const IV, struct InputStream* is, struct OutputStream* os){
   Block_t* buffer = BlockMemoryAllocationZero();
   // Initializing streams
   InputStreamMoveTowardsLastBlock(is);
   OutputStreamMoveTowardsLastBlock(os);
   // Initializing stream for previous block
-  const uint8_t* previousBlock = (const uint8_t*)((size_t)is->currentPossition - BLOCK_SIZE);
+  //const uint8_t* previousCipherBlock = (const uint8_t*)((size_t)is->currentPossition - BLOCK_SIZE);
   for(size_t i = 1; i < is->info.sizeInBlocks; i++) {
-    decryptXorMoveBackwards(ke_p, is, buffer, previousBlock, os);
-    previousBlock = (const uint8_t*)((size_t)previousBlock - BLOCK_SIZE);
+    applyCBCdecryptionStepMoveForward(ke_p, is, buffer, os);
+    //previousCipherBlock = (const uint8_t*)((size_t)previousCipherBlock - BLOCK_SIZE);
   }
-  decryptXorMoveBackwards(ke_p, is, buffer, IV, os);  // Decryption of first block
+  // Decryption of first block
+  InputStreamReadBlockMoveBackwards(buffer, is);
+  decryptBlock(buffer, ke_p, buffer, false);
+  BlockXORequalBytes(buffer, IV);
+  OutputStreamWriteBlockMoveBackwards(buffer, os);
+  // Delete allocated memory
   BlockDelete(&buffer);
 }
 
@@ -405,13 +418,13 @@ union Counter{
   uint64_t uint64_[2];
 };
 
-void CounterWriteFromBytes(union Counter* output, const uint8_t*const input){
+static void CounterWriteFromBytes(union Counter* output, const uint8_t*const input){
   for(size_t i = 0; i <BLOCK_SIZE; i++){
     output->uint08_[i] = input[i];
   }
 }
 
-void CounterIncrease(union Counter*const counter){
+static void CounterIncrease(union Counter*const counter){
   if(counter->uint64_[0] == 0xFFFFFFFFFFFFFFFF){
     counter->uint64_[0] = 0; ++counter->uint64_[1];
     return;
