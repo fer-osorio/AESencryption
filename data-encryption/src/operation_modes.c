@@ -381,8 +381,13 @@ static void applyOFBencryptionStepMoveForward(const KeyExpansion_t* ke_p, struct
  */
 static void encryptOFB__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputStream* is, struct OutputStream* os){
   Block_t* keystream = BlockMemoryAllocationFromBytes(IV);
-  for(size_t i = 0; i < is->info.sizeInBlocks; i++) { // -Encryption of the stream.
+  for(size_t i = 0; i < is->info.sizeInBlocks; i++) {           // -Encryption of data stream.
     applyOFBencryptionStepMoveForward(ke_p, is, keystream, os);
+  }
+  uint8_t tmp[BLOCK_SIZE];
+  bytesFromBlock(keystream, tmp);
+  for(size_t i = 0; i < is->info.tailSize; i++){                // -Encrypting tail of the stream.
+    os->currentPossition[i] = is->currentPossition[i] ^ tmp[i];
   }
   BlockDelete(&keystream);
 }
