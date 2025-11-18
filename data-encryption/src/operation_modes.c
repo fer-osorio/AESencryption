@@ -404,6 +404,17 @@ static void encryptOFB__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
   BlockDelete(&keystream);
 }
 
+enum ExceptionCode encryptOFB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
+  VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
+  if(IV == NULL) return NullInitialVector;
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_STREAMS(is,os)
+  // Encryption
+  encryptOFB__(ke_p, IV, &is, &os);
+  KeyExpansionDelete(&ke_p);
+  return NoException;
+}
+
 /**
  * @brief Implementation of OFB operation mode for decryption.
  *
@@ -411,6 +422,17 @@ static void encryptOFB__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
  */
 static void decryptOFB__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputStream* is, struct OutputStream* os){
   encryptOFB__(ke_p, IV, is, os);
+}
+
+enum ExceptionCode decryptOFB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
+  VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
+  if(IV == NULL) return NullInitialVector;
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_STREAMS(is,os)
+  // Encryption
+  decryptOFB__(ke_p, IV, &is, &os);
+  KeyExpansionDelete(&ke_p);
+  return NoException;
 }
 
 union Counter{
@@ -453,6 +475,28 @@ static void encryptCTR__(const KeyExpansion_t* ke_p, const uint8_t* counter00, s
   }
 }
 
+enum ExceptionCode encryptCTR(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* counter00, uint8_t*const output){
+  VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
+  if(counter00 == NULL) return NullInitialVector;
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_STREAMS(is,os)
+  // Encryption
+  encryptCTR__(ke_p, counter00, &is, &os);
+  KeyExpansionDelete(&ke_p);
+  return NoException;
+}
+
 static void decryptCTR__(const KeyExpansion_t* ke_p, const uint8_t* counter00, struct InputStream* is, struct OutputStream* os){
   encryptCTR__(ke_p, counter00, is, os);
+}
+
+enum ExceptionCode decryptCTR(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* counter00, uint8_t*const output){
+  VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
+  if(counter00 == NULL) return NullInitialVector;
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_STREAMS(is,os)
+  // Encryption
+  decryptCTR__(ke_p, counter00, &is, &os);
+  KeyExpansionDelete(&ke_p);
+  return NoException;
 }
