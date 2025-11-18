@@ -375,7 +375,6 @@ static void applyOFBencryptionStepMoveForward(const KeyExpansion_t* ke_p, struct
   OutputStreamMoveForwardOneBlock(os);
 }
 
-
 /**
  * @brief Implementation of OFB operation mode for encryption.
  */
@@ -399,4 +398,48 @@ static void encryptOFB__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
  */
 static void decryptOFB__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputStream* is, struct OutputStream* os){
   encryptOFB__(ke_p, IV, is, os);
+}
+
+union Counter{
+  uint8_t  uint08_[BLOCK_SIZE];
+  uint64_t uint64_[2];
+};
+
+void CounterWriteFromBytes(union Counter* output, const uint8_t*const input){
+  for(size_t i = 0; i <BLOCK_SIZE; i++){
+    output->uint08_[i] = input[i];
+  }
+}
+
+void CounterIncrease(union Counter*const counter){
+  if(counter->uint64_[0] == 0xFFFFFFFFFFFFFFFF){
+    counter->uint64_[0] = 0; ++counter->uint64_[1];
+    return;
+  }
+  ++counter->uint64_[0];
+}
+
+static void applyCTRencryptionStepMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, union Counter*const counter, Block_t*const buffer, struct OutputStream* os){
+  BlockWriteFromBytes(counter->uint08_, buffer);
+  encryptBlock(buffer, ke_p, buffer, false);
+  bytesXORBlock(is->currentPossition, buffer, os->currentPossition);
+  CounterIncrease(counter);
+  InputStreamMoveForwardOneBlock(is);
+  OutputStreamMoveForwardOneBlock(os);
+}
+
+static void encryptCTR__(const KeyExpansion_t* ke_p, const uint8_t* counter00, struct InputStream* is, struct OutputStream* os){
+  Block_t* buffer = BlockMemoryAllocationZero();
+  union Counter counter;
+  CounterWriteFromBytes(&counter, counter00);
+  for(size_t i = 0; i < is->info.sizeInBlocks; i++){
+    applyCTRencryptionStepMoveForward(ke_p, is, &counter, buffer, os);
+  }
+  for(size_t i = 0; i < is->info.tailSize; i++){                // -Encrypting tail of the stream.
+    os->currentPossition[i] ^= counter.uint08_[i];
+  }
+}
+
+static void decryptCTR__(const KeyExpansion_t* ke_p, const uint8_t* counter00, struct InputStream* is, struct OutputStream* os){
+  encryptCTR__(ke_p, counter00, is, os);
 }
