@@ -55,9 +55,12 @@ bool test_specific_exception_code_mapping(AESENC_KEYLEN klb, AESENC_OPTMODE mode
     std::vector<uint8_t> dummy_key(static_cast<size_t>(klb)/8, 0);
     size_t c_klb = static_cast<size_t>(klb);
     ptrKeyExpansion_t c_ke = KeyExpansionMemoryAllocationBuild(dummy_key.data(), c_klb, false);
+    size_t ke_lenbytes = getKeyExpansionLengthBytesfromKeylenBits(static_cast<enum KeylenBits_t>(c_klb));
+    std::vector<uint8_t> c_key_expansion(ke_lenbytes);
+    KeyExpansionWriteBytes(c_ke, c_key_expansion.data());
 
     if (c_ke != nullptr) {
-        const uint8_t* key_expansion_ptr = KeyExpansionReturnBytePointerToData(c_ke);
+        const uint8_t* key_expansion_ptr = c_key_expansion.data();
         uint8_t input[BLOCK_SIZE];
         uint8_t output[BLOCK_SIZE];
 
