@@ -166,6 +166,10 @@ enum ExceptionCode encryptOFB(const uint8_t*const input, size_t size, const uint
 
 enum ExceptionCode decryptOFB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output);
 
+enum ExceptionCode encryptCTR(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* counter00, uint8_t*const output);
+
+enum ExceptionCode decryptCTR(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* counter00, uint8_t*const output);
+
 #ifdef __cplusplus
 }
 #endif
