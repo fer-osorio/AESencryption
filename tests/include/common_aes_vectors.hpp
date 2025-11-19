@@ -9,7 +9,7 @@
  * - Common keys used in FIPS 197 and NIST SP 800-38A examples.
  * - Stub/mock test data for independent component testing.
  * - A common plaintext block and initialization vector.
- * - A base class for structuring test examples.
+ * - A base class for structuring test vectors.
  * - Helper functions for retrieving keys and converting enums to strings.
  *
  * All arrays use byte representation in big-endian format.
@@ -72,7 +72,7 @@ namespace Common {
     // =============================================================================
 
     /**
-     * @brief A base class for test examples, providing common key information.
+     * @brief A base class for test vectors, providing common key information.
      */
     struct TestVectorBase {
     protected:
@@ -112,7 +112,7 @@ namespace Common {
     // =============================================================================
 
     // These keys are specified in FIPS 197 Appendix C and used across
-    // NIST SP 800-38A examples for AES-128, AES-192, and AES-256.
+    // NIST SP 800-38A test vectors for AES-128, AES-192, and AES-256.
 
     constexpr unsigned char key128[16] = {
         0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,

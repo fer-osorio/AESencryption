@@ -10,7 +10,7 @@
 namespace FIPS197 {
 
     // =============================================================================
-    // Appendix A: Key Expansion Examples Implementation
+    // Appendix A: Key Expansion Test Vectors Implementation
     // =============================================================================
 
     namespace KeyExpansion {
@@ -38,7 +38,7 @@ namespace FIPS197 {
     } // namespace KeyExpansion
 
     // =============================================================================
-    // Appendix B: Cipher Example Implementation
+    // Appendix B: Cipher Test Vector Implementation
     // =============================================================================
 
     namespace Encryption {

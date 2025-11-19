@@ -284,7 +284,7 @@ public:
 const unsigned char* getKey(Common::KeySize keysz);
 const unsigned char* getCipherText(Common::KeySize keysz);
 
-// Keys specific to the FIPS 197 Appendix B example - kept inline for performance
+// Keys specific to the FIPS 197 Appendix B test vector - kept inline for performance
 inline const unsigned char key128[] = {
     0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
     0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f
