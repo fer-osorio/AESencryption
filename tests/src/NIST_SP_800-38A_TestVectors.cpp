@@ -8,18 +8,18 @@
 #include "../include/NIST_SP_800-38A_TestVectors.hpp"
 #include <map>
 
-namespace NISTSP800_38A_Examples {
+namespace SP800_38A {
 
     // =============================================================================
     // Utility Functions Implementation
     // =============================================================================
 
-    const char* getModeString(OperationMode mode) {
-        switch(mode) {
-            case OperationMode::ECB: return "ECB";
-            case OperationMode::CBC: return "CBC";
-            case OperationMode::OFB: return "OFB";
-            case OperationMode::CTR: return "CTR";
+    const char* getModeString(CipherMode cm) {
+        switch(cm) {
+            case CipherMode::ECB: return "ECB";
+            case CipherMode::CBC: return "CBC";
+            case CipherMode::OFB: return "OFB";
+            case CipherMode::CTR: return "CTR";
             default: return "Unknown";
         }
     }
@@ -41,30 +41,30 @@ namespace NISTSP800_38A_Examples {
     }
 
     // =============================================================================
-    // ExampleBase Implementation
+    // TestVectorBase Implementation
     // =============================================================================
 
-    CommonAESVectors::EncryptionOperationType ExampleBase::getOperationType() const {
-        return this->operation;
+    Common::Direction TestVectorBase::getDirection() const {
+        return this->dir;
     }
 
-    OperationMode ExampleBase::getOperationMode() const {
-        return this->mode;
+    CipherMode TestVectorBase::getCipherMode() const {
+        return this->cm;
     }
 
-    const unsigned char* ExampleBase::getInput() const {
+    const unsigned char* TestVectorBase::getInput() const {
         return this->input;
     }
 
-    std::vector<unsigned char> ExampleBase::getInputAsVector() const {
+    std::vector<unsigned char> TestVectorBase::getInputAsVector() const {
         return std::vector<unsigned char>(this->input, this->input + TEXT_SIZE);
     }
 
-    const unsigned char* ExampleBase::getExpectedOutput() const {
+    const unsigned char* TestVectorBase::getExpectedOutput() const {
         return this->expectedOutput;
     }
 
-    std::vector<unsigned char> ExampleBase::getExpectedOutputAsVector() const {
+    std::vector<unsigned char> TestVectorBase::getExpectedOutputAsVector() const {
         return std::vector<unsigned char>(this->expectedOutput, this->expectedOutput + TEXT_SIZE);
     }
 
@@ -72,30 +72,30 @@ namespace NISTSP800_38A_Examples {
     // ECB Mode Implementation
     // =============================================================================
 
-    namespace ECB_ns {
+    namespace ECB {
 
-        const unsigned char* retrieveECBCiphertext(CommonAESVectors::KeylengthBits klb) {
-            switch(klb) {
-                case CommonAESVectors::KeylengthBits::keylen128: return ecb_aes128_ciphertext;
-                case CommonAESVectors::KeylengthBits::keylen192: return ecb_aes192_ciphertext;
-                case CommonAESVectors::KeylengthBits::keylen256: return ecb_aes256_ciphertext;
+        const unsigned char* getECBCiphertext(Common::KeySize ks) {
+            switch(ks) {
+                case Common::KeySize::AES128: return ecb_aes128_ciphertext;
+                case Common::KeySize::AES192: return ecb_aes192_ciphertext;
+                case Common::KeySize::AES256: return ecb_aes256_ciphertext;
                 default: return nullptr;
             }
         }
 
-        Example::Example(CommonAESVectors::KeylengthBits klb, CommonAESVectors::EncryptionOperationType op) {
-            this->keylenbits = klb;
-            this->mode = OperationMode::ECB;
-            this->operation = op;
-            this->key = CommonAESVectors::retrieveKey(klb);
+        TestVector::TestVector(Common::KeySize ks, Common::Direction op) {
+            this->keySize = ks;
+            this->cm = CipherMode::ECB;
+            this->dir = op;
+            this->key = Common::getKey(ks);
 
             switch(op) {
-                case CommonAESVectors::EncryptionOperationType::Encryption:
+                case Common::Direction::Encryption:
                     this->input = commonPlaintext;
-                    this->expectedOutput = retrieveECBCiphertext(klb);
+                    this->expectedOutput = getECBCiphertext(ks);
                     break;
-                case CommonAESVectors::EncryptionOperationType::Decryption:
-                    this->input = retrieveECBCiphertext(klb);
+                case Common::Direction::Decryption:
+                    this->input = getECBCiphertext(ks);
                     this->expectedOutput = commonPlaintext;
                     break;
                 default:
@@ -105,37 +105,37 @@ namespace NISTSP800_38A_Examples {
             }
         }
 
-    } // namespace ECB_ns
+    } // namespace ECB
 
     // =============================================================================
     // CBC Mode Implementation
     // =============================================================================
 
-    namespace CBC_ns {
+    namespace CBC {
 
-        const unsigned char* retrieveCBCCiphertext(CommonAESVectors::KeylengthBits klb) {
-            switch(klb) {
-                case CommonAESVectors::KeylengthBits::keylen128: return cbc_aes128_ciphertext;
-                case CommonAESVectors::KeylengthBits::keylen192: return cbc_aes192_ciphertext;
-                case CommonAESVectors::KeylengthBits::keylen256: return cbc_aes256_ciphertext;
+        const unsigned char* getCBCCiphertext(Common::KeySize ks) {
+            switch(ks) {
+                case Common::KeySize::AES128: return cbc_aes128_ciphertext;
+                case Common::KeySize::AES192: return cbc_aes192_ciphertext;
+                case Common::KeySize::AES256: return cbc_aes256_ciphertext;
                 default: return nullptr;
             }
         }
 
-        Example::Example(CommonAESVectors::KeylengthBits klb, CommonAESVectors::EncryptionOperationType op) {
-            this->keylenbits = klb;
-            this->mode = OperationMode::CBC;
-            this->operation = op;
-            this->key = CommonAESVectors::retrieveKey(klb);
+        TestVector::TestVector(Common::KeySize ks, Common::Direction op) {
+            this->keySize = ks;
+            this->cm = CipherMode::CBC;
+            this->dir = op;
+            this->key = Common::getKey(ks);
             this->iv = initializationVector;
 
             switch(op) {
-                case CommonAESVectors::EncryptionOperationType::Encryption:
+                case Common::Direction::Encryption:
                     this->input = commonPlaintext;
-                    this->expectedOutput = retrieveCBCCiphertext(klb);
+                    this->expectedOutput = getCBCCiphertext(ks);
                     break;
-                case CommonAESVectors::EncryptionOperationType::Decryption:
-                    this->input = retrieveCBCCiphertext(klb);
+                case Common::Direction::Decryption:
+                    this->input = getCBCCiphertext(ks);
                     this->expectedOutput = commonPlaintext;
                     break;
                 default:
@@ -145,41 +145,41 @@ namespace NISTSP800_38A_Examples {
             }
         }
 
-        const unsigned char* Example::getIV() const {
+        const unsigned char* TestVector::getIV() const {
             return this->iv;
         }
 
-    } // namespace CBC_ns
+    } // namespace CBC
 
     // =============================================================================
     // OFB Mode Implementation
     // =============================================================================
 
-    namespace OFB_ns {
+    namespace OFB {
 
-        const unsigned char* retrieveOFBCiphertext(CommonAESVectors::KeylengthBits klb) {
-            switch(klb) {
-                case CommonAESVectors::KeylengthBits::keylen128: return ofb_aes128_ciphertext;
-                case CommonAESVectors::KeylengthBits::keylen192: return ofb_aes192_ciphertext;
-                case CommonAESVectors::KeylengthBits::keylen256: return ofb_aes256_ciphertext;
+        const unsigned char* getOFBCiphertext(Common::KeySize ks) {
+            switch(ks) {
+                case Common::KeySize::AES128: return ofb_aes128_ciphertext;
+                case Common::KeySize::AES192: return ofb_aes192_ciphertext;
+                case Common::KeySize::AES256: return ofb_aes256_ciphertext;
                 default: return nullptr;
             }
         }
 
-        Example::Example(CommonAESVectors::KeylengthBits klb, CommonAESVectors::EncryptionOperationType op) {
-            this->keylenbits = klb;
-            this->mode = OperationMode::OFB;
-            this->operation = op;
-            this->key = CommonAESVectors::retrieveKey(klb);
+        TestVector::TestVector(Common::KeySize ks, Common::Direction op) {
+            this->keySize = ks;
+            this->cm = CipherMode::OFB;
+            this->dir = op;
+            this->key = Common::getKey(ks);
             this->iv = initializationVector;
 
             switch(op) {
-                case CommonAESVectors::EncryptionOperationType::Encryption:
+                case Common::Direction::Encryption:
                     this->input = commonPlaintext;
-                    this->expectedOutput = retrieveOFBCiphertext(klb);
+                    this->expectedOutput = getOFBCiphertext(ks);
                     break;
-                case CommonAESVectors::EncryptionOperationType::Decryption:
-                    this->input = retrieveOFBCiphertext(klb);
+                case Common::Direction::Decryption:
+                    this->input = getOFBCiphertext(ks);
                     this->expectedOutput = commonPlaintext;
                     break;
                 default:
@@ -189,41 +189,41 @@ namespace NISTSP800_38A_Examples {
             }
         }
 
-        const unsigned char* Example::getIV() const {
+        const unsigned char* TestVector::getIV() const {
             return this->iv;
         }
 
-    } // namespace OFB_ns
+    } // namespace OFB
 
     // =============================================================================
     // CTR Mode Implementation
     // =============================================================================
 
-    namespace CTR_ns {
+    namespace CTR {
 
-        const unsigned char* retrieveCTRCiphertext(CommonAESVectors::KeylengthBits klb) {
-            switch(klb) {
-                case CommonAESVectors::KeylengthBits::keylen128: return ctr_aes128_ciphertext;
-                case CommonAESVectors::KeylengthBits::keylen192: return ctr_aes192_ciphertext;
-                case CommonAESVectors::KeylengthBits::keylen256: return ctr_aes256_ciphertext;
+        const unsigned char* getCTRCiphertext(Common::KeySize ks) {
+            switch(ks) {
+                case Common::KeySize::AES128: return ctr_aes128_ciphertext;
+                case Common::KeySize::AES192: return ctr_aes192_ciphertext;
+                case Common::KeySize::AES256: return ctr_aes256_ciphertext;
                 default: return nullptr;
             }
         }
 
-        Example::Example(CommonAESVectors::KeylengthBits klb, CommonAESVectors::EncryptionOperationType op) {
-            this->keylenbits = klb;
-            this->mode = OperationMode::CTR;
-            this->operation = op;
-            this->key = CommonAESVectors::retrieveKey(klb);
+        TestVector::TestVector(Common::KeySize ks, Common::Direction op) {
+            this->keySize = ks;
+            this->cm = CipherMode::CTR;
+            this->dir = op;
+            this->key = Common::getKey(ks);
             this->counter = initialCounter;
 
             switch(op) {
-                case CommonAESVectors::EncryptionOperationType::Encryption:
+                case Common::Direction::Encryption:
                     this->input = commonPlaintext;
-                    this->expectedOutput = retrieveCTRCiphertext(klb);
+                    this->expectedOutput = getCTRCiphertext(ks);
                     break;
-                case CommonAESVectors::EncryptionOperationType::Decryption:
-                    this->input = retrieveCTRCiphertext(klb);
+                case Common::Direction::Decryption:
+                    this->input = getCTRCiphertext(ks);
                     this->expectedOutput = commonPlaintext;
                     break;
                 default:
@@ -233,49 +233,49 @@ namespace NISTSP800_38A_Examples {
             }
         }
 
-        const unsigned char* Example::getCounter() const {
+        const unsigned char* TestVector::getCounter() const {
             return this->counter;
         }
 
-    } // namespace CTR_ns
+    } // namespace CTR
 
     // =============================================================================
     // Factory Functions Implementation
     // =============================================================================
 
-    std::unique_ptr<ExampleBase> makeExampleECB(CommonAESVectors::KeylengthBits klb) {
-        return std::make_unique<ECB_ns::Example>(klb, CommonAESVectors::EncryptionOperationType::Encryption);
+    std::unique_ptr<TestVectorBase> makeTestVectorECB(Common::KeySize ks) {
+        return std::make_unique<ECB::TestVector>(ks, Common::Direction::Encryption);
     }
 
-    std::unique_ptr<ExampleBase> makeExampleCBC(CommonAESVectors::KeylengthBits klb) {
-        return std::make_unique<CBC_ns::Example>(klb, CommonAESVectors::EncryptionOperationType::Encryption);
+    std::unique_ptr<TestVectorBase> makeTestVectorCBC(Common::KeySize ks) {
+        return std::make_unique<CBC::TestVector>(ks, Common::Direction::Encryption);
     }
 
-    std::unique_ptr<ExampleBase> makeExampleOFB(CommonAESVectors::KeylengthBits klb) {
-        return std::make_unique<OFB_ns::Example>(klb, CommonAESVectors::EncryptionOperationType::Encryption);
+    std::unique_ptr<TestVectorBase> makeTestVectorOFB(Common::KeySize ks) {
+        return std::make_unique<OFB::TestVector>(ks, Common::Direction::Encryption);
     }
 
-    std::unique_ptr<ExampleBase> makeExampleCTR(CommonAESVectors::KeylengthBits klb) {
-        return std::make_unique<CTR_ns::Example>(klb, CommonAESVectors::EncryptionOperationType::Encryption);
+    std::unique_ptr<TestVectorBase> makeTestVectorCTR(Common::KeySize ks) {
+        return std::make_unique<CTR::TestVector>(ks, Common::Direction::Encryption);
     }
 
     // The map that connects the enum to the factory function
-    static const std::map<OperationMode, ExampleFactory> factoryMap = {
-        { OperationMode::ECB, &makeExampleECB },
-        { OperationMode::CBC, &makeExampleCBC },
-        { OperationMode::OFB, &makeExampleOFB },
-        { OperationMode::CTR, &makeExampleCTR }
+    static const std::map<CipherMode, TestVectorFactory> factoryMap = {
+        { CipherMode::ECB, &makeTestVectorECB },
+        { CipherMode::CBC, &makeTestVectorCBC },
+        { CipherMode::OFB, &makeTestVectorOFB },
+        { CipherMode::CTR, &makeTestVectorCTR }
     };
 
     /**
      * @brief Factory dispatcher using a map lookup.
      */
-    std::unique_ptr<ExampleBase> createExample(CommonAESVectors::KeylengthBits klb, OperationMode mode) {
-        auto it = factoryMap.find(mode);
+    std::unique_ptr<TestVectorBase> createTestVector(Common::KeySize ks, CipherMode cm) {
+        auto it = factoryMap.find(cm);
         if (it != factoryMap.end()) {
-            return it->second(klb);
+            return it->second(ks);
         }
         return nullptr;
     }
 
-} // namespace NISTSP800_38A_Examples
+} // namespace SP800_38A
