@@ -11,8 +11,8 @@
  * common plaintext data.
  */
 
-#ifndef NIST_SP800_38A_EXAMPLES_HPP
-#define NIST_SP800_38A_EXAMPLES_HPP
+#ifndef NIST_SP800_38A_TestVectors_HPP
+#define NIST_SP800_38A_TestVectors_HPP
 
 #include "common_aes_vectors.hpp"
 #include <memory>
@@ -22,14 +22,14 @@
 // Mode-Specific Definitions and Base Classes
 // =============================================================================
 
-namespace NISTSP800_38A_Examples {
+namespace SP800_38A {
 
     constexpr size_t TEXT_SIZE = 64;
     constexpr unsigned int INITIALIZATION_VECTOR_SIZE = 16;
     constexpr unsigned int COUNTER_SIZE = 16;
 
     // Enums specific to modes of operation testing
-    enum struct OperationMode {
+    enum struct CipherMode {
         Unknown,
         ECB,  // Electronic Codebook
         CBC,  // Cipher Block Chaining
@@ -37,25 +37,25 @@ namespace NISTSP800_38A_Examples {
         CTR   // Counter
     };
 
-    const char* getModeString(OperationMode mode);
+    const char* getModeString(CipherMode cm);
     const unsigned char* getInitializationVector();
     std::vector<unsigned char> getInitializationVectorAsStdVector();
     const unsigned char* getInitialCounter();
     std::vector<unsigned char> getInitialCounterAsStdVector();
 
     // Extends the common base class with members specific to operation modes.
-    struct ExampleBase : public CommonAESVectors::ExampleBase {
+    struct TestVectorBase : public Common::TestVectorBase {
     protected:
-        CommonAESVectors::EncryptionOperationType operation;
-        OperationMode mode;
+        Common::Direction dir;
+        CipherMode cm;
         const unsigned char* input;
         const unsigned char* expectedOutput;
 
     public:
-        virtual ~ExampleBase() = default;
+        virtual ~TestVectorBase() = default;
 
-        CommonAESVectors::EncryptionOperationType getOperationType() const;
-        OperationMode getOperationMode() const;
+        Common::Direction getDirection() const;
+        CipherMode getCipherMode() const;
         const unsigned char* getInput() const;
         std::vector<unsigned char> getInputAsVector() const;
         const unsigned char* getExpectedOutput() const;
@@ -64,11 +64,11 @@ namespace NISTSP800_38A_Examples {
     };
 
     // Factory function declarations
-    std::unique_ptr<ExampleBase> makeExampleECB(CommonAESVectors::KeylengthBits klb);
-    std::unique_ptr<ExampleBase> makeExampleCBC(CommonAESVectors::KeylengthBits klb);
-    std::unique_ptr<ExampleBase> makeExampleOFB(CommonAESVectors::KeylengthBits klb);
-    std::unique_ptr<ExampleBase> makeExampleCTR(CommonAESVectors::KeylengthBits klb);
-    std::unique_ptr<ExampleBase> createExample(CommonAESVectors::KeylengthBits klb, OperationMode mode);
+    std::unique_ptr<TestVectorBase> makeTestVectorECB(Common::KeySize ks);
+    std::unique_ptr<TestVectorBase> makeTestVectorCBC(Common::KeySize ks);
+    std::unique_ptr<TestVectorBase> makeTestVectorOFB(Common::KeySize ks);
+    std::unique_ptr<TestVectorBase> makeTestVectorCTR(Common::KeySize ks);
+    std::unique_ptr<TestVectorBase> createTestVector(Common::KeySize ks, CipherMode cm);
 
     // =============================================================================
     // Data Arrays
@@ -95,10 +95,10 @@ namespace NISTSP800_38A_Examples {
     };
 
     // =============================================================================
-    // ECB Mode Examples (NIST SP 800-38A Appendix F.1)
+    // ECB Mode TestVectors (NIST SP 800-38A Appendix F.1)
     // =============================================================================
 
-    namespace ECB_ns {
+    namespace ECB {
 
         // ECB Ciphertexts for each key length using the common plaintext.
         inline const unsigned char ecb_aes128_ciphertext[TEXT_SIZE] = {
@@ -123,20 +123,20 @@ namespace NISTSP800_38A_Examples {
         };
 
         // Function declaration
-        const unsigned char* retrieveECBCiphertext(CommonAESVectors::KeylengthBits klb);
+        const unsigned char* getECBCiphertext(Common::KeySize ks);
 
-        struct Example : public ExampleBase {
+        struct TestVector : public TestVectorBase {
         public:
-            Example(CommonAESVectors::KeylengthBits klb, CommonAESVectors::EncryptionOperationType op);
+            TestVector(Common::KeySize ks, Common::Direction op);
         };
 
-    } // namespace ECB_ns
+    } // namespace ECB
 
     // =============================================================================
-    // CBC Mode Examples (NIST SP 800-38A Appendix F.2)
+    // CBC Mode TestVectors (NIST SP 800-38A Appendix F.2)
     // =============================================================================
 
-    namespace CBC_ns {
+    namespace CBC {
 
         // CBC Ciphertexts for each key length
         inline const unsigned char cbc_aes128_ciphertext[TEXT_SIZE] = {
@@ -161,25 +161,25 @@ namespace NISTSP800_38A_Examples {
         };
 
         // Function declaration
-        const unsigned char* retrieveCBCCiphertext(CommonAESVectors::KeylengthBits klb);
+        const unsigned char* getCBCCiphertext(Common::KeySize ks);
 
-        struct Example : public ExampleBase {
+        struct TestVector : public TestVectorBase {
         private:
             const unsigned char* iv;
 
         public:
-            Example(CommonAESVectors::KeylengthBits klb, CommonAESVectors::EncryptionOperationType op);
+            TestVector(Common::KeySize ks, Common::Direction op);
             const unsigned char* getIV() const;
             static constexpr size_t getIVSize() { return INITIALIZATION_VECTOR_SIZE; }
         };
 
-    } // namespace CBC_ns
+    } // namespace CBC
 
     // =============================================================================
-    // OFB Mode Examples (NIST SP 800-38A Appendix F.4)
+    // OFB Mode TestVectors (NIST SP 800-38A Appendix F.4)
     // =============================================================================
 
-    namespace OFB_ns {
+    namespace OFB {
 
         // OFB Ciphertexts for each key length
         inline const unsigned char ofb_aes128_ciphertext[TEXT_SIZE] = {
@@ -204,25 +204,25 @@ namespace NISTSP800_38A_Examples {
         };
 
         // Function declaration
-        const unsigned char* retrieveOFBCiphertext(CommonAESVectors::KeylengthBits klb);
+        const unsigned char* getOFBCiphertext(Common::KeySize ks);
 
-        struct Example : public ExampleBase {
+        struct TestVector : public TestVectorBase {
         private:
             const unsigned char* iv;
 
         public:
-            Example(CommonAESVectors::KeylengthBits klb, CommonAESVectors::EncryptionOperationType op);
+            TestVector(Common::KeySize ks, Common::Direction op);
             const unsigned char* getIV() const;
             static constexpr size_t getIVSize() { return INITIALIZATION_VECTOR_SIZE; }
         };
 
-    } // namespace OFB_ns
+    } // namespace OFB
 
     // =============================================================================
-    // CTR Mode Examples (NIST SP 800-38A Appendix F.5)
+    // CTR Mode TestVectors (NIST SP 800-38A Appendix F.5)
     // =============================================================================
 
-    namespace CTR_ns {
+    namespace CTR {
 
         // CTR Ciphertexts for each key length
         inline const unsigned char ctr_aes128_ciphertext[TEXT_SIZE] = {
@@ -247,44 +247,52 @@ namespace NISTSP800_38A_Examples {
         };
 
         // Function declaration
-        const unsigned char* retrieveCTRCiphertext(CommonAESVectors::KeylengthBits klb);
+        const unsigned char* getCTRCiphertext(Common::KeySize ks);
 
-        struct Example : public ExampleBase {
+        struct TestVector : public TestVectorBase {
         private:
             const unsigned char* counter;
 
         public:
-            Example(CommonAESVectors::KeylengthBits klb, CommonAESVectors::EncryptionOperationType op);
+            TestVector(Common::KeySize ks, Common::Direction op);
             const unsigned char* getCounter() const;
             static constexpr size_t getCounterSize() { return COUNTER_SIZE; }
         };
 
-    } // namespace CTR_ns
+    } // namespace CTR
 
     // Type alias for factory function
-    using ExampleFactory = std::function<std::unique_ptr<ExampleBase>(CommonAESVectors::KeylengthBits)>;
+    using TestVectorFactory = std::function<std::unique_ptr<TestVectorBase>(Common::KeySize ks)>;
 
-} // namespace NISTSP800_38A_Examples
+} // namespace SP800_38A
 
 // Utility macros for cleaner writing
-#define NIST NISTSP800_38A_Examples
-#define NIST_EXAMPLEBASE NISTSP800_38A_Examples::ExampleBase
-#define NIST_EXAMPLEECB NISTSP800_38A_Examples::ECB_ns::Example
-#define NIST_EXAMPLECBC NISTSP800_38A_Examples::CBC_ns::Example
-#define NIST_EXAMPLEOFB NISTSP800_38A_Examples::OFB_ns::Example
-#define NIST_EXAMPLECTR NISTSP800_38A_Examples::CTR_ns::Example
-#define NIST_EXAMPLEBASE_UPTR std::unique_ptr<NISTSP800_38A_Examples::ExampleBase>
-#define NIST_EXAMPLEECB_UPTR std::unique_ptr<NISTSP800_38A_Examples::ECB_ns::Example>
-#define NIST_EXAMPLECBC_UPTR std::unique_ptr<NISTSP800_38A_Examples::CBC_ns::Example>
-#define NIST_EXAMPLEOFB_UPTR std::unique_ptr<NISTSP800_38A_Examples::OFB_ns::Example>
-#define NIST_EXAMPLECTR_UPTR std::unique_ptr<NISTSP800_38A_Examples::CTR_ns::Example>
-#define NIST_OPTMODE NISTSP800_38A_Examples::OperationMode
-#define NIST_TEXTSIZE NISTSP800_38A_Examples::TEXT_SIZE
-#define NIST_CREATEECBEXAMPLE(klb) std::make_unique<NIST_EXAMPLEECB>(NIST_EXAMPLEECB(static_cast<COMAESVEC_KEYLEN>(klb), COMAESVEC_OPERTENCRYPT))
-#define NIST_CREATECBCEXAMPLE(klb) std::make_unique<NIST_EXAMPLECBC>(NIST_EXAMPLECBC(static_cast<COMAESVEC_KEYLEN>(klb), COMAESVEC_OPERTENCRYPT))
-#define NIST_CREATEOFBEXAMPLE(klb) std::make_unique<NIST_EXAMPLEOFB>(NIST_EXAMPLEOFB(static_cast<COMAESVEC_KEYLEN>(klb), COMAESVEC_OPERTENCRYPT))
-#define NIST_CREATECTREXAMPLE(klb) std::make_unique<NIST_EXAMPLECTR>(NIST_EXAMPLECTR(static_cast<COMAESVEC_KEYLEN>(klb), COMAESVEC_OPERTENCRYPT))
-#define NIST_CREATEEXAMPLE(klb,mode) NISTSP800_38A_Examples::createExample(static_cast<COMAESVEC_KEYLEN>(klb), static_cast<NIST_OPTMODE>(mode))
-#define NIST_GETMODESTRING(mode) NISTSP800_38A_Examples::getModeString(static_cast<NIST_OPTMODE>(mode))
+#define SP80038A_BASE SP800_38A::TestVectorBase
+#define SP80038A_ECB SP800_38A::ECB::TestVector
+#define SP80038A_CBC SP800_38A::CBC::TestVector
+#define SP80038A_OFB SP800_38A::OFB::TestVector
+#define SP80038A_CTR SP800_38A::CTR::TestVector
 
-#endif // NIST_SP800_38A_EXAMPLES_HPP
+#define SP80038A_BASE_UPTR std::unique_ptr<SP800_38A::TestVectorBase>
+#define SP80038A_ECB_UPTR std::unique_ptr<SP800_38A::ECB::TestVector>
+#define SP80038A_CBC_UPTR std::unique_ptr<SP800_38A::CBC::TestVector>
+#define SP80038A_OFB_UPTR std::unique_ptr<SP800_38A::OFB::TestVector>
+#define SP80038A_CTR_UPTR std::unique_ptr<SP800_38A::CTR::TestVector>
+
+#define SP80038A_CIPHMODE SP800_38A::CipherMode
+#define SP80038A_TEXTSIZE SP800_38A::TEXT_SIZE
+
+#define SP80038A_CREATEECBEXAMPLE(ks) \
+    std::make_unique<SP80038A_ECB>(SP80038A_ECB(static_cast<COMMON_KEYSZ>(ks), COMMON_DIR_ENC))
+#define SP80038A_CREATECBCEXAMPLE(ks) \
+    std::make_unique<SP80038A_CBC>(SP80038A_CBC(static_cast<COMMON_KEYSZ>(ks), COMMON_DIR_ENC))
+#define SP80038A_CREATEOFBEXAMPLE(ks) \
+    std::make_unique<SP80038A_OFB>(SP80038A_OFB(static_cast<COMMON_KEYSZ>(ks), COMMON_DIR_ENC))
+#define SP80038A_CREATECTREXAMPLE(ks) \
+    std::make_unique<SP80038A_CTR>(SP80038A_CTR(static_cast<COMMON_KEYSZ>(ks), COMMON_DIR_ENC))
+#define SP80038A_CREATEEXAMPLE(ks,cm) \
+    SP800_38A::createTestVector(static_cast<COMMON_KEYSZ>(ks), static_cast<SP80038A_CIPHMODE>(cm))
+#define SP80038A_GETMODESTRING(cm) \
+    SP800_38A::getModeString(static_cast<SP80038A_CIPHMODE>(cm))
+
+#endif // NIST_SP800_38A_TestVectors_HPP
