@@ -20,7 +20,7 @@ bool test_encryptionDecryptionRoundtrip(Common::KeySize ks, bool debugHard);
  * @param debugHard The debug flag to pass to the test functions.
  * @return true if the critical key expansion test passes, false otherwise.
  */
-bool runTestsForKeylength(Common::KeySize ks, bool debugHard);
+bool runTestsForKeySize(Common::KeySize ks, bool debugHard);
 
 int main() {
     std::cout << "================= AES Core Implementation Tests =================\n" << std::endl;
@@ -29,9 +29,9 @@ int main() {
     const bool debugMode = false;
     bool allTestsSucceed = true;
 
-    allTestsSucceed &= runTestsForKeylength(Common::KeySize::AES128, debugMode);
-    allTestsSucceed &= runTestsForKeylength(Common::KeySize::AES192, debugMode);
-    allTestsSucceed &= runTestsForKeylength(Common::KeySize::AES256, debugMode);
+    allTestsSucceed &= runTestsForKeySize(Common::KeySize::AES128, debugMode);
+    allTestsSucceed &= runTestsForKeySize(Common::KeySize::AES192, debugMode);
+    allTestsSucceed &= runTestsForKeySize(Common::KeySize::AES256, debugMode);
 
     if(allTestsSucceed) {
         std::cout << "\n\n================== All AES Core Tests Succeed ==================" << std::endl;
@@ -67,9 +67,9 @@ bool test_KeyExpansionMemoryAllocationBuild(Common::KeySize ks, bool debugHard) 
     KeyExpansionWriteBytes(ke_p, KeyExpansionBytes.data());
     success &= ASSERT_BYTES_EQUAL(
         reference.getExpectedKeyExpansion(),
-                       KeyExpansionBytes.data(),
-                       keyexpansionlen,
-                       "Expanded key should match reference expanded key"
+        KeyExpansionBytes.data(),
+        keyexpansionlen,
+        "Expanded key should match reference expanded key"
     );
 
     KeyExpansionDelete(&ke_p);
@@ -195,7 +195,7 @@ bool test_encryptionDecryptionRoundtrip(Common::KeySize ks, bool debugHard) {
     return success;
 }
 
-bool runTestsForKeylength(Common::KeySize ks, bool debugHard) {
+bool runTestsForKeySize(Common::KeySize ks, bool debugHard) {
     const char* keylenStr = Common::getKeySizeString(ks);
     bool success = true;
     std::cout << "\n=================================================================\n"
