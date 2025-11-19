@@ -32,9 +32,9 @@ namespace Common {
      */
     enum struct KeySize {
         UnknownKeySize,
-        keylen128 = 128,
-        keylen192 = 192,
-        keylen256 = 256
+        AES128 = 128,
+        AES192 = 192,
+        AES256 = 256
     };
 
     /**

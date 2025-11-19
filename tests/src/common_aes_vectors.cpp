@@ -14,18 +14,18 @@ namespace Common {
 
     size_t getKeySizeBytes(KeySize keysz) {
         switch(keysz) {
-            case KeySize::keylen128: return 16;
-            case KeySize::keylen192: return 24;
-            case KeySize::keylen256: return 32;
+            case KeySize::AES128: return 16;
+            case KeySize::AES192: return 24;
+            case KeySize::AES256: return 32;
             default: return 0;
         }
     }
 
     const char* getKeySizeString(KeySize keysz) {
         switch(keysz) {
-            case KeySize::keylen128: return "128";
-            case KeySize::keylen192: return "192";
-            case KeySize::keylen256: return "256";
+            case KeySize::AES128: return "128";
+            case KeySize::AES192: return "192";
+            case KeySize::AES256: return "256";
             default: return "Unknown";
         }
     }
@@ -51,9 +51,9 @@ namespace Common {
 
     const unsigned char* getKey(KeySize keysz) {
         switch(keysz) {
-            case KeySize::keylen128: return key128;
-            case KeySize::keylen192: return key192;
-            case KeySize::keylen256: return key256;
+            case KeySize::AES128: return key128;
+            case KeySize::AES192: return key192;
+            case KeySize::AES256: return key256;
             default: return nullptr;
         }
     }
@@ -66,33 +66,33 @@ namespace Common {
 
             case VectorSource::Stub_Sequential:
                 switch(keysz) {
-                    case KeySize::keylen128: return stub_key128_sequential;
-                    case KeySize::keylen192: return stub_key192_sequential;
-                    case KeySize::keylen256: return stub_key256_sequential;
+                    case KeySize::AES128: return stub_key128_sequential;
+                    case KeySize::AES192: return stub_key192_sequential;
+                    case KeySize::AES256: return stub_key256_sequential;
                     default: return nullptr;
                 }
 
                     case VectorSource::Stub_Zeros:
                         switch(keysz) {
-                            case KeySize::keylen128: return stub_key128_zeros;
-                            case KeySize::keylen192: return stub_key192_zeros;
-                            case KeySize::keylen256: return stub_key256_zeros;
+                            case KeySize::AES128: return stub_key128_zeros;
+                            case KeySize::AES192: return stub_key192_zeros;
+                            case KeySize::AES256: return stub_key256_zeros;
                             default: return nullptr;
                         }
 
                             case VectorSource::Stub_Ones:
                                 switch(keysz) {
-                                    case KeySize::keylen128: return stub_key128_ones;
-                                    case KeySize::keylen192: return stub_key192_ones;
-                                    case KeySize::keylen256: return stub_key256_ones;
+                                    case KeySize::AES128: return stub_key128_ones;
+                                    case KeySize::AES192: return stub_key192_ones;
+                                    case KeySize::AES256: return stub_key256_ones;
                                     default: return nullptr;
                                 }
 
                                     case VectorSource::Stub_Alternating:
                                         switch(keysz) {
-                                            case KeySize::keylen128: return stub_key128_alternating;
-                                            case KeySize::keylen192: return stub_key192_alternating;
-                                            case KeySize::keylen256: return stub_key256_alternating;
+                                            case KeySize::AES128: return stub_key128_alternating;
+                                            case KeySize::AES192: return stub_key192_alternating;
+                                            case KeySize::AES256: return stub_key256_alternating;
                                             default: return nullptr;
                                         }
 
@@ -111,9 +111,9 @@ namespace Common {
 
     size_t TestVectorBase::getKeySizeBytes() const {
         switch(this->keysz) {
-            case KeySize::keylen128: return 16;
-            case KeySize::keylen192: return 24;
-            case KeySize::keylen256: return 32;
+            case KeySize::AES128: return 16;
+            case KeySize::AES192: return 24;
+            case KeySize::AES256: return 32;
             default: return 0;
         }
     }
