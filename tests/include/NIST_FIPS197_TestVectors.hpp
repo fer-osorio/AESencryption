@@ -1,5 +1,5 @@
 /*
- * AES Key Expansion and Cipher Examples - FIPS 197 Standard Reference
+ * AES Key Expansion and Cipher TestVectors - FIPS 197 Standard Reference
  *
  * This file contains test vectors from the FIPS 197 standard for:
  * - Appendix A: Key Expansion examples.
@@ -10,35 +10,35 @@
  *
  * Note: The Cipher example in Appendix B uses a different set of keys
  * than the Key Expansion examples. These keys are defined locally within
- * the "Encryption_ns" namespace.
+ * the "Encryption" namespace.
  */
 
-#ifndef FIPS197_EXAMPLES_HPP
-#define FIPS197_EXAMPLES_HPP
+#ifndef NIST_FIPS197_TestVectors_HPP
+#define NIST_FIPS197_TestVectors_HPP
 
 #include "common_aes_vectors.hpp"
 
-namespace NISTFIPS197_Examples {
+namespace FIPS197 {
 
 // =============================================================================
-// Appendix A: Key Expansion Examples
+// Appendix A: Key Expansion TestVectors
 // =============================================================================
 
-namespace KeyExpansion_ns {
+namespace KeyExpansion {
 
-struct Example : public CommonAESVectors::ExampleBase {
+struct TestVector : public Common::TestVectorBase {
 private:
     const unsigned char* expectedKeyExpansion;
 
 public:
-    Example(CommonAESVectors::KeylengthBits kl);
+    TestVector(Common::KeySize keysz);
     const unsigned char* getExpectedKeyExpansion() const;
 };
 
 // Function declarations
-const unsigned char* retrieveKeyExpansion(CommonAESVectors::KeylengthBits kl);
+const unsigned char* getKeyExpansion(Common::KeySize keysz);
 
-// Expected expanded key schedules for each key length - kept inline for performance
+// Expected expanded key schedules for each key size - kept inline for performance
 inline const unsigned char key128_expanded[176] = {
     // w[0] to w[3] - Original key
     0x2b, 0x7e, 0x15, 0x16,  // w[0]
@@ -259,30 +259,30 @@ inline const unsigned char key256_expanded[240] = {
     0x70, 0x6c, 0x63, 0x1e   // w[59]
 };
 
-} // namespace KeyExpansion_ns
+} // namespace KeyExpansion
 
 // =============================================================================
-// Appendix B: Cipher Example
+// Appendix B: Cipher TestVector
 // =============================================================================
 
-namespace Encryption_ns {
+namespace Encryption {
 
 // Inherits directly from the common base class.
-struct Example : public CommonAESVectors::ExampleBase {
+struct TestVector : public Common::TestVectorBase {
 private:
-    CommonAESVectors::EncryptionOperationType encOpType_;
+    Common::Direction dir_;
     const unsigned char* input;
     const unsigned char* expectedOutput;
 
 public:
-    Example(CommonAESVectors::KeylengthBits kl, CommonAESVectors::EncryptionOperationType encOpType);
+    TestVector(Common::KeySize keysz, Common::Direction dir);
     const unsigned char* getInput() const;
     const unsigned char* getExpectedOutput() const;
 };
 
 // Function declarations
-const unsigned char* retrieveKey(CommonAESVectors::KeylengthBits kl);
-const unsigned char* retrieveCipherText(CommonAESVectors::KeylengthBits kl);
+const unsigned char* getKey(Common::KeySize keysz);
+const unsigned char* getCipherText(Common::KeySize keysz);
 
 // Keys specific to the FIPS 197 Appendix B example - kept inline for performance
 inline const unsigned char key128[] = {
@@ -323,14 +323,13 @@ inline const unsigned char cipherTextKey256[16] = {
     0xea,0xfc,0x49,0x90,0x4b,0x49,0x60,0x89
 };
 
-} // namespace Encryption_ns
+} // namespace Encryption
 
-} // namespace NISTFIPS197_Examples
+} // namespace FIPS197
 
 // Utility macros for cleaner writing
-#define NISTFIPS197 NISTFIPS197_Examples
-#define NISTFIPS197_KEYEXPANSION NISTFIPS197::KeyExpansion_ns::Example
-#define NISTFIPS197_ENCRYPTION NISTFIPS197::Encryption_ns::Example
-#define NISTFIPS197_PLAINTEXT NISTFIPS197_Examples::Encryption_ns::plainText
+#define FIPS197_KEYEXP_TESTVEC FIPS197::KeyExpansion::TestVector
+#define FIPS197_ENC_TESTVEC FIPS197::Encryption::TestVector
+#define FIPS197_PLAINTEXT FIPS197::Encryption::plainText
 
-#endif // FIPS197_EXAMPLES_HPP
+#endif // NIST_FIPS197_TestVectors_HPP
