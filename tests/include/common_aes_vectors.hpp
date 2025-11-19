@@ -60,12 +60,12 @@ namespace Common {
     // Function Declarations
     // =============================================================================
 
-    size_t getKeySizeBytes(KeySize keysz);
-    const char* getKeySizeString(KeySize keysz);
+    size_t getKeySizeBytes(KeySize ks);
+    const char* getKeySizeString(KeySize ks);
     const char* getDirectionString(Direction dir);
     const char* getVectorSourceString(VectorSource vs);
-    const unsigned char* getKey(KeySize keysz);
-    const unsigned char* getStubKey(KeySize keysz, VectorSource vs);
+    const unsigned char* getKey(KeySize ks);
+    const unsigned char* getStubKey(KeySize ks, VectorSource vs);
 
     // =============================================================================
     // Common Base Classes
@@ -76,7 +76,7 @@ namespace Common {
      */
     struct TestVectorBase {
     protected:
-        KeySize keysz;
+        KeySize keySize;
         const unsigned char* key;
 
     public:
@@ -269,12 +269,12 @@ namespace Common {
      */
     template<typename TestVectorClass>
     struct TestVectorFactory {
-        static TestVectorClass createEncryptionTestVector(KeySize keysz) {
-            return TestVectorClass(keysz, Direction::Encryption);
+        static TestVectorClass createEncryptionTestVector(KeySize ks) {
+            return TestVectorClass(ks, Direction::Encryption);
         }
 
-        static TestVectorClass createDecryptionTestVector(KeySize keysz) {
-            return TestVectorClass(keysz, Direction::Decryption);
+        static TestVectorClass createDecryptionTestVector(KeySize ks) {
+            return TestVectorClass(ks, Direction::Decryption);
         }
     };
 
@@ -288,7 +288,7 @@ namespace Common {
 #define COMMON_DIR_ENC Common::Direction::Encryption
 #define COMMON_DIR_DEC Common::Direction::Decryption
 #define COMMON_VECTSRC Common::VectorSource
-#define COMMON_GETKEYSZSTR(keysz) Common::getKeySizeString(static_cast<COMMON_KEYSZ>(keysz))
-#define COMMON_GETSTUBKEY(keysz, vs) Common::getStubKey(static_cast<COMMON_KEYSZ>(keysz), static_cast<COMMON_VECTSRC>(vs))
+#define COMMON_GETKEYSZSTR(ks) Common::getKeySizeString(static_cast<COMMON_KEYSZ>(ks))
+#define COMMON_GETSTUBKEY(ks, vs) Common::getStubKey(static_cast<COMMON_KEYSZ>(ks), static_cast<COMMON_VECTSRC>(vs))
 
 #endif // COMMON_AES_VECTORS_HPP
