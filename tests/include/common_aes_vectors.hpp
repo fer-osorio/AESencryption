@@ -5,7 +5,7 @@
  * example files to provide a single, reusable header for AES implementations.
  *
  * It includes:
- * - Enumeration for standard AES key lengths.
+ * - Enumeration for standard AES key sizes.
  * - Common keys used in FIPS 197 and NIST SP 800-38A examples.
  * - Stub/mock test data for independent component testing.
  * - A common plaintext block and initialization vector.
@@ -21,17 +21,17 @@
 #include <stddef.h>
 #include <vector>
 
-namespace CommonAESVectors {
+namespace Common {
 
     // =============================================================================
     // Common Enumerations
     // =============================================================================
 
     /**
-     * @brief Defines the standard AES key lengths in bits.
+     * @brief Defines the standard AES key sizes in bits.
      */
-    enum struct KeylengthBits {
-        UnknownKeylen,
+    enum struct KeySize {
+        UnknownKeySize,
         keylen128 = 128,
         keylen192 = 192,
         keylen256 = 256
@@ -40,8 +40,7 @@ namespace CommonAESVectors {
     /**
      * @brief Defines the type of cryptographic operation.
      */
-    enum struct EncryptionOperationType {
-        Unknown,
+    enum struct Direction {
         Encryption,
         Decryption
     };
@@ -61,12 +60,12 @@ namespace CommonAESVectors {
     // Function Declarations
     // =============================================================================
 
-    size_t getKeyLengthBytes(KeylengthBits klb);
-    const char* getKeylengthString(KeylengthBits keylen);
-    const char* getOperationString(EncryptionOperationType op);
+    size_t getKeySizeBytes(KeySize keysz);
+    const char* getKeySizeString(KeySize keysz);
+    const char* getDirectionString(Direction dir);
     const char* getVectorSourceString(VectorSource vs);
-    const unsigned char* retrieveKey(KeylengthBits kl);
-    const unsigned char* retrieveStubKey(KeylengthBits kl, VectorSource vs);
+    const unsigned char* getKey(KeySize keysz);
+    const unsigned char* getStubKey(KeySize keysz, VectorSource vs);
 
     // =============================================================================
     // Common Base Classes
@@ -75,25 +74,25 @@ namespace CommonAESVectors {
     /**
      * @brief A base class for test examples, providing common key information.
      */
-    struct ExampleBase {
+    struct TestVectorBase {
     protected:
-        KeylengthBits keylenbits;
+        KeySize keysz;
         const unsigned char* key;
 
     public:
-        virtual ~ExampleBase() = default;
+        virtual ~TestVectorBase() = default;
 
         /**
-         * @brief Gets the key length enumeration.
-         * @return The key length as a KeylengthBits enum value.
+         * @brief Gets the key size enumeration.
+         * @return The key size as a KeySize enum value.
          */
-        KeylengthBits getKeylenBits() const;
+        KeySize getKeySize() const;
 
         /**
          * @brief Gets the size of the key in bytes.
          * @return The key size (16, 24, or 32) or 0 for unknown.
          */
-        size_t getKeylenBytes() const;
+        size_t getKeySizeBytes() const;
 
         /**
          * @brief Gets a pointer to the raw key data.
@@ -266,30 +265,30 @@ namespace CommonAESVectors {
     // =============================================================================
 
     /**
-     * @brief Template factory class for creating examples of different operation types.
+     * @brief Template factory class for creating test vectors of different operation types.
      */
-    template<typename ExampleType>
-    struct ExampleFactory {
-        static ExampleType createEncryptionExample(KeylengthBits keylen) {
-            return ExampleType(keylen, EncryptionOperationType::Encryption);
+    template<typename TestVectorClass>
+    struct TestVectorFactory {
+        static TestVectorClass createEncryptionTestVector(KeySize keysz) {
+            return TestVectorClass(keysz, Direction::Encryption);
         }
 
-        static ExampleType createDecryptionExample(KeylengthBits keylen) {
-            return ExampleType(keylen, EncryptionOperationType::Decryption);
+        static TestVectorClass createDecryptionTestVector(KeySize keysz) {
+            return TestVectorClass(keysz, Direction::Decryption);
         }
     };
 
-} // namespace CommonAESVectors
+} // namespace Common
 
 // =============================================================================
 // Utility Macros
 // =============================================================================
 
-#define COMAESVEC_KEYLEN CommonAESVectors::KeylengthBits
-#define COMAESVEC_OPERTENCRYPT CommonAESVectors::EncryptionOperationType::Encryption
-#define COMAESVEC_OPERTDECRYPT CommonAESVectors::EncryptionOperationType::Decryption
-#define COMAESVEC_VECTORSOURCE CommonAESVectors::VectorSource
-#define COMAESVEC_GETKEYLENSTR(klb) CommonAESVectors::getKeylengthString(static_cast<COMAESVEC_KEYLEN>(klb))
-#define COMAESVEC_GETSTUBKEY(klb, vs) CommonAESVectors::retrieveStubKey(static_cast<COMAESVEC_KEYLEN>(klb), static_cast<COMAESVEC_VECTORSOURCE>(vs))
+#define COMMON_KEYSZ Common::KeySize
+#define COMMON_DIR_ENC Common::Direction::Encryption
+#define COMMON_DIR_DEC Common::Direction::Decryption
+#define COMMON_VECTSRC Common::VectorSource
+#define COMMON_GETKEYSZSTR(keysz) Common::getKeySizeString(static_cast<COMMON_KEYSZ>(keysz))
+#define COMMON_GETSTUBKEY(keysz, vs) Common::getStubKey(static_cast<COMMON_KEYSZ>(keysz), static_cast<COMMON_VECTSRC>(vs))
 
 #endif // COMMON_AES_VECTORS_HPP

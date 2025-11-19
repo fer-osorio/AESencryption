@@ -6,34 +6,34 @@
 
 #include "../include/common_aes_vectors.hpp"
 
-namespace CommonAESVectors {
+namespace Common {
 
     // =============================================================================
     // Utility Function Implementations
     // =============================================================================
 
-    size_t getKeyLengthBytes(KeylengthBits klb) {
-        switch(klb) {
-            case KeylengthBits::keylen128: return 16;
-            case KeylengthBits::keylen192: return 24;
-            case KeylengthBits::keylen256: return 32;
+    size_t getKeySizeBytes(KeySize keysz) {
+        switch(keysz) {
+            case KeySize::keylen128: return 16;
+            case KeySize::keylen192: return 24;
+            case KeySize::keylen256: return 32;
             default: return 0;
         }
     }
 
-    const char* getKeylengthString(KeylengthBits keylen) {
-        switch(keylen) {
-            case KeylengthBits::keylen128: return "128";
-            case KeylengthBits::keylen192: return "192";
-            case KeylengthBits::keylen256: return "256";
+    const char* getKeySizeString(KeySize keysz) {
+        switch(keysz) {
+            case KeySize::keylen128: return "128";
+            case KeySize::keylen192: return "192";
+            case KeySize::keylen256: return "256";
             default: return "Unknown";
         }
     }
 
-    const char* getOperationString(EncryptionOperationType op) {
-        switch(op) {
-            case EncryptionOperationType::Encryption: return "Encryption";
-            case EncryptionOperationType::Decryption: return "Decryption";
+    const char* getDirectionString(Direction dir) {
+        switch(dir) {
+            case Direction::Encryption: return "Encryption";
+            case Direction::Decryption: return "Decryption";
             default: return "Unknown";
         }
     }
@@ -49,50 +49,50 @@ namespace CommonAESVectors {
         }
     }
 
-    const unsigned char* retrieveKey(KeylengthBits kl) {
-        switch(kl) {
-            case KeylengthBits::keylen128: return key128;
-            case KeylengthBits::keylen192: return key192;
-            case KeylengthBits::keylen256: return key256;
+    const unsigned char* getKey(KeySize keysz) {
+        switch(keysz) {
+            case KeySize::keylen128: return key128;
+            case KeySize::keylen192: return key192;
+            case KeySize::keylen256: return key256;
             default: return nullptr;
         }
     }
 
-    const unsigned char* retrieveStubKey(KeylengthBits kl, VectorSource vs) {
+    const unsigned char* getStubKey(KeySize keysz, VectorSource vs) {
         // First handle by vector source type
         switch(vs) {
             case VectorSource::NIST_Official:
-                return retrieveKey(kl); // Delegate to official keys
+                return getKey(keysz); // Delegate to official keys
 
             case VectorSource::Stub_Sequential:
-                switch(kl) {
-                    case KeylengthBits::keylen128: return stub_key128_sequential;
-                    case KeylengthBits::keylen192: return stub_key192_sequential;
-                    case KeylengthBits::keylen256: return stub_key256_sequential;
+                switch(keysz) {
+                    case KeySize::keylen128: return stub_key128_sequential;
+                    case KeySize::keylen192: return stub_key192_sequential;
+                    case KeySize::keylen256: return stub_key256_sequential;
                     default: return nullptr;
                 }
 
                     case VectorSource::Stub_Zeros:
-                        switch(kl) {
-                            case KeylengthBits::keylen128: return stub_key128_zeros;
-                            case KeylengthBits::keylen192: return stub_key192_zeros;
-                            case KeylengthBits::keylen256: return stub_key256_zeros;
+                        switch(keysz) {
+                            case KeySize::keylen128: return stub_key128_zeros;
+                            case KeySize::keylen192: return stub_key192_zeros;
+                            case KeySize::keylen256: return stub_key256_zeros;
                             default: return nullptr;
                         }
 
                             case VectorSource::Stub_Ones:
-                                switch(kl) {
-                                    case KeylengthBits::keylen128: return stub_key128_ones;
-                                    case KeylengthBits::keylen192: return stub_key192_ones;
-                                    case KeylengthBits::keylen256: return stub_key256_ones;
+                                switch(keysz) {
+                                    case KeySize::keylen128: return stub_key128_ones;
+                                    case KeySize::keylen192: return stub_key192_ones;
+                                    case KeySize::keylen256: return stub_key256_ones;
                                     default: return nullptr;
                                 }
 
                                     case VectorSource::Stub_Alternating:
-                                        switch(kl) {
-                                            case KeylengthBits::keylen128: return stub_key128_alternating;
-                                            case KeylengthBits::keylen192: return stub_key192_alternating;
-                                            case KeylengthBits::keylen256: return stub_key256_alternating;
+                                        switch(keysz) {
+                                            case KeySize::keylen128: return stub_key128_alternating;
+                                            case KeySize::keylen192: return stub_key192_alternating;
+                                            case KeySize::keylen256: return stub_key256_alternating;
                                             default: return nullptr;
                                         }
 
@@ -102,28 +102,28 @@ namespace CommonAESVectors {
     }
 
     // =============================================================================
-    // ExampleBase Implementation
+    // TestVectorBase Implementation
     // =============================================================================
 
-    KeylengthBits ExampleBase::getKeylenBits() const {
-        return this->keylenbits;
+    KeySize TestVectorBase::getKeySize() const {
+        return this->keysz;
     }
 
-    size_t ExampleBase::getKeylenBytes() const {
-        switch(this->keylenbits) {
-            case KeylengthBits::keylen128: return 16;
-            case KeylengthBits::keylen192: return 24;
-            case KeylengthBits::keylen256: return 32;
+    size_t TestVectorBase::getKeySizeBytes() const {
+        switch(this->keysz) {
+            case KeySize::keylen128: return 16;
+            case KeySize::keylen192: return 24;
+            case KeySize::keylen256: return 32;
             default: return 0;
         }
     }
 
-    const unsigned char* ExampleBase::getKey() const {
+    const unsigned char* TestVectorBase::getKey() const {
         return this->key;
     }
 
-    std::vector<unsigned char> ExampleBase::getKeyAsVector() const {
-        return std::vector<unsigned char>(this->key, this->key + this->getKeylenBytes());
+    std::vector<unsigned char> TestVectorBase::getKeyAsVector() const {
+        return std::vector<unsigned char>(this->key, this->key + this->getKeySizeBytes());
     }
 
-} // namespace CommonAESVectors
+} // namespace Common
