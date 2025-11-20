@@ -4,7 +4,7 @@
 all: data-encryption core file-handlers crypto-cli metrics-analysis tests command-line-tools
 
 # Component targets
-tests: data-encryption core file-handlers crypto-cli metrics-analysis
+tests: data-encryption core file-handlers crypto-cli metrics-analysis command-line-tools
 	@$(MAKE) -C tests
 
 command-line-tools: data-encryption core file-handlers crypto-cli metrics-analysis
