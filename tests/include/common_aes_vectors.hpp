@@ -65,6 +65,7 @@ namespace Common {
     const char* getVectorSourceString(VectorSource vs);
     const unsigned char* getKey(KeySize ks);
     const unsigned char* getStubKey(KeySize ks, VectorSource vs);
+    const unsigned char* getStubKeyExpansion(KeySize ks, VectorSource vs);
 
     // =============================================================================
     // Common Base Classes
