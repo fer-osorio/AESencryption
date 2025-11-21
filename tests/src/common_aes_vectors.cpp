@@ -44,7 +44,6 @@ namespace Common {
             case VectorSource::Stub_Sequential: return "Stub Sequential";
             case VectorSource::Stub_Zeros: return "Stub Zeros";
             case VectorSource::Stub_Ones: return "Stub Ones";
-            case VectorSource::Stub_Alternating: return "Stub Alternating";
             default: return "Unknown";
         }
     }
@@ -63,7 +62,6 @@ namespace Common {
         switch(vs) {
             case VectorSource::NIST_Official:
                 return getKey(ks); // Delegate to official keys
-
             case VectorSource::Stub_Sequential:
                 switch(ks) {
                     case KeySize::AES128: return stub_key128_sequential;
@@ -71,33 +69,50 @@ namespace Common {
                     case KeySize::AES256: return stub_key256_sequential;
                     default: return nullptr;
                 }
+            case VectorSource::Stub_Zeros:
+                switch(ks) {
+                    case KeySize::AES128: return stub_key128_zeros;
+                    case KeySize::AES192: return stub_key192_zeros;
+                    case KeySize::AES256: return stub_key256_zeros;
+                    default: return nullptr;
+                }
+            case VectorSource::Stub_Ones:
+                switch(ks) {
+                    case KeySize::AES128: return stub_key128_ones;
+                    case KeySize::AES192: return stub_key192_ones;
+                    case KeySize::AES256: return stub_key256_ones;
+                    default: return nullptr;
+                }
+            default:
+                return nullptr;
+        }
+    }
 
-                    case VectorSource::Stub_Zeros:
-                        switch(ks) {
-                            case KeySize::AES128: return stub_key128_zeros;
-                            case KeySize::AES192: return stub_key192_zeros;
-                            case KeySize::AES256: return stub_key256_zeros;
-                            default: return nullptr;
-                        }
-
-                            case VectorSource::Stub_Ones:
-                                switch(ks) {
-                                    case KeySize::AES128: return stub_key128_ones;
-                                    case KeySize::AES192: return stub_key192_ones;
-                                    case KeySize::AES256: return stub_key256_ones;
-                                    default: return nullptr;
-                                }
-
-                                    case VectorSource::Stub_Alternating:
-                                        switch(ks) {
-                                            case KeySize::AES128: return stub_key128_alternating;
-                                            case KeySize::AES192: return stub_key192_alternating;
-                                            case KeySize::AES256: return stub_key256_alternating;
-                                            default: return nullptr;
-                                        }
-
-                                            default:
-                                                return nullptr;
+    const unsigned char* getStubKeyExpansion(KeySize ks, VectorSource vs) {
+        switch(vs) {
+            case VectorSource::Stub_Sequential:
+                switch(ks) {
+                    case KeySize::AES128: return stub_keyexp128_sequential;
+                    case KeySize::AES192: return stub_keyexp192_sequential;
+                    case KeySize::AES256: return stub_keyexp256_sequential;
+                    default: return nullptr;
+                }
+            case VectorSource::Stub_Zeros:
+                switch(ks) {
+                    case KeySize::AES128: return stub_keyexp128_zeros;
+                    case KeySize::AES192: return stub_keyexp192_zeros;
+                    case KeySize::AES256: return stub_keyexp256_zeros;
+                    default: return nullptr;
+                }
+            case VectorSource::Stub_Ones:
+                switch(ks) {
+                    case KeySize::AES128: return stub_keyexp128_ones;
+                    case KeySize::AES192: return stub_keyexp192_ones;
+                    case KeySize::AES256: return stub_keyexp256_ones;
+                    default: return nullptr;
+                }
+            default:
+                return nullptr;
         }
     }
 
