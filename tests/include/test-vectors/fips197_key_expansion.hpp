@@ -54,9 +54,8 @@ namespace TestVectors {
                     /**
                      * @brief Construct key expansion test vector
                      * @param ks Key size
-                     * @param source Data source (NIST or Stub variants)
                      */
-                    explicit TestVector(KeySize ks, DataSource source = DataSource::NIST_Official);
+                    explicit TestVector(KeySize ks);
 
                     // TestVectorBase interface implementation
                     const unsigned char* getInput() const override { return key_; }
@@ -75,13 +74,9 @@ namespace TestVectors {
                 /**
                  * @brief Create key expansion test vector
                  * @param ks Key size
-                 * @param source Data source
                  * @return Unique pointer to test vector
                  */
-                std::unique_ptr<TestVector> create(
-                    KeySize ks,
-                    DataSource source = DataSource::NIST_Official
-                );
+                std::unique_ptr<TestVector> create(KeySize ks);
 
             } // namespace KeyExpansion
         } // namespace FIPS197
