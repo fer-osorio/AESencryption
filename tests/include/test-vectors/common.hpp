@@ -146,8 +146,7 @@ namespace TestVectors {
             size_t getKeySizeBytes() const { return TestVectors::AES::getKeySizeBytes(keySize_); }
 
             // Data access
-            const unsigned char* getKey() const { return key_; }
-            std::vector<unsigned char> getKeyAsVector() const;
+            std::vector<unsigned char> getKey() const;
 
             // Pure virtual interface - must be implemented by derived classes
             virtual const unsigned char* getInput() const = 0;

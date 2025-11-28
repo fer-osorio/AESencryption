@@ -80,7 +80,7 @@ namespace TestVectors {
         // TestVectorBase Implementation
         // =========================================================================
 
-        std::vector<unsigned char> TestVectorBase::getKeyAsVector() const {
+        std::vector<unsigned char> TestVectorBase::getKey() const {
             if (key_ == nullptr) {
                 return std::vector<unsigned char>();
             }
