@@ -221,15 +221,15 @@ namespace TestVectors {
                     }
                 }
 
-                std::vector<unsigned char> TestVector::getInputAsVector() const {
+                const std::vector<unsigned char> TestVector::getInput() const {
                     return std::vector<unsigned char>(input_, input_ + 16);
                 }
 
-                std::vector<unsigned char> TestVector::getExpectedOutputAsVector() const {
+                const std::vector<unsigned char> TestVector::getExpectedOutput() const {
                     return std::vector<unsigned char>(expectedOutput_, expectedOutput_ + 16);
                 }
 
-                std::vector<unsigned char> TestVector::getKeyExpansionAsVector() const {
+                std::vector<unsigned char> TestVector::getKeyExpansion() const {
                     return std::vector<unsigned char>(keyExpansion_, keyExpansion_ + keyExpansionSize_);
                 }
 

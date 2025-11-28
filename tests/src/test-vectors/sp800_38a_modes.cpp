@@ -35,27 +35,19 @@ namespace TestVectors {
                 return kInitializationVector;
             }
 
-            std::vector<unsigned char> getIVAsVector() {
-                return std::vector<unsigned char>(kInitializationVector, kInitializationVector + 16);
-            }
-
             const unsigned char* getCounter() {
                 return kInitialCounter;
-            }
-
-            std::vector<unsigned char> getCounterAsVector() {
-                return std::vector<unsigned char>(kInitialCounter, kInitialCounter + 16);
             }
 
             // =========================================================================
             // Base Test Vector Class Implementation
             // =========================================================================
 
-            std::vector<unsigned char> ModeTestVectorBase::getInputAsVector() const {
+            const std::vector<unsigned char> ModeTestVectorBase::getInput() const {
                 return std::vector<unsigned char>(input_, input_ + kDataSize);
             }
 
-            std::vector<unsigned char> ModeTestVectorBase::getExpectedOutputAsVector() const {
+            const std::vector<unsigned char> ModeTestVectorBase::getExpectedOutput() const {
                 return std::vector<unsigned char>(expectedOutput_, expectedOutput_ + kDataSize);
             }
 
@@ -176,7 +168,7 @@ namespace TestVectors {
                     }
                 }
 
-                std::vector<unsigned char> TestVector::getIVAsVector() const {
+                const std::vector<unsigned char> TestVector::getIV() const {
                     return std::vector<unsigned char>(iv_, iv_ + 16);
                 }
 
@@ -242,7 +234,7 @@ namespace TestVectors {
                     }
                 }
 
-                std::vector<unsigned char> TestVector::getIVAsVector() const {
+                const std::vector<unsigned char> TestVector::getIV() const {
                     return std::vector<unsigned char>(iv_, iv_ + 16);
                 }
 
@@ -308,7 +300,7 @@ namespace TestVectors {
                     }
                 }
 
-                std::vector<unsigned char> TestVector::getCounterAsVector() const {
+                const std::vector<unsigned char> TestVector::getCounter() const {
                     return std::vector<unsigned char>(counter_, counter_ + 16);
                 }
 

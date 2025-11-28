@@ -259,7 +259,15 @@ namespace TestVectors {
                     expectedExpansion_ = getExpandedKey(ks);
                 }
 
-                std::vector<unsigned char> TestVector::getExpectedExpansionAsVector() const {
+                const std::vector<unsigned char> TestVector::getInput() const{
+                    return getKey();
+                }
+
+                const std::vector<unsigned char> TestVector::getExpectedOutput() const{
+                    return this->getExpectedExpansion();
+                }
+
+                const std::vector<unsigned char> TestVector::getExpectedExpansion() const {
                     if (expectedExpansion_ == nullptr) {
                         return std::vector<unsigned char>();
                     }
