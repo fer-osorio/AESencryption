@@ -39,22 +39,10 @@ namespace TestVectors {
             const unsigned char* getIV();
 
             /**
-             * @brief Get initialization vector as std::vector
-             * @return Vector containing IV data
-             */
-            std::vector<unsigned char> getIVAsVector();
-
-            /**
              * @brief Get initial counter
              * @return Pointer to counter data
              */
             const unsigned char* getCounter();
-
-            /**
-             * @brief Get initial counter as std::vector
-             * @return Vector containing counter data
-             */
-            std::vector<unsigned char> getCounterAsVector();
 
             // =========================================================================
             // Base Test Vector Class
@@ -78,13 +66,9 @@ namespace TestVectors {
                 CipherMode getCipherMode() const { return mode_; }
 
                 // TestVectorBase interface
-                const unsigned char* getInput() const override { return input_; }
-                const unsigned char* getExpectedOutput() const override { return expectedOutput_; }
+                const std::vector<unsigned char> getInput() const override;
+                const std::vector<unsigned char> getExpectedOutput() const override;
                 size_t getDataSize() const override { return kDataSize; }
-
-                // Convenience methods
-                std::vector<unsigned char> getInputAsVector() const;
-                std::vector<unsigned char> getExpectedOutputAsVector() const;
             };
 
             // =========================================================================
@@ -162,8 +146,7 @@ namespace TestVectors {
                         Direction dir = Direction::Encrypt
                     );
 
-                    const unsigned char* getIV() const { return iv_; }
-                    std::vector<unsigned char> getIVAsVector() const;
+                    const std::vector<unsigned char> getIV() const;
                 };
 
                 /**
@@ -209,8 +192,7 @@ namespace TestVectors {
                         Direction dir = Direction::Encrypt
                     );
 
-                    const unsigned char* getIV() const { return iv_; }
-                    std::vector<unsigned char> getIVAsVector() const;
+                    const std::vector<unsigned char> getIV() const;
                 };
 
                 /**
@@ -256,8 +238,7 @@ namespace TestVectors {
                         Direction dir = Direction::Encrypt
                     );
 
-                    const unsigned char* getCounter() const { return counter_; }
-                    std::vector<unsigned char> getCounterAsVector() const;
+                    const std::vector<unsigned char> getCounter() const;
                 };
 
                 /**

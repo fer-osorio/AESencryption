@@ -58,13 +58,12 @@ namespace TestVectors {
                     explicit TestVector(KeySize ks);
 
                     // TestVectorBase interface implementation
-                    const unsigned char* getInput() const override { return key_; }
-                    const unsigned char* getExpectedOutput() const override { return expectedExpansion_; }
+                    const std::vector<unsigned char> getInput() const override;
+                    const std::vector<unsigned char> getExpectedOutput() const override;
                     size_t getDataSize() const override { return getExpandedKeySizeBytes(keySize_); }
 
                     // Convenience accessors
-                    const unsigned char* getExpectedExpansion() const { return expectedExpansion_; }
-                    std::vector<unsigned char> getExpectedExpansionAsVector() const;
+                    const std::vector<unsigned char> getExpectedExpansion()const ;
                 };
 
                 // =========================================================================

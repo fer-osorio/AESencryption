@@ -149,8 +149,8 @@ namespace TestVectors {
             std::vector<unsigned char> getKey() const;
 
             // Pure virtual interface - must be implemented by derived classes
-            virtual const unsigned char* getInput() const = 0;
-            virtual const unsigned char* getExpectedOutput() const = 0;
+            virtual const std::vector<unsigned char> getInput() const = 0;
+            virtual const std::vector<unsigned char> getExpectedOutput() const = 0;
             virtual size_t getDataSize() const = 0;
         };
 

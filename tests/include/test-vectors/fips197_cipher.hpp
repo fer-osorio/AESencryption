@@ -95,18 +95,15 @@ namespace TestVectors {
                     );
 
                     // TestVectorBase interface implementation
-                    const unsigned char* getInput() const override { return input_; }
-                    const unsigned char* getExpectedOutput() const override { return expectedOutput_; }
+                    const std::vector<unsigned char> getInput() const override;
+                    const std::vector<unsigned char> getExpectedOutput() const override;
                     size_t getDataSize() const override { return 16; } // Single block
 
                     // Key schedule accessors
-                    const unsigned char* getKeyExpansion() const { return keyExpansion_; }
                     size_t getKeyExpansionSize() const { return keyExpansionSize_; }
 
                     // Convenience accessors
-                    std::vector<unsigned char> getInputAsVector() const;
-                    std::vector<unsigned char> getExpectedOutputAsVector() const;
-                    std::vector<unsigned char> getKeyExpansionAsVector() const;
+                    std::vector<unsigned char> getKeyExpansion() const;
                 };
 
                 // =========================================================================
