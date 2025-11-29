@@ -72,7 +72,7 @@ bool TestSuite::assertBytesEqual(const uint8_t* expected, const uint8_t* actual,
 
 bool TestSuite::assertNotNull(const void* ptr, const std::string& testName){
     this->testsRun++;
-    if(ptr != NULL) {
+    if(ptr != NULL && ptr != nullptr) {
         this->testsPassed++;
         sendSuccessMessage(std::cout, testName);
         return true;
