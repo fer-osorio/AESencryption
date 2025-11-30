@@ -257,6 +257,27 @@ void bytesXORBlock(const uint8_t input[], const Block_t* block, uint8_t output[]
   output[15] = input[15] ^ block->uint08_[15];
 }
 
+bool compareBlockBytes(const Block_t*const input, const uint8_t byteBlock[]){
+  bool result = true; // Constant time comparison. Preventing timing attacks
+  result &= input->uint08_[0] == byteBlock[0];
+  result &= input->uint08_[1] == byteBlock[4];
+  result &= input->uint08_[2] == byteBlock[8];
+  result &= input->uint08_[3] == byteBlock[12];
+  result &= input->uint08_[4] == byteBlock[1];
+  result &= input->uint08_[5] == byteBlock[5];
+  result &= input->uint08_[6] == byteBlock[9];
+  result &= input->uint08_[7] == byteBlock[13];
+  result &= input->uint08_[8] == byteBlock[2];
+  result &= input->uint08_[9] == byteBlock[6];
+  result &= input->uint08_[10] == byteBlock[10];
+  result &= input->uint08_[11] == byteBlock[14];
+  result &= input->uint08_[12] == byteBlock[3];
+  result &= input->uint08_[13] == byteBlock[7];
+  result &= input->uint08_[14] == byteBlock[11];
+  result &= input->uint08_[15] == byteBlock[15];
+  return result;
+}
+
 static void copyBlock(const Block_t* source, Block_t* destination) {
   destination->uint64_[0] = source->uint64_[0];
   destination->uint64_[1] = source->uint64_[1];
