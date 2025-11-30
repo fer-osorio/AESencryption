@@ -1,5 +1,6 @@
 #include"../include/constants.h"
 #include"../include/AES.h"
+#include <cstdint>
 #include<stdio.h>
 #include"SBox.h"
 #include"GF256.h"
@@ -521,6 +522,23 @@ ptrKeyExpansion_t KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t k
     BlockFromWords(buffer + i, output->dataBlocks + j);
   }
   free(buffer);
+  return output;
+}
+
+ptrKeyExpansion_t KeyExpansionMemoryAllocationZero(size_t keylenbits){
+  enum Nk_t Nk = keylenbitsToNk(keylenbits);
+  if(Nk == UnknownNk) {
+    //printf("KeyExpansionMemoryAllocationBuild: Nk == Unknown\n");
+    //printf("KeyExpansionMemoryAllocationBuild: nk == %d\n", Nk);
+    return NULL;
+  }
+
+  ptrKeyExpansion_t output = KeyExpansionMemoryAllocation(Nk);
+  if(output == NULL) return NULL;
+  const uint8_t tmp[BLOCK_SIZE] = {0};
+  for(size_t i = 0; i < output->blockSize; i++){
+    BlockWriteFromBytes(tmp, output->dataBlocks + i);
+  }
   return output;
 }
 
