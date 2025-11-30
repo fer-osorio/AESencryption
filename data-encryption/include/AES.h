@@ -102,6 +102,11 @@ ptrKeyExpansion_t KeyExpansionFromBytes(const uint8_t source[], size_t keylenbit
 enum ExceptionCode KeyExpansionBuildWrite(const uint8_t* key, size_t keylenbits, uint8_t* dest, bool debug);
 
 /*
+ * Compare key expansion with the bytes pointed by bytes.
+ * */
+bool compareKeyExpansionBytes(const KeyExpansion_t*const input, const uint8_t bytes[]);
+
+/*
  * Encrypts input block using the key referenced by key_p, the resultant encrypted block is written in output
  * If input == output (they point to the same memory location), the input block is overwritten with the encrypted data
  * */
