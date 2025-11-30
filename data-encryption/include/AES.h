@@ -68,6 +68,12 @@ void bytesXORBlock(const uint8_t input[], const Block_t* block, uint8_t output[]
 ptrKeyExpansion_t KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t keylenbits, bool debug);
 
 /*
+ * Builds key expansion object with zeros and returns a pointer to it.
+ * Consider: Allocates memory using malloc.
+ * */
+ptrKeyExpansion_t KeyExpansionMemoryAllocationZero(size_t keylenbits);
+
+/*
  * Free the memory allocated for an KeyExpansion_t object pointed by *ke_pp.
  * */
 void KeyExpansionDelete(KeyExpansion_t** ke_pp);
