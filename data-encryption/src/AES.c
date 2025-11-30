@@ -1,6 +1,5 @@
 #include"../include/constants.h"
 #include"../include/AES.h"
-#include <cstdint>
 #include<stdio.h>
 #include"SBox.h"
 #include"GF256.h"
