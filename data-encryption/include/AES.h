@@ -62,6 +62,11 @@ void BlockXORequalBytes(Block_t* input, const uint8_t byteBlock[]);
 void bytesXORBlock(const uint8_t input[], const Block_t* block, uint8_t output[]);
 
 /*
+ * Compare blocks with the bytes pointed by byteBlock.
+ * */
+bool compareBlockBytes(const Block_t*const input, const uint8_t byteBlock[]);
+
+/*
  * Builds key expansion object and returns a pointer to it.
  * Consider: Allocates memory using malloc.
  * */
