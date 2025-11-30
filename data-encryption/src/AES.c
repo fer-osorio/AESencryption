@@ -600,6 +600,15 @@ enum ExceptionCode KeyExpansionBuildWrite(const uint8_t* key, size_t keylenbits,
   return NoException;
 }
 
+bool compareKeyExpansionBytes(const KeyExpansion_t*const input, const uint8_t bytes[]){
+  bool result = true;
+  // Constant time comparison. Preventing timing attacks.
+  for(size_t i = 0; i < input->blockSize; i++){
+    result &= compareBlockBytes(input->dataBlocks + i, bytes + i*BLOCK_SIZE);
+  }
+  return result;
+}
+
 enum ExceptionCode encryptBlock(const Block_t* input, const KeyExpansion_t* ke_p, Block_t* output, bool debug) {
   size_t i, j;
   // -Debugging purposes. Columns of the debugging table.
