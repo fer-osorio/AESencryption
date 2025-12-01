@@ -67,6 +67,9 @@ enum ExceptionCode {
 
   /* Operation errors */
 
+  /** @brief Could not allocate memory */
+  BadAllocation,
+
   /** @brief The requested operation is not recognized or supported */
   UnknownOperation
 };
