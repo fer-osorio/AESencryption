@@ -19,7 +19,7 @@ typedef KeyExpansion_t* ptrKeyExpansion_t;
 /*
  * Reads BLOCK_SIZE bytes from source and writes the on the block pointed by output.
  * */
-void BlockWriteFromBytes(const uint8_t source[], Block_t* output);
+int BlockWriteFromBytes(const uint8_t source[], Block_t* output);
 
 /*
  * Creates a Block instance from the bytes pointed by source. Basically it takes pieces of four bytes and creates the columns with them
