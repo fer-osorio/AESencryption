@@ -19,7 +19,7 @@ typedef KeyExpansion_t* ptrKeyExpansion_t;
 /*
  * Reads BLOCK_SIZE bytes from source and writes the on the block pointed by output.
  * */
-int BlockWriteFromBytes(const uint8_t source[], Block_t* output);
+enum ExceptionCode BlockWriteFromBytes(Block_t*const output, const uint8_t*const input);
 
 /*
  * Creates a Block instance from the bytes pointed by source. Basically it takes pieces of four bytes and creates the columns with them
@@ -67,6 +67,11 @@ void bytesXORBlock(const uint8_t input[], const Block_t* block, uint8_t output[]
 bool compareBlockBytes(const Block_t*const input, const uint8_t byteBlock[]);
 
 /*
+ * Builds key expansion object.
+ * */
+enum ExceptionCode KeyExpansionBuild(KeyExpansion_t*const output, const uint8_t* key, size_t keylenbits, bool debug);
+
+/*
  * Builds key expansion object and returns a pointer to it.
  * Consider: Allocates memory using malloc.
  * */
@@ -89,11 +94,10 @@ void KeyExpansionDelete(KeyExpansion_t** ke_pp);
 void KeyExpansionWriteBytes(const KeyExpansion_t* source, uint8_t* dest);
 
 /*
- * Creates KeyExpansion_t object using the bytes pointed by source.
+ * Writes KeyExpansion_t object using the bytes pointed by source.
  * The amounth of bytes it uses is Nb*((Nk + 6) + 1), where Nb = 4 and Nk = keylenbits/2^5.
- * Consider: Allocates memory using malloc.
  * */
-ptrKeyExpansion_t KeyExpansionFromBytes(const uint8_t source[], size_t keylenbits);
+enum ExceptionCode KeyExpansionFromBytes(KeyExpansion_t*const output, size_t keylenbits, const uint8_t input[]);
 
 /*
  * Build key expansion and writes it on the bytes pointed by dest pointer.
