@@ -1,4 +1,4 @@
-#include "../include/test-encryption/test_encryption_c.hpp"
+#include "../test-framework/include/test-encryption/test_encryption_c.hpp"
 #include "../../data-encryption/include/AES.h"
 
 static ptrKeyExpansion_t (*allocateKeyExapansion)(size_t) = KeyExpansionMemoryAllocationZero;
