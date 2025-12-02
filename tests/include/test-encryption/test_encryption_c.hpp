@@ -35,7 +35,7 @@
 #include "../test-vectors/fips197_key_expansion.hpp"
 #include "../test-vectors/fips197_cipher.hpp"
 #include "../test_framework.hpp"
-#include <cstring>
+#include <cstddef>
 #include <functional>
 
 namespace ke = TestVectors::AES::FIPS197::KeyExpansion;
@@ -90,13 +90,45 @@ namespace cp = TestVectors::AES::FIPS197::Cipher;
  *
  * - **Comparison functions** return true for matching data, false otherwise
  * - **Builder functions** return 0 on success, non-zero on error
- * - **Allocation functions** return valid, initialized pointers or NULL on failure
+ * - **Allocation functions** return valid, initialized pointers or nullptr on failure
  * - **Deallocation functions** nullify the pointer after freeing
  * - **Deallocation functions** handle null pointers gracefully (no-op)
  *
  * Users should test these functions independently before using this framework.
  * The validateMemoryCallbacks() method provides basic sanity checking but is not
  * a substitute for thorough testing of infrastructure code.
+ *
+ * @section opaque_types Working With Opaque/Incomplete Types
+ *
+ * This framework is designed to work with opaque pointer types (forward declarations)
+ * commonly used in C APIs for encapsulation:
+ *
+ * @code
+ * // In header (opaque)
+ * typedef struct KeyExpansion_ KeyExpansion_t;
+ * typedef KeyExpansion_t* ptrKeyExpansion_t;
+ *
+ * // In implementation (complete)
+ * struct KeyExpansion_ {
+ *     uint32_t* roundKeys;
+ *     size_t numRounds;
+ * };
+ * @endcode
+ *
+ * Because template code cannot use sizeof() on incomplete types, validation is limited to:
+ * - Checking allocation returns non-null
+ * - Verifying deallocation nullifies pointers
+ * - Testing multiple allocations work
+ *
+ * Memory access validation (writing to allocated memory) must be done in implementation-
+ * specific unit tests where the complete type definition is available. This design
+ * respects the encapsulation that opaque types provide and follows industry standards
+ * used by libraries like OpenSSL, SQLite, and POSIX FILE*.
+ *
+ * For comprehensive memory testing, use tools like:
+ * - Valgrind (memory leak detection)
+ * - AddressSanitizer (out-of-bounds access)
+ * - Dr. Memory (Windows memory checking)
  *
  * @section safety Memory Safety
  *
@@ -167,7 +199,6 @@ private:
     /// Function to compare key expansion with expected bytes
     const std::function<bool(
         const KeyExpansionType* const,
-        size_t keySize,
         const unsigned char* const
     )> compareKeyExpansionBytes_;
 
@@ -209,16 +240,16 @@ public:
      * @throws std::invalid_argument if memCallbacks is invalid (when used with runTestSuite)
      */
     EncryptionTester(
-        std::function<bool(const KeyExpansionType* const, size_t, const unsigned char* const)> compareKE,
+        std::function<bool(const KeyExpansionType* const, const unsigned char* const)> compareKE,
         std::function<int(KeyExpansionType* const, size_t, const unsigned char* const)> buildKE,
         std::function<bool(const BlockType* const, const unsigned char* const)> compareBlock,
         std::function<int(BlockType* const, const unsigned char* const)> buildBlock,
         MemoryCallbacks<KeyExpansionType, BlockType> memCallbacks = {}
     ) : compareKeyExpansionBytes_(compareKE),
-    buildKeyExpansionFromBytes_(buildKE),
-    compareBlockBytes_(compareBlock),
-    buildBlockFromBytes_(buildBlock),
-    memoryCallbacks_(memCallbacks)
+        buildKeyExpansionFromBytes_(buildKE),
+        compareBlockBytes_(compareBlock),
+        buildBlockFromBytes_(buildBlock),
+        memoryCallbacks_(memCallbacks)
     {}
 
     /**
@@ -247,7 +278,11 @@ public:
     ) {
         TEST_SUITE("AES Key Expansion Tests");
 
-        int buildStatus = builder(tv.getKey().data(), static_cast<size_t>(tv.getKeySize()), keBuffer);
+        int buildStatus = builder(
+            tv.getKey().data(),
+            static_cast<size_t>(tv.getKeySize()),
+            keBuffer
+        );
 
         // Test key expansion building status
         if (!ASSERT_TRUE(
@@ -262,7 +297,6 @@ public:
         ASSERT_TRUE(
             compareKeyExpansionBytes_(
                 keBuffer,
-                static_cast<size_t>(tv.getKeySize()),
                 tv.getExpectedExpansion().data()
             ),
             "Expanded key should match reference expanded key"
@@ -310,7 +344,7 @@ public:
         buildKeyExpansionFromBytes_(
             keBuffer,
             static_cast<size_t>(tv.getKeySize()),
-                                    tv.getKeyExpansion().data()
+            tv.getKeyExpansion().data()
         );
         buildBlockFromBytes_(inputBlockBuffer, tv.getInput().data());
 
@@ -326,7 +360,7 @@ public:
 
         // Test null pointer handling
         ASSERT_TRUE(
-            encryptor(NULL, keBuffer, outputBlockBuffer) != 0,
+            encryptor(nullptr, keBuffer, outputBlockBuffer) != 0,
             "Null input should return error"
         );
 
@@ -362,7 +396,11 @@ public:
         TEST_SUITE("AES Block Decryption Tests");
 
         // Prepare test environment
-        buildKeyExpansionFromBytes_(keBuffer, static_cast<size_t>(tv.getKeySize()), tv.getKeyExpansion().data());
+        buildKeyExpansionFromBytes_(
+            keBuffer,
+            static_cast<size_t>(tv.getKeySize()),
+            tv.getKeyExpansion().data()
+        );
         buildBlockFromBytes_(inputBlockBuffer, tv.getInput().data());
 
         // Test single block decryption
@@ -377,7 +415,7 @@ public:
 
         // Test null pointer handling
         ASSERT_TRUE(
-            decryptor(NULL, keBuffer, outputBlockBuffer) != 0,
+            decryptor(nullptr, keBuffer, outputBlockBuffer) != 0,
             "Null input should return error"
         );
 
@@ -426,7 +464,11 @@ public:
         // Prepare test environment with plaintext direction test vector
         cp::TestVector encryptTV(tv.getKeySize(), TestVectors::AES::Direction::Encrypt);
 
-        buildKeyExpansionFromBytes_(keBuffer, static_cast<size_t>(encryptTV.getKeySize()), encryptTV.getKeyExpansion().data());
+        buildKeyExpansionFromBytes_(
+            keBuffer,
+            static_cast<size_t>(encryptTV.getKeySize()),
+                                    encryptTV.getKeyExpansion().data()
+        );
         buildBlockFromBytes_(inputBlockBuffer, encryptTV.getInput().data());
 
         // Perform encryption
@@ -446,7 +488,7 @@ public:
         // Verify round-trip integrity
         ASSERT_TRUE(
             compareBlockBytes_(decryptedBlockBuffer, encryptTV.getInput().data()),
-            "Roundtrip encryption/decryption should preserve original plaintext"
+                    "Roundtrip encryption/decryption should preserve original plaintext"
         );
 
         PRINT_RESULTS();
@@ -459,15 +501,19 @@ public:
      * This method performs basic validation of the memory management functions
      * to catch common errors before running the full test suite. It tests:
      * - Allocation functions return non-null pointers
-     * - Allocated structures can be written to without segfaults
      * - Deallocation functions handle null pointers gracefully
      * - Deallocation properly nullifies the pointer
      * - KeyExpansion allocation works for all three AES key sizes
+     * - Multiple simultaneous allocations work correctly
      *
      * @return true if all basic checks pass, false otherwise
      *
+     * @note This method works with opaque/incomplete types (forward declarations)
+     * @note Cannot test memory contents with sizeof() on incomplete types
+     *
      * @warning This does NOT guarantee correctness; it only catches obvious errors
      * @warning Memory leaks cannot be detected by this method
+     * @warning Cannot validate actual memory size (hidden by opaque type design)
      * @note Users should still test their memory management functions independently
      * @note This is a convenience function; failures here suggest user function bugs
      *
@@ -487,58 +533,61 @@ public:
             return false;
         }
 
+        bool success = true;
+
         // Test KeyExpansion allocation for all three key sizes
         const size_t keySizes[] = {128, 192, 256};
         for (size_t keySize : keySizes) {
             KeyExpansionType* testKE = memoryCallbacks_.allocateKeyExpansion(keySize);
 
-            std::string msg = "KeyExpansion allocation for " + std::to_string(keySize) + "-bit key should return non-null";
-            ASSERT_NOT_NULL(
+            std::string msg = "KeyExpansion allocation for " + std::to_string(keySize) +
+            "-bit key should return non-null";
+            success &= ASSERT_NOT_NULL(
                 testKE, msg.c_str()
             );
 
             if (testKE) {
-                // Test that we can write to allocated memory without segfault
-                // (This is a basic sanity check, not comprehensive)
-                std::memset(testKE, 0xAA, sizeof(KeyExpansionType));
+                // Note: We cannot use sizeof() on opaque/incomplete types
+                // The allocation function is responsible for allocating the correct size
+                // We can only test that allocation succeeded and deallocation works
 
                 // Test deallocation
                 memoryCallbacks_.freeKeyExpansion(&testKE);
-                ASSERT_TRUE(
-                    testKE == NULL,
+                success &= ASSERT_TRUE(
+                    testKE == nullptr,
                     "KeyExpansion free should nullify pointer"
                 );
             }
         }
 
         // Test that free handles already-null pointer gracefully
-        KeyExpansionType* testKE = NULL;
+        KeyExpansionType* testKE = nullptr;
         memoryCallbacks_.freeKeyExpansion(&testKE);
-        ASSERT_TRUE(
-            testKE == NULL,
+        success &= ASSERT_TRUE(
+            testKE == nullptr,
             "KeyExpansion free should handle null pointer gracefully"
         );
 
         // Test Block allocation
         BlockType* testBlock = memoryCallbacks_.allocateBlock();
-        ASSERT_NOT_NULL(
+        success &= ASSERT_NOT_NULL(
             testBlock,
             "Block allocation should return non-null"
         );
 
         if (testBlock) {
-            std::memset(testBlock, 0xBB, sizeof(BlockType));
+            // Note: Cannot use sizeof() on incomplete types
+            // Block allocation function is responsible for correct sizing
+
             memoryCallbacks_.freeBlock(&testBlock);
-            ASSERT_TRUE(
-                testBlock == NULL,
-                "Block free should nullify pointer"
-            );
+            success &= ASSERT_TRUE(testBlock == nullptr,
+                                   "Block free should nullify pointer");
         }
 
-        testBlock = NULL;
+        testBlock = nullptr;
         memoryCallbacks_.freeBlock(&testBlock);
-        ASSERT_TRUE(
-            testBlock == NULL,
+        success &= ASSERT_TRUE(
+            testBlock == nullptr,
             "Block free should handle null pointer gracefully"
         );
 
@@ -548,16 +597,16 @@ public:
         BlockType* b1 = memoryCallbacks_.allocateBlock();
         BlockType* b2 = memoryCallbacks_.allocateBlock();
 
-        ASSERT_NOT_NULL(ke128, "AES-128 KeyExpansion allocation");
-        ASSERT_NOT_NULL(ke256, "AES-256 KeyExpansion allocation");
-        ASSERT_NOT_NULL(b1, "First Block allocation");
-        ASSERT_NOT_NULL(b2, "Second Block allocation");
+        success &= ASSERT_NOT_NULL(ke128, "AES-128 KeyExpansion allocation");
+        success &= ASSERT_NOT_NULL(ke256, "AES-256 KeyExpansion allocation");
+        success &= ASSERT_NOT_NULL(b1, "First Block allocation");
+        success &= ASSERT_NOT_NULL(b2, "Second Block allocation");
 
-        ASSERT_TRUE(
+        success &= ASSERT_TRUE(
             ke128 != ke256,
             "Different KeyExpansion allocations should return different pointers"
         );
-        ASSERT_TRUE(
+        success &= ASSERT_TRUE(
             b1 != b2,
             "Multiple Block allocations should return different pointers"
         );
@@ -570,7 +619,7 @@ public:
 
         PRINT_RESULTS();
 
-        if (!SUITE_PASSED()) {
+        if (!success) {
             std::cout << "\n"
             << "=================================================================\n"
             << "WARNING: Memory callback validation failed!\n"
@@ -580,9 +629,8 @@ public:
             << std::endl;
         }
 
-        return SUITE_PASSED();
+        return success;
     }
-
     /**
     * This version automatically allocates and frees all necessary buffers using the
     * memory callbacks provided in the constructor. This is the recommended method for
@@ -604,17 +652,17 @@ public:
     * @example
     * @code
     * MemoryCallbacks<MyKE, MyBlock> callbacks{
-        *     // Allocate with key size
-        *     [](size_t keySizeBits) { return KeyExpansionAlloc(keySizeBits); },
-        *     [](MyKE** p) { KeyExpansionDelete(p); },
-        *     []() { return BlockMemoryAllocationZero(); },
-        *     [](MyBlock** p) { BlockDelete(p); }
-        * };
-        *
-        * EncryptionTester<MyKE, MyBlock> tester(compareKE, buildKE, compareBlock, buildBlock, callbacks);
-        * bool success = tester.runTestSuite(KeySize::AES128, keyBuilder, encryptor, decryptor);
-        * @endcode
-        */
+    *     // Allocate with key size
+    *     [](size_t keySizeBits) { return KeyExpansionAlloc(keySizeBits); },
+    *     [](MyKE** p) { KeyExpansionDelete(p); },
+    *     []() { return BlockMemoryAllocationZero(); },
+    *     [](MyBlock** p) { BlockDelete(p); }
+    * };
+    *
+    * EncryptionTester<MyKE, MyBlock> tester(compareKE, buildKE, compareBlock, buildBlock, callbacks);
+    * bool success = tester.runTestSuite(KeySize::AES128, keyBuilder, encryptor, decryptor);
+    * @endcode
+    */
     bool runTestSuite(
         TestVectors::AES::KeySize keySize,
         std::function<int(const unsigned char* const, size_t, KeyExpansionType*)> keyBuilder,
@@ -660,7 +708,8 @@ public:
             // Test key expansion (critical - must pass for other tests to be meaningful)
             auto keTV = ke::create(keySize);
             if (!testKeyExpansion(*keTV, keyBuilder, keBuffer)) {
-                std::cout << "\n=== Key expansion failed. Skipping remaining tests for AES-" << keySizeStr << " ===" << std::endl;
+                std::cout << "\n=== Key expansion failed. Skipping remaining tests for AES-"
+                << keySizeStr << " ===" << std::endl;
                 success = false;
             } else {
                 // Test encryption
