@@ -596,12 +596,9 @@ void KeyExpansionWriteBytes(const KeyExpansion_t* source, uint8_t* dest){
   }
 }
 
-enum ExceptionCode KeyExpansionFromBytes(KeyExpansion_t*const output, size_t keylenbits, const uint8_t input[]){
+enum ExceptionCode KeyExpansionFromBytes(KeyExpansion_t*const output, const uint8_t input[]){
   if(input == NULL) return NullInput;
   if(output == NULL) return NullOutput;
-
-  enum Nk_t Nk = keylenbitsToNk(keylenbits);
-  if(Nk == UnknownNk) return InvalidKeyLength;
   for(size_t i = 0, j = 0; i < output->blockSize; i++, j += BLOCK_SIZE){
     BlockWriteFromBytes(output->dataBlocks + i, input + j);
   }
