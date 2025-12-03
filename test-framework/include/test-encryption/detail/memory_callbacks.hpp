@@ -48,7 +48,7 @@ namespace CryptoTest {
          * @brief Validates if all base pointers to functions are not null.
          * @return True if all function pointers are not null, false otherwise.
          */
-        bool noNullFunctionPointerBase() const {
+        bool validateBaseFunctions() const {
             return this->allocateKeyExpansion && this->freeKeyExpansion && this->allocateBlock && this->freeBlock;
         }
 
@@ -82,7 +82,7 @@ namespace CryptoTest {
          * }
          * @endcode
          */
-        bool validateMemoryCallbacksBase() {
+        bool validateBaseMemoryCallbacks() {
             TEST_SUITE("Basic Memory Callback Validation");
 
             if (!this->noNullFunctionPointer()) {
@@ -212,7 +212,7 @@ namespace CryptoTest {
              * @return True if all function pointers are not null, false otherwise.
              */
             bool noNullFunctionPointer() const override {
-                return this->noNullFunctionPointerBase();
+                return this->validateBaseFunctions();
             }
 
             /**
@@ -220,7 +220,7 @@ namespace CryptoTest {
              * @return True if all basic checks pass, false otherwise
              */
             bool validateMemoryCallbacks() const override{
-                return this->validateMemoryCallbacksBase();
+                return this->validateBaseMemoryCallbacks();
             }
         };
 
@@ -239,11 +239,11 @@ namespace CryptoTest {
             std::function<void(IV**)> freeIV;
 
             bool noNullFunctionPointer() const override {
-                return this->noNullFunctionPointerBase() && this->allocateIV && this->freeIV;
+                return this->validateBaseFunctions() && this->allocateIV && this->freeIV;
             }
 
             bool validateMemoryCallbacks() const override{
-                bool partial_check = this->validateMemoryCallbacksBase();
+                bool partial_check = this->validateBaseMemoryCallbacks();
 
                 TEST_SUITE("Initial Vector Memory Callback Validation");
 
