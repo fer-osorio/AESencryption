@@ -482,7 +482,7 @@ namespace CryptoTest {
             bool validateMemoryCallbacks() {
                 TEST_SUITE("Memory Callback Validation");
 
-                if (!this->memoryCallbacks_.isValid()) {
+                if (!this->memoryCallbacks_.noNullFunctionPointer()) {
                     std::cerr << "ERROR: Memory callbacks struct is not fully initialized" << std::endl;
                     return false;
                 }
