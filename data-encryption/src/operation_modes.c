@@ -223,7 +223,7 @@ static void encryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, str
 
 #define BUILD_KEYEXPANSION_FROMBYTES(ke_p,source,keylenbits) \
   ptrKeyExpansion_t ke_p = KeyExpansionMemoryAllocationZero(keylenbits); \
-  KeyExpansionFromBytes(ke_p, keylenbits, source); \
+  KeyExpansionFromBytes(ke_p, source); \
   if(ke_p == NULL) return NullKeyExpansion;
 
 #define BUILD_STREAMS(is,os) \
