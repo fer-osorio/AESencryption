@@ -97,7 +97,7 @@ void KeyExpansionWriteBytes(const KeyExpansion_t* source, uint8_t* dest);
  * Writes KeyExpansion_t object using the bytes pointed by source.
  * The amounth of bytes it uses is Nb*((Nk + 6) + 1), where Nb = 4 and Nk = keylenbits/2^5.
  * */
-enum ExceptionCode KeyExpansionFromBytes(KeyExpansion_t*const output, size_t keylenbits, const uint8_t input[]);
+enum ExceptionCode KeyExpansionFromBytes(KeyExpansion_t*const output, const uint8_t input[]);
 
 /*
  * Build key expansion and writes it on the bytes pointed by dest pointer.
