@@ -152,27 +152,22 @@ namespace CryptoTest {
         private:
             /// Function to compare key expansion with expected bytes
             const std::function<bool(
-                const KeyExpansionType* const,
-                const unsigned char* const
+                const KeyExpansionType* const, const unsigned char* const
             )> compareKeyExpansionBytes_;
 
             /// Function to build key expansion from raw key bytes
             const std::function<int(
-                KeyExpansionType* const,
-                size_t keySize,
-                const unsigned char* const
+                KeyExpansionType* const, size_t keySize, const unsigned char* const
             )> buildKeyExpansionFromBytes_;
 
             /// Function to compare block with expected bytes
             const std::function<bool(
-                const BlockType* const,
-                const unsigned char* const
+                const BlockType* const, const unsigned char* const
             )> compareBlockBytes_;
 
             /// Function to build block from raw bytes
             const std::function<int(
-                BlockType* const,
-                const unsigned char* const
+                BlockType* const, const unsigned char* const
             )> buildBlockFromBytes_;
 
             /// Memory management callbacks for RAII-based test methods
@@ -199,7 +194,8 @@ namespace CryptoTest {
                 std::function<bool(const BlockType* const, const unsigned char* const)> compareBlock,
                 std::function<int(BlockType* const, const unsigned char* const)> buildBlock,
                 MemoryCallbacks<KeyExpansionType, BlockType> memCallbacks = {}
-            ) : compareKeyExpansionBytes_(compareKE),
+            ):
+                compareKeyExpansionBytes_(compareKE),
                 buildKeyExpansionFromBytes_(buildKE),
                 compareBlockBytes_(compareBlock),
                 buildBlockFromBytes_(buildBlock),
@@ -353,7 +349,7 @@ namespace CryptoTest {
                 this->buildKeyExpansionFromBytes_(
                     keBuffer,
                     static_cast<size_t>(tv.getKeySize()),
-                                            tv.getKeyExpansion().data()
+                    tv.getKeyExpansion().data()
                 );
                 this->buildBlockFromBytes_(inputBlockBuffer, tv.getInput().data());
 
@@ -629,7 +625,7 @@ namespace CryptoTest {
                 return success;
             }
         }; // Tester
-    }
-}
+    } // BlockCipher
+} // CryptoTest
 
 #endif // BLOCK_CIPHER_TESTER_HPP
