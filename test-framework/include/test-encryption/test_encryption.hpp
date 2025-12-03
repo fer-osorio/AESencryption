@@ -102,9 +102,19 @@
  * - Respects encapsulation
  * - No sizeof() dependencies on incomplete types
  */
+
+// All implementations are in detail/ headers included above
+// This namespace exists for documentation and organization
 namespace CryptoTest {
-    // All implementations are in detail/ headers included above
-    // This namespace exists for documentation and organization
+    namespace Common {
+
+    }
+    namespace BlockCipher {
+
+    }
+    namespace CipherMode {
+
+    }
 }
 
 #endif // TEST_ENCRYPTION_HPP
