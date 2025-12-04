@@ -42,7 +42,7 @@ namespace CryptoTest {
         std::function<void(BT**)>           freeBlock;
     protected:
         // Preventing polymorphic deletion.
-        ~MemoryCallbacksBase();
+        ~MemoryCallbacksBase() = default;
 
         /**
          * @brief Validates if all base pointers to functions are not null.
@@ -242,7 +242,7 @@ namespace CryptoTest {
                 return this->validateBaseFunctions() && this->allocateIV && this->freeIV;
             }
 
-            bool validateMemoryCallbacks() const override{
+            bool validateMemoryCallbacks() const override {
                 bool partial_check = this->validateBaseMemoryCallbacks();
 
                 TEST_SUITE("Initial Vector Memory Callback Validation");
@@ -295,7 +295,7 @@ namespace CryptoTest {
                     << std::endl;
                 }
 
-                return SUITE_PASSED();
+                return SUITE_PASSED() && partial_check;
             }
         };
 
