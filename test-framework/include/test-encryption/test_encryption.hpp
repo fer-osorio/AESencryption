@@ -63,7 +63,7 @@
 #include "detail/common_utilities.hpp"
 #include "detail/memory_callbacks.hpp"
 #include "detail/block_cipher_tester.hpp"
-#include "detail/cipher_mode_tester.hpp"
+//#include "detail/cipher_mode_tester.hpp"
 // Future additions:
 // #include "detail/authenticated_mode_tester.hpp"
 
