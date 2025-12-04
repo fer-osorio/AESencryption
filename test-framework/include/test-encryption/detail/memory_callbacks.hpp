@@ -40,10 +40,10 @@ namespace CryptoTest {
     template<typename KE, typename BT>
     struct MemoryCallbacks {
     protected:
-        std::function<KE*(size_t keySize)>  allocateKeyExpansion;
-        std::function<void(KE**)>           freeKeyExpansion;
-        std::function<BT*()>                allocateBlock;
-        std::function<void(BT**)>           freeBlock;
+        std::function<KE*(size_t keySize)>  allocateKeyExpansion_;
+        std::function<void(KE**)>           freeKeyExpansion_;
+        std::function<BT*()>                allocateBlock_;
+        std::function<void(BT**)>           freeBlock_;
     protected:
         /**
          * @brief Protected destructor prevents polymorphic deletion
@@ -60,7 +60,7 @@ namespace CryptoTest {
          * @note Derived classes should call this AND check their own functions
          */
         bool validateBaseFunctions() const {
-            return this->allocateKeyExpansion && this->freeKeyExpansion && this->allocateBlock && this->freeBlock;
+            return this->allocateKeyExpansion_ && this->freeKeyExpansion_ && this->allocateBlock_ && this->freeBlock_;
         }
 
         /**
@@ -110,7 +110,7 @@ namespace CryptoTest {
             // Test KeyExpansion allocation for all three key sizes
             const size_t keySizes[] = {128, 192, 256};
             for (size_t keySize : keySizes) {
-                KE* testKE = this->allocateKeyExpansion(keySize);
+                KE* testKE = this->allocateKeyExpansion_(keySize);
 
                 std::string msg = "KeyExpansion allocation for " + std::to_string(keySize) +
                 "-bit key should return non-null";
@@ -124,7 +124,7 @@ namespace CryptoTest {
                     // We can only test that allocation succeeded and deallocation works
 
                     // Test deallocation
-                    this->freeKeyExpansion(&testKE);
+                    this->freeKeyExpansion_(&testKE);
                     ASSERT_TRUE(
                         testKE == nullptr,
                         "KeyExpansion free should nullify pointer"
@@ -134,14 +134,14 @@ namespace CryptoTest {
 
             // Test that free handles already-null pointer gracefully
             KE* testKE = nullptr;
-            this->freeKeyExpansion(&testKE);
+            this->freeKeyExpansion_(&testKE);
             ASSERT_TRUE(
                 testKE == nullptr,
                 "KeyExpansion free should handle null pointer gracefully"
             );
 
             // Test Block allocation
-            BT* testBlock = this->allocateBlock();
+            BT* testBlock = this->allocateBlock_();
             ASSERT_NOT_NULL(
                 testBlock,
                 "Block allocation should return non-null"
@@ -151,23 +151,23 @@ namespace CryptoTest {
                 // Note: Cannot use sizeof() on incomplete types
                 // Block allocation function is responsible for correct sizing
 
-                this->freeBlock(&testBlock);
+                this->freeBlock_(&testBlock);
                 ASSERT_TRUE(testBlock == nullptr,
                 "Block free should nullify pointer");
             }
 
             testBlock = nullptr;
-            this->freeBlock(&testBlock);
+            this->freeBlock_(&testBlock);
             ASSERT_TRUE(
                 testBlock == nullptr,
                 "Block free should handle null pointer gracefully"
             );
 
             // Test multiple simultaneous allocations
-            KE* ke128 = this->allocateKeyExpansion(128);
-            KE* ke256 = this->allocateKeyExpansion(256);
-            BT* b1 = this->allocateBlock();
-            BT* b2 = this->allocateBlock();
+            KE* ke128 = this->allocateKeyExpansion_(128);
+            KE* ke256 = this->allocateKeyExpansion_(256);
+            BT* b1 = this->allocateBlock_();
+            BT* b2 = this->allocateBlock_();
 
             ASSERT_NOT_NULL(ke128, "AES-128 KeyExpansion allocation");
             ASSERT_NOT_NULL(ke256, "AES-256 KeyExpansion allocation");
@@ -184,10 +184,10 @@ namespace CryptoTest {
             );
 
             // Clean up
-            if (ke128) this->freeKeyExpansion(&ke128);
-            if (ke256) this->freeKeyExpansion(&ke256);
-            if (b1) this->freeBlock(&b1);
-            if (b2) this->freeBlock(&b2);
+            if (ke128) this->freeKeyExpansion_(&ke128);
+            if (ke256) this->freeKeyExpansion_(&ke256);
+            if (b1) this->freeBlock_(&b1);
+            if (b2) this->freeBlock_(&b2);
 
             PRINT_RESULTS();
 
@@ -292,15 +292,15 @@ namespace CryptoTest {
          */
         template<typename KE, typename BT, typename IV>
         struct MemoryCallbacks: protected CryptoTest::MemoryCallbacks<KE, BT>{
-            std::function<IV*()> allocateIV;
-            std::function<void(IV**)> freeIV;
+            std::function<IV*()> allocateIV_;
+            std::function<void(IV**)> freeIV_;
 
             /**
              * @brief Check if all required function pointers are initialized
              * @return true if no null function pointers exist
              */
             bool validateFunctions() const override {
-                return this->validateBaseFunctions() && this->allocateIV && this->freeIV;
+                return this->validateBaseFunctions() && this->allocateIV_ && this->freeIV_;
             }
 
             /**
@@ -315,7 +315,7 @@ namespace CryptoTest {
                 TEST_SUITE("Initial Vector Memory Callback Validation");
 
                 // Test Initial Vector allocation
-                IV* testIV = this->allocateIV();
+                IV* testIV = this->allocateIV_();
                 ASSERT_NOT_NULL(
                     testIV,
                     "Initial Vector allocation should return non-null"
@@ -323,21 +323,21 @@ namespace CryptoTest {
                 if (testIV) {
                     // Note: Cannot use sizeof() on incomplete types
                     // Initial Vector allocation function is responsible for correct sizing
-                    this->freeBlock(&testIV);
+                    this->freeIV_(&testIV);
                     ASSERT_TRUE(testIV == nullptr,
                     "Initial Vector free should nullify pointer");
                 }
 
                 testIV = nullptr;
-                this->freeBlock(&testIV);
+                this->freeIV_(&testIV);
                 ASSERT_TRUE(
                     testIV == nullptr,
                     "Initial Vector free should handle null pointer gracefully"
                 );
 
                 // Test multiple simultaneous allocations
-                IV* iv1 = this->allocateIV();
-                IV* iv2 = this->allocateIV();
+                IV* iv1 = this->allocateIV_();
+                IV* iv2 = this->allocateIV_();
                 ASSERT_NOT_NULL(iv1, "First Initial Vector allocation");
                 ASSERT_NOT_NULL(iv2, "Second Initial Vector allocation");
 
@@ -347,8 +347,8 @@ namespace CryptoTest {
                 );
 
                 // Clean up
-                if (iv1) this->freeIV(&iv1);
-                if (iv2) this->freeIV(&iv2);
+                if (iv1) this->freeIV_(&iv1);
+                if (iv2) this->freeIV_(&iv2);
 
                 PRINT_RESULTS();
 
