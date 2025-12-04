@@ -34,7 +34,7 @@ namespace CryptoTest {
      * @note Free functions should handle null pointers (no-op)
      */
     template<typename KE, typename BT>
-    struct MemoryCallbacksBase {
+    struct MemoryCallbacks {
     protected:
         std::function<KE*(size_t keySize)>  allocateKeyExpansion;
         std::function<void(KE**)>           freeKeyExpansion;
@@ -42,7 +42,7 @@ namespace CryptoTest {
         std::function<void(BT**)>           freeBlock;
     protected:
         // Preventing polymorphic deletion.
-        ~MemoryCallbacksBase() = default;
+        ~MemoryCallbacks() = default;
 
         /**
          * @brief Validates if all base pointers to functions are not null.
@@ -85,7 +85,7 @@ namespace CryptoTest {
         bool validateBaseMemoryCallbacks() {
             TEST_SUITE("Basic Memory Callback Validation");
 
-            if (!this->noNullFunctionPointer()) {
+            if (!this->validateBaseFunctions()) {
                 std::cerr << "ERROR: Memory callbacks struct is not fully initialized" << std::endl;
                 return false;
             }
@@ -188,14 +188,10 @@ namespace CryptoTest {
         }
 
     public:
-        /**
-         * @brief Destinated to flag null function pointers.
-         */
-        virtual bool noNullFunctionPointer() const = 0;
+        // Pure virtual for derived classes to flag null function pointers.
+        virtual bool validateFunctions() const = 0;
 
-        /**
-         * @brief Destinated to implement basic memory management tests.
-         */
+        // Pure virtual for derived classes to implement basic memory check.
         virtual bool validateMemoryCallbacks() const = 0;
     };
 
@@ -205,19 +201,23 @@ namespace CryptoTest {
          * @brief Memory management callbacks for block C-style cipher structures
          */
         template<typename KE, typename BT>
-        struct MemoryCallbacks: protected MemoryCallbacksBase<KE, BT>{
+        struct MemoryCallbacks: protected CryptoTest::MemoryCallbacks<KE, BT>{
 
             /**
              * @brief Validates if all pointers to functions are not null.
              * @return True if all function pointers are not null, false otherwise.
+             * @note Implements validateBaseFunctions() method
+             * @see validateBaseFunctions()
              */
-            bool noNullFunctionPointer() const override {
+            bool validateFunctions() const override {
                 return this->validateBaseFunctions();
             }
 
             /**
              * @brief Validates memory management for callbacks (optional sanity check)
              * @return True if all basic checks pass, false otherwise
+             * @note Implements validateBaseMemoryCallbacks() method
+             * @see validateBaseMemoryCallbacks()
              */
             bool validateMemoryCallbacks() const override{
                 return this->validateBaseMemoryCallbacks();
@@ -234,16 +234,28 @@ namespace CryptoTest {
          * @brief Memory management callbacks for cipher C-style mode structures
          */
         template<typename KE, typename BT, typename IV>
-        struct MemoryCallbacks: protected MemoryCallbacksBase<KE, BT>{
+        struct MemoryCallbacks: protected CryptoTest::MemoryCallbacks<KE, BT>{
             std::function<IV*()> allocateIV;
             std::function<void(IV**)> freeIV;
 
-            bool noNullFunctionPointer() const override {
+            /**
+             * @brief Validates if all pointers to functions are not null.
+             * @return True if all function pointers are not null, false otherwise.
+             * @note Implements validateBaseFunctions() method
+             * @see validateBaseFunctions()
+             */
+            bool validateFunctions() const override {
                 return this->validateBaseFunctions() && this->allocateIV && this->freeIV;
             }
 
+            /**
+             * @brief Validates memory management for callbacks (optional sanity check)
+             * @return True if all basic checks pass, false otherwise
+             * @note Implements validateBaseMemoryCallbacks() method
+             * @see validateBaseMemoryCallbacks()
+             */
             bool validateMemoryCallbacks() const override {
-                bool partial_check = this->validateBaseMemoryCallbacks();
+                bool baseValid = this->validateBaseMemoryCallbacks();
 
                 TEST_SUITE("Initial Vector Memory Callback Validation");
 
@@ -295,7 +307,7 @@ namespace CryptoTest {
                     << std::endl;
                 }
 
-                return SUITE_PASSED() && partial_check;
+                return SUITE_PASSED() && baseValid;
             }
         };
 
