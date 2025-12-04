@@ -90,6 +90,7 @@ void KeyExpansionDelete(KeyExpansion_t** ke_pp);
 
 /*
  * Write the bytes that forms the key expansion object on the location pointed by dest.
+ * This function does not implement key expansion algorithm, just formats the data properly.
  * */
 void KeyExpansionWriteBytes(const KeyExpansion_t* source, uint8_t* dest);
 
