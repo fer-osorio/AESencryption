@@ -45,7 +45,7 @@ namespace CryptoTest {
          * @param keySize Key size in bits for testing
          * @return true if validation passes
          */
-        bool validateBaseByteOperationsImplementation(KE* keBuffer, BT* blockBuffer, size_t keySize = 128) const {
+        bool validateBaseByteOperations(KE* keBuffer, BT* blockBuffer, size_t keySize = 128) const {
             if (!validateFunctions()) {
                 std::cerr << "ERROR: Function pointers not initialized\n";
                 return false;
@@ -160,7 +160,7 @@ namespace CryptoTest {
              * @endcode
              */
             bool validateByteOperations(KE* keBuffer, BT* blockBuffer, size_t keySize = 128) const {
-                return this->validateBaseByteOperationsImplementation(keBuffer, blockBuffer, keySize);
+                return this->validateBaseByteOperations(keBuffer, blockBuffer, keySize);
             }
 
         };
@@ -183,7 +183,7 @@ namespace CryptoTest {
             // Override base validation to include IV testing
             bool validateByteOperations(KE* keBuffer, BT* blockBuffer, IV* ivBuffer, size_t keySize = 128) const override {
                 // First validate base operations (KE and Block)
-                bool baseValid = this->validateBaseByteOperationsImplementation(keBuffer, blockBuffer, keySize);
+                bool baseValid = this->validateBaseByteOperations(keBuffer, blockBuffer, keySize);
 
                 if (!baseValid) return false;
 
