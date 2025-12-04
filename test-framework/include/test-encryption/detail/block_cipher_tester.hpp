@@ -16,24 +16,6 @@
  *
  * @tparam KeyExpansionType Type representing expanded key material (e.g., struct containing round keys)
  * @tparam BlockType Type representing a cipher block (e.g., 16-byte AES block)
- *
- * @example
- * @code
- * // Define comparison and builder functions for your implementation
- * auto compareKE = [](const MyKeyExpansion* ke, size_t keySize, const uint8_t* expected) { ... };
- * auto buildKE = [](MyKeyExpansion* ke, size_t keySize, const uint8_t* key) { ... };
- * auto compareBlock = [](const MyBlock* block, const uint8_t* expected) { ... };
- * auto buildBlock = [](const MyBlock* block, const uint8_t* data) { ... };
- *
- * // Create tester instance
- * Tester<MyKeyExpansion, MyBlock> tester(compareKE, buildKE, compareBlock, buildBlock);
- *
- * // Run tests with NIST test vectors
- * auto tv = TestVectors::AES::FIPS197::Cipher::create(KeySize::AES128);
- * MyKeyExpansion ke_buffer;
- * MyBlock input_buffer, output_buffer;
- * bool success = tester.testEncryptBlock(*tv, myEncryptFunc, &ke_buffer, &input_buffer, &output_buffer);
- * @endcode
  */
 
 #ifndef BLOCK_CIPHER_TESTER_HPP
@@ -65,7 +47,7 @@ namespace cp = TestVectors::AES::FIPS197::Cipher;
  *
  * @section infrastructure Infrastructure Requirements
  *
- * The Tester class requires two types of callbacks:
+ * The Tester class requires two types of infrastructure:
  *
  * 1. **TypeByteInterface**: Comparison and construction functions
  *    - compareKeyExpansionBytes: Compare KE with byte array
@@ -80,14 +62,15 @@ namespace cp = TestVectors::AES::FIPS197::Cipher;
  *    - freeBlock: Deallocate and nullify Block
  *
  * These are separated to match the single-responsibility principle:
- * memory management vs. data operations are distinct concerns.
+ * data operations vs. memory management are distinct concerns.
  *
  * @section usage Usage
  *
- * Users have two options for memory management:
+ * Users have two options for infrastructure setup:
  *
- * **Option 1: Automatic (Recommended)** - Provide memory callbacks and use runTestSuite():
+ * **Option 1: Automatic (Recommended)** - Provide both interfaces and use runTestSuite():
  * @code
+ * TypeByteInterface<MyKE, MyBlock> byteOps{compareKE, buildKE, compareBlock, buildBlock};
  * MemoryCallbacks<MyKE, MyBlock> callbacks{
  *     // KeyExpansion needs key size (128, 192, or 256 bits)
  *     [](size_t keySizeBits) { return MyKEAlloc(keySizeBits); },
@@ -96,17 +79,28 @@ namespace cp = TestVectors::AES::FIPS197::Cipher;
  *     []() { return MyBlockAlloc(); },
  *     [](MyBlock** p) { MyBlockFree(p); }
  * };
- * Tester tester(compare, build, compare, build, callbacks);
+ *
+ * Tester tester(byteOps, callbacks);
+ *
+ * // Optional but recommended: validate infrastructure
+ * if (!tester.validateInfrastructure()) {
+ *     std::cerr << "Infrastructure issues detected\n";
+ * }
+ *
  * tester.runTestSuite(KeySize::AES128, keyBuilder, encrypt, decrypt);
  * @endcode
  *
  * **Option 2: Manual** - Manage buffers yourself and use individual test methods:
  * @code
- * Tester tester(compare, build, compare, build);  // No callbacks
+ * TypeByteInterface<MyKE, MyBlock> byteOps{...};
+ * Tester tester(byteOps);  // No memory callbacks
+ *
  * MyKE* ke = allocateKE();
  * MyBlock* input = allocateBlock();
  * // ... allocate other buffers
+ *
  * tester.runTestSuiteWithBuffers(KeySize::AES128, builder, enc, dec, ke, input, output, temp);
+ *
  * // ... free buffers
  * @endcode
  *
@@ -182,18 +176,22 @@ namespace CryptoTest {
 
         public:
             /**
-             * @brief Constructs an Tester with necessary comparison and builder functions
+             * @brief Constructs a Tester with necessary byte conversion operations
              *
-             * @param compareKE Function that compares a KeyExpansionType with expected byte array
-             * @param buildKE Function that builds a KeyExpansionType from key bytes
-             * @param compareBlock Function that compares a BlockType with expected byte array
-             * @param buildBlock Function that builds a BlockType from raw bytes
+             * @param byteOps Interface containing comparison and builder functions
+             *                for converting between typed structures and byte arrays
              * @param memCallbacks Memory management callbacks for allocation/deallocation
+             *                     (optional - required only for runTestSuite() method)
              *
-             * @warning All function parameters should be non-null; behavior is undefined if null functions are provided
-             * @warning Memory callbacks are required for runTestSuite() method; other methods can work without them
+             * @warning byteOps must contain valid function pointers (non-null)
+             * @warning Memory callbacks are required for runTestSuite() method;
+             *          other methods (runTestSuiteWithBuffers, individual tests)
+             *          can work without them
              *
-             * @throws std::invalid_argument if memCallbacks is invalid (when used with runTestSuite)
+             * @throws std::invalid_argument if memCallbacks invalid when used with runTestSuite
+             *
+             * @see TypeByteInterface for byte operation requirements
+             * @see MemoryCallbacks for memory management requirements
              */
             Tester(
                 TypeByteInterface<KeyExpansionType, BlockType> byteOps,
@@ -204,7 +202,19 @@ namespace CryptoTest {
             {}
 
             /**
-             * @brief Run pre-flight checks (optional but recommended)
+             * @brief Run pre-flight checks on infrastructure (optional but recommended)
+             *
+             * Validates both byte operations and memory management before running
+             * cryptographic tests. This catches infrastructure bugs early, separating
+             * them from actual crypto implementation issues.
+             *
+             * @return true if both interfaces pass validation
+             *
+             * @note This is optional - you may skip if confident in your infrastructure
+             * @note Failures indicate bugs in YOUR infrastructure, not crypto code
+             *
+             * @see TypeByteInterface::validateByteOperations()
+             * @see MemoryCallbacks::validateMemoryCallbacks()
              */
             bool validateInfrastructure() const {
                 bool memValid = memoryCallbacks_.validateMemoryCallbacks();
@@ -304,14 +314,14 @@ namespace CryptoTest {
                 this->byteInterface_.buildKeyExpansionFromBytes_(
                     keBuffer,
                     static_cast<size_t>(tv.getKeySize()),
-                                            tv.getKeyExpansion().data()
+                    tv.getKeyExpansion().data()
                 );
                 this->byteInterface_.buildBlockFromBytes_(inputBlockBuffer, tv.getInput().data());
 
                 // Test single block encryption
                 ASSERT_TRUE(
                     encryptor(inputBlockBuffer, keBuffer, outputBlockBuffer) == 0,
-                            "AES block encryption should succeed"
+                    "AES block encryption should succeed"
                 );
                 ASSERT_TRUE(
                     this->byteInterface_.compareBlockBytes_(outputBlockBuffer, tv.getExpectedOutput().data()),
@@ -455,10 +465,6 @@ namespace CryptoTest {
                 return SUITE_PASSED();
             }
 
-            bool validateMemoryCallbacks() {
-                return this->memoryCallbacks_.validateMemoryCallbacks();
-            }
-
             /**
              * This version automatically allocates and frees all necessary buffers using the
              * memory callbacks provided in the constructor. This is the recommended method for
@@ -475,6 +481,7 @@ namespace CryptoTest {
              * @return true if all tests pass for this key size, false otherwise
              *
              * @throws std::runtime_error if memory callbacks were not provided or are invalid
+             * @throws std::runtime_error if byte interface was not provided or are invalid
              * @throws std::bad_alloc if any allocation fails
              *
              * @example
@@ -503,6 +510,15 @@ namespace CryptoTest {
                         "Memory callbacks not provided. Either:\n"
                         "  1. Provide callbacks in constructor and use this method, or\n"
                         "  2. Use runTestSuiteWithBuffers() and manage memory yourself"
+                    );
+                }
+                // Check byte interface
+                if (!this->byteInterface_.isValid()) {
+                    throw std::runtime_error(
+                        "TypeByteInterface not fully initialized.\n"
+                        "All comparison and builder functions must be provided.\n"
+                        "Check: compareKeyExpansionBytes, buildKeyExpansionFromBytes,\n"
+                        "       compareBlockBytes, buildBlockFromBytes"
                     );
                 }
 
@@ -589,6 +605,8 @@ namespace CryptoTest {
              * @param tempBuffer Pre-allocated buffer for intermediate results (round-trip test)
              * @return true if all tests pass for this key size, false otherwise
              *
+             * @throws std::runtime_error if byte interface was not provided or are invalid
+             *
              * @note The buffers should be sized appropriately for the largest key size
              *       and block size to avoid reallocation between test runs
              * @note User is responsible for allocating buffers before calling and freeing after
@@ -603,6 +621,14 @@ namespace CryptoTest {
                 BlockType* const outputBuffer,
                 BlockType* const tempBuffer
             ) {
+                // Only check byte interface (user manages memory themselves)
+                if (!this->byteInterface_.isValid()) {
+                    throw std::runtime_error(
+                        "TypeByteInterface not fully initialized.\n"
+                        "All comparison and builder functions must be provided."
+                    );
+                }
+
                 const char* keySizeStr = TestVectors::AES::getKeySizeString(keySize);
                 bool success = true;
 
