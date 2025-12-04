@@ -1,3 +1,16 @@
+/**
+ * @file memory_callbacks.hpp
+ * @brief Memory management callback structures for cryptographic testing
+ *
+ * Provides RAII-compatible memory management interfaces for C-style
+ * cryptographic structures that lack constructors/destructors.
+ * Organized by testing namespace (BlockCipher, CipherMode, etc.)
+ *
+ * @section design Design Pattern
+ * Uses inheritance to share common allocation logic (KeyExpansion, Block)
+ * while allowing specializations to add domain-specific allocations (IV, MAC).
+ */
+
 #ifndef CRYPTO_TEST_DETAIL_MEMORY_CALLBACKS_HPP
 #define CRYPTO_TEST_DETAIL_MEMORY_CALLBACKS_HPP
 
@@ -7,31 +20,22 @@
 
 namespace CryptoTest {
 
-    // ========== Block Cipher Memory Callbacks ==========
+    // ========== Base Memory Callbacks ==========
 
     /**
-     * @brief Memory management callbacks for C-style cipher structures
+     * @brief Base class for memory management callbacks
      *
-     * Since C structures lack constructors/destructors, users must provide
-     * functions to allocate and deallocate resources. This structure bundles
-     * all required memory management callbacks.
+     * Provides common allocation/deallocation for KeyExpansion and Block types.
+     * Derived classes extend this with additional type-specific allocations
+     * (e.g., IV for cipher modes, MAC for authenticated modes).
+     *
+     * @section design_rationale Design Rationale
+     * - **Inheritance**: Avoids code duplication across BlockCipher/CipherMode
+     * - **Protected destructor**: Prevents polymorphic deletion issues
+     * - **Virtual validation**: Allows derived classes to extend checks
      *
      * @tparam KE KeyExpansion type
      * @tparam BT Block type
-     *
-     * @section key_size_allocation Why KeyExpansion Needs Key Size
-     *
-     * AES key expansion produces different amounts of data:
-     * - AES-128: 11 round keys (176 bytes)
-     * - AES-192: 13 round keys (208 bytes)
-     * - AES-256: 15 round keys (240 bytes)
-     *
-     * If your KE allocates memory dynamically, it MUST know
-     * the key size at allocation time. Block allocation doesn't need size
-     * since AES blocks are always 16 bytes.
-     *
-     * @note All function pointers should handle edge cases gracefully
-     * @note Free functions should handle null pointers (no-op)
      */
     template<typename KE, typename BT>
     struct MemoryCallbacks {
@@ -41,12 +45,19 @@ namespace CryptoTest {
         std::function<BT*()>                allocateBlock;
         std::function<void(BT**)>           freeBlock;
     protected:
-        // Preventing polymorphic deletion.
+        /**
+         * @brief Protected destructor prevents polymorphic deletion
+         *
+         * This is intentional: MemoryCallbacks should be used as value types,
+         * not via base class pointers. Matches the pattern used in TypeByteInterface.
+         */
         ~MemoryCallbacks() = default;
 
         /**
-         * @brief Validates if all base pointers to functions are not null.
-         * @return True if all function pointers are not null, false otherwise.
+         * @brief Validates if all base function pointers are initialized
+         * @return true if all function pointers are non-null, false otherwise
+         *
+         * @note Derived classes should call this AND check their own functions
          */
         bool validateBaseFunctions() const {
             return this->allocateKeyExpansion && this->freeKeyExpansion && this->allocateBlock && this->freeBlock;
@@ -54,6 +65,12 @@ namespace CryptoTest {
 
         /**
          * @brief Validates memory management for base callbacks (optional sanity check)
+         *
+         * @section philosophy Validation Philosophy
+         * This framework follows "trust, but verify when cheap":
+         * - We ASSUME user allocators work (their infrastructure, their responsibility)
+         * - We PROVIDE basic validation as a development aid
+         * - We DON'T require passing (users may have valid reasons to skip)
          *
          * This method performs basic validation of the memory management functions
          * to catch common errors before running the full test suite. It tests:
@@ -188,36 +205,61 @@ namespace CryptoTest {
         }
 
     public:
-        // Pure virtual for derived classes to flag null function pointers.
+        /**
+         * @brief Check if all required function pointers are initialized
+         * @return true if no null function pointers exist
+         *
+         * Pure virtual - derived classes must implement to check all their functions.
+         */
         virtual bool validateFunctions() const = 0;
 
-        // Pure virtual for derived classes to implement basic memory check.
+        /**
+         * @brief Validate memory management operations (optional sanity check)
+         * @return true if basic allocation/deallocation tests pass
+         *
+         * Pure virtual - derived classes should call validateBaseMemoryCallbacks()
+         * and add any additional validation for their specialized types.
+         *
+         * @see validateBaseMemoryCallbacks() for base implementation
+         */
         virtual bool validateMemoryCallbacks() const = 0;
     };
 
-    namespace BlockCipher {
+    // ========== Block Cipher Memory Callbacks ==========
 
+    /**
+     * @namespace CryptoTest::BlockCipher
+     * @brief Block cipher testing utilities
+     *
+     * Contains MemoryCallbacks (this file) and TypeByteInterface (type_byte_interface.hpp)
+     * which are used together by the Tester class (block_cipher_tester.hpp).
+     */
+    namespace BlockCipher {
         /**
-         * @brief Memory management callbacks for block C-style cipher structures
+         * @brief Memory management callbacks for block cipher testing
+         *
+         * Specialization of base callbacks that adds no additional allocations
+         * (block ciphers only need KeyExpansion and Block).
+         *
+         * @see CipherMode::MemoryCallbacks for extension example (adds IV)
+         * @see TypeByteInterface for the complementary byte operation interface
          */
         template<typename KE, typename BT>
         struct MemoryCallbacks: protected CryptoTest::MemoryCallbacks<KE, BT>{
 
             /**
-             * @brief Validates if all pointers to functions are not null.
-             * @return True if all function pointers are not null, false otherwise.
-             * @note Implements validateBaseFunctions() method
-             * @see validateBaseFunctions()
+             * @brief Check if all required function pointers are initialized
+             * @return true if no null function pointers exist
              */
             bool validateFunctions() const override {
                 return this->validateBaseFunctions();
             }
 
             /**
-             * @brief Validates memory management for callbacks (optional sanity check)
-             * @return True if all basic checks pass, false otherwise
-             * @note Implements validateBaseMemoryCallbacks() method
-             * @see validateBaseMemoryCallbacks()
+             * @brief Validate memory management operations (optional sanity check)
+             * @return true if basic allocation/deallocation tests pass
+             *
+             * * @see validateBaseMemoryCallbacks() for base implementation
              */
             bool validateMemoryCallbacks() const override{
                 return this->validateBaseMemoryCallbacks();
@@ -228,10 +270,25 @@ namespace CryptoTest {
 
     // ========== Cipher Mode Memory Callbacks ==========
 
+    /**
+     * @namespace CryptoTest::CipherMode
+     * @brief Cipher mode testing utilities
+     *
+     * Contains MemoryCallbacks (this file) and TypeByteInterface (type_byte_interface.hpp)
+     * which are used together by the Tester class (cipher_mode_tester.hpp).
+     */
     namespace CipherMode {
 
         /**
-         * @brief Memory management callbacks for cipher C-style mode structures
+         * @brief Memory management callbacks for cipher mode testing
+         *
+         * Extends base callbacks with IV (Initial Vector) allocation/deallocation.
+         * Demonstrates the extension pattern for adding type-specific allocations.
+         *
+         * @tparam IV Initial Vector type (typically 16 bytes for AES modes)
+         *
+         * @see BlockCipher::MemoryCallbacks for simpler base-only version
+         * @see validateMemoryCallbacks() for validation of IV operations
          */
         template<typename KE, typename BT, typename IV>
         struct MemoryCallbacks: protected CryptoTest::MemoryCallbacks<KE, BT>{
@@ -239,20 +296,18 @@ namespace CryptoTest {
             std::function<void(IV**)> freeIV;
 
             /**
-             * @brief Validates if all pointers to functions are not null.
-             * @return True if all function pointers are not null, false otherwise.
-             * @note Implements validateBaseFunctions() method
-             * @see validateBaseFunctions()
+             * @brief Check if all required function pointers are initialized
+             * @return true if no null function pointers exist
              */
             bool validateFunctions() const override {
                 return this->validateBaseFunctions() && this->allocateIV && this->freeIV;
             }
 
             /**
-             * @brief Validates memory management for callbacks (optional sanity check)
-             * @return True if all basic checks pass, false otherwise
-             * @note Implements validateBaseMemoryCallbacks() method
-             * @see validateBaseMemoryCallbacks()
+             * @brief Validate memory management operations (optional sanity check)
+             * @return true if basic allocation/deallocation tests pass
+             *
+             * * @see validateBaseMemoryCallbacks() for base implementation
              */
             bool validateMemoryCallbacks() const override {
                 bool baseValid = this->validateBaseMemoryCallbacks();
