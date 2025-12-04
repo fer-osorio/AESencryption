@@ -1,6 +1,13 @@
 /**
- * @file block_cipher_tester.hpp.hpp
+ * @file block_cipher_tester.hpp
  * @brief Template-based testing framework for C-style symmetric encryption functions
+ *
+ * @section dependencies Dependencies
+ * This tester requires two infrastructure components:
+ * - **MemoryCallbacks**: Allocation/deallocation for C structures
+ * - **TypeByteInterface**: Conversion between types and raw bytes
+ *
+ * Both can be optionally validated before running cryptographic tests.
  *
  * This file provides a reusable testing framework for validating C-style cryptographic
  * implementations. It abstracts key expansion, encryption, and decryption operations
@@ -36,6 +43,7 @@
 #include "../../test-vectors/fips197_cipher.hpp"
 #include "../../test_framework.hpp"
 #include "memory_callbacks.hpp"
+#include "type_byte_interface.hpp"
 #include <cstddef>
 #include <functional>
 
@@ -54,6 +62,25 @@ namespace cp = TestVectors::AES::FIPS197::Cipher;
  * - Configurable memory management (user provides allocation/deallocation)
  * - Consistent error conventions (0 = success, non-zero = failure)
  * - Support for NIST FIPS 197 test vectors
+ *
+ * @section infrastructure Infrastructure Requirements
+ *
+ * The Tester class requires two types of callbacks:
+ *
+ * 1. **TypeByteInterface**: Comparison and construction functions
+ *    - compareKeyExpansionBytes: Compare KE with byte array
+ *    - buildKeyExpansionFromBytes: Construct KE from bytes
+ *    - compareBlockBytes: Compare Block with byte array
+ *    - buildBlockFromBytes: Construct Block from bytes
+ *
+ * 2. **MemoryCallbacks** (optional for runTestSuite):
+ *    - allocateKeyExpansion: Allocate KE with key size
+ *    - freeKeyExpansion: Deallocate and nullify KE
+ *    - allocateBlock: Allocate Block (fixed size)
+ *    - freeBlock: Deallocate and nullify Block
+ *
+ * These are separated to match the single-responsibility principle:
+ * memory management vs. data operations are distinct concerns.
  *
  * @section usage Usage
  *
@@ -150,27 +177,7 @@ namespace CryptoTest {
         template<typename KeyExpansionType, typename BlockType>
         class Tester {
         private:
-            /// Function to compare key expansion with expected bytes
-            const std::function<bool(
-                const KeyExpansionType* const, const unsigned char* const
-            )> compareKeyExpansionBytes_;
-
-            /// Function to build key expansion from raw key bytes
-            const std::function<int(
-                KeyExpansionType* const, size_t keySize, const unsigned char* const
-            )> buildKeyExpansionFromBytes_;
-
-            /// Function to compare block with expected bytes
-            const std::function<bool(
-                const BlockType* const, const unsigned char* const
-            )> compareBlockBytes_;
-
-            /// Function to build block from raw bytes
-            const std::function<int(
-                BlockType* const, const unsigned char* const
-            )> buildBlockFromBytes_;
-
-            /// Memory management callbacks for RAII-based test methods
+            TypeByteInterface<KeyExpansionType, BlockType> byteInterface_;
             MemoryCallbacks<KeyExpansionType, BlockType> memoryCallbacks_;
 
         public:
@@ -189,18 +196,21 @@ namespace CryptoTest {
              * @throws std::invalid_argument if memCallbacks is invalid (when used with runTestSuite)
              */
             Tester(
-                std::function<bool(const KeyExpansionType* const, const unsigned char* const)> compareKE,
-                std::function<int(KeyExpansionType* const, size_t, const unsigned char* const)> buildKE,
-                std::function<bool(const BlockType* const, const unsigned char* const)> compareBlock,
-                std::function<int(BlockType* const, const unsigned char* const)> buildBlock,
+                TypeByteInterface<KeyExpansionType, BlockType> byteOps,
                 MemoryCallbacks<KeyExpansionType, BlockType> memCallbacks = {}
             ):
-                compareKeyExpansionBytes_(compareKE),
-                buildKeyExpansionFromBytes_(buildKE),
-                compareBlockBytes_(compareBlock),
-                buildBlockFromBytes_(buildBlock),
+                byteInterface_(byteOps),
                 memoryCallbacks_(memCallbacks)
             {}
+
+            /**
+             * @brief Run pre-flight checks (optional but recommended)
+             */
+            bool validateInfrastructure() const {
+                bool memValid = memoryCallbacks_.validateMemoryCallbacks();
+                bool byteValid = byteInterface_.validateByteOperations();
+                return memValid && byteValid;
+            }
 
             /**
              * @brief Tests key expansion building functionality
@@ -245,7 +255,7 @@ namespace CryptoTest {
 
                 // Verify expanded key matches reference
                 ASSERT_TRUE(
-                    this->compareKeyExpansionBytes_(
+                    this->byteInterface_.compareKeyExpansionBytes_(
                         keBuffer,
                         tv.getExpectedExpansion().data()
                     ),
@@ -291,12 +301,12 @@ namespace CryptoTest {
                 TEST_SUITE("AES Block Encryption Tests");
 
                 // Prepare test environment
-                this->buildKeyExpansionFromBytes_(
+                this->byteInterface_.buildKeyExpansionFromBytes_(
                     keBuffer,
                     static_cast<size_t>(tv.getKeySize()),
                                             tv.getKeyExpansion().data()
                 );
-                this->buildBlockFromBytes_(inputBlockBuffer, tv.getInput().data());
+                this->byteInterface_.buildBlockFromBytes_(inputBlockBuffer, tv.getInput().data());
 
                 // Test single block encryption
                 ASSERT_TRUE(
@@ -304,7 +314,7 @@ namespace CryptoTest {
                             "AES block encryption should succeed"
                 );
                 ASSERT_TRUE(
-                    this->compareBlockBytes_(outputBlockBuffer, tv.getExpectedOutput().data()),
+                    this->byteInterface_.compareBlockBytes_(outputBlockBuffer, tv.getExpectedOutput().data()),
                     "Encrypted block should match test vector"
                 );
 
@@ -346,12 +356,12 @@ namespace CryptoTest {
                 TEST_SUITE("AES Block Decryption Tests");
 
                 // Prepare test environment
-                this->buildKeyExpansionFromBytes_(
+                this->byteInterface_.buildKeyExpansionFromBytes_(
                     keBuffer,
                     static_cast<size_t>(tv.getKeySize()),
                     tv.getKeyExpansion().data()
                 );
-                this->buildBlockFromBytes_(inputBlockBuffer, tv.getInput().data());
+                this->byteInterface_.buildBlockFromBytes_(inputBlockBuffer, tv.getInput().data());
 
                 // Test single block decryption
                 ASSERT_TRUE(
@@ -359,7 +369,7 @@ namespace CryptoTest {
                     "AES block decryption should succeed"
                 );
                 ASSERT_TRUE(
-                    this->compareBlockBytes_(outputBlockBuffer, tv.getExpectedOutput().data()),
+                    this->byteInterface_.compareBlockBytes_(outputBlockBuffer, tv.getExpectedOutput().data()),
                     "Decrypted block should match test vector"
                 );
 
@@ -414,12 +424,12 @@ namespace CryptoTest {
                 // Prepare test environment with plaintext direction test vector
                 cp::TestVector encryptTV(tv.getKeySize(), TestVectors::AES::Direction::Encrypt);
 
-                this->buildKeyExpansionFromBytes_(
+                this->byteInterface_.buildKeyExpansionFromBytes_(
                     keBuffer,
                     static_cast<size_t>(encryptTV.getKeySize()),
                                             encryptTV.getKeyExpansion().data()
                 );
-                this->buildBlockFromBytes_(inputBlockBuffer, encryptTV.getInput().data());
+                this->byteInterface_.buildBlockFromBytes_(inputBlockBuffer, encryptTV.getInput().data());
 
                 // Perform encryption
                 int encryptStatus = encryptor(inputBlockBuffer, keBuffer, encryptedBlockBuffer);
@@ -437,7 +447,7 @@ namespace CryptoTest {
 
                 // Verify round-trip integrity
                 ASSERT_TRUE(
-                    this->compareBlockBytes_(decryptedBlockBuffer, encryptTV.getInput().data()),
+                    this->byteInterface_.compareBlockBytes_(decryptedBlockBuffer, encryptTV.getInput().data()),
                     "Roundtrip encryption/decryption should preserve original plaintext"
                 );
 
