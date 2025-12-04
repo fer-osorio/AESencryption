@@ -44,6 +44,20 @@ namespace CryptoTest {
         std::function<void(KE**)>           freeKeyExpansion_;
         std::function<BT*()>                allocateBlock_;
         std::function<void(BT**)>           freeBlock_;
+
+    public:
+        MemoryCallbacks<KE,BT>(
+            std::function<KE*(size_t keySize)>  allocateKeyExpansion,
+            std::function<void(KE**)>           freeKeyExpansion,
+            std::function<BT*()>                allocateBlock,
+            std::function<void(BT**)>           freeBlock
+        ):
+            allocateKeyExpansion_(allocateKeyExpansion),
+            freeKeyExpansion_(freeKeyExpansion),
+            allocateBlock_(allocateBlock),
+            freeBlock_(freeBlock)
+        {}
+
     protected:
         /**
          * @brief Protected destructor prevents polymorphic deletion
@@ -246,6 +260,16 @@ namespace CryptoTest {
          */
         template<typename KE, typename BT>
         struct MemoryCallbacks: protected CryptoTest::MemoryCallbacks<KE, BT>{
+            MemoryCallbacks<KE,BT>(
+                std::function<KE*(size_t keySize)>  allocateKeyExpansion,
+                std::function<void(KE**)>           freeKeyExpansion,
+                std::function<BT*()>                allocateBlock,
+                std::function<void(BT**)>           freeBlock
+            ):
+                CryptoTest::MemoryCallbacks<KE,BT>(
+                    allocateKeyExpansion, freeKeyExpansion, allocateBlock, freeBlock
+                )
+            {}
 
             /**
              * @brief Check if all required function pointers are initialized
@@ -294,6 +318,21 @@ namespace CryptoTest {
         struct MemoryCallbacks: protected CryptoTest::MemoryCallbacks<KE, BT>{
             std::function<IV*()> allocateIV_;
             std::function<void(IV**)> freeIV_;
+
+            MemoryCallbacks<KE,BT>(
+                std::function<KE*(size_t keySize)> allocateKeyExpansion,
+                std::function<void(KE**)>          freeKeyExpansion,
+                std::function<BT*()>               allocateBlock,
+                std::function<void(BT**)>          freeBlock,
+                std::function<IV*()>               allocateIV,
+                std::function<void(IV**)>          freeIV
+            ):
+                CryptoTest::MemoryCallbacks<KE,BT>(
+                    allocateKeyExpansion, freeKeyExpansion, allocateBlock, freeBlock
+                ),
+                allocateIV_(allocateIV),
+                freeIV_(freeIV)
+            {}
 
             /**
              * @brief Check if all required function pointers are initialized
