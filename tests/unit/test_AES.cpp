@@ -1,66 +1,58 @@
-#include "../test-framework/include/test-encryption/test_encryption_c.hpp"
+#include "../../test-framework/include/test-encryption/detail/block_cipher_tester.hpp"
 #include "../../data-encryption/include/AES.h"
 
-static ptrKeyExpansion_t (*allocateKeyExapansion)(size_t) = KeyExpansionMemoryAllocationZero;
+static ptrKeyExpansion_t (*allocateKeyExapansion)(size_t)      = KeyExpansionMemoryAllocationZero;
 static void              (*freeKeyExpansion)(KeyExpansion_t**) = KeyExpansionDelete;
-static ptrBlock_t        (*allocateBlock)() = BlockMemoryAllocationZero;
-static void              (*freeBlock)(Block_t**) = BlockDelete;
+static ptrBlock_t        (*allocateBlock)()                    = BlockMemoryAllocationZero;
+static void              (*freeBlock)(Block_t**)               = BlockDelete;
 
-MemoryCallbacks<KeyExpansion_t, Block_t> callbacks{
+CryptoTest::BlockCipher::MemoryCallbacks<KeyExpansion_t, Block_t> callbacks{
     allocateKeyExapansion,
     freeKeyExpansion,
     allocateBlock,
     freeBlock
 };
 
-static bool (*compareKeyExpansionBytes_)(const KeyExpansion_t*const input, const uint8_t* bytes) = compareKeyExpansionBytes;
-static bool (*compareBlockBytes_)(const Block_t*const input, const uint8_t* bytes) = compareBlockBytes;
-
-EncryptionTester<KeyExpansion_t, Block_t> tester{
-    compareKeyExpansionBytes_,
-    [](KeyExpansion_t*const output, size_t keylenbits, const unsigned char*const input) -> int{
-        return static_cast<int>(KeyExpansionFromBytes(output, keylenbits, input));
+CryptoTest::BlockCipher::TypeByteInterface<KeyExpansion_t, Block_t> byteInterface{
+    [](const KeyExpansion_t*const input, size_t keySize,const uint8_t* bytes) -> bool{
+        return compareKeyExpansionBytes(input, bytes);
     },
-    compareBlockBytes_,
+    [](KeyExpansion_t*const output, size_t keylenbits, const unsigned char*const input) -> int{
+        return static_cast<int>(KeyExpansionFromBytes(output, input));
+    },
+    [](const Block_t*const input, const uint8_t* bytes) -> bool{
+        return compareBlockBytes(input, bytes);
+    },
     [](Block_t*const output, const unsigned char*const input) -> int {
         return static_cast<int>(BlockWriteFromBytes(output, input));
-    },
+    }
+};
+
+CryptoTest::BlockCipher::Tester<KeyExpansion_t, Block_t> tester{
+    byteInterface,
     callbacks
 };
 
 int main(){
     // (Optional but recommended) Validate memory management first
     std::cout << "\nValidating memory management callbacks..." << std::endl;
-    if (!tester.validateMemoryCallbacks()) {
-        std::cerr << "\nERROR: Memory callbacks are broken!" << std::endl;
-        std::cerr << "Fix allocation/deallocation functions before proceeding." << std::endl;
+    if (!tester.validateInfrastructure()) {
+        std::cerr << "Fix allocation/deallocation and byte interface functions before proceeding." << std::endl;
         return 1;
     }
-    std::cout << "Memory callbacks validated successfully.\n" << std::endl;
+    std::cout << "Infrastructure validated successfully.\n" << std::endl;
 
     // Define crypto functions to test
-    auto keyExpansionBuilder = [](
-        const unsigned char* key,
-        size_t keySize,
-        ptrKeyExpansion_t ke
-    ) -> int {
+    auto keyExpansionBuilder = []( const unsigned char* key, size_t keySize, ptrKeyExpansion_t ke) -> int {
         // Your key expansion implementation
         return KeyExpansionBuild(ke, key, keySize, false);
     };
 
-    auto encryptor = [](
-        const Block_t*const input,
-        const KeyExpansion_t*const ke,
-        Block_t* output
-    ) -> int {
+    auto encryptor = [](const Block_t*const input, const KeyExpansion_t*const ke, Block_t* output) -> int {
         return encryptBlock(input, ke, output, false);  // debugHard = false
     };
 
-    auto decryptor = [](
-        const Block_t*const input,
-        const KeyExpansion_t*const ke,
-        Block_t* output
-    ) -> int {
+    auto decryptor = [](const Block_t*const input, const KeyExpansion_t*const ke, Block_t* output) -> int {
         return decryptBlock(input, ke, output, false);
     };
 
