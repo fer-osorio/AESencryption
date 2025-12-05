@@ -108,24 +108,38 @@ namespace CryptoTest {
     protected:
         // Core operations needed by all testers
         std::function<bool(const KE* const, size_t keySize, const unsigned char* const)>
-            compareKeyExpansionBytes;
+            compareKeyExpansionBytes_;
         std::function<int(KE* const, size_t keySize, const unsigned char* const)>
-            buildKeyExpansionFromBytes;
+            buildKeyExpansionFromBytes_;
         std::function<bool(const BT* const, const unsigned char* const)>
-            compareBlockBytes;
+            compareBlockBytes_;
         std::function<int(BT* const, const unsigned char* const)>
-            buildBlockFromBytes;
+            buildBlockFromBytes_;
 
         // Protected destructor prevents polymorphic deletion
         ~TypeByteInterface() = default;
 
+    public:
+        TypeByteInterface<KE, BT>(
+            std::function<bool(const KE* const, size_t keySize, const unsigned char* const)> compareKeyExpansionBytes,
+            std::function<int(KE* const, size_t keySize, const unsigned char* const)>        buildKeyExpansionFromBytes,
+            std::function<bool(const BT* const, const unsigned char* const)>                 compareBlockBytes,
+            std::function<int(BT* const, const unsigned char* const)>                        buildBlockFromBytes
+        ):
+            compareKeyExpansionBytes_(compareKeyExpansionBytes),
+            buildKeyExpansionFromBytes_(buildKeyExpansionFromBytes),
+            compareBlockBytes_(compareBlockBytes),
+            buildBlockFromBytes_(buildBlockFromBytes)
+        {}
+
+    protected:
         /**
          * @brief Validates that all function pointers are initialized
          * @return true if all base functions are non-null
          */
         bool validateBaseFunctions() const {
-            return compareKeyExpansionBytes && buildKeyExpansionFromBytes && compareBlockBytes &&
-                buildBlockFromBytes;
+            return this->compareKeyExpansionBytes_ && this->buildKeyExpansionFromBytes_ && this->compareBlockBytes_ &&
+                this->buildBlockFromBytes_;
         }
 
         /**
@@ -187,25 +201,25 @@ namespace CryptoTest {
             // Test KeyExpansion operations
             const unsigned char zeroKeyExpansion[240] = {0};
 
-            int buildResult = buildKeyExpansionFromBytes(keBuffer, keySize, zeroKeyExpansion);
+            int buildResult = this->buildKeyExpansionFromBytes_(keBuffer, keySize, zeroKeyExpansion);
             ASSERT_EQUAL(
                 0, buildResult, "Build KeyExpansion from bytes should succeed"
             );
 
             if (buildResult == 0) {
                 ASSERT_TRUE(
-                    compareKeyExpansionBytes(keBuffer, keySize, zeroKeyExpansion),
+                    this->compareKeyExpansionBytes_(keBuffer, keySize, zeroKeyExpansion),
                     "Built KeyExpansion should match source bytes"
                 );
             }
 
             // Test error handling
-            buildResult = buildKeyExpansionFromBytes(nullptr, keySize, zeroKeyExpansion);
+            buildResult = this->buildKeyExpansionFromBytes_(nullptr, keySize, zeroKeyExpansion);
             ASSERT_TRUE(
                 buildResult != 0, "Build should reject null output pointer"
             );
 
-            buildResult = buildKeyExpansionFromBytes(keBuffer, 17, zeroKeyExpansion);  // Invalid size
+            buildResult = this->buildKeyExpansionFromBytes_(keBuffer, 17, zeroKeyExpansion);  // Invalid size
             ASSERT_TRUE(
                 buildResult != 0, "Build should reject invalid key size"
             );
@@ -216,20 +230,20 @@ namespace CryptoTest {
                 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff
             };
 
-            buildResult = buildBlockFromBytes(blockBuffer, testBlock);
+            buildResult = this->buildBlockFromBytes_(blockBuffer, testBlock);
             ASSERT_EQUAL(
                 0, buildResult, "Build Block from bytes should succeed"
             );
 
             if (buildResult == 0) {
                 ASSERT_TRUE(
-                    compareBlockBytes(blockBuffer, testBlock),
+                    this->compareBlockBytes_(blockBuffer, testBlock),
                     "Round-trip: built Block should match source bytes"
                 );
             }
 
             // Test error handling
-            buildResult = buildBlockFromBytes(nullptr, testBlock);
+            buildResult = this->buildBlockFromBytes_(nullptr, testBlock);
             ASSERT_TRUE(
                 buildResult != 0, "Build should reject null output pointer"
             );
@@ -270,6 +284,17 @@ namespace CryptoTest {
          */
         template<typename KE, typename BT>
         struct TypeByteInterface : protected CryptoTest::TypeByteInterface<KE, BT> {
+            TypeByteInterface<KE, BT>(
+                std::function<bool(const KE* const, size_t keySize, const unsigned char* const)> compareKeyExpansionBytes,
+                std::function<int(KE* const, size_t keySize, const unsigned char* const)>        buildKeyExpansionFromBytes,
+                std::function<bool(const BT* const, const unsigned char* const)>                 compareBlockBytes,
+                std::function<int(BT* const, const unsigned char* const)>                        buildBlockFromBytes
+            ):
+                CryptoTest::TypeByteInterface<KE, BT>(
+                    compareKeyExpansionBytes, buildKeyExpansionFromBytes, compareBlockBytes, buildBlockFromBytes
+                )
+            {}
+
             bool validateFunctions() const override {
                 return this->validateBaseFunctions();
             }
@@ -299,7 +324,7 @@ namespace CryptoTest {
              * freeBlock(&block);
              * @endcode
              */
-            bool validateByteOperations(KE* keBuffer, BT* blockBuffer, size_t keySize = 128) const {
+            bool validateByteOperations(KE* keBuffer, BT* blockBuffer, size_t keySize = 128) const override {
                 return this->validateBaseByteOperations(keBuffer, blockBuffer, keySize);
             }
 
@@ -325,11 +350,26 @@ namespace CryptoTest {
          */
         template<typename KE, typename BT, typename IV>
         struct TypeByteInterface : public CryptoTest::TypeByteInterface<KE, BT> {
-            std::function<bool(const IV* const, const unsigned char* const)> compareIVBytes;
-            std::function<int(IV* const, const unsigned char* const)>        buildIVFromBytes;
+            std::function<bool(const IV* const, const unsigned char* const)> compareIVBytes_;
+            std::function<int(IV* const, const unsigned char* const)>        buildIVFromBytes_;
+
+            TypeByteInterface<KE, BT>(
+                std::function<bool(const KE* const, size_t keySize, const unsigned char* const)> compareKeyExpansionBytes,
+                std::function<int(KE* const, size_t keySize, const unsigned char* const)>        buildKeyExpansionFromBytes,
+                std::function<bool(const BT* const, const unsigned char* const)>                 compareBlockBytes,
+                std::function<int(BT* const, const unsigned char* const)>                        buildBlockFromBytes,
+                std::function<bool(const IV* const, const unsigned char* const)>                 compareIVBytes,
+                std::function<int(IV* const, const unsigned char* const)>                        buildIVFromBytes
+            ):
+                CryptoTest::TypeByteInterface<KE, BT>(
+                    compareKeyExpansionBytes, buildKeyExpansionFromBytes, compareBlockBytes, buildBlockFromBytes
+                ),
+                compareIVBytes_(compareIVBytes),
+                buildIVFromBytes_(buildIVFromBytes)
+            {}
 
             bool validateFunctions() const override {
-                return this->validateBaseFunctions() && compareIVBytes && buildIVFromBytes;
+                return this->validateBaseFunctions() && this->compareIVBytes_ && this->buildIVFromBytes_;
             }
 
             /**
@@ -360,17 +400,17 @@ namespace CryptoTest {
                     0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf
                 };
 
-                int buildResult = buildIVFromBytes(ivBuffer, testIV);
+                int buildResult = this->buildIVFromBytes_(ivBuffer, testIV);
                 ASSERT_EQUAL(0, buildResult, "Build IV from bytes should succeed");
 
                 if (buildResult == 0) {
                     ASSERT_TRUE(
-                        compareIVBytes(ivBuffer, testIV),
+                        this->compareIVBytes_(ivBuffer, testIV),
                         "Built IV should match source bytes"
                     );
                 }
 
-                buildResult = buildIVFromBytes(nullptr, testIV);
+                buildResult = this->buildIVFromBytes_(nullptr, testIV);
                 ASSERT_TRUE(
                     buildResult != 0, "Build should reject null output pointer"
                 );
