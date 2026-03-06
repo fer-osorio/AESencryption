@@ -218,7 +218,18 @@ namespace CryptoTest {
              */
             bool validateInfrastructure() const {
                 bool memValid = memoryCallbacks_.validateMemoryCallbacks();
-                bool byteValid = byteInterface_.validateByteOperations();
+
+                KeyExpansionType* ke    = memoryCallbacks_.allocateKeyExpansion(128);
+                BlockType*        block = memoryCallbacks_.allocateBlock();
+
+                bool byteValid = false;
+                if (ke && block) {
+                    byteValid = byteInterface_.validateByteOperations(ke, block);
+                }
+
+                if (ke)    memoryCallbacks_.freeKeyExpansion(&ke);
+                if (block) memoryCallbacks_.freeBlock(&block);
+
                 return memValid && byteValid;
             }
 
@@ -265,8 +276,9 @@ namespace CryptoTest {
 
                 // Verify expanded key matches reference
                 ASSERT_TRUE(
-                    this->byteInterface_.compareKeyExpansionBytes_(
+                    this->byteInterface_.compareKeyExpansionBytes(
                         keBuffer,
+                        static_cast<size_t>(tv.getKeySize()),
                         tv.getExpectedExpansion().data()
                     ),
                     "Expanded key should match reference expanded key"
@@ -311,12 +323,12 @@ namespace CryptoTest {
                 TEST_SUITE("AES Block Encryption Tests");
 
                 // Prepare test environment
-                this->byteInterface_.buildKeyExpansionFromBytes_(
+                this->byteInterface_.buildKeyExpansionFromBytes(
                     keBuffer,
                     static_cast<size_t>(tv.getKeySize()),
                     tv.getKeyExpansion().data()
                 );
-                this->byteInterface_.buildBlockFromBytes_(inputBlockBuffer, tv.getInput().data());
+                this->byteInterface_.buildBlockFromBytes(inputBlockBuffer, tv.getInput().data());
 
                 // Test single block encryption
                 ASSERT_TRUE(
@@ -324,7 +336,7 @@ namespace CryptoTest {
                     "AES block encryption should succeed"
                 );
                 ASSERT_TRUE(
-                    this->byteInterface_.compareBlockBytes_(outputBlockBuffer, tv.getExpectedOutput().data()),
+                    this->byteInterface_.compareBlockBytes(outputBlockBuffer, tv.getExpectedOutput().data()),
                     "Encrypted block should match test vector"
                 );
 
@@ -366,12 +378,12 @@ namespace CryptoTest {
                 TEST_SUITE("AES Block Decryption Tests");
 
                 // Prepare test environment
-                this->byteInterface_.buildKeyExpansionFromBytes_(
+                this->byteInterface_.buildKeyExpansionFromBytes(
                     keBuffer,
                     static_cast<size_t>(tv.getKeySize()),
                     tv.getKeyExpansion().data()
                 );
-                this->byteInterface_.buildBlockFromBytes_(inputBlockBuffer, tv.getInput().data());
+                this->byteInterface_.buildBlockFromBytes(inputBlockBuffer, tv.getInput().data());
 
                 // Test single block decryption
                 ASSERT_TRUE(
@@ -379,7 +391,7 @@ namespace CryptoTest {
                     "AES block decryption should succeed"
                 );
                 ASSERT_TRUE(
-                    this->byteInterface_.compareBlockBytes_(outputBlockBuffer, tv.getExpectedOutput().data()),
+                    this->byteInterface_.compareBlockBytes(outputBlockBuffer, tv.getExpectedOutput().data()),
                     "Decrypted block should match test vector"
                 );
 
@@ -434,12 +446,12 @@ namespace CryptoTest {
                 // Prepare test environment with plaintext direction test vector
                 cp::TestVector encryptTV(tv.getKeySize(), TestVectors::AES::Direction::Encrypt);
 
-                this->byteInterface_.buildKeyExpansionFromBytes_(
+                this->byteInterface_.buildKeyExpansionFromBytes(
                     keBuffer,
                     static_cast<size_t>(encryptTV.getKeySize()),
-                                            encryptTV.getKeyExpansion().data()
+                    encryptTV.getKeyExpansion().data()
                 );
-                this->byteInterface_.buildBlockFromBytes_(inputBlockBuffer, encryptTV.getInput().data());
+                this->byteInterface_.buildBlockFromBytes(inputBlockBuffer, encryptTV.getInput().data());
 
                 // Perform encryption
                 int encryptStatus = encryptor(inputBlockBuffer, keBuffer, encryptedBlockBuffer);
@@ -457,7 +469,7 @@ namespace CryptoTest {
 
                 // Verify round-trip integrity
                 ASSERT_TRUE(
-                    this->byteInterface_.compareBlockBytes_(decryptedBlockBuffer, encryptTV.getInput().data()),
+                    this->byteInterface_.compareBlockBytes(decryptedBlockBuffer, encryptTV.getInput().data()),
                     "Roundtrip encryption/decryption should preserve original plaintext"
                 );
 
@@ -505,7 +517,7 @@ namespace CryptoTest {
                 std::function<int(const BlockType* const, const KeyExpansionType* const, BlockType* const)> decryptor
             ) {
                 // Validate memory callbacks
-                if (!this->memoryCallbacks_.isValid()) {
+                if (!this->memoryCallbacks_.validateFunctions()) {
                     throw std::runtime_error(
                         "Memory callbacks not provided. Either:\n"
                         "  1. Provide callbacks in constructor and use this method, or\n"
@@ -513,7 +525,7 @@ namespace CryptoTest {
                     );
                 }
                 // Check byte interface
-                if (!this->byteInterface_.isValid()) {
+                if (!this->byteInterface_.validateFunctions()) {
                     throw std::runtime_error(
                         "TypeByteInterface not fully initialized.\n"
                         "All comparison and builder functions must be provided.\n"
@@ -622,7 +634,7 @@ namespace CryptoTest {
                 BlockType* const tempBuffer
             ) {
                 // Only check byte interface (user manages memory themselves)
-                if (!this->byteInterface_.isValid()) {
+                if (!this->byteInterface_.validateFunctions()) {
                     throw std::runtime_error(
                         "TypeByteInterface not fully initialized.\n"
                         "All comparison and builder functions must be provided."
