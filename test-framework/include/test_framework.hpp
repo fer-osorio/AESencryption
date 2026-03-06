@@ -5,6 +5,15 @@
 #include<vector>
 #include<cstdint>
 #include<functional>
+#include<cstring>
+
+#define TF_COLOR_RED    "\033[31m"
+#define TF_COLOR_GREEN  "\033[32m"
+#define TF_COLOR_BLUE   "\033[34m"
+#define TF_COLOR_NC     "\033[0m"   // No color
+#define TF_INFO         "\t\033[34m[INFO]\033[0m"
+#define TF_SUCCESS      "\t\033[32m[SUCCESS]\033[0m"
+#define TF_FAILURE      "\t\033[31m[FAILURE]\033[0m"
 
 namespace TestFramework{
 class TestSuite{
@@ -13,14 +22,79 @@ private:
 	int testsRun = 0;
 	int testsPassed = 0;
 	std::vector<std::string> failedTests;
-public:
-	TestSuite(const std::string& name);
 
-	// Test assertion macros
-	bool assertTrue(bool condition, const std::string& testName);
-	bool assertEqual(int expected, int actual, const std::string& testName);
-	bool assertBytesEqual(const uint8_t* expected, const uint8_t* actual, size_t len, const std::string& testName);
-	bool assertNotNull(const void* ptr, const std::string& testName);
+	static std::ostream& sendSuccessMessage(std::ostream& os, const std::string& testName){
+		os << TF_COLOR_GREEN "  ✓ " << testName << TF_COLOR_NC << std::endl;
+		return os;
+	}
+
+	static std::ostream& sendFailureMessage(std::ostream& os, const std::string& testName){
+		os << TF_COLOR_RED "  ✗ " << testName << " - FAILED" TF_COLOR_NC << std::endl;
+		return os;
+	}
+
+public:
+	TestSuite(const std::string& name) : suiteName(name) {}
+
+	bool assertTrue(bool condition, const std::string& testName){
+		this->testsRun++;
+		if(condition) {
+			this->testsPassed++;
+			sendSuccessMessage(std::cout, testName);
+		} else {
+			this->failedTests.push_back(testName);
+			sendFailureMessage(std::cout, testName);
+		}
+		return condition;
+	}
+
+	bool assertEqual(int expected, int actual, const std::string& testName){
+		this->testsRun++;
+		if(expected == actual) {
+			this->testsPassed++;
+			sendSuccessMessage(std::cout, testName);
+			return true;
+		} else {
+			this->failedTests.push_back(testName + " (expected: " + std::to_string(expected) + ", got: " + std::to_string(actual) + ")");
+			sendFailureMessage(std::cout, testName) << TF_INFO"(expected: " << expected << ", got: " << actual << ")" << std::endl;
+			return false;
+		}
+	}
+
+	bool assertBytesEqual(const uint8_t* expected, const uint8_t* actual, size_t len, const std::string& testName){
+		this->testsRun++;
+		if(memcmp(expected, actual, len) == 0) {
+			this->testsPassed++;
+			sendSuccessMessage(std::cout, testName);
+			return true;
+		} else {
+			this->failedTests.push_back(testName + " (byte arrays differ)");
+			sendFailureMessage(std::cout, testName) << TF_INFO"(byte arrays differ)" << std::endl;
+			// Show first differing bytes for debugging
+			for(size_t i = 0; i < len; i++) {
+				if(expected[i] != actual[i]) {
+					std::cout << "\tFirst difference at byte number " << i
+					          << ": expected 0x" << std::hex << static_cast<int>(expected[i])
+					          << ", got 0x" << static_cast<int>(actual[i]) << std::dec << std::endl;
+					break;
+				}
+			}
+			return false;
+		}
+	}
+
+	bool assertNotNull(const void* ptr, const std::string& testName){
+		this->testsRun++;
+		if(ptr != NULL && ptr != nullptr) {
+			this->testsPassed++;
+			sendSuccessMessage(std::cout, testName);
+			return true;
+		} else {
+			this->failedTests.push_back(testName + " (pointer is null)");
+			sendFailureMessage(std::cout, testName) << TF_INFO"(pointer is null)" << std::endl;
+			return false;
+		}
+	}
 
 	// Template method to test if a function throws a specific exception
 	template<typename ExceptionType>
@@ -52,17 +126,68 @@ public:
 			return false;
 		}
 	}
+
 	// Overload for any exception (not type-specific)
-	bool assertThrows(std::function<void()> func, const std::string& testName);
+	bool assertThrows(std::function<void()> func, const std::string& testName) {
+		testsRun++;
+		try {
+			func();
+			sendFailureMessage(std::cout, testName) << TF_INFO" (Expected exception not thrown)" << std::endl;
+			failedTests.push_back(testName);
+			return false;
+		}
+		catch (...) {
+			testsPassed++;
+			sendSuccessMessage(std::cout, testName) << " (Exception thrown as expected)" << std::endl;
+			return true;
+		}
+	}
 
-	// Run a test function and catch exceptions
-	bool runTest(std::function<bool ()> testFunc, const std::string& testName);
+	bool runTest(std::function<bool ()> testFunc, const std::string& testName){
+		bool success = false;
+		this->testsRun++;
+		try {
+			success = testFunc();
+		} catch(const std::exception& exp) {
+			this->failedTests.push_back(testName + " (exception: " + exp.what() + ")");
+			sendFailureMessage(std::cout, testName) << TF_INFO"(exception: " << exp.what() << ")" << std::endl;
+		}
+		if(success == true) {
+			this->testsPassed++;
+			sendSuccessMessage(std::cout, testName);
+			return true;
+		} else {
+			this->failedTests.push_back(testName + " (function exit with non success status)");
+			sendFailureMessage(std::cout, testName) << TF_INFO"(function exit with non success status)" << std::endl;
+			return false;
+		}
+	}
 
-	// Print final results
-	void printResults();
+	void printResults(){
+		std::cout << "\n" << std::string(65, '=') << "\n";
+		std::cout << TF_INFO " Test Suite: " << this->suiteName << "\n";
+		std::cout << TF_INFO " Tests run: " << this->testsRun << "\n";
+		std::cout << TF_INFO " Tests passed: " << this->testsPassed << "\n";
+		std::cout << TF_INFO " Tests failed: " << (this->testsRun - this->testsPassed) << "\n";
 
-	bool allPassed() const;
-	int getFailedCount() const;
+		if(this->testsPassed == this->testsRun) {
+			std::cout << TF_SUCCESS TF_COLOR_GREEN" ✓ ALL TESTS PASSED" TF_COLOR_NC << "\n";
+		} else {
+			std::cout << TF_FAILURE TF_COLOR_RED" ✗ SOME TESTS FAILED:" TF_COLOR_NC << "\n";
+			for (const std::string& failure : this->failedTests) {
+				std::cout << "  - " << failure << "\n";
+			}
+		}
+		std::cout << std::string(65, '=') << std::endl;
+	}
+
+	bool allPassed() const{
+		return this->testsPassed == testsRun;
+	}
+
+	int getFailedCount() const {
+		return this->testsRun - this->testsPassed;
+	}
 };
 
 // Utility macros for cleaner test writing
