@@ -113,7 +113,7 @@ namespace CryptoTest {
          * }
          * @endcode
          */
-        bool validateBaseMemoryCallbacks() {
+        bool validateBaseMemoryCallbacks() const {
             TEST_SUITE("Basic Memory Callback Validation");
 
             if (!this->validateBaseFunctions()) {
@@ -271,6 +271,11 @@ namespace CryptoTest {
                 )
             {}
 
+            KE* allocateKeyExpansion(size_t keySize) const { return this->allocateKeyExpansion_(keySize); }
+            void freeKeyExpansion(KE** p)            const { this->freeKeyExpansion_(p); }
+            BT*  allocateBlock()                     const { return this->allocateBlock_(); }
+            void freeBlock(BT** p)                   const { this->freeBlock_(p); }
+
             /**
              * @brief Check if all required function pointers are initialized
              * @return true if no null function pointers exist
@@ -319,7 +324,7 @@ namespace CryptoTest {
             std::function<IV*()> allocateIV_;
             std::function<void(IV**)> freeIV_;
 
-            MemoryCallbacks<KE,BT>(
+            MemoryCallbacks<KE,BT,IV>(
                 std::function<KE*(size_t keySize)> allocateKeyExpansion,
                 std::function<void(KE**)>          freeKeyExpansion,
                 std::function<BT*()>               allocateBlock,
