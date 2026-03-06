@@ -295,6 +295,19 @@ namespace CryptoTest {
                 )
             {}
 
+            bool compareKeyExpansionBytes(const KE* ke, size_t keySize, const unsigned char* bytes) const {
+                return this->compareKeyExpansionBytes_(ke, keySize, bytes);
+            }
+            int buildKeyExpansionFromBytes(KE* ke, size_t keySize, const unsigned char* bytes) const {
+                return this->buildKeyExpansionFromBytes_(ke, keySize, bytes);
+            }
+            bool compareBlockBytes(const BT* block, const unsigned char* bytes) const {
+                return this->compareBlockBytes_(block, bytes);
+            }
+            int buildBlockFromBytes(BT* block, const unsigned char* bytes) const {
+                return this->buildBlockFromBytes_(block, bytes);
+            }
+
             bool validateFunctions() const override {
                 return this->validateBaseFunctions();
             }
@@ -353,7 +366,7 @@ namespace CryptoTest {
             std::function<bool(const IV* const, const unsigned char* const)> compareIVBytes_;
             std::function<int(IV* const, const unsigned char* const)>        buildIVFromBytes_;
 
-            TypeByteInterface<KE, BT>(
+            TypeByteInterface<KE, BT, IV>(
                 std::function<bool(const KE* const, size_t keySize, const unsigned char* const)> compareKeyExpansionBytes,
                 std::function<int(KE* const, size_t keySize, const unsigned char* const)>        buildKeyExpansionFromBytes,
                 std::function<bool(const BT* const, const unsigned char* const)>                 compareBlockBytes,
