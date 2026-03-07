@@ -85,7 +85,7 @@ public:
 
 	bool assertNotNull(const void* ptr, const std::string& testName){
 		this->testsRun++;
-		if(ptr != NULL && ptr != nullptr) {
+		if(ptr != nullptr) {
 			this->testsPassed++;
 			sendSuccessMessage(std::cout, testName);
 			return true;
