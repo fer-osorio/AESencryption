@@ -120,7 +120,7 @@ namespace CryptoTest {
         ~TypeByteInterface() = default;
 
     public:
-        TypeByteInterface<KE, BT>(
+        TypeByteInterface(
             std::function<bool(const KE* const, size_t keySize, const unsigned char* const)> compareKeyExpansionBytes,
             std::function<int(KE* const, size_t keySize, const unsigned char* const)>        buildKeyExpansionFromBytes,
             std::function<bool(const BT* const, const unsigned char* const)>                 compareBlockBytes,
@@ -284,7 +284,7 @@ namespace CryptoTest {
          */
         template<typename KE, typename BT>
         struct TypeByteInterface : protected CryptoTest::TypeByteInterface<KE, BT> {
-            TypeByteInterface<KE, BT>(
+            TypeByteInterface(
                 std::function<bool(const KE* const, size_t keySize, const unsigned char* const)> compareKeyExpansionBytes,
                 std::function<int(KE* const, size_t keySize, const unsigned char* const)>        buildKeyExpansionFromBytes,
                 std::function<bool(const BT* const, const unsigned char* const)>                 compareBlockBytes,
@@ -366,7 +366,7 @@ namespace CryptoTest {
             std::function<bool(const IV* const, const unsigned char* const)> compareIVBytes_;
             std::function<int(IV* const, const unsigned char* const)>        buildIVFromBytes_;
 
-            TypeByteInterface<KE, BT, IV>(
+            TypeByteInterface(
                 std::function<bool(const KE* const, size_t keySize, const unsigned char* const)> compareKeyExpansionBytes,
                 std::function<int(KE* const, size_t keySize, const unsigned char* const)>        buildKeyExpansionFromBytes,
                 std::function<bool(const BT* const, const unsigned char* const)>                 compareBlockBytes,

@@ -46,7 +46,7 @@ namespace CryptoTest {
         std::function<void(BT**)>           freeBlock_;
 
     public:
-        MemoryCallbacks<KE,BT>(
+        MemoryCallbacks(
             std::function<KE*(size_t keySize)>  allocateKeyExpansion,
             std::function<void(KE**)>           freeKeyExpansion,
             std::function<BT*()>                allocateBlock,
@@ -260,7 +260,7 @@ namespace CryptoTest {
          */
         template<typename KE, typename BT>
         struct MemoryCallbacks: protected CryptoTest::MemoryCallbacks<KE, BT>{
-            MemoryCallbacks<KE,BT>(
+            MemoryCallbacks(
                 std::function<KE*(size_t keySize)>  allocateKeyExpansion,
                 std::function<void(KE**)>           freeKeyExpansion,
                 std::function<BT*()>                allocateBlock,
@@ -324,7 +324,7 @@ namespace CryptoTest {
             std::function<IV*()> allocateIV_;
             std::function<void(IV**)> freeIV_;
 
-            MemoryCallbacks<KE,BT,IV>(
+            MemoryCallbacks(
                 std::function<KE*(size_t keySize)> allocateKeyExpansion,
                 std::function<void(KE**)>          freeKeyExpansion,
                 std::function<BT*()>               allocateBlock,
