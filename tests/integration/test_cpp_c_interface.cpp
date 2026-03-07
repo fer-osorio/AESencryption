@@ -1,11 +1,14 @@
-#include "../include/test_framework.hpp"
+#include "../../test-framework/include/test_framework.hpp"
 #include "../../data-encryption/include/constants.h"
 #include "../../data-encryption/include/AES.h"
 #include "../../data-encryption/include/operation_modes.h"
 #include "../../include/cipher.hpp"
 #include "../../include/key.hpp"
-#include "../include/NIST_SP_800-38A_TestVectors.hpp"
+#include "../../test-framework/include/test-vectors/sp800_38a_modes.hpp"
 #include <cstring>
+
+namespace TV = TestVectors::AES;
+namespace SP = TestVectors::AES::SP800_38A;
 
 #define AESKEY AESencryption::Key
 #define AESENC_KEYLEN AESencryption::Key::LengthBits
@@ -132,26 +135,26 @@ bool test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
 }
 
 bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
-    // Convert from AESENC_KEYLEN to Common::KeySize
-    Common::KeySize ks;
+    // Convert from AESENC_KEYLEN to TV::KeySize
+    TV::KeySize ks;
     switch(klb) {
-        case AESENC_KEYLEN::_128: ks = Common::KeySize::AES128; break;
-        case AESENC_KEYLEN::_192: ks = Common::KeySize::AES192; break;
-        case AESENC_KEYLEN::_256: ks = Common::KeySize::AES256; break;
+        case AESENC_KEYLEN::_128: ks = TV::KeySize::AES128; break;
+        case AESENC_KEYLEN::_192: ks = TV::KeySize::AES192; break;
+        case AESENC_KEYLEN::_256: ks = TV::KeySize::AES256; break;
         default: return false;
     }
 
-    // Convert from AESENC_OPTMODE to SP800_38A::CipherMode
-    SP800_38A::CipherMode cm;
+    // Convert from AESENC_OPTMODE to TV::CipherMode
+    TV::CipherMode cm;
     switch(mode) {
-        case AESENC_OPTMODE::ECB: cm = SP800_38A::CipherMode::ECB; break;
-        case AESENC_OPTMODE::CBC: cm = SP800_38A::CipherMode::CBC; break;
+        case AESENC_OPTMODE::ECB: cm = TV::CipherMode::ECB; break;
+        case AESENC_OPTMODE::CBC: cm = TV::CipherMode::CBC; break;
         default:
             std::cerr << "Error: Unsupported operation mode." << std::endl;
             return false;
     }
 
-    std::unique_ptr<SP800_38A::TestVectorBase> example = SP800_38A::createTestVector(ks, cm);
+    std::unique_ptr<SP::ModeTestVectorBase> example = SP::create(ks, cm);
     if (!example) {
         std::cerr << "Error: Failed to create test vector." << std::endl;
         return false;
@@ -162,7 +165,7 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
     try {
         // Direct C implementation
         size_t sz_klb = static_cast<size_t>(klb);
-        ptrKeyExpansion_t c_ke = KeyExpansionMemoryAllocationBuild(example->getKey(), sz_klb, false);
+        ptrKeyExpansion_t c_ke = KeyExpansionMemoryAllocationBuild(example->getKey().data(), sz_klb, false);
         success &= ASSERT_NOT_NULL(
             c_ke,
             "C key expansion creation should succeed"
@@ -170,19 +173,19 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
 
         std::vector<uint8_t> key_expansion_bytes(getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(klb)));
         KeyExpansionWriteBytes(c_ke, key_expansion_bytes.data());
-        uint8_t c_output[SP800_38A::TEXT_SIZE];
+        uint8_t c_output[SP::kDataSize];
 
         // C++ wrapper implementation
-        AESKEY cpp_key(example->getKeyAsVector(), klb);
+        AESKEY cpp_key(example->getKey(), klb);
         AESencryption::Cipher cpp_cipher(cpp_key, AESCIPHER::OperationMode(mode));
 
         enum ExceptionCode c_result = [&]() -> enum ExceptionCode{
             switch(mode){
                 case AESENC_OPTMODE::ECB:
-                    return encryptECB(example->getInput(), SP800_38A::TEXT_SIZE, key_expansion_bytes.data(), sz_klb, c_output);
+                    return encryptECB(example->getInput().data(), SP::kDataSize, key_expansion_bytes.data(), sz_klb, c_output);
                     break;
                 case AESENC_OPTMODE::CBC:
-                    return encryptCBC(example->getInput(), SP800_38A::TEXT_SIZE, key_expansion_bytes.data(), sz_klb, cpp_cipher.getInitialVectorForTesting(), c_output);
+                    return encryptCBC(example->getInput().data(), SP::kDataSize, key_expansion_bytes.data(), sz_klb, cpp_cipher.getInitialVectorForTesting(), c_output);
                     break;
                     break;
                 default:
@@ -195,25 +198,25 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
             "C encryption should succeed with NoException"
         );
 
-        uint8_t cpp_output[SP800_38A::TEXT_SIZE];
-        cpp_cipher.encrypt(example->getInput(), SP800_38A::TEXT_SIZE, cpp_output);
+        uint8_t cpp_output[SP::kDataSize];
+        cpp_cipher.encrypt(example->getInput().data(), SP::kDataSize, cpp_output);
 
         success &= ASSERT_BYTES_EQUAL(
-            c_output, cpp_output, SP800_38A::TEXT_SIZE,
+            c_output, cpp_output, SP::kDataSize,
             "C++ wrapper should produce same result as direct C"
         );
 
         // Test decryption consistency
-        uint8_t c_decrypted[SP800_38A::TEXT_SIZE];
-        uint8_t cpp_decrypted[SP800_38A::TEXT_SIZE];
+        uint8_t c_decrypted[SP::kDataSize];
+        uint8_t cpp_decrypted[SP::kDataSize];
 
         c_result = [&]() -> enum ExceptionCode{
             switch(mode){
                 case AESENC_OPTMODE::ECB:
-                    return decryptECB(c_output, SP800_38A::TEXT_SIZE, key_expansion_bytes.data(), sz_klb, c_decrypted);
+                    return decryptECB(c_output, SP::kDataSize, key_expansion_bytes.data(), sz_klb, c_decrypted);
                     break;
                 case AESENC_OPTMODE::CBC:
-                    return decryptCBC(c_output, SP800_38A::TEXT_SIZE, key_expansion_bytes.data(), sz_klb, cpp_cipher.getInitialVectorForTesting(), c_decrypted);
+                    return decryptCBC(c_output, SP::kDataSize, key_expansion_bytes.data(), sz_klb, cpp_cipher.getInitialVectorForTesting(), c_decrypted);
                     break;
                     break;
                 default:
@@ -223,12 +226,12 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
         }();
         success &= ASSERT_TRUE(c_result == NoException, "C decryption should succeed");
 
-        cpp_cipher.decrypt(cpp_output, SP800_38A::TEXT_SIZE, cpp_decrypted);
+        cpp_cipher.decrypt(cpp_output, SP::kDataSize, cpp_decrypted);
 
-        success &= ASSERT_BYTES_EQUAL(c_decrypted, cpp_decrypted, SP800_38A::TEXT_SIZE,
+        success &= ASSERT_BYTES_EQUAL(c_decrypted, cpp_decrypted, SP::kDataSize,
                                       "C++ and C decryption should produce same result");
 
-        success &= ASSERT_BYTES_EQUAL(example->getInput(), cpp_decrypted, SP800_38A::TEXT_SIZE,
+        success &= ASSERT_BYTES_EQUAL(example->getInput().data(), cpp_decrypted, SP::kDataSize,
                                       "Both implementations should correctly decrypt data");
 
         KeyExpansionDelete(&c_ke);
@@ -243,25 +246,25 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
 bool runTestsForKeylengthMode(AESENC_KEYLEN klb, AESENC_OPTMODE mode){
     bool success = true;
 
-    // Convert from AESENC_KEYLEN to Common::KeySize for string lookup
-    Common::KeySize ks;
+    // Convert from AESENC_KEYLEN to TV::KeySize for string lookup
+    TV::KeySize ks;
     switch(klb) {
-        case AESENC_KEYLEN::_128: ks = Common::KeySize::AES128; break;
-        case AESENC_KEYLEN::_192: ks = Common::KeySize::AES192; break;
-        case AESENC_KEYLEN::_256: ks = Common::KeySize::AES256; break;
+        case AESENC_KEYLEN::_128: ks = TV::KeySize::AES128; break;
+        case AESENC_KEYLEN::_192: ks = TV::KeySize::AES192; break;
+        case AESENC_KEYLEN::_256: ks = TV::KeySize::AES256; break;
         default: return false;
     }
 
-    // Convert from AESENC_OPTMODE to SP800_38A::CipherMode for string lookup
-    SP800_38A::CipherMode cm;
+    // Convert from AESENC_OPTMODE to TV::CipherMode for string lookup
+    TV::CipherMode cm;
     switch(mode) {
-        case AESENC_OPTMODE::ECB: cm = SP800_38A::CipherMode::ECB; break;
-        case AESENC_OPTMODE::CBC: cm = SP800_38A::CipherMode::CBC; break;
+        case AESENC_OPTMODE::ECB: cm = TV::CipherMode::ECB; break;
+        case AESENC_OPTMODE::CBC: cm = TV::CipherMode::CBC; break;
         default: return false;
     }
 
-    const char* keylenStr = Common::getKeySizeString(ks);
-    const char* optModeStr = SP800_38A::getModeString(cm);
+    const char* keylenStr = TV::getKeySizeString(ks);
+    const char* optModeStr = TV::getCipherModeString(cm);
 
     std::cout << "\n*****************************************************************\n"
     << "\n========== AES key " << keylenStr << " bits, operation mode: " << optModeStr << " ============\n"
