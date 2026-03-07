@@ -29,6 +29,8 @@ endif
 # Local includes and libraries
 INCLUDES = \
     -I./include \
+    -I$(PROJECT_ROOT)/test-framework/include \
+    -I$(PROJECT_ROOT)/test-framework/include/test-vectors \
     -I$(PROJECT_ROOT)/crypto-cli/include \
     -I$(PROJECT_ROOT)/file-handlers/include \
     -I$(PROJECT_ROOT)/include \
@@ -36,7 +38,7 @@ INCLUDES = \
     -I$(PROJECT_ROOT)/metrics-analysis/include
 
 LDFLAGS += -L$(PROJECT_ROOT)/lib
-LIBS = -lcryptocli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetricsanalysis
+LIBS = -lcryptocli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetricsanalysis -ltest_vectors
 
 # Define required dependencies (library files)
 DEPS = \
@@ -44,7 +46,8 @@ DEPS = \
     $(PROJECT_ROOT)/lib/libaesencryption_cpp.a \
     $(PROJECT_ROOT)/lib/libmetricsanalysis.a \
     $(PROJECT_ROOT)/lib/libfilehandlers.a \
-    $(PROJECT_ROOT)/lib/libcryptocli.a
+    $(PROJECT_ROOT)/lib/libcryptocli.a \
+    $(PROJECT_ROOT)/lib/libtest_vectors.a
 
 # Source files
 SOURCES = $(call find_local_sources,cpp)
