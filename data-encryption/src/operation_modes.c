@@ -103,7 +103,7 @@ static void InputStreamMoveTowardsLastBlock(struct InputStream* is){
  * @param dest The block where the read data will be written
  */
 static void InputStreamReadBlockMoveForward(Block_t* dest, struct InputStream* is){
-  BlockWriteFromBytes(is->currentPossition, dest);
+  BlockWriteFromBytes(dest, is->currentPossition);
   InputStreamMoveForwardOneBlock(is);
 }
 
@@ -113,7 +113,7 @@ static void InputStreamReadBlockMoveForward(Block_t* dest, struct InputStream* i
  * @param dest The block where the read data will be written.
  */
 static void InputStreamReadBlockMoveBackwards(Block_t* dest, struct InputStream* is){
-  BlockWriteFromBytes(is->currentPossition, dest);
+  BlockWriteFromBytes(dest, is->currentPossition);
   InputStreamMoveBackwardsOneBlock(is);
 }
 
@@ -221,8 +221,9 @@ static void encryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, str
   if(size == 0) return ZeroLength; \
   if(size % BLOCK_SIZE != 0) return InvalidInputSize;
 
-#define BUILD_KEYEXPANSION_FROMBYTES(ke_p,source) \
-  ptrKeyExpansion_t ke_p = KeyExpansionFromBytes(source, keylenbits); \
+#define BUILD_KEYEXPANSION_FROMBYTES(ke_p,source,keylenbits) \
+  ptrKeyExpansion_t ke_p = KeyExpansionMemoryAllocationZero(keylenbits); \
+  KeyExpansionFromBytes(ke_p, source); \
   if(ke_p == NULL) return NullKeyExpansion;
 
 #define BUILD_STREAMS(is,os) \
@@ -234,7 +235,7 @@ static void encryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, str
  * */
 enum ExceptionCode encryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
   VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
-  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion,keylenbits)
   BUILD_STREAMS(is,os)
   // Encryption
   encryptECB__(ke_p, &is, &os);
@@ -260,7 +261,7 @@ static void decryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, str
  * */
 enum ExceptionCode decryptECB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, uint8_t*const output){
   VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
-  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion,keylenbits)
   BUILD_STREAMS(is,os)
   decryptECB__(ke_p, &is, &os);
   KeyExpansionDelete(&ke_p);
@@ -307,7 +308,7 @@ static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t*const IV, str
 enum ExceptionCode encryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
   VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
   if(IV == NULL) return NullInitialVector;
-  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion,keylenbits)
   BUILD_STREAMS(is,os)
   // Encryption
   encryptCBC__(ke_p, IV, &is, &os);
@@ -361,7 +362,7 @@ static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t*const IV, str
 enum ExceptionCode decryptCBC(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
   VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
   if(IV == NULL) return NullInitialVector;
-  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion,keylenbits)
   BUILD_STREAMS(is,os)
   // Encryption
   decryptCBC__(ke_p, IV, &is, &os);
@@ -407,7 +408,7 @@ static void encryptOFB__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
 enum ExceptionCode encryptOFB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
   VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
   if(IV == NULL) return NullInitialVector;
-  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion,keylenbits)
   BUILD_STREAMS(is,os)
   // Encryption
   encryptOFB__(ke_p, IV, &is, &os);
@@ -427,7 +428,7 @@ static void decryptOFB__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct I
 enum ExceptionCode decryptOFB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
   VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
   if(IV == NULL) return NullInitialVector;
-  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion,keylenbits)
   BUILD_STREAMS(is,os)
   // Encryption
   decryptOFB__(ke_p, IV, &is, &os);
@@ -455,7 +456,7 @@ static void CounterIncrease(union Counter*const counter){
 }
 
 static void applyCTRencryptionStepMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, union Counter*const counter, Block_t*const buffer, struct OutputStream* os){
-  BlockWriteFromBytes(counter->uint08_, buffer);
+  BlockWriteFromBytes(buffer, counter->uint08_);
   encryptBlock(buffer, ke_p, buffer, false);
   bytesXORBlock(is->currentPossition, buffer, os->currentPossition);
   CounterIncrease(counter);
@@ -478,7 +479,7 @@ static void encryptCTR__(const KeyExpansion_t* ke_p, const uint8_t* counter00, s
 enum ExceptionCode encryptCTR(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* counter00, uint8_t*const output){
   VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
   if(counter00 == NULL) return NullInitialVector;
-  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion,keylenbits)
   BUILD_STREAMS(is,os)
   // Encryption
   encryptCTR__(ke_p, counter00, &is, &os);
@@ -493,7 +494,7 @@ static void decryptCTR__(const KeyExpansion_t* ke_p, const uint8_t* counter00, s
 enum ExceptionCode decryptCTR(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* counter00, uint8_t*const output){
   VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output)
   if(counter00 == NULL) return NullInitialVector;
-  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion)
+  BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion,keylenbits)
   BUILD_STREAMS(is,os)
   // Encryption
   decryptCTR__(ke_p, counter00, &is, &os);

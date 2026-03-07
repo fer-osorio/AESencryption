@@ -19,7 +19,7 @@ typedef KeyExpansion_t* ptrKeyExpansion_t;
 /*
  * Reads BLOCK_SIZE bytes from source and writes the on the block pointed by output.
  * */
-void BlockWriteFromBytes(const uint8_t source[], Block_t* output);
+enum ExceptionCode BlockWriteFromBytes(Block_t*const output, const uint8_t*const input);
 
 /*
  * Creates a Block instance from the bytes pointed by source. Basically it takes pieces of four bytes and creates the columns with them
@@ -62,10 +62,26 @@ void BlockXORequalBytes(Block_t* input, const uint8_t byteBlock[]);
 void bytesXORBlock(const uint8_t input[], const Block_t* block, uint8_t output[]);
 
 /*
+ * Compare blocks with the bytes pointed by byteBlock.
+ * */
+bool compareBlockBytes(const Block_t*const input, const uint8_t byteBlock[]);
+
+/*
+ * Builds key expansion object.
+ * */
+enum ExceptionCode KeyExpansionBuild(KeyExpansion_t*const output, const uint8_t* key, size_t keylenbits, bool debug);
+
+/*
  * Builds key expansion object and returns a pointer to it.
  * Consider: Allocates memory using malloc.
  * */
 ptrKeyExpansion_t KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t keylenbits, bool debug);
+
+/*
+ * Builds key expansion object with zeros and returns a pointer to it.
+ * Consider: Allocates memory using malloc.
+ * */
+ptrKeyExpansion_t KeyExpansionMemoryAllocationZero(size_t keylenbits);
 
 /*
  * Free the memory allocated for an KeyExpansion_t object pointed by *ke_pp.
@@ -74,21 +90,26 @@ void KeyExpansionDelete(KeyExpansion_t** ke_pp);
 
 /*
  * Write the bytes that forms the key expansion object on the location pointed by dest.
+ * This function does not implement key expansion algorithm, just formats the data properly.
  * */
 void KeyExpansionWriteBytes(const KeyExpansion_t* source, uint8_t* dest);
 
 /*
- * Creates KeyExpansion_t object using the bytes pointed by source.
+ * Writes KeyExpansion_t object using the bytes pointed by source.
  * The amounth of bytes it uses is Nb*((Nk + 6) + 1), where Nb = 4 and Nk = keylenbits/2^5.
- * Consider: Allocates memory using malloc.
  * */
-ptrKeyExpansion_t KeyExpansionFromBytes(const uint8_t source[], size_t keylenbits);
+enum ExceptionCode KeyExpansionFromBytes(KeyExpansion_t*const output, const uint8_t input[]);
 
 /*
  * Build key expansion and writes it on the bytes pointed by dest pointer.
  * Consider: Supposes that dest pointer points to a suitable memory location.
  * */
 enum ExceptionCode KeyExpansionBuildWrite(const uint8_t* key, size_t keylenbits, uint8_t* dest, bool debug);
+
+/*
+ * Compare key expansion with the bytes pointed by bytes.
+ * */
+bool compareKeyExpansionBytes(const KeyExpansion_t*const input, const uint8_t bytes[]);
 
 /*
  * Encrypts input block using the key referenced by key_p, the resultant encrypted block is written in output
