@@ -1,7 +1,7 @@
 // Comprehensive unit test suite for Bitmap class
 #include "../../file-handlers/include/bitmap.hpp"
 #include "../include/bitmap_fixture.hpp"
-#include "../include/test_framework.hpp"
+#include "../../test-framework/include/test_framework.hpp"
 #include <filesystem>
 #include <sstream>
 
