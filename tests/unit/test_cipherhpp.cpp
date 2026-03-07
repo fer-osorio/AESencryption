@@ -1,6 +1,9 @@
-#include "../include/test_framework.hpp"
-#include "../include/NIST_SP_800-38A_TestVectors.hpp"
+#include "../../test-framework/include/test_framework.hpp"
+#include "../../test-framework/include/test-vectors/sp800_38a_modes.hpp"
 #include "../../include/cipher.hpp"
+
+namespace TV = TestVectors::AES;
+namespace SP = TestVectors::AES::SP800_38A;
 
 #define AESKEY AESencryption::Key
 #define AESKEY_LENBITS AESencryption::Key::LengthBits
@@ -47,26 +50,26 @@ int main() {
 }
 
 bool test_successful_operations(AESKEY_LENBITS ks, AESCIPHER_OPTMODE cm) {
-    // Convert from AESKEY_LENBITS to Common::KeySize
-    Common::KeySize ks_;
+    // Convert from AESKEY_LENBITS to TV::KeySize
+    TV::KeySize ks_;
     switch(ks) {
-        case AESKEY_LENBITS::_128: ks_ = Common::KeySize::AES128; break;
-        case AESKEY_LENBITS::_192: ks_ = Common::KeySize::AES192; break;
-        case AESKEY_LENBITS::_256: ks_ = Common::KeySize::AES256; break;
+        case AESKEY_LENBITS::_128: ks_ = TV::KeySize::AES128; break;
+        case AESKEY_LENBITS::_192: ks_ = TV::KeySize::AES192; break;
+        case AESKEY_LENBITS::_256: ks_ = TV::KeySize::AES256; break;
         default: return false;
     }
 
-    // Convert from AESCIPHER_OPTMODE to SP800_38A::CipherMode
-    SP800_38A::CipherMode cm_;
+    // Convert from AESCIPHER_OPTMODE to TV::CipherMode
+    TV::CipherMode cm_;
     switch(cm) {
-        case AESCIPHER_OPTMODE::ECB: cm_ = SP800_38A::CipherMode::ECB; break;
-        case AESCIPHER_OPTMODE::CBC: cm_ = SP800_38A::CipherMode::CBC; break;
+        case AESCIPHER_OPTMODE::ECB: cm_ = TV::CipherMode::ECB; break;
+        case AESCIPHER_OPTMODE::CBC: cm_ = TV::CipherMode::CBC; break;
         default:
             std::cerr << "Error: Unsupported operation cm." << std::endl;
             return false;
     }
 
-    std::unique_ptr<SP800_38A::TestVectorBase> example = SP800_38A::createTestVector(ks_, cm_);
+    std::unique_ptr<SP::ModeTestVectorBase> example = SP::create(ks_, cm_);
     if (!example) {
         std::cerr << "Error: Failed to create test vector." << std::endl;
         return false;
@@ -74,13 +77,16 @@ bool test_successful_operations(AESKEY_LENBITS ks, AESCIPHER_OPTMODE cm) {
 
     TEST_SUITE("Successful Operations Tests");
     bool success = true;
-    std::string optModeStr = SP800_38A::getModeString(cm_);
+    std::string optModeStr = TV::getCipherModeString(cm_);
 
     try {
         // Test operation cm
-        AESKEY key(example->getKeyAsVector(), ks);
+        AESKEY key(example->getKey(), ks);
         AESCIPHER ciph(key, AESCIPHER::OperationMode(cm));
-        ciph.setInitialVectorForTesting(std::vector<uint8_t>(SP800_38A::getInitializationVectorAsStdVector()));
+        ciph.setInitialVectorForTesting(std::vector<uint8_t>(
+            SP::kInitializationVector,
+            SP::kInitializationVector + 16
+        ));
 
         // Verify key expansion is initialized
         success &= ASSERT_TRUE(
@@ -88,22 +94,22 @@ bool test_successful_operations(AESKEY_LENBITS ks, AESCIPHER_OPTMODE cm) {
                                "Key expansion should be initialized after Cipher construction"
         );
 
-        std::vector<uint8_t> input = example->getInputAsVector();
-        std::vector<uint8_t> encrypted(SP800_38A::TEXT_SIZE);
-        std::vector<uint8_t> decrypted(SP800_38A::TEXT_SIZE);
+        std::vector<uint8_t> input = example->getInput();
+        std::vector<uint8_t> encrypted(SP::kDataSize);
+        std::vector<uint8_t> decrypted(SP::kDataSize);
 
         ciph.encryption(input, encrypted);
         success &= ASSERT_BYTES_EQUAL(
-            example->getExpectedOutput(),
+            example->getExpectedOutput().data(),
                                       encrypted.data(),
-                                      SP800_38A::TEXT_SIZE,
+                                      SP::kDataSize,
                                       optModeStr + " encryption should match reference vector"
         );
         ciph.decryption(encrypted, decrypted);
         success &= ASSERT_BYTES_EQUAL(
-            example->getInput(),
+            example->getInput().data(),
             decrypted.data(),
-            SP800_38A::TEXT_SIZE,
+            SP::kDataSize,
             optModeStr + " roundtrip should preserve data"
         );
         success &= ASSERT_TRUE(true, "All successful operations completed");
@@ -121,8 +127,8 @@ bool test_empty_vector_exceptions(AESKEY_LENBITS ks, AESCIPHER_OPTMODE cm) {
     AESKEY key(ks);
     AESCIPHER cipher(key, AESCIPHER::OperationMode(cm));
 
-    std::vector<uint8_t> input(SP800_38A::TEXT_SIZE);
-    std::vector<uint8_t> output(SP800_38A::TEXT_SIZE);
+    std::vector<uint8_t> input(SP::kDataSize);
+    std::vector<uint8_t> output(SP::kDataSize);
     std::vector<uint8_t> empty(0);
 
     // Test empty input data
@@ -184,7 +190,7 @@ bool test_invalid_size_exceptions(AESKEY_LENBITS ks, AESCIPHER_OPTMODE cm) {
     AESCIPHER cipher(key, AESCIPHER::OperationMode(cm));
 
     std::vector<uint8_t> invalid_input(15);
-    std::vector<uint8_t> output(SP800_38A::TEXT_SIZE);
+    std::vector<uint8_t> output(SP::kDataSize);
 
     // Test non-block-aligned size (should map to InvalidInputSize from C)
     try {
@@ -220,15 +226,15 @@ bool test_exception_safety(AESKEY_LENBITS ks, AESCIPHER_OPTMODE cm) {
     AESKEY key(ks);
     AESCIPHER cipher(key, AESCIPHER::OperationMode(cm));
 
-    uint8_t input[SP800_38A::TEXT_SIZE];
-    uint8_t output[SP800_38A::TEXT_SIZE];
+    uint8_t input[SP::kDataSize];
+    uint8_t output[SP::kDataSize];
 
     // Verify object is in valid state initially
     success &= ASSERT_TRUE(cipher.isKeyExpansionInitialized(), "Cipher should be properly initialized");
 
     try {
         // This should throw
-        cipher.encrypt(nullptr, SP800_38A::TEXT_SIZE, output);
+        cipher.encrypt(nullptr, SP::kDataSize, output);
         success &= ASSERT_TRUE(false, "Should have thrown exception");
     } catch (const std::invalid_argument&) {
         // Object should still be usable after exception
@@ -237,7 +243,7 @@ bool test_exception_safety(AESKEY_LENBITS ks, AESCIPHER_OPTMODE cm) {
                                "Key expansion should still be initialized after exception"
         );
         try {
-            cipher.encrypt(input, SP800_38A::TEXT_SIZE, output);
+            cipher.encrypt(input, SP::kDataSize, output);
             success &= ASSERT_TRUE(true, "Cipher object remained usable after exception");
         } catch (const std::exception& e) {
             success &= ASSERT_TRUE(
@@ -260,8 +266,8 @@ bool test_cbc_mode_iv_handling(AESKEY_LENBITS ks) {
             cbc_key, AESCIPHER::OperationMode(AESCIPHER_OPTMODE::CBC)
         );
 
-        std::vector<uint8_t> input(SP800_38A::TEXT_SIZE);
-        std::vector<uint8_t> output(SP800_38A::TEXT_SIZE);
+        std::vector<uint8_t> input(SP::kDataSize);
+        std::vector<uint8_t> output(SP::kDataSize);
 
         // If IV is not properly set, it should throw an exception
         try {
@@ -286,25 +292,25 @@ bool test_cbc_mode_iv_handling(AESKEY_LENBITS ks) {
 bool runTestsForKeylengthMode(AESKEY_LENBITS ks, AESCIPHER_OPTMODE cm){
     bool success = true;
 
-    // Convert from AESKEY_LENBITS to Common::KeySize for string lookup
-    Common::KeySize ks_;
+    // Convert from AESKEY_LENBITS to TV::KeySize for string lookup
+    TV::KeySize ks_;
     switch(ks) {
-        case AESKEY_LENBITS::_128: ks_ = Common::KeySize::AES128; break;
-        case AESKEY_LENBITS::_192: ks_ = Common::KeySize::AES192; break;
-        case AESKEY_LENBITS::_256: ks_ = Common::KeySize::AES256; break;
+        case AESKEY_LENBITS::_128: ks_ = TV::KeySize::AES128; break;
+        case AESKEY_LENBITS::_192: ks_ = TV::KeySize::AES192; break;
+        case AESKEY_LENBITS::_256: ks_ = TV::KeySize::AES256; break;
         default: return false;
     }
 
-    // Convert from AESCIPHER_OPTMODE to SP800_38A::CipherMode for string lookup
-    SP800_38A::CipherMode cm_;
+    // Convert from AESCIPHER_OPTMODE to TV::CipherMode for string lookup
+    TV::CipherMode cm_;
     switch(cm) {
-        case AESCIPHER_OPTMODE::ECB: cm_ = SP800_38A::CipherMode::ECB; break;
-        case AESCIPHER_OPTMODE::CBC: cm_ = SP800_38A::CipherMode::CBC; break;
+        case AESCIPHER_OPTMODE::ECB: cm_ = TV::CipherMode::ECB; break;
+        case AESCIPHER_OPTMODE::CBC: cm_ = TV::CipherMode::CBC; break;
         default: return false;
     }
 
-    const char* keylenStr = Common::getKeySizeString(ks_);
-    const char* optModeStr = SP800_38A::getModeString(cm_);
+    const char* keylenStr = TV::getKeySizeString(ks_);
+    const char* optModeStr = TV::getCipherModeString(cm_);
 
     std::cout << "\n*****************************************************************\n"
     << "\n========== AES key " << keylenStr << " bits, operation cm: " << optModeStr << " ============\n"
