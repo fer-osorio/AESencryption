@@ -341,6 +341,7 @@ namespace CryptoTest {
                 return this->validateBaseByteOperations(keBuffer, blockBuffer, keySize);
             }
 
+            virtual ~TypeByteInterface() = default;
         };
     }
 

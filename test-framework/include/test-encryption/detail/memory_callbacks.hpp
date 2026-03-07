@@ -293,6 +293,8 @@ namespace CryptoTest {
             bool validateMemoryCallbacks() const override{
                 return this->validateBaseMemoryCallbacks();
             }
+
+            virtual ~MemoryCallbacks() = default;
         };
 
     } // namespace BlockCipher
