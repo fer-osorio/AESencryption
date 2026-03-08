@@ -140,7 +140,7 @@ static uint8_t dotProductWord(const Word_t w1, const Word_t w2){                
           multiply[w1.uint08_[3]][w2.uint08_[3]];
 }
 
-enum ExceptionCode BlockWriteFromBytes(Block_t*const output, const uint8_t*const input){
+enum ExceptionCode BlockFromBytes(Block_t*const output, const uint8_t*const input){
   if(input == NULL)  return NullInput;
   if(output == NULL) return NullOutput;
   // First column
@@ -167,20 +167,20 @@ enum ExceptionCode BlockWriteFromBytes(Block_t*const output, const uint8_t*const
   return NoException;
 }
 
-ptrBlock_t BlockMemoryAllocationFromBytes(const uint8_t source[]){
-  ptrBlock_t output = (Block_t*)malloc(sizeof(Block_t));
+Block_t* BlockCreate(const uint8_t source[]){
+  Block_t* output = (Block_t*)malloc(sizeof(Block_t));
   if(output == NULL) return NULL;
-  BlockWriteFromBytes(output, source);
+  BlockFromBytes(output, source);
   return output;
 }
 
-void BlockDelete(Block_t** blk_pp){
+void BlockDestroy(Block_t** blk_pp){
   Block_t* blk_p = *blk_pp;
   if(blk_p != NULL) free(blk_p);
   *blk_pp = NULL;
 }
 
-void bytesFromBlock(const Block_t* source, uint8_t output[]){
+void BytesFromBlock(const Block_t* source, uint8_t output[]){
   // First column
   output[0] = source->uint08_[0];
   output[4] = source->uint08_[1];
@@ -203,8 +203,8 @@ void bytesFromBlock(const Block_t* source, uint8_t output[]){
   output[15]= source->uint08_[15];
 }
 
-ptrBlock_t BlockMemoryAllocationZero(){
-  ptrBlock_t output = (Block_t*)malloc(sizeof(Block_t));
+Block_t* BlockCreateZero(){
+  Block_t* output = (Block_t*)malloc(sizeof(Block_t));
   if(output == NULL) return NULL;
   for(size_t i = 0; i < NB; i++) output->word_[i].uint32_ = 0;
   return output;
@@ -223,7 +223,7 @@ static void XORblocks(const Block_t* b1,const Block_t* b2, Block_t* result) {
   result->uint64_[1] = b1->uint64_[1] ^ b2->uint64_[1];
 }
 
-void BlockXORequalBytes(Block_t* input, const uint8_t byteBlock[]){
+void BlockXORBytes(Block_t* input, const uint8_t byteBlock[]){
   input->uint08_[0] ^= byteBlock[0];
   input->uint08_[1] ^= byteBlock[4];
   input->uint08_[2] ^= byteBlock[8];
@@ -242,7 +242,7 @@ void BlockXORequalBytes(Block_t* input, const uint8_t byteBlock[]){
   input->uint08_[15] ^= byteBlock[15];
 }
 
-void bytesXORBlock(const uint8_t input[], const Block_t* block, uint8_t output[]){
+void BytesXORBlockTo(const uint8_t input[], const Block_t* block, uint8_t output[]){
   output[0] = input[0] ^ block->uint08_[0];
   output[1] = input[1] ^ block->uint08_[4];
   output[2] = input[2] ^ block->uint08_[8];
@@ -388,7 +388,7 @@ static void AddRoundKey(Block_t* b, const Block_t keyExpansion[], size_t round) 
   XORblocks(b,keyExpansion+round,b);
 }
 
-static void KeyExpansionBuildWords(const uint8_t* key, enum Nk_t Nk, Word_t outputKeyExpansion[], bool debug){
+static void KeyExpansionInitWords(const uint8_t* key, enum Nk_t Nk, Word_t outputKeyExpansion[], bool debug){
   Word_t tmp;
   const size_t KeyExpansionLen = getKeyExpansionLengthWordsfromNk(Nk);
   size_t i;
@@ -468,8 +468,8 @@ static void KeyExpansionBuildWords(const uint8_t* key, enum Nk_t Nk, Word_t outp
   debug = false;
 }
 
-static ptrKeyExpansion_t KeyExpansionMemoryAllocation(enum Nk_t Nk){
-  ptrKeyExpansion_t output = (KeyExpansion_t*)malloc(sizeof(KeyExpansion_t));
+static KeyExpansion_t* KeyExpansionAllocate(enum Nk_t Nk){
+  KeyExpansion_t* output = (KeyExpansion_t*)malloc(sizeof(KeyExpansion_t));
   if(output == NULL) return NULL;
   // -Building KeyExpansion_t object
   output->Nk = Nk;
@@ -525,7 +525,7 @@ static void BlockFromWords(const Word_t source[], Block_t* output){
   output->uint08_[15]= source[3].uint08_[3];
 }
 
-enum ExceptionCode KeyExpansionBuild(KeyExpansion_t*const output, const uint8_t* key, size_t keylenbits, bool debug){
+enum ExceptionCode KeyExpansionInit(KeyExpansion_t*const output, const uint8_t* key, size_t keylenbits, bool debug){
   if(key == NULL) return NullInput;
   if(output == NULL) return NullOutput;
   enum Nk_t Nk = keylenbitsToNk(keylenbits);
@@ -535,7 +535,7 @@ enum ExceptionCode KeyExpansionBuild(KeyExpansion_t*const output, const uint8_t*
   if(buffer == NULL) return BadAllocation;
 
   // Writing key expansion on array of words
-  KeyExpansionBuildWords(key, Nk, buffer, debug);
+  KeyExpansionInitWords(key, Nk, buffer, debug);
 
   // Writting key expansion on the array of Blocks 'inside' KeyExpansion_t object.
   for(size_t i = 0, j = 0; i < output->wordsSize && j < output->blockSize; i += NB, j++){
@@ -546,39 +546,39 @@ enum ExceptionCode KeyExpansionBuild(KeyExpansion_t*const output, const uint8_t*
   return NoException;
 }
 
-ptrKeyExpansion_t KeyExpansionMemoryAllocationBuild(const uint8_t* key, size_t keylenbits, bool debug){
+KeyExpansion_t* KeyExpansionCreate(const uint8_t* key, size_t keylenbits, bool debug){
   enum Nk_t Nk = keylenbitsToNk(keylenbits);
   if(Nk == UnknownNk) {
-    //printf("KeyExpansionMemoryAllocationBuild: Nk == Unknown\n");
-    //printf("KeyExpansionMemoryAllocationBuild: nk == %d\n", Nk);
+    //printf("KeyExpansionCreate: Nk == Unknown\n");
+    //printf("KeyExpansionCreate: nk == %d\n", Nk);
     return NULL;
   }
 
-  ptrKeyExpansion_t output = KeyExpansionMemoryAllocation(Nk);
+  KeyExpansion_t* output = KeyExpansionAllocate(Nk);
   if(output == NULL) return NULL;
-  KeyExpansionBuild(output, key, keylenbits, debug);
+  KeyExpansionInit(output, key, keylenbits, debug);
 
   return output;
 }
 
-ptrKeyExpansion_t KeyExpansionMemoryAllocationZero(size_t keylenbits){
+KeyExpansion_t* KeyExpansionCreateZero(size_t keylenbits){
   enum Nk_t Nk = keylenbitsToNk(keylenbits);
   if(Nk == UnknownNk) {
-    //printf("KeyExpansionMemoryAllocationBuild: Nk == Unknown\n");
-    //printf("KeyExpansionMemoryAllocationBuild: nk == %d\n", Nk);
+    //printf("KeyExpansionCreate: Nk == Unknown\n");
+    //printf("KeyExpansionCreate: nk == %d\n", Nk);
     return NULL;
   }
 
-  ptrKeyExpansion_t output = KeyExpansionMemoryAllocation(Nk);
+  KeyExpansion_t* output = KeyExpansionAllocate(Nk);
   if(output == NULL) return NULL;
   const uint8_t tmp[BLOCK_SIZE] = {0};
   for(size_t i = 0; i < output->blockSize; i++){
-    BlockWriteFromBytes(output->dataBlocks + i, tmp);
+    BlockFromBytes(output->dataBlocks + i, tmp);
   }
   return output;
 }
 
-void KeyExpansionDelete(KeyExpansion_t** ke_pp){
+void KeyExpansionDestroy(KeyExpansion_t** ke_pp){
   KeyExpansion_t* ke_p = *ke_pp;
   if(ke_p != NULL){
     if(ke_p->dataBlocks != NULL) {
@@ -590,27 +590,27 @@ void KeyExpansionDelete(KeyExpansion_t** ke_pp){
   }
 }
 
-void KeyExpansionWriteBytes(const KeyExpansion_t* source, uint8_t* dest){
+void KeyExpansionWriteToBytes(const KeyExpansion_t* source, uint8_t* dest){
   for(size_t i = 0, j = 0; i < source->blockSize; i++, j += BLOCK_SIZE){
-    bytesFromBlock(source->dataBlocks + i, dest + j);
+    BytesFromBlock(source->dataBlocks + i, dest + j);
   }
 }
 
-enum ExceptionCode KeyExpansionFromBytes(KeyExpansion_t*const output, const uint8_t input[]){
+enum ExceptionCode KeyExpansionReadFromBytes(KeyExpansion_t*const output, const uint8_t input[]){
   if(input == NULL) return NullInput;
   if(output == NULL) return NullOutput;
   for(size_t i = 0, j = 0; i < output->blockSize; i++, j += BLOCK_SIZE){
-    BlockWriteFromBytes(output->dataBlocks + i, input + j);
+    BlockFromBytes(output->dataBlocks + i, input + j);
   }
   return NoException;
 }
 
-enum ExceptionCode KeyExpansionBuildWrite(const uint8_t* key, size_t keylenbits, uint8_t* dest, bool debug){
+enum ExceptionCode KeyExpansionInitWrite(const uint8_t* key, size_t keylenbits, uint8_t* dest, bool debug){
   if(dest == NULL) return NullDestination;
-  KeyExpansion_t* ke_p = KeyExpansionMemoryAllocationBuild(key, keylenbits, false);
+  KeyExpansion_t* ke_p = KeyExpansionCreate(key, keylenbits, false);
   if(ke_p == NULL) return NullKeyExpansion;
-  KeyExpansionWriteBytes(ke_p, dest);
-  KeyExpansionDelete(&ke_p);
+  KeyExpansionWriteToBytes(ke_p, dest);
+  KeyExpansionDestroy(&ke_p);
   return NoException;
 }
 

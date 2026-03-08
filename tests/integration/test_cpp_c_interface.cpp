@@ -57,10 +57,10 @@ bool test_specific_exception_code_mapping(AESENC_KEYLEN klb, AESENC_OPTMODE mode
     // Test direct C function calls and their error codes
     std::vector<uint8_t> dummy_key(static_cast<size_t>(klb)/8, 0);
     size_t c_klb = static_cast<size_t>(klb);
-    ptrKeyExpansion_t c_ke = KeyExpansionMemoryAllocationBuild(dummy_key.data(), c_klb, false);
+    KeyExpansion_t* c_ke = KeyExpansionCreate(dummy_key.data(), c_klb, false);
     size_t ke_lenbytes = getKeyExpansionLengthBytesfromKeylenBits(static_cast<enum KeylenBits_t>(c_klb));
     std::vector<uint8_t> c_key_expansion(ke_lenbytes);
-    KeyExpansionWriteBytes(c_ke, c_key_expansion.data());
+    KeyExpansionWriteToBytes(c_ke, c_key_expansion.data());
 
     if (c_ke != nullptr) {
         const uint8_t* key_expansion_ptr = c_key_expansion.data();
@@ -87,7 +87,7 @@ bool test_specific_exception_code_mapping(AESENC_KEYLEN klb, AESENC_OPTMODE mode
         result = encryptECB(input, BLOCK_SIZE, nullptr, 128, output);
         success &= ASSERT_TRUE(result == NullSource, "C function should return NullSource for null key expansion argument");
 
-        KeyExpansionDelete(&c_ke);
+        KeyExpansionDestroy(&c_ke);
     } else{
         std::cerr << "No test runned. Something went wrong in key creation.";
     }
@@ -117,10 +117,10 @@ bool test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     );
 
     // Compare with direct C implementation
-    ptrKeyExpansion_t c_ke = KeyExpansionMemoryAllocationBuild(dumm.data(), keylen, false);
+    KeyExpansion_t* c_ke = KeyExpansionCreate(dumm.data(), keylen, false);
     if (c_ke != nullptr) {
         std::vector<uint8_t> c_key_expansion(ke_lenbytes);
-        KeyExpansionWriteBytes(c_ke, c_key_expansion.data());
+        KeyExpansionWriteToBytes(c_ke, c_key_expansion.data());
 
         // Compare bytes to verify consistency
         success &= ASSERT_BYTES_EQUAL(
@@ -128,7 +128,7 @@ bool test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
                                       "c key expansion and c++ key expansion should match"
         );
 
-        KeyExpansionDelete(&c_ke);
+        KeyExpansionDestroy(&c_ke);
     }
     PRINT_RESULTS();
     return success;
@@ -165,14 +165,14 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
     try {
         // Direct C implementation
         size_t sz_klb = static_cast<size_t>(klb);
-        ptrKeyExpansion_t c_ke = KeyExpansionMemoryAllocationBuild(example->getKey().data(), sz_klb, false);
+        KeyExpansion_t* c_ke = KeyExpansionCreate(example->getKey().data(), sz_klb, false);
         success &= ASSERT_NOT_NULL(
             c_ke,
             "C key expansion creation should succeed"
         );
 
         std::vector<uint8_t> key_expansion_bytes(getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(klb)));
-        KeyExpansionWriteBytes(c_ke, key_expansion_bytes.data());
+        KeyExpansionWriteToBytes(c_ke, key_expansion_bytes.data());
         uint8_t c_output[SP::kDataSize];
 
         // C++ wrapper implementation
@@ -234,7 +234,7 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
         success &= ASSERT_BYTES_EQUAL(example->getInput().data(), cpp_decrypted, SP::kDataSize,
                                       "Both implementations should correctly decrypt data");
 
-        KeyExpansionDelete(&c_ke);
+        KeyExpansionDestroy(&c_ke);
 
     } catch (const std::exception& e) {
         success &= ASSERT_TRUE(false, std::string("Consistency test failed with exception: ") + e.what());

@@ -53,25 +53,25 @@ bool test_ecb_mode(TV::KeySize ks) {
 
     // Prepare key expansion
     successStatus = ASSERT_TRUE(
-        KeyExpansionBuildWrite(example_ecb.getKey().data(), static_cast<size_t>(ks), expanded_key.data(), false) == NoException,
-                                "Key expansion should succeed"
+        KeyExpansionInitWrite(example_ecb.getKey().data(), static_cast<size_t>(ks), expanded_key.data(), false) == NoException,
+        "Key expansion should succeed"
     ) && successStatus;
 
     // Test ECB encryption
     successStatus = ASSERT_TRUE(
         encryptECB(example_ecb.getInput().data(), SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), output) == NoException,
-                                "ECB encryption should succeed"
+        "ECB encryption should succeed"
     ) && successStatus;
 
     successStatus = ASSERT_BYTES_EQUAL(
         example_ecb.getExpectedOutput().data(), output, SP::kDataSize,
-                                       "ECB encryption should match test vector"
+        "ECB encryption should match test vector"
     ) && successStatus;
 
     // Test ECB decryption
     successStatus = ASSERT_TRUE(
         decryptECB(output, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), decrypted) == NoException,
-                                "ECB decryption should succeed"
+        "ECB decryption should succeed"
     ) && successStatus;
 
     successStatus = ASSERT_BYTES_EQUAL(
@@ -96,24 +96,24 @@ bool test_cbc_mode(TV::KeySize ks) {
 
     // Prepare key expansion
     successStatus = ASSERT_TRUE(
-        KeyExpansionBuildWrite(example_cbc.getKey().data(), static_cast<size_t>(ks), expanded_key.data(), false) == NoException,
-                                "Key expansion should succeed"
+        KeyExpansionInitWrite(example_cbc.getKey().data(), static_cast<size_t>(ks), expanded_key.data(), false) == NoException,
+        "Key expansion should succeed"
     ) && successStatus;
 
     successStatus = ASSERT_TRUE(
         encryptCBC(SP::kPlainText, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), example_cbc.getIV().data(), output) == NoException,
-                                "CBC encryption should succeed"
+        "CBC encryption should succeed"
     ) && successStatus;
 
     successStatus = ASSERT_BYTES_EQUAL(
         example_cbc.getExpectedOutput().data(), output, SP::kDataSize,
-                                       "CBC encryption should match test vector"
+        "CBC encryption should match test vector"
     ) && successStatus;
 
     // Test CBC decryption
     successStatus = ASSERT_TRUE(
         decryptCBC(output, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), example_cbc.getIV().data(), decrypted) == NoException,
-                                "CBC decryption should succeed"
+        "CBC decryption should succeed"
     ) && successStatus;
 
     successStatus = ASSERT_BYTES_EQUAL(
@@ -136,7 +136,7 @@ bool test_iv_independence(TV::KeySize ks) {
     uint8_t output1[SP::kDataSize], output2[SP::kDataSize];
     uint8_t iv1[BLOCK_SIZE], iv2[BLOCK_SIZE];
 
-    KeyExpansionBuildWrite(example_cbc.getKey().data(), static_cast<size_t>(ks), expanded_key.data(), false);
+    KeyExpansionInitWrite(example_cbc.getKey().data(), static_cast<size_t>(ks), expanded_key.data(), false);
 
     // Set up two different IVs
     memcpy(iv1, example_cbc.getIV().data(), BLOCK_SIZE);
@@ -149,7 +149,7 @@ bool test_iv_independence(TV::KeySize ks) {
 
     successStatus = ASSERT_TRUE(
         memcmp(output1, output2, SP::kDataSize) != 0,
-                                "Different IVs should produce different ciphertext"
+        "Different IVs should produce different ciphertext"
     );
 
     PRINT_RESULTS();
@@ -167,43 +167,43 @@ bool test_error_conditions(TV::KeySize ks) {
     std::vector<uint8_t> expanded_key(expanded_key_len);
     uint8_t output[SP::kDataSize];
 
-    KeyExpansionBuildWrite(example_ecb.getKey().data(), static_cast<size_t>(ks), expanded_key.data(), false);
+    KeyExpansionInitWrite(example_ecb.getKey().data(), static_cast<size_t>(ks), expanded_key.data(), false);
 
     // Test null pointer handling
     successStatus = ASSERT_TRUE(
         encryptECB(NULL, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), output) != NoException,
-                                "ECB should handle null input"
+        "ECB should handle null input"
     ) && successStatus;
 
     successStatus = ASSERT_TRUE(
         encryptECB(SP::kPlainText, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), NULL) != NoException,
-                                "ECB should handle null output"
+        "ECB should handle null output"
     ) && successStatus;
 
     successStatus = ASSERT_TRUE(
         encryptCBC(NULL, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), example_cbc.getIV().data(), output) == NullInput,
-                                "CBC should handle null input"
+        "CBC should handle null input"
     ) && successStatus;
 
     successStatus = ASSERT_TRUE(
         encryptCBC(SP::kPlainText, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), example_cbc.getIV().data(), NULL) == NullOutput,
-                                "CBC should handle null output"
+        "CBC should handle null output"
     ) && successStatus;
 
     successStatus = ASSERT_TRUE(
         encryptCBC(SP::kPlainText, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), NULL, output) == NullInitialVector,
-                                "CBC should handle null IV"
+        "CBC should handle null IV"
     ) && successStatus;
 
     // Test zero length
     successStatus = ASSERT_TRUE(
         encryptECB(SP::kPlainText, 0, expanded_key.data(), static_cast<KeylenBits_t>(ks), output) == ZeroLength,
-                                "ECB should handle zero length"
+        "ECB should handle zero length"
     ) && successStatus;
 
     successStatus = ASSERT_TRUE(
         encryptCBC(SP::kPlainText, 0, expanded_key.data(), static_cast<KeylenBits_t>(ks), example_cbc.getIV().data(), output) == ZeroLength,
-                                "CBC should handle zero length"
+        "CBC should handle zero length"
     ) && successStatus;
 
     PRINT_RESULTS();
