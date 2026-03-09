@@ -1,6 +1,8 @@
 #include"../../test-framework/include/test_framework.hpp"
 #include"../../data-encryption/include/constants.h"
-#include"../../data-encryption/include/AES.h"              // For key expansion
+#include"../../data-encryption/include/block.h"
+#include"../../data-encryption/include/key_expansion.h"
+#include"../../data-encryption/include/AES.h"              // For encryptBlock/decryptBlock
 #include"../../data-encryption/include/operation_modes.h"
 #include"../../test-framework/include/test-vectors/sp800_38a_modes.hpp"
 #include<cstring>

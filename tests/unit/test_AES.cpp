@@ -1,4 +1,6 @@
 #include "../../test-framework/include/test-encryption/detail/block_cipher_tester.hpp"
+#include "../../data-encryption/include/block.h"
+#include "../../data-encryption/include/key_expansion.h"
 #include "../../data-encryption/include/AES.h"
 
 static KeyExpansion_t* (*allocateKeyExapansion)(size_t)      = KeyExpansionCreateZero;

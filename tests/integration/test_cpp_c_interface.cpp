@@ -1,5 +1,7 @@
 #include "../../test-framework/include/test_framework.hpp"
 #include "../../data-encryption/include/constants.h"
+#include "../../data-encryption/include/block.h"
+#include "../../data-encryption/include/key_expansion.h"
 #include "../../data-encryption/include/AES.h"
 #include "../../data-encryption/include/operation_modes.h"
 #include "../../include/cipher.hpp"
