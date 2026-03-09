@@ -1,10 +1,12 @@
 #include "../../test-framework/include/test-encryption/detail/block_cipher_tester.hpp"
+#include "../../data-encryption/include/block.h"
+#include "../../data-encryption/include/key_expansion.h"
 #include "../../data-encryption/include/AES.h"
 
-static ptrKeyExpansion_t (*allocateKeyExapansion)(size_t)      = KeyExpansionMemoryAllocationZero;
-static void              (*freeKeyExpansion)(KeyExpansion_t**) = KeyExpansionDelete;
-static ptrBlock_t        (*allocateBlock)()                    = BlockMemoryAllocationZero;
-static void              (*freeBlock)(Block_t**)               = BlockDelete;
+static KeyExpansion_t* (*allocateKeyExapansion)(size_t)      = KeyExpansionCreateZero;
+static void            (*freeKeyExpansion)(KeyExpansion_t**) = KeyExpansionDestroy;
+static Block_t*        (*allocateBlock)()                    = BlockCreateZero;
+static void            (*freeBlock)(Block_t**)               = BlockDestroy;
 
 CryptoTest::BlockCipher::MemoryCallbacks<KeyExpansion_t, Block_t> callbacks{
     allocateKeyExapansion,
@@ -18,13 +20,13 @@ CryptoTest::BlockCipher::TypeByteInterface<KeyExpansion_t, Block_t> byteInterfac
         return compareKeyExpansionBytes(input, bytes);
     },
     [](KeyExpansion_t*const output, size_t keylenbits, const unsigned char*const input) -> int{
-        return static_cast<int>(KeyExpansionFromBytes(output, input));
+        return static_cast<int>(KeyExpansionReadFromBytes(output, input));
     },
     [](const Block_t*const input, const uint8_t* bytes) -> bool{
         return compareBlockBytes(input, bytes);
     },
     [](Block_t*const output, const unsigned char*const input) -> int {
-        return static_cast<int>(BlockWriteFromBytes(output, input));
+        return static_cast<int>(BlockFromBytes(output, input));
     }
 };
 
@@ -43,9 +45,9 @@ int main(){
     std::cout << "Infrastructure validated successfully.\n" << std::endl;
 
     // Define crypto functions to test
-    auto keyExpansionBuilder = []( const unsigned char* key, size_t keySize, ptrKeyExpansion_t ke) -> int {
+    auto keyExpansionBuilder = []( const unsigned char* key, size_t keySize, KeyExpansion_t* ke) -> int {
         // Your key expansion implementation
-        return KeyExpansionBuild(ke, key, keySize, false);
+        return KeyExpansionInit(ke, key, keySize, false);
     };
 
     auto encryptor = [](const Block_t*const input, const KeyExpansion_t*const ke, Block_t* output) -> int {

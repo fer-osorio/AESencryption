@@ -103,7 +103,7 @@ static void InputStreamMoveTowardsLastBlock(struct InputStream* is){
  * @param dest The block where the read data will be written
  */
 static void InputStreamReadBlockMoveForward(Block_t* dest, struct InputStream* is){
-  BlockWriteFromBytes(dest, is->currentPossition);
+  BlockFromBytes(dest, is->currentPossition);
   InputStreamMoveForwardOneBlock(is);
 }
 
@@ -113,7 +113,7 @@ static void InputStreamReadBlockMoveForward(Block_t* dest, struct InputStream* i
  * @param dest The block where the read data will be written.
  */
 static void InputStreamReadBlockMoveBackwards(Block_t* dest, struct InputStream* is){
-  BlockWriteFromBytes(dest, is->currentPossition);
+  BlockFromBytes(dest, is->currentPossition);
   InputStreamMoveBackwardsOneBlock(is);
 }
 
@@ -169,7 +169,7 @@ static void OutputStreamMoveTowardsLastBlock(struct OutputStream* os){
  * @param input Block where the data comes from
  */
 static void OutputStreamWriteBlockMoveForward(struct OutputStream* os, Block_t* origin){
-  bytesFromBlock(origin, os->currentPossition);
+  BytesFromBlock(origin, os->currentPossition);
   OutputStreamMoveForwardOneBlock(os);
 }
 
@@ -179,7 +179,7 @@ static void OutputStreamWriteBlockMoveForward(struct OutputStream* os, Block_t* 
  * @param dest The block where the read data will be written.
  */
 static void OutputStreamWriteBlockMoveBackwards(const Block_t* source, struct OutputStream* os){
-  bytesFromBlock(source, os->currentPossition);
+  BytesFromBlock(source, os->currentPossition);
   OutputStreamMoveBackwardsOneBlock(os);
 }
 
@@ -206,12 +206,12 @@ static void decryptBlockMoveForward(const KeyExpansion_t* ke_p, struct InputStre
  * @warning Supposes the input parameters are already validated.
  * */
 static void encryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, struct OutputStream* os){
-  Block_t* buffer = BlockMemoryAllocationZero();
+  Block_t* buffer = BlockCreateZero();
   // Encrypting the blocks
   for(size_t i = 0; i < is->info.sizeInBlocks; i++) {
     encryptBlockMoveForward(ke_p, is, buffer, os);
   }
-  BlockDelete(&buffer);
+  BlockDestroy(&buffer);
 }
 
 #define VALIDATE_ENCRYPTION_INPUT_OUTPUT_SOURCES(input,size,keyexpansion,output) \
@@ -222,8 +222,8 @@ static void encryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, str
   if(size % BLOCK_SIZE != 0) return InvalidInputSize;
 
 #define BUILD_KEYEXPANSION_FROMBYTES(ke_p,source,keylenbits) \
-  ptrKeyExpansion_t ke_p = KeyExpansionMemoryAllocationZero(keylenbits); \
-  KeyExpansionFromBytes(ke_p, source); \
+  KeyExpansion_t* ke_p = KeyExpansionCreateZero(keylenbits); \
+  KeyExpansionReadFromBytes(ke_p, source); \
   if(ke_p == NULL) return NullKeyExpansion;
 
 #define BUILD_STREAMS(is,os) \
@@ -239,7 +239,7 @@ enum ExceptionCode encryptECB(const uint8_t*const input, size_t size, const uint
   BUILD_STREAMS(is,os)
   // Encryption
   encryptECB__(ke_p, &is, &os);
-  KeyExpansionDelete(&ke_p);
+  KeyExpansionDestroy(&ke_p);
   return NoException;
 }
 
@@ -248,12 +248,12 @@ enum ExceptionCode encryptECB(const uint8_t*const input, size_t size, const uint
  * @warning Supposes the input parameters are already validated.
  * */
 static void decryptECB__(const KeyExpansion_t* ke_p, struct InputStream* is, struct OutputStream* os){
-  Block_t* buffer = BlockMemoryAllocationZero();
+  Block_t* buffer = BlockCreateZero();
   // Encrypting the blocks
   for(size_t i = 0; i < is->info.sizeInBlocks; i++) {
     decryptBlockMoveForward(ke_p, is, buffer, os);
   }
-  BlockDelete(&buffer);
+  BlockDestroy(&buffer);
 }
 
 /**
@@ -264,7 +264,7 @@ enum ExceptionCode decryptECB(const uint8_t*const input, size_t size, const uint
   BUILD_KEYEXPANSION_FROMBYTES(ke_p,keyexpansion,keylenbits)
   BUILD_STREAMS(is,os)
   decryptECB__(ke_p, &is, &os);
-  KeyExpansionDelete(&ke_p);
+  KeyExpansionDestroy(&ke_p);
   return NoException;
 }
 
@@ -278,7 +278,7 @@ enum ExceptionCode decryptECB(const uint8_t*const input, size_t size, const uint
  */
 static void applyCBCencryptionStepMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, Block_t* buffer, const uint8_t** previousCipherBlock, struct OutputStream* os){
   InputStreamReadBlockMoveForward(buffer, is);
-  BlockXORequalBytes(buffer, *previousCipherBlock);
+  BlockXORBytes(buffer, *previousCipherBlock);
   encryptBlock(buffer, ke_p, buffer, false);
   *previousCipherBlock = os->currentPossition;
   OutputStreamWriteBlockMoveForward(os, buffer);
@@ -291,7 +291,7 @@ static void applyCBCencryptionStepMoveForward(const KeyExpansion_t* ke_p, struct
  * */
 static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t*const IV, struct InputStream* is, struct OutputStream* os){
   const uint8_t* previousCipherBlock = NULL;
-  Block_t* buffer = BlockMemoryAllocationZero();
+  Block_t* buffer = BlockCreateZero();
   size_t i;
   // First step of CBC encryption mode
   previousCipherBlock = IV;
@@ -299,7 +299,7 @@ static void encryptCBC__(const KeyExpansion_t* ke_p, const uint8_t*const IV, str
   for(i = 1; i < is->info.sizeInBlocks; i++) {                               // -Encryption of the rest of the blocks.
     applyCBCencryptionStepMoveForward(ke_p, is, buffer, &previousCipherBlock, os);
   }
-  BlockDelete(&buffer);
+  BlockDestroy(&buffer);
 }
 
 /**
@@ -312,7 +312,7 @@ enum ExceptionCode encryptCBC(const uint8_t*const input, size_t size, const uint
   BUILD_STREAMS(is,os)
   // Encryption
   encryptCBC__(ke_p, IV, &is, &os);
-  KeyExpansionDelete(&ke_p);
+  KeyExpansionDestroy(&ke_p);
   return NoException;
 }
 
@@ -327,7 +327,7 @@ enum ExceptionCode encryptCBC(const uint8_t*const input, size_t size, const uint
 static void applyCBCdecryptionStepMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, Block_t* buffer, struct OutputStream* os){
   InputStreamReadBlockMoveBackwards(buffer, is);
   decryptBlock(buffer, ke_p, buffer, false);
-  BlockXORequalBytes(buffer, (const uint8_t*)((size_t)is->currentPossition));
+  BlockXORBytes(buffer, (const uint8_t*)((size_t)is->currentPossition));
   OutputStreamWriteBlockMoveBackwards(buffer, os);
 }
 
@@ -336,7 +336,7 @@ static void applyCBCdecryptionStepMoveForward(const KeyExpansion_t* ke_p, struct
  * @warning Supposes the input parameters are already validated.
  * */
 static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t*const IV, struct InputStream* is, struct OutputStream* os){
-  Block_t* buffer = BlockMemoryAllocationZero();
+  Block_t* buffer = BlockCreateZero();
   // Initializing streams
   InputStreamMoveTowardsLastBlock(is);
   OutputStreamMoveTowardsLastBlock(os);
@@ -349,10 +349,10 @@ static void decryptCBC__(const KeyExpansion_t* ke_p, const uint8_t*const IV, str
   // Decryption of first block
   InputStreamReadBlockMoveBackwards(buffer, is);
   decryptBlock(buffer, ke_p, buffer, false);
-  BlockXORequalBytes(buffer, IV);
+  BlockXORBytes(buffer, IV);
   OutputStreamWriteBlockMoveBackwards(buffer, os);
   // Delete allocated memory
-  BlockDelete(&buffer);
+  BlockDestroy(&buffer);
 }
 
 
@@ -366,7 +366,7 @@ enum ExceptionCode decryptCBC(const uint8_t*const input, size_t size, const uint
   BUILD_STREAMS(is,os)
   // Encryption
   decryptCBC__(ke_p, IV, &is, &os);
-  KeyExpansionDelete(&ke_p);
+  KeyExpansionDestroy(&ke_p);
   return NoException;
 }
 
@@ -384,7 +384,7 @@ enum ExceptionCode decryptCBC(const uint8_t*const input, size_t size, const uint
  */
 static void applyOFBencryptionStepMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, Block_t* keystream, struct OutputStream* os){
   encryptBlock(keystream, ke_p, keystream, false);
-  bytesXORBlock(is->currentPossition, keystream, os->currentPossition);
+  BytesXORBlockTo(is->currentPossition, keystream, os->currentPossition);
   InputStreamMoveForwardOneBlock(is);
   OutputStreamMoveForwardOneBlock(os);
 }
@@ -393,16 +393,16 @@ static void applyOFBencryptionStepMoveForward(const KeyExpansion_t* ke_p, struct
  * @brief Implementation of OFB operation mode for encryption.
  */
 static void encryptOFB__(const KeyExpansion_t* ke_p, const uint8_t* IV, struct InputStream* is, struct OutputStream* os){
-  Block_t* keystream = BlockMemoryAllocationFromBytes(IV);
+  Block_t* keystream = BlockCreate(IV);
   for(size_t i = 0; i < is->info.sizeInBlocks; i++) {           // -Encryption of data stream.
     applyOFBencryptionStepMoveForward(ke_p, is, keystream, os);
   }
   uint8_t tmp[BLOCK_SIZE];
-  bytesFromBlock(keystream, tmp);
+  BytesFromBlock(keystream, tmp);
   for(size_t i = 0; i < is->info.tailSize; i++){                // -Encrypting tail of the stream.
     os->currentPossition[i] = is->currentPossition[i] ^ tmp[i];
   }
-  BlockDelete(&keystream);
+  BlockDestroy(&keystream);
 }
 
 enum ExceptionCode encryptOFB(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* IV, uint8_t*const output){
@@ -412,7 +412,7 @@ enum ExceptionCode encryptOFB(const uint8_t*const input, size_t size, const uint
   BUILD_STREAMS(is,os)
   // Encryption
   encryptOFB__(ke_p, IV, &is, &os);
-  KeyExpansionDelete(&ke_p);
+  KeyExpansionDestroy(&ke_p);
   return NoException;
 }
 
@@ -432,7 +432,7 @@ enum ExceptionCode decryptOFB(const uint8_t*const input, size_t size, const uint
   BUILD_STREAMS(is,os)
   // Encryption
   decryptOFB__(ke_p, IV, &is, &os);
-  KeyExpansionDelete(&ke_p);
+  KeyExpansionDestroy(&ke_p);
   return NoException;
 }
 
@@ -456,16 +456,16 @@ static void CounterIncrease(union Counter*const counter){
 }
 
 static void applyCTRencryptionStepMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, union Counter*const counter, Block_t*const buffer, struct OutputStream* os){
-  BlockWriteFromBytes(buffer, counter->uint08_);
+  BlockFromBytes(buffer, counter->uint08_);
   encryptBlock(buffer, ke_p, buffer, false);
-  bytesXORBlock(is->currentPossition, buffer, os->currentPossition);
+  BytesXORBlockTo(is->currentPossition, buffer, os->currentPossition);
   CounterIncrease(counter);
   InputStreamMoveForwardOneBlock(is);
   OutputStreamMoveForwardOneBlock(os);
 }
 
 static void encryptCTR__(const KeyExpansion_t* ke_p, const uint8_t* counter00, struct InputStream* is, struct OutputStream* os){
-  Block_t* buffer = BlockMemoryAllocationZero();
+  Block_t* buffer = BlockCreateZero();
   union Counter counter;
   CounterWriteFromBytes(&counter, counter00);
   for(size_t i = 0; i < is->info.sizeInBlocks; i++){
@@ -483,7 +483,7 @@ enum ExceptionCode encryptCTR(const uint8_t*const input, size_t size, const uint
   BUILD_STREAMS(is,os)
   // Encryption
   encryptCTR__(ke_p, counter00, &is, &os);
-  KeyExpansionDelete(&ke_p);
+  KeyExpansionDestroy(&ke_p);
   return NoException;
 }
 
@@ -498,6 +498,6 @@ enum ExceptionCode decryptCTR(const uint8_t*const input, size_t size, const uint
   BUILD_STREAMS(is,os)
   // Encryption
   decryptCTR__(ke_p, counter00, &is, &os);
-  KeyExpansionDelete(&ke_p);
+  KeyExpansionDestroy(&ke_p);
   return NoException;
 }

@@ -393,7 +393,7 @@ void Cipher::buildKeyExpansion() {
     }
 
     // Build key expansion using C function
-    KeyExpansion_t* ke_p = KeyExpansionMemoryAllocationBuild(this->key.data, keylenBits, false);
+    KeyExpansion_t* ke_p = KeyExpansionCreate(this->key.data, keylenBits, false);
     if (ke_p == NULL) {
         throw KeyExpansionException("Failed to allocate key expansion object");
     }
@@ -408,13 +408,13 @@ void Cipher::buildKeyExpansion() {
             this->keyExpansion = new uint8_t[expansion_size];
         }
         // Write key expansion bytes
-        KeyExpansionWriteBytes(ke_p, this->keyExpansion);
+        KeyExpansionWriteToBytes(ke_p, this->keyExpansion);
         // Clean up C object
-        KeyExpansionDelete(&ke_p);
+        KeyExpansionDestroy(&ke_p);
     } catch (...) {
         // Ensure C resources are cleaned up even if exception occurs
         if (ke_p != NULL) {
-            KeyExpansionDelete(&ke_p);
+            KeyExpansionDestroy(&ke_p);
         }
         throw; // Re-throw the exception
     }
