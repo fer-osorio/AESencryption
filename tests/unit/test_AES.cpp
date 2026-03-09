@@ -46,7 +46,6 @@ int main(){
 
     // Define crypto functions to test
     auto keyExpansionBuilder = []( const unsigned char* key, size_t keySize, KeyExpansion_t* ke) -> int {
-        // Your key expansion implementation
         return KeyExpansionInit(ke, key, keySize, false);
     };
 
