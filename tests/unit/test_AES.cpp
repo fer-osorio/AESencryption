@@ -19,7 +19,8 @@ CryptoTest::BlockCipher::TypeByteInterface<KeyExpansion_t, Block_t> byteInterfac
     [](const KeyExpansion_t*const input, size_t keySize,const uint8_t* bytes) -> bool{
         return compareKeyExpansionBytes(input, bytes);
     },
-    [](KeyExpansion_t*const output, size_t keylenbits, const unsigned char*const input) -> int{
+    [](KeyExpansion_t*const output, size_t keySize, const unsigned char*const input) -> int{
+        if(keySize != 128 && keySize != 192 && keySize != 256) return 1;
         return static_cast<int>(KeyExpansionReadFromBytes(output, input));
     },
     [](const Block_t*const input, const uint8_t* bytes) -> bool{
