@@ -474,6 +474,7 @@ static void encryptCTR__(const KeyExpansion_t* ke_p, const uint8_t* counter00, s
   for(size_t i = 0; i < is->info.tailSize; i++){                // -Encrypting tail of the stream.
     os->currentPossition[i] ^= counter.uint08_[i];
   }
+  BlockDestroy(&buffer);
 }
 
 enum ExceptionCode encryptCTR(const uint8_t*const input, size_t size, const uint8_t* keyexpansion, size_t keylenbits, const uint8_t* counter00, uint8_t*const output){
