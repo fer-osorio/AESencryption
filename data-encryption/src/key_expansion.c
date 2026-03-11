@@ -235,7 +235,7 @@ bool compareKeyExpansionBytes(const KeyExpansion_t*const input, const uint8_t by
   bool result = true;
   // Constant time comparison. Preventing timing attacks.
   for(size_t i = 0, j = 0; i < input->blockSize; i++, j += BLOCK_SIZE){
-    result &= compareBlockBytes(input->dataBlocks + i, bytes + i);
+    result &= compareBlockBytes(input->dataBlocks + i, bytes + j);
   }
   return result;
 }
