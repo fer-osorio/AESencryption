@@ -24,6 +24,8 @@ public:
 			Unknown,
 			ECB,							// -Electronic Code Book (not recommended).
 			CBC,							// -Cipher Block Chaining.
+			OFB,							// -Output Feedback.
+			CTR,							// -Counter.
 		};
 	private:
 		Identifier ID_ = Identifier::ECB;
