@@ -110,6 +110,25 @@ Cipher::OperationMode::OperationMode(Identifier ID) : ID_(ID){
             encryptECB(dummyBlock.data08, BLOCK_SIZE, dummyKeyExpansion.data08, 128, this->IV_->data);
             break;
         }
+        case Identifier::OFB:
+        case Identifier::CTR: {     // Initialize initial vector with encrypted block
+            union {
+                uint8_t  data08[KEY_EXPANSION_LENGTH_128_BYTES];
+                uint64_t data64[KEY_EXPANSION_LENGTH_128_UINT64];
+            } dummyKeyExpansion;
+
+            uint64_t initialValue = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+            for(size_t i = 0; i < KEY_EXPANSION_LENGTH_128_UINT64; i++) dummyKeyExpansion.data64[i] = initialValue++;
+            union {
+                uint8_t  data08[BLOCK_SIZE];
+                uint64_t data64[2];
+            } dummyBlock;
+            dummyBlock.data64[0] = initialValue++;
+            dummyBlock.data64[1] = initialValue;
+            this->IV_ = new InitVector;
+            encryptECB(dummyBlock.data08, BLOCK_SIZE, dummyKeyExpansion.data08, 128, this->IV_->data);
+            break;
+        }
         case Identifier::Unknown:
             break;
     }
@@ -159,6 +178,10 @@ const char* Cipher::OperationMode::identifier_to_string(Identifier ID){
             return "ECB";
         case Identifier::CBC:
             return "CBC";
+        case Identifier::OFB:
+            return "OFB";
+        case Identifier::CTR:
+            return "CTR";
     }
     return "Unknown";
 }
@@ -168,6 +191,10 @@ Cipher::OperationMode::Identifier Cipher::OperationMode::string_to_identifier(co
         return Identifier::ECB;
     if(str == "CBC")
         return Identifier::CBC;
+    if(str == "OFB")
+        return Identifier::OFB;
+    if(str == "CTR")
+        return Identifier::CTR;
 
     return Identifier::Unknown;
 }
@@ -186,6 +213,8 @@ void Cipher::OperationMode::save(const std::string& filepath) const{
             case Identifier::ECB:
                 break;
             case Identifier::CBC:
+            case Identifier::OFB:
+            case Identifier::CTR:
                 file.write(reinterpret_cast<const char*>(&this->IV_->data), BLOCK_SIZE);
                 break;
         }
@@ -221,6 +250,8 @@ Cipher::OperationMode Cipher::OperationMode::loadFromFile(const std::string& fil
                 case Identifier::ECB:
                     break;
                 case Identifier::CBC:
+                case Identifier::OFB:
+                case Identifier::CTR:
                     if(optmode_out.IV_ == nullptr) optmode_out.IV_ = new InitVector;
                     file.read(reinterpret_cast<char*>(optmode_out.IV_->data),BLOCK_SIZE);
                     if (!file || file.gcount() != BLOCK_SIZE) {
@@ -464,6 +495,26 @@ void Cipher::encrypt(const uint8_t*const data, size_t size, uint8_t*const output
                 handleExceptionCode(result, "CBC encryption");
             }
             break;
+        case OperationMode::Identifier::OFB:
+            {
+                const uint8_t* iv = this->config.getIVpointerData();
+                if (iv == nullptr) {
+                    throw EncryptionException("IV is required for OFB mode but not set");
+                }
+                result = encryptOFB(data, size, this->keyExpansion, keylenBits, iv, output);
+                handleExceptionCode(result, "OFB encryption");
+            }
+            break;
+        case OperationMode::Identifier::CTR:
+            {
+                const uint8_t* iv = this->config.getIVpointerData();
+                if (iv == nullptr) {
+                    throw EncryptionException("Counter is required for CTR mode but not set");
+                }
+                result = encryptCTR(data, size, this->keyExpansion, keylenBits, iv, output);
+                handleExceptionCode(result, "CTR encryption");
+            }
+            break;
         default:
             throw EncryptionException("Unsupported operation mode: " + std::to_string(static_cast<int>(opt_mode)));
     }
@@ -510,6 +561,26 @@ void Cipher::decrypt(const uint8_t*const data, size_t size, uint8_t*const output
                 }
                 result = decryptCBC(data, size, this->keyExpansion, key_len_bits, iv, output);
                 handleExceptionCode(result, "CBC decryption");
+            }
+            break;
+        case OperationMode::Identifier::OFB:
+            {
+                const uint8_t* iv = this->config.getIVpointerData();
+                if (iv == nullptr) {
+                    throw DecryptionException("IV is required for OFB mode but not set");
+                }
+                result = decryptOFB(data, size, this->keyExpansion, key_len_bits, iv, output);
+                handleExceptionCode(result, "OFB decryption");
+            }
+            break;
+        case OperationMode::Identifier::CTR:
+            {
+                const uint8_t* iv = this->config.getIVpointerData();
+                if (iv == nullptr) {
+                    throw DecryptionException("Counter is required for CTR mode but not set");
+                }
+                result = decryptCTR(data, size, this->keyExpansion, key_len_bits, iv, output);
+                handleExceptionCode(result, "CTR decryption");
             }
             break;
         default:
