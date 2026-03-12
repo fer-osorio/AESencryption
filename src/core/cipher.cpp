@@ -89,29 +89,9 @@ Cipher::OperationMode::OperationMode(Identifier ID) : ID_(ID){
     switch(ID){
         case Identifier::ECB:
             break;
-        case Identifier::CBC: {     // Initialize initial vector with encrypted block
-            union {
-                uint8_t  data08[KEY_EXPANSION_LENGTH_128_BYTES];
-                uint64_t data64[KEY_EXPANSION_LENGTH_128_UINT64];
-            } dummyKeyExpansion;
-
-            // Initializing dummy key expansion with current time
-            uint64_t initialValue = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-            for(size_t i = 0; i < KEY_EXPANSION_LENGTH_128_UINT64; i++) dummyKeyExpansion.data64[i] = initialValue++;
-            union {
-                uint8_t  data08[BLOCK_SIZE];
-                uint64_t data64[2];
-            } dummyBlock;
-            // Initialize dummy block with current time
-            dummyBlock.data64[0] = initialValue++;
-            dummyBlock.data64[1] = initialValue;
-            // Creating initial vector with the encryption of the dummy block with the dummy key expansion
-            this->IV_ = new InitVector;
-            encryptECB(dummyBlock.data08, BLOCK_SIZE, dummyKeyExpansion.data08, 128, this->IV_->data);
-            break;
-        }
+        case Identifier::CBC:
         case Identifier::OFB:
-        case Identifier::CTR: {     // Initialize initial vector with encrypted block
+        case Identifier::CTR: {     // Initialize initial vector/counter with encrypted block
             union {
                 uint8_t  data08[KEY_EXPANSION_LENGTH_128_BYTES];
                 uint64_t data64[KEY_EXPANSION_LENGTH_128_UINT64];
