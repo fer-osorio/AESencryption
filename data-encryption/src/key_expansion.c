@@ -18,7 +18,10 @@ static KeyExpansion_t* KeyExpansionAllocate(enum Nk_t Nk){
   output->wordsSize = getKeyExpansionLengthWordsfromNk(Nk);
   output->blockSize = getKeyExpansionLengthBlocksfromNk(Nk);
   output->dataBlocks = (Block_t*)malloc(output->blockSize*sizeof(Block_t));
-  if(output->dataBlocks == NULL) return NULL;
+  if(output->dataBlocks == NULL) {
+      KeyExpansionDestroy(&output);
+      return NULL;
+  }
   return output;
 }
 

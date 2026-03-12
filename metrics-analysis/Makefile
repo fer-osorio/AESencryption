@@ -12,14 +12,11 @@ TARGET_LIB = $(LIBDIR)/libmetricsanalysis.a
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
 
 # Local includes
-INCLUDES = -I$(INCDIR)
+INCLUDES = -I$(PROJECT_ROOT)/metrics-analysis/$(INCDIR)
 
 # Source files
 SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
-
-# Dependencies on other modules
-DEPS =
 
 # Default target
 all: $(TARGET_LIB)
@@ -44,3 +41,5 @@ clean:
 
 # Dependency inclusion
 $(eval $(include_deps))
+
+.PHONY: all clean

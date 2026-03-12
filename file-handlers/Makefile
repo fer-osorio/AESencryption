@@ -16,13 +16,13 @@ SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Local includes (in addition to common includes)
-INCLUDES = -I./$(INCDIR) -I../$(INCDIR) -I../metrics-analysis/$(INCDIR)
+INCLUDES = -I$(PROJECT_ROOT)/file-handlers/$(INCDIR) -I$(PROJECT_ROOT)/$(INCDIR) -I$(PROJECT_ROOT)/metrics-analysis/$(INCDIR)
 
 # Dependencies on other modules
 DEPS = $(LIBDIR)/libaesencryption_cpp.a $(LIBDIR)/libmetricsanalysis.a
 
 # External libraries needed
-LIBS = -L$(LIBDIR) -laesencryption_cpp lmetricsanalysis
+LIBS = -L$(LIBDIR) -laesencryption_cpp -lmetricsanalysis
 
 # Default target
 all: $(TARGET_LIB)
@@ -68,15 +68,15 @@ setup-test-data:
 $(eval $(include_deps))
 
 # Module-specific targets
-.PHONY: check-deps setup-test-data
+.PHONY: all clean check-deps dependencies setup-test-data list-formats
 
 # List supported file formats
 list-formats:
-	@echo "$(COLOR_BLUE)Supported file formats:$(COLOR_NC)"
-	@echo "  - Text files (.txt)"
-	@echo "  - Bitmap images (.bmp)"
-	@echo "  - Binary files (generic)"
-	@echo "$(COLOR_YELLOW)Planned formats:$(COLOR_NC)"
-	@echo "  - PNG images"
-	@echo "  - JPEG images"
-	@echo "  - Custom binary formats"
+	@echo -e "$(COLOR_BLUE)Supported file formats:$(COLOR_NC)"
+	@echo -e "  - Text files (.txt)"
+	@echo -e "  - Bitmap images (.bmp)"
+	@echo -e "  - Binary files (generic)"
+	@echo -e "$(COLOR_YELLOW)Planned formats:$(COLOR_NC)"
+	@echo -e "  - PNG images"
+	@echo -e "  - JPEG images"
+	@echo -e "  - Custom binary formats"

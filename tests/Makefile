@@ -1,10 +1,13 @@
 # Include common functions and utilities
 include ../common.mk
+BUILD_TYPE ?= test
 include ../config.mk
 
 # Local configuration
 MODULE_NAME = $(notdir $(CURDIR))
 PROJECT_ROOT := $(call find-project-root)
+OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
+BINDIR = $(PROJECT_ROOT)/bin/$(notdir $(CURDIR))
 MODULE_DIRECTORIES := $(shell find . -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 basename)
 
 MAKEFILE_DEBUG =? FALSE
@@ -188,7 +191,7 @@ define run_tests
 for test in $($(1)_TESTS); do \
 	if [ -f "$$test" ]; then \
 		$(call echo_building,"Executing: $$test"); \
-		if ./$$test; then \
+		if $$test; then \
 			$(call echo_success,"PASSED: $$test"); \
 		else \
 			$(call echo_error,"FAILED: $$test"); \
