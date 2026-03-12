@@ -24,7 +24,7 @@ LDFLAGS += -L$(PROJECT_ROOT)/lib
 LIBS = -lcryptocli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetricsanalysis
 
 # Define required dependencies (library files)
-REQUIRED_DEPS = \
+DEPS = \
     $(PROJECT_ROOT)/lib/libaesencryption_c.a \
     $(PROJECT_ROOT)/lib/libaesencryption_cpp.a \
     $(PROJECT_ROOT)/lib/libfilehandlers.a \
@@ -78,7 +78,7 @@ clean:
 	@rm -f $(BINARIES)
 	$(call print_success,"Cleaned command-line-tools module")
 
-.PHONY: clean
+.PHONY: all clean check-deps dependencies
 
 # Dependency inclusion
 $(eval $(include_deps))
