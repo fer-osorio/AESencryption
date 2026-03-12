@@ -110,8 +110,12 @@ CryptoConfig ArgumentParser::parse() {
                 this->config.operation_mode = AESencryption::Cipher::OperationMode::Identifier::ECB;
             } else if (mode == "CBC") {
                 this->config.operation_mode = AESencryption::Cipher::OperationMode::Identifier::CBC;
+            } else if (mode == "OFB") {
+                this->config.operation_mode = AESencryption::Cipher::OperationMode::Identifier::OFB;
+            } else if (mode == "CTR") {
+                this->config.operation_mode = AESencryption::Cipher::OperationMode::Identifier::CTR;
             } else {
-                this->config.error_message = "Invalid mode: " + mode + ". Use ECB or CBC.";
+                this->config.error_message = "Invalid mode: " + mode + ". Use ECB, CBC, OFB, or CTR.";
                 this->config.is_valid = false;
                 return this->config;
             }
@@ -172,7 +176,7 @@ void ArgumentParser::print_help() const{
               << "\tKey Generation:\t" << this->argv[0] << " --generate-key --key-length <bits> --output <file>\n\n"
               << "Options:\n"
               << "\t--key-length <bits>      Key length: 128, 192, or 256 (default: 128)\n"
-              << "\t--mode <ECB|CBC>         Operation mode (default: CBC)\n"
+              << "\t--mode <ECB|CBC|OFB|CTR> Operation mode (default: CBC)\n"
               << "\t--mode-data <file>       Required data for specific operation mode\n"
               << "\t--show-metrics           Show statistical metrics from input and output\n"
               << "\t--help                   Show this help message\n";

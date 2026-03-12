@@ -31,7 +31,7 @@ bool runTestsForKeylengthMode(AESKEY_LENBITS ks, AESCIPHER_OPTMODE cm);
 int main() {
     std::cout << "=== C/C++ Cipher.hpp Tests with Specific Exception Handling ===" << std::endl;
     std::vector<AESKEY_LENBITS> keylengths = { AESKEY_LENBITS::_128, AESKEY_LENBITS::_192, AESKEY_LENBITS::_256 };
-    std::vector<AESCIPHER_OPTMODE> optModes = { AESCIPHER_OPTMODE::ECB, AESCIPHER_OPTMODE::CBC };
+    std::vector<AESCIPHER_OPTMODE> optModes = { AESCIPHER_OPTMODE::ECB, AESCIPHER_OPTMODE::CBC, AESCIPHER_OPTMODE::OFB, AESCIPHER_OPTMODE::CTR };
     bool success = true;
 
     for(AESKEY_LENBITS ks: keylengths){
@@ -64,6 +64,8 @@ bool test_successful_operations(AESKEY_LENBITS ks, AESCIPHER_OPTMODE cm) {
     switch(cm) {
         case AESCIPHER_OPTMODE::ECB: cm_ = TV::CipherMode::ECB; break;
         case AESCIPHER_OPTMODE::CBC: cm_ = TV::CipherMode::CBC; break;
+        case AESCIPHER_OPTMODE::OFB: cm_ = TV::CipherMode::OFB; break;
+        case AESCIPHER_OPTMODE::CTR: cm_ = TV::CipherMode::CTR; break;
         default:
             std::cerr << "Error: Unsupported operation cm." << std::endl;
             return false;
@@ -83,10 +85,10 @@ bool test_successful_operations(AESKEY_LENBITS ks, AESCIPHER_OPTMODE cm) {
         // Test operation cm
         AESKEY key(example->getKey(), ks);
         AESCIPHER ciph(key, AESCIPHER::OperationMode(cm));
-        ciph.setInitialVectorForTesting(std::vector<uint8_t>(
-            SP::kInitializationVector,
-            SP::kInitializationVector + 16
-        ));
+        const unsigned char* iv_data = (cm == AESCIPHER_OPTMODE::CTR)
+            ? SP::kInitialCounter
+            : SP::kInitializationVector;
+        ciph.setInitialVectorForTesting(std::vector<uint8_t>(iv_data, iv_data + 16));
 
         // Verify key expansion is initialized
         success &= ASSERT_TRUE(
@@ -306,6 +308,8 @@ bool runTestsForKeylengthMode(AESKEY_LENBITS ks, AESCIPHER_OPTMODE cm){
     switch(cm) {
         case AESCIPHER_OPTMODE::ECB: cm_ = TV::CipherMode::ECB; break;
         case AESCIPHER_OPTMODE::CBC: cm_ = TV::CipherMode::CBC; break;
+        case AESCIPHER_OPTMODE::OFB: cm_ = TV::CipherMode::OFB; break;
+        case AESCIPHER_OPTMODE::CTR: cm_ = TV::CipherMode::CTR; break;
         default: return false;
     }
 

@@ -12,6 +12,8 @@ namespace SP = TestVectors::AES::SP800_38A;
 
 bool test_ecb_mode(TV::KeySize ks);
 bool test_cbc_mode(TV::KeySize ks);
+bool test_ofb_mode(TV::KeySize ks);
+bool test_ctr_mode(TV::KeySize ks);
 bool test_iv_independence(TV::KeySize ks);
 bool test_error_conditions(TV::KeySize ks);
 
@@ -128,6 +130,92 @@ bool test_cbc_mode(TV::KeySize ks) {
     return successStatus;
 }
 
+bool test_ofb_mode(TV::KeySize ks) {
+    TEST_SUITE("OFB Mode Tests");
+
+    bool successStatus = true;
+    SP::OFB::TestVector example_ofb(ks, TV::Direction::Encrypt);
+    const size_t expanded_key_len = getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(ks));
+    std::vector<uint8_t> expanded_key(expanded_key_len);
+    uint8_t output[SP::kDataSize];
+    uint8_t decrypted[SP::kDataSize];
+
+    // Prepare key expansion
+    successStatus = ASSERT_TRUE(
+        KeyExpansionInitWrite(example_ofb.getKey().data(), static_cast<size_t>(ks), expanded_key.data(), false) == NoException,
+        "Key expansion should succeed"
+    ) && successStatus;
+
+    // Test OFB encryption
+    successStatus = ASSERT_TRUE(
+        encryptOFB(SP::kPlainText, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), example_ofb.getIV().data(), output) == NoException,
+        "OFB encryption should succeed"
+    ) && successStatus;
+
+    successStatus = ASSERT_BYTES_EQUAL(
+        example_ofb.getExpectedOutput().data(), output, SP::kDataSize,
+        "OFB encryption should match test vector"
+    ) && successStatus;
+
+    // Test OFB decryption (round-trip)
+    successStatus = ASSERT_TRUE(
+        decryptOFB(output, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), example_ofb.getIV().data(), decrypted) == NoException,
+        "OFB decryption should succeed"
+    ) && successStatus;
+
+    successStatus = ASSERT_BYTES_EQUAL(
+        SP::kPlainText, decrypted, SP::kDataSize,
+        "OFB roundtrip should preserve plaintext"
+    ) && successStatus;
+
+    PRINT_RESULTS();
+
+    return successStatus;
+}
+
+bool test_ctr_mode(TV::KeySize ks) {
+    TEST_SUITE("CTR Mode Tests");
+
+    bool successStatus = true;
+    SP::CTR::TestVector example_ctr(ks, TV::Direction::Encrypt);
+    const size_t expanded_key_len = getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(ks));
+    std::vector<uint8_t> expanded_key(expanded_key_len);
+    uint8_t output[SP::kDataSize];
+    uint8_t decrypted[SP::kDataSize];
+
+    // Prepare key expansion
+    successStatus = ASSERT_TRUE(
+        KeyExpansionInitWrite(example_ctr.getKey().data(), static_cast<size_t>(ks), expanded_key.data(), false) == NoException,
+        "Key expansion should succeed"
+    ) && successStatus;
+
+    // Test CTR encryption
+    successStatus = ASSERT_TRUE(
+        encryptCTR(SP::kPlainText, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), example_ctr.getCounter().data(), output) == NoException,
+        "CTR encryption should succeed"
+    ) && successStatus;
+
+    successStatus = ASSERT_BYTES_EQUAL(
+        example_ctr.getExpectedOutput().data(), output, SP::kDataSize,
+        "CTR encryption should match test vector"
+    ) && successStatus;
+
+    // Test CTR decryption (round-trip)
+    successStatus = ASSERT_TRUE(
+        decryptCTR(output, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), example_ctr.getCounter().data(), decrypted) == NoException,
+        "CTR decryption should succeed"
+    ) && successStatus;
+
+    successStatus = ASSERT_BYTES_EQUAL(
+        SP::kPlainText, decrypted, SP::kDataSize,
+        "CTR roundtrip should preserve plaintext"
+    ) && successStatus;
+
+    PRINT_RESULTS();
+
+    return successStatus;
+}
+
 bool test_iv_independence(TV::KeySize ks) {
     TEST_SUITE("IV Independence Tests");
 
@@ -165,6 +253,8 @@ bool test_error_conditions(TV::KeySize ks) {
     bool successStatus = true;
     SP::ECB::TestVector example_ecb(ks, TV::Direction::Encrypt);
     SP::CBC::TestVector example_cbc(ks, TV::Direction::Encrypt);
+    SP::OFB::TestVector example_ofb(ks, TV::Direction::Encrypt);
+    SP::CTR::TestVector example_ctr(ks, TV::Direction::Encrypt);
     const size_t expanded_key_len = getKeyExpansionLengthBytesfromKeylenBits(static_cast<KeylenBits_t>(ks));
     std::vector<uint8_t> expanded_key(expanded_key_len);
     uint8_t output[SP::kDataSize];
@@ -208,6 +298,46 @@ bool test_error_conditions(TV::KeySize ks) {
         "CBC should handle zero length"
     ) && successStatus;
 
+    successStatus = ASSERT_TRUE(
+        encryptOFB(NULL, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), example_ofb.getIV().data(), output) == NullInput,
+        "OFB should handle null input"
+    ) && successStatus;
+
+    successStatus = ASSERT_TRUE(
+        encryptOFB(SP::kPlainText, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), example_ofb.getIV().data(), NULL) == NullOutput,
+        "OFB should handle null output"
+    ) && successStatus;
+
+    successStatus = ASSERT_TRUE(
+        encryptOFB(SP::kPlainText, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), NULL, output) == NullInitialVector,
+        "OFB should handle null IV"
+    ) && successStatus;
+
+    successStatus = ASSERT_TRUE(
+        encryptOFB(SP::kPlainText, 0, expanded_key.data(), static_cast<KeylenBits_t>(ks), example_ofb.getIV().data(), output) == ZeroLength,
+        "OFB should handle zero length"
+    ) && successStatus;
+
+    successStatus = ASSERT_TRUE(
+        encryptCTR(NULL, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), example_ctr.getCounter().data(), output) == NullInput,
+        "CTR should handle null input"
+    ) && successStatus;
+
+    successStatus = ASSERT_TRUE(
+        encryptCTR(SP::kPlainText, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), example_ctr.getCounter().data(), NULL) == NullOutput,
+        "CTR should handle null output"
+    ) && successStatus;
+
+    successStatus = ASSERT_TRUE(
+        encryptCTR(SP::kPlainText, SP::kDataSize, expanded_key.data(), static_cast<KeylenBits_t>(ks), NULL, output) == NullInitialVector,
+        "CTR should handle null counter"
+    ) && successStatus;
+
+    successStatus = ASSERT_TRUE(
+        encryptCTR(SP::kPlainText, 0, expanded_key.data(), static_cast<KeylenBits_t>(ks), example_ctr.getCounter().data(), output) == ZeroLength,
+        "CTR should handle zero length"
+    ) && successStatus;
+
     PRINT_RESULTS();
 
     return successStatus;
@@ -222,6 +352,8 @@ bool runTestsForKeylength(TV::KeySize ks) {
 
     successStatus = test_ecb_mode(ks) && successStatus;
     successStatus = test_cbc_mode(ks) && successStatus;
+    successStatus = test_ofb_mode(ks) && successStatus;
+    successStatus = test_ctr_mode(ks) && successStatus;
     successStatus = test_iv_independence(ks) && successStatus;
     successStatus = test_error_conditions(ks) && successStatus;
 
