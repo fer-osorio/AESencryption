@@ -1,5 +1,6 @@
 # test-framework/Makefile - NIST AES test vectors library
 include ../common.mk
+BUILD_TYPE ?= test
 include ../config.mk
 
 # Module configuration
