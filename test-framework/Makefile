@@ -9,10 +9,10 @@ LIBDIR = $(PROJECT_ROOT)/lib
 TARGET_LIB = $(LIBDIR)/libtest_vectors.a
 
 # Local source directory and object directory
-OBJDIR = $(PROJECT_ROOT)/obj/test-framework
+OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
 
 # Local includes (private headers)
-INCLUDES = -I$(INCDIR) -I$(INCDIR)/test-vectors
+INCLUDES = -I$(PROJECT_ROOT)/test-framework/$(INCDIR) -I$(PROJECT_ROOT)/test-framework/$(INCDIR)/test-vectors
 
 # Source files and objects
 SOURCES = $(wildcard $(SRCDIR)/test-vectors/*.cpp)
@@ -22,7 +22,7 @@ OBJECTS = $(call sources_to_objects,$(SOURCES),$(OBJDIR),cpp)
 all: $(TARGET_LIB)
 
 # Static library creation
-$(TARGET_LIB): $(OBJECTS) | $(OBJDIR) $(LIBDIR)
+$(TARGET_LIB): $(OBJECTS) | $(LIBDIR) $(OBJDIR)
 	$(call create_static_lib,$@,$(OBJECTS))
 
 # Compilation rule for C++ files
