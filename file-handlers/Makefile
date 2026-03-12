@@ -72,11 +72,11 @@ $(eval $(include_deps))
 
 # List supported file formats
 list-formats:
-	@echo "$(COLOR_BLUE)Supported file formats:$(COLOR_NC)"
-	@echo "  - Text files (.txt)"
-	@echo "  - Bitmap images (.bmp)"
-	@echo "  - Binary files (generic)"
-	@echo "$(COLOR_YELLOW)Planned formats:$(COLOR_NC)"
-	@echo "  - PNG images"
-	@echo "  - JPEG images"
-	@echo "  - Custom binary formats"
+	@echo -e "$(COLOR_BLUE)Supported file formats:$(COLOR_NC)"
+	@echo -e "  - Text files (.txt)"
+	@echo -e "  - Bitmap images (.bmp)"
+	@echo -e "  - Binary files (generic)"
+	@echo -e "$(COLOR_YELLOW)Planned formats:$(COLOR_NC)"
+	@echo -e "  - PNG images"
+	@echo -e "  - JPEG images"
+	@echo -e "  - Custom binary formats"
