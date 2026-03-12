@@ -16,10 +16,10 @@ SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Local includes (in addition to common includes)
-INCLUDES = -I./$(INCDIR) -I$(PROJECT_ROOT)/$(INCDIR)
+INCLUDES = -I$(PROJECT_ROOT)/crypto-cli/$(INCDIR) -I$(PROJECT_ROOT)/$(INCDIR)
 
 # Dependencies on other modules
-DEPS =$(LIBDIR)/libaesencryption_cpp.a
+DEPS = $(LIBDIR)/libaesencryption_cpp.a
 
 # External libraries needed
 LIBS = -L$(LIBDIR) -laesencryption_cpp
@@ -33,7 +33,7 @@ check-deps:
 
 # Build dependencies (optional - for convenience)
 dependencies:
-# 	$(call print_info,"Building project dependencies...")
+	$(call print_info,"Building project dependencies...")
 	@$(MAKE) -C $(PROJECT_ROOT)/src
 	$(call print_success,"All dependencies built successfully")
 
@@ -60,4 +60,4 @@ clean:
 $(eval $(include_deps))
 
 # Module-specific targets
-.PHONY: check-deps setup-test-data
+.PHONY: all clean check-deps dependencies
