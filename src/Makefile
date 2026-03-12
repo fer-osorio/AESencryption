@@ -16,11 +16,8 @@ OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
 INCLUDES = -I./utils/ -I$(PROJECT_ROOT)/data-encryption/include -I$(PROJECT_ROOT)/include
 
 # Source files
-SOURCES = $(call find_sources,$(SRCDIR),cpp)
-#$(info SOURCES=$(SOURCES))
-# Object files
-OBJECTS = $(call sources_to_objects,$(SOURCES),$(OBJDIR),cpp)
-#$(info OBJECTS=$(OBJECTS))
+SOURCES = $(wildcard $(SRCDIR)/*.cpp)
+OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Dependencies on other modules
 DEPS = $(LIBDIR)/libaesencryption_c.a
@@ -41,7 +38,7 @@ dependencies:
 	$(call print_success,"All dependencies built successfully")
 
 # Library target
-$(TARGET_LIB): check-deps $(OBJECTS) | $(OBJDIR) $(LIBDIR)
+$(TARGET_LIB): check-deps $(OBJECTS) | $(LIBDIR) $(OBJDIR)
 	$(call create_static_lib,$@,$(OBJECTS))
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
@@ -53,7 +50,7 @@ $(OBJDIR) $(LIBDIR):
 
 # Clean target
 clean:
-	$(call clean_dir,$(OBJDIR))
+	$(call clean_standard)
 	@rm -f $(TARGET_LIB)
 	$(call print_success,"Cleaned core C++ module: $(MODULE_NAME)")
 
@@ -64,3 +61,5 @@ check-symbols: $(TARGET_LIB)
 
 # Dependency inclusion
 $(eval $(include_deps))
+
+.PHONY: all clean check-deps dependencies check-symbols
