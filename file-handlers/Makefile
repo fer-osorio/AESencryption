@@ -16,13 +16,13 @@ SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Local includes (in addition to common includes)
-INCLUDES = -I./$(INCDIR) -I../$(INCDIR) -I../metrics-analysis/$(INCDIR)
+INCLUDES = -I$(PROJECT_ROOT)/file-handlers/$(INCDIR) -I$(PROJECT_ROOT)/$(INCDIR) -I$(PROJECT_ROOT)/metrics-analysis/$(INCDIR)
 
 # Dependencies on other modules
 DEPS = $(LIBDIR)/libaesencryption_cpp.a $(LIBDIR)/libmetricsanalysis.a
 
 # External libraries needed
-LIBS = -L$(LIBDIR) -laesencryption_cpp lmetricsanalysis
+LIBS = -L$(LIBDIR) -laesencryption_cpp -lmetricsanalysis
 
 # Default target
 all: $(TARGET_LIB)
@@ -68,7 +68,7 @@ setup-test-data:
 $(eval $(include_deps))
 
 # Module-specific targets
-.PHONY: check-deps setup-test-data
+.PHONY: all clean check-deps dependencies setup-test-data list-formats
 
 # List supported file formats
 list-formats:
