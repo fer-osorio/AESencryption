@@ -40,10 +40,10 @@ NO_OPTIMIZE = -O0
 OPTIMIZE = -O2
 
 # Coverage analysis support
-COVERAGE_FLAGS = --coverage -fprofile-arcs -ftest-coverage
+COVERAGE_FLAGS = --coverage -fprofile-abs-path
 
-# Default build type (debug-oriented)
-BUILD_TYPE ?= debug
+# Default build type
+BUILD_TYPE ?= test
 
 # Build type specific flags
 ifeq ($(BUILD_TYPE),debug)
