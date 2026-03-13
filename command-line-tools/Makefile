@@ -18,10 +18,11 @@ INCLUDES = \
     -I$(PROJECT_ROOT)/file-handlers/include \
     -I$(PROJECT_ROOT)/include \
     -I$(PROJECT_ROOT)/data-encryption/include \
-    -I$(PROJECT_ROOT)/metrics-analysis/include
+    -I$(PROJECT_ROOT)/metrics-analysis/include \
+    -I$(PROJECT_ROOT)/hsm/include
 
 LDFLAGS += -L$(PROJECT_ROOT)/lib
-LIBS = -lcryptocli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetricsanalysis
+LIBS = -lcryptocli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetricsanalysis -lhsm -ldl
 
 # Define required dependencies (library files)
 DEPS = \
@@ -29,7 +30,8 @@ DEPS = \
     $(PROJECT_ROOT)/lib/libaesencryption_cpp.a \
     $(PROJECT_ROOT)/lib/libfilehandlers.a \
     $(PROJECT_ROOT)/lib/libmetricsanalysis.a \
-    $(PROJECT_ROOT)/lib/libcryptocli.a
+    $(PROJECT_ROOT)/lib/libcryptocli.a \
+    $(PROJECT_ROOT)/lib/libhsm.a
 
 # Source files
 SOURCES = $(call find_local_sources,cpp)
