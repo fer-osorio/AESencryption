@@ -1,9 +1,9 @@
-#include "hsm_session.hpp"
-#include "hsm_cipher.hpp"
-#include "hsm_key_handle.hpp"
-#include "cipher.hpp"
-#include "key.hpp"
-#include "file_base.hpp"
+#include "../../hsm/include/hsm_session.hpp"
+#include "../../hsm/include/hsm_cipher.hpp"
+#include "../../hsm/include/hsm_key_handle.hpp"
+#include "../../include/cipher.hpp"
+#include "../../include/key.hpp"
+#include "../../file-handlers/include/file_base.hpp"
 
 #include <iostream>
 #include <string>
