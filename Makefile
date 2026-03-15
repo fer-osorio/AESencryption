@@ -1,13 +1,13 @@
-.PHONY: all clean data-encryption core file-handlers metrics-analysis test-framework tests command-line-tools
+.PHONY: all clean data-encryption core file-handlers metrics-analysis test-framework tests command-line-tools hsm
 
 # Default target
-all: data-encryption core file-handlers crypto-cli metrics-analysis test-framework tests command-line-tools
+all: data-encryption core hsm file-handlers crypto-cli metrics-analysis test-framework tests command-line-tools
 
 # Component targets
 tests: data-encryption core file-handlers crypto-cli metrics-analysis test-framework command-line-tools
 	@$(MAKE) -C tests
 
-command-line-tools: data-encryption core file-handlers crypto-cli metrics-analysis
+command-line-tools: data-encryption core hsm file-handlers crypto-cli metrics-analysis
 	@$(MAKE) -C command-line-tools
 
 file-handlers: core metrics-analysis
@@ -19,6 +19,9 @@ crypto-cli: core
 core: data-encryption
 	@$(MAKE) -C src
 
+hsm: core
+	@$(MAKE) -C hsm
+
 data-encryption:
 	@$(MAKE) -C data-encryption
 
@@ -29,6 +32,7 @@ test-framework:
 	@$(MAKE) -C test-framework
 
 clean:
+	@$(MAKE) -C hsm clean
 	@$(MAKE) -C command-line-tools clean
 	@$(MAKE) -C tests clean
 	@$(MAKE) -C file-handlers clean

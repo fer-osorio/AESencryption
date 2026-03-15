@@ -3,12 +3,15 @@ include ../common.mk
 BUILD_TYPE ?= test
 include ../config.mk
 
-# Local configuration
+# Local configuration. Since this is the test module, local configuration is fundamentally different.
+TESTS_ROOT := $(CURDIR)
 MODULE_NAME = $(notdir $(CURDIR))
-PROJECT_ROOT := $(call find-project-root)
-OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
-BINDIR = $(PROJECT_ROOT)/bin/$(notdir $(CURDIR))
+# Objects and binaries are contained in this same module
+OBJDIR = $(TESTS_ROOT)/obj
+BINDIR = $(TESTS_ROOT)/bin
 MODULE_DIRECTORIES := $(shell find . -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 basename)
+# Necessary for finding dependencies
+PROJECT_ROOT := $(call find-project-root)
 
 MAKEFILE_DEBUG =? FALSE
 ifeq ($(MAKEFILE_DEBUG),TRUE)
@@ -38,10 +41,11 @@ INCLUDES = \
     -I$(PROJECT_ROOT)/file-handlers/include \
     -I$(PROJECT_ROOT)/include \
     -I$(PROJECT_ROOT)/data-encryption/include \
-    -I$(PROJECT_ROOT)/metrics-analysis/include
+    -I$(PROJECT_ROOT)/metrics-analysis/include \
+    -I$(PROJECT_ROOT)/hsm/include
 
 LDFLAGS += -L$(PROJECT_ROOT)/lib
-LIBS = -lcryptocli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetricsanalysis -ltest_vectors
+LIBS = -lcryptocli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetricsanalysis -ltest_vectors -lhsm -ldl
 
 # Define required dependencies (library files)
 DEPS = \
@@ -50,7 +54,8 @@ DEPS = \
     $(PROJECT_ROOT)/lib/libmetricsanalysis.a \
     $(PROJECT_ROOT)/lib/libfilehandlers.a \
     $(PROJECT_ROOT)/lib/libcryptocli.a \
-    $(PROJECT_ROOT)/lib/libtest_vectors.a
+    $(PROJECT_ROOT)/lib/libtest_vectors.a \
+    $(PROJECT_ROOT)/lib/libhsm.a
 
 # Source files
 SOURCES = $(call find_local_sources,cpp)
@@ -247,7 +252,7 @@ debug-vars:
 	@for test in $(SYSTEM_TESTS); do echo "  $$test"; done
 	@echo -e "$(COLOR_CYAN)TEST_UTILS_OBJECTS:$(COLOR_NC)"
 	@for obj in $(TEST_UTILS_OBJECTS); do echo "  $$obj"; done
-	@echo -e "$(COLOR_CYAN)PROJECT_ROOT:$(COLOR_NC) $(PROJECT_ROOT)"
+	@echo -e "$(COLOR_CYAN)TESTS_ROOT:$(COLOR_NC) $(TESTS_ROOT)"
 	@echo -e "$(COLOR_CYAN)OBJDIR:$(COLOR_NC) $(OBJDIR)"
 	@echo -e "$(COLOR_CYAN)BINDIR:$(COLOR_NC) $(BINDIR)"
 
