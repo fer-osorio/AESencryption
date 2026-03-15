@@ -1,8 +1,8 @@
 #ifndef HSM_CIPHER_HPP
 #define HSM_CIPHER_HPP
 
-#include "encryptor.hpp"
-#include "cipher.hpp"
+#include "../../include/encryptor.hpp"
+#include "../../include/cipher.hpp"
 #include "hsm_session.hpp"
 #include "hsm_key_handle.hpp"
 
@@ -17,8 +17,10 @@ class HSMCipher : public Encryptor {
 public:
     // session is held by reference — HSMCipher does not own it.
     // The caller must keep HSMSession alive for the lifetime of HSMCipher.
-    HSMCipher(HSMSession& session,
-              Cipher::OperationMode::Identifier mode);
+    HSMCipher(
+        HSMSession& session,
+        Cipher::OperationMode::Identifier mode
+    );
 
     ~HSMCipher() override = default;
 
@@ -31,8 +33,9 @@ public:
     // CKA_SENSITIVE=True and CKA_EXTRACTABLE=False are enforced
     // unconditionally — not optional, not configurable.
 
-    HSMKeyHandle generateKey(Key::LengthBits    length,
-                             const std::string& label);
+    HSMKeyHandle generateKey(
+        Key::LengthBits length, const std::string& label
+    );
 
     // Throws std::runtime_error if no key with this label exists.
     HSMKeyHandle findKey(const std::string& label);
@@ -43,11 +46,13 @@ public:
     // ── Encryptor interface ───────────────────────────────────────────
     // setActiveKey() must be called before these.
 
-    void encryption(const std::vector<uint8_t>& input,
-                          std::vector<uint8_t>& output) const override;
+    void encryption(
+        const std::vector<uint8_t>& input, std::vector<uint8_t>& output
+    ) const override;
 
-    void decryption(const std::vector<uint8_t>& input,
-                          std::vector<uint8_t>& output) const override;
+    void decryption(
+        const std::vector<uint8_t>& input, std::vector<uint8_t>& output
+    ) const override;
 
     // ── Configuration ─────────────────────────────────────────────────
 
@@ -64,7 +69,7 @@ private:
     std::vector<uint8_t>              iv_;
 
     CK_MECHANISM buildMechanism() const;
-    void         checkActiveKey()  const;
+    void         checkActiveKey() const;
     void         checkRV(const std::string& fn, CK_RV rv) const;
 };
 
