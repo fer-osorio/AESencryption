@@ -3,12 +3,15 @@ include ../common.mk
 BUILD_TYPE ?= test
 include ../config.mk
 
-# Local configuration
+# Local configuration. Since this is the test module, local configuration is fundamentally different.
+TESTS_ROOT := $(CURDIR)
 MODULE_NAME = $(notdir $(CURDIR))
-PROJECT_ROOT := $(call find-project-root)
-OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
-BINDIR = $(PROJECT_ROOT)/bin/$(notdir $(CURDIR))
+# Objects and binaries are contained in this same module
+OBJDIR = $(TESTS_ROOT)/obj
+BINDIR = $(TESTS_ROOT)/bin
 MODULE_DIRECTORIES := $(shell find . -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 basename)
+# Necessary for finding dependencies
+PROJECT_ROOT := $(call find-project-root)
 
 MAKEFILE_DEBUG =? FALSE
 ifeq ($(MAKEFILE_DEBUG),TRUE)
@@ -249,7 +252,7 @@ debug-vars:
 	@for test in $(SYSTEM_TESTS); do echo "  $$test"; done
 	@echo -e "$(COLOR_CYAN)TEST_UTILS_OBJECTS:$(COLOR_NC)"
 	@for obj in $(TEST_UTILS_OBJECTS); do echo "  $$obj"; done
-	@echo -e "$(COLOR_CYAN)PROJECT_ROOT:$(COLOR_NC) $(PROJECT_ROOT)"
+	@echo -e "$(COLOR_CYAN)TESTS_ROOT:$(COLOR_NC) $(TESTS_ROOT)"
 	@echo -e "$(COLOR_CYAN)OBJDIR:$(COLOR_NC) $(OBJDIR)"
 	@echo -e "$(COLOR_CYAN)BINDIR:$(COLOR_NC) $(BINDIR)"
 
