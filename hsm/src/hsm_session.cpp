@@ -1,10 +1,9 @@
-#include "hsm_session.hpp"
+#include "../include/hsm_session.hpp"
 
 #include <dlfcn.h>
 #include <sstream>
 #include <iomanip>
 #include <vector>
-#include <cstring>
 
 namespace AESencryption {
 namespace HSM {
@@ -45,8 +44,10 @@ CK_SLOT_ID HSMSession::findSlotByLabel(const std::string& label) const {
         if (p11_->C_GetTokenInfo(slot, &info) != CKR_OK) continue;
 
         // PKCS#11 pads the label field to 32 bytes with trailing spaces.
-        std::string raw(reinterpret_cast<const char*>(info.label),
-                        sizeof(info.label));
+        std::string raw(
+            reinterpret_cast<const char*>(info.label),
+            sizeof(info.label)
+        );
         // Trim trailing spaces.
         auto end = raw.find_last_not_of(' ');
         std::string trimmed = (end == std::string::npos) ? "" : raw.substr(0, end + 1);
@@ -61,10 +62,11 @@ CK_SLOT_ID HSMSession::findSlotByLabel(const std::string& label) const {
 // HSMSession — constructor / destructor / move
 // ---------------------------------------------------------------------------
 
-HSMSession::HSMSession(const std::string& lib_path,
-                       const std::string& token_label,
-                       const std::string& user_pin)
-{
+HSMSession::HSMSession(
+    const std::string& lib_path,
+    const std::string& token_label,
+    const std::string& user_pin
+) {
     // 1. Load the PKCS#11 shared library.
     lib_handle_ = dlopen(lib_path.c_str(), RTLD_NOW);
     if (!lib_handle_) {
@@ -74,7 +76,8 @@ HSMSession::HSMSession(const std::string& lib_path,
     // 2. Resolve C_GetFunctionList and obtain the function-list pointer.
     using GetFunctionList_t = CK_RV (*)(CK_FUNCTION_LIST_PTR_PTR);
     auto get_fn_list = reinterpret_cast<GetFunctionList_t>(
-        dlsym(lib_handle_, "C_GetFunctionList"));
+        dlsym(lib_handle_, "C_GetFunctionList")
+    );
     if (!get_fn_list) {
         dlclose(lib_handle_);
         lib_handle_ = nullptr;
@@ -95,15 +98,17 @@ HSMSession::HSMSession(const std::string& lib_path,
     CK_SLOT_ID slot = findSlotByLabel(token_label);
 
     // 5. Open a R/W serial session.
-    checkRV("C_OpenSession",
-            p11_->C_OpenSession(slot,
-                                CKF_SERIAL_SESSION | CKF_RW_SESSION,
-                                nullptr, nullptr,
-                                &session_));
+    checkRV(
+        "C_OpenSession",
+        p11_->C_OpenSession(
+            slot, CKF_SERIAL_SESSION | CKF_RW_SESSION, nullptr, nullptr, &session_
+        )
+    );
 
     // 6. Log in as the normal user.
-    auto* pin     = reinterpret_cast<CK_UTF8CHAR_PTR>(
-                        const_cast<char*>(user_pin.c_str()));
+    auto* pin = reinterpret_cast<CK_UTF8CHAR_PTR>(
+        const_cast<char*>(user_pin.c_str())
+    );
     auto  pin_len = static_cast<CK_ULONG>(user_pin.size());
     checkRV("C_Login", p11_->C_Login(session_, CKU_USER, pin, pin_len));
 }
