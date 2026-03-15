@@ -3,7 +3,7 @@
 
 #include <string>
 #include <stdexcept>
-#include <pkcs11.h>
+#include <p11-kit-1/p11-kit/pkcs11.h>
 
 namespace AESencryption {
 namespace HSM {
@@ -23,9 +23,11 @@ public:
     // Loads lib_path via dlopen, initialises the library, finds the token
     // by label, opens a R/W session, and logs in.
     // Throws PKCS11Exception on any failure.
-    HSMSession(const std::string& lib_path,
-               const std::string& token_label,
-               const std::string& user_pin);
+    HSMSession(
+        const std::string& lib_path,
+        const std::string& token_label,
+        const std::string& user_pin
+    );
 
     // C_Logout -> C_CloseSession -> C_Finalize -> dlclose, in that order.
     ~HSMSession();
