@@ -2,15 +2,15 @@
 #include "../../test-framework/include/test-vectors/fips197_cipher.hpp"
 #include "../../test-framework/include/test-vectors/sp800_38a_modes.hpp"
 
-#include "hsm_session.hpp"
-#include "hsm_cipher.hpp"
-#include "hsm_key_handle.hpp"
-#include "cipher.hpp"
-#include "key.hpp"
+#include "../../hsm/include/hsm_session.hpp"
+#include "../../hsm/include/hsm_cipher.hpp"
+#include "../../hsm/include/hsm_key_handle.hpp"
+#include "../../include/cipher.hpp"
+#include "../../include/key.hpp"
 
 extern "C" {
-#include "operation_modes.h"
-#include "key_expansion.h"
+#include "../../data-encryption/include/operation_modes.h"
+#include "../../data-encryption/include/key_expansion.h"
 }
 
 #include <vector>
@@ -25,7 +25,7 @@ using AESencryption::Key;
 using AESencryption::Cipher;
 using namespace AESencryption::HSM;
 
-static const std::string LIB_PATH    = "/usr/lib64/softhsm/libsofthsm2.so";
+static const std::string LIB_PATH    = "/usr/lib64/pkcs11/libsofthsm2.so";
 static const std::string TOKEN_LABEL = "AESdev";
 static const std::string USER_PIN    = "1234";
 static const TV::KeySize KS          = TV::KeySize::AES128;
@@ -35,11 +35,12 @@ static const TV::KeySize KS          = TV::KeySize::AES128;
 // Imports a known plaintext key into the HSM as a session object.
 // CKA_TOKEN=False: destroyed automatically on session close.
 // CKA_SENSITIVE=False: required to import known plaintext (test-only).
-static HSMKeyHandle importTestKey(HSMSession&        session,
-                                  const uint8_t*     key_bytes,
-                                  size_t             key_len_bytes,
-                                  const std::string& label)
-{
+static HSMKeyHandle importTestKey(
+    HSMSession&        session,
+    const uint8_t*     key_bytes,
+    size_t             key_len_bytes,
+    const std::string& label
+) {
     CK_BBOOL        yes = CK_TRUE, no = CK_FALSE;
     CK_KEY_TYPE     aes = CKK_AES;
     CK_OBJECT_CLASS cls = CKO_SECRET_KEY;
@@ -47,20 +48,19 @@ static HSMKeyHandle importTestKey(HSMSession&        session,
     CK_ATTRIBUTE tmpl[] = {
         { CKA_CLASS,       &cls, sizeof(cls) },
         { CKA_KEY_TYPE,    &aes, sizeof(aes) },
-        { CKA_VALUE,       const_cast<uint8_t*>(key_bytes),
-                           static_cast<CK_ULONG>(key_len_bytes) },
+        { CKA_VALUE,       const_cast<uint8_t*>(key_bytes), static_cast<CK_ULONG>(key_len_bytes) },
         { CKA_TOKEN,       &no,  sizeof(no)  },
         { CKA_SENSITIVE,   &no,  sizeof(no)  },
         { CKA_EXTRACTABLE, &yes, sizeof(yes) },
         { CKA_ENCRYPT,     &yes, sizeof(yes) },
         { CKA_DECRYPT,     &yes, sizeof(yes) },
-        { CKA_LABEL, const_cast<char*>(label.c_str()),
-                     static_cast<CK_ULONG>(label.size()) },
+        { CKA_LABEL, const_cast<char*>(label.c_str()), static_cast<CK_ULONG>(label.size()) },
     };
 
     CK_OBJECT_HANDLE handle;
     CK_RV rv = session.p11()->C_CreateObject(
-        session.session(), tmpl, sizeof(tmpl) / sizeof(*tmpl), &handle);
+        session.session(), tmpl, sizeof(tmpl) / sizeof(*tmpl), &handle
+    );
     if (rv != CKR_OK)
         throw PKCS11Exception("C_CreateObject (test import)", rv);
 
@@ -79,6 +79,56 @@ static size_t keyExpansionSize(size_t key_bits) {
         case 256: return 240;
         default:  return 176;
     }
+}
+
+// Tests forward declaration
+bool test_nist_ecb_encrypt();
+bool test_nist_ecb_decrypt();
+bool test_nist_cbc_encrypt_matches_nist();
+bool test_nist_cbc_roundtrip();
+// bool test_nist_ofb_encrypt_matches_nist();  Uncomment only with confirmation of OFB mode support
+// bool test_nist_ofb_roundtrip();  Uncomment only with confirmation of OFB mode support
+bool test_nist_ctr_roundtrip();
+bool test_crosspath_ecb();
+bool test_crosspath_cbc();
+// bool test_crosspath_ofb();  Uncomment only with confirmation of OFB mode support
+bool test_crosspath_ctr();
+bool test_generate_key_not_extractable();
+bool test_find_key_returns_valid_handle();
+bool test_destroy_key_not_found();
+
+// ── main ──────────────────────────────────────────────────────────────────────
+
+int main() {
+    std::cout << "=== HSMCipher Tests ===" << std::endl;
+    bool success = true;
+
+    std::cout << "\n--- Part 1: NIST Vector Tests ---" << std::endl;
+    success &= test_nist_ecb_encrypt();
+    success &= test_nist_ecb_decrypt();
+    success &= test_nist_cbc_encrypt_matches_nist();
+    success &= test_nist_cbc_roundtrip();
+    // success &= test_nist_ofb_encrypt_matches_nist();  Uncomment only with confirmation of OFB mode support
+    //success &= test_nist_ofb_roundtrip();  Uncomment only with confirmation of OFB mode support
+    success &= test_nist_ctr_roundtrip();
+
+    std::cout << "\n--- Part 2: Cross-path Comparison Tests ---" << std::endl;
+    success &= test_crosspath_ecb();
+    success &= test_crosspath_cbc();
+    // success &= test_crosspath_ofb();  Uncomment only with confirmation of OFB mode support
+    success &= test_crosspath_ctr();
+
+    std::cout << "\n--- Part 3: Key Lifecycle Tests ---" << std::endl;
+    success &= test_generate_key_not_extractable();
+    success &= test_find_key_returns_valid_handle();
+    success &= test_destroy_key_not_found();
+
+    if (success) {
+        std::cout << "\n============= All HSMCipher Tests Passed =============" << std::endl;
+        return 0;
+    }
+    std::cout << "\n============= Some HSMCipher Tests Failed =============" << std::endl;
+    return 1;
 }
 
 // ── Part 1: NIST vector tests ─────────────────────────────────────────────────
@@ -218,6 +268,7 @@ bool test_nist_cbc_roundtrip() {
     return ok;
 }
 
+/* Uncomment only with confirmation of OFB mode support
 bool test_nist_ofb_encrypt_matches_nist() {
     TEST_SUITE("NIST OFB Encrypt (SP 800-38A)");
     bool ok = true;
@@ -285,6 +336,7 @@ bool test_nist_ofb_roundtrip() {
     PRINT_RESULTS();
     return ok;
 }
+*/
 
 bool test_nist_ctr_roundtrip() {
     TEST_SUITE("NIST CTR Roundtrip (SP 800-38A)");
@@ -425,6 +477,7 @@ bool test_crosspath_cbc() {
     return ok;
 }
 
+/* Uncomment only with confirmation of OFB mode support
 bool test_crosspath_ofb() {
     // OFB is a stream mode — no padding. Output length equals input length.
     TEST_SUITE("Cross-path OFB (HSMCipher vs C encryptOFB)");
@@ -476,6 +529,7 @@ bool test_crosspath_ofb() {
     PRINT_RESULTS();
     return ok;
 }
+*/
 
 bool test_crosspath_ctr() {
     // Single-block (16 bytes) input — no counter increment occurs.
@@ -605,38 +659,4 @@ bool test_destroy_key_not_found() {
     }
     PRINT_RESULTS();
     return ok;
-}
-
-// ── main ──────────────────────────────────────────────────────────────────────
-
-int main() {
-    std::cout << "=== HSMCipher Tests ===" << std::endl;
-    bool success = true;
-
-    std::cout << "\n--- Part 1: NIST Vector Tests ---" << std::endl;
-    success &= test_nist_ecb_encrypt();
-    success &= test_nist_ecb_decrypt();
-    success &= test_nist_cbc_encrypt_matches_nist();
-    success &= test_nist_cbc_roundtrip();
-    success &= test_nist_ofb_encrypt_matches_nist();
-    success &= test_nist_ofb_roundtrip();
-    success &= test_nist_ctr_roundtrip();
-
-    std::cout << "\n--- Part 2: Cross-path Comparison Tests ---" << std::endl;
-    success &= test_crosspath_ecb();
-    success &= test_crosspath_cbc();
-    success &= test_crosspath_ofb();
-    success &= test_crosspath_ctr();
-
-    std::cout << "\n--- Part 3: Key Lifecycle Tests ---" << std::endl;
-    success &= test_generate_key_not_extractable();
-    success &= test_find_key_returns_valid_handle();
-    success &= test_destroy_key_not_found();
-
-    if (success) {
-        std::cout << "\n============= All HSMCipher Tests Passed =============" << std::endl;
-        return 0;
-    }
-    std::cout << "\n============= Some HSMCipher Tests Failed =============" << std::endl;
-    return 1;
 }
