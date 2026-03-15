@@ -7,7 +7,7 @@ all: data-encryption core hsm file-handlers crypto-cli metrics-analysis test-fra
 tests: data-encryption core file-handlers crypto-cli metrics-analysis test-framework command-line-tools
 	@$(MAKE) -C tests
 
-command-line-tools: data-encryption core file-handlers crypto-cli metrics-analysis
+command-line-tools: data-encryption core hsm file-handlers crypto-cli metrics-analysis
 	@$(MAKE) -C command-line-tools
 
 file-handlers: core metrics-analysis
