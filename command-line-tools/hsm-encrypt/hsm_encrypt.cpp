@@ -23,7 +23,7 @@ static void print_usage(const char* prog) {
         << "Usage: " << prog << " [options]\n"
         << "\nRequired:\n"
         << "  --lib    PATH    PKCS#11 library path\n"
-        << "                   e.g. /usr/lib64/softhsm/libsofthsm2.so\n"
+        << "                   e.g. /usr/lib64/pkcs11/libsofthsm2.so\n"
         << "  --token  LABEL   Token label\n"
         << "  --pin    PIN     User PIN\n"
         << "  --mode   MODE    Operation mode: ecb | cbc | ctr\n"
@@ -147,7 +147,8 @@ int main(int argc, const char* argv[]) {
                 // Generate a random IV via the HSM's RNG.
                 iv.resize(16);
                 CK_RV rv = session.p11()->C_GenerateRandom(
-                    session.session(), iv.data(), 16);
+                    session.session(), iv.data(), 16
+                );
                 if (rv != CKR_OK)
                     throw PKCS11Exception("C_GenerateRandom (IV)", rv);
                 std::cout << "Generated IV (save for decryption): "
