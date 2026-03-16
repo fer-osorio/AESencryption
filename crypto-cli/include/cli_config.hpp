@@ -3,58 +3,59 @@
 #define CLI_CONFIG_HPP
 
 #include "../../include/cipher.hpp"
-#include <filesystem> // For path handling
+#include <filesystem>
+#include <stdexcept>
+#include <string>
+#include <unordered_map>
 
 namespace CLIConfig {
 
-// Configuration structure - the integration point
-struct CryptoConfig {
-    enum class Operation {
-        ENCRYPT,
-        DECRYPT,
-        GENERATE_KEY
-    };
+// Dumb tokenizer: walks argv and populates a key→value map.
+// No crypto-specific knowledge.
+class ArgumentParser {
+public:
+    ArgumentParser(int argc, const char** argv);
+    void parse();
 
-    Operation operation;
-    std::filesystem::path key_file;
-    std::filesystem::path input_file;
-    std::filesystem::path output_file;
-    std::filesystem::path mode_file; // File containing necessary data for the operation mode
+    bool        has(const std::string& flag) const;
+    std::string get(const std::string& flag) const;   // throws std::out_of_range if absent
+    std::string getOr(const std::string& flag, const std::string& fallback) const;
+    const char* program_name() const;
 
-    // Optional parameters with defaults
-    AESencryption::Key::LengthBits key_length = AESencryption::Key::LengthBits::_128;
-    AESencryption::Cipher::OperationMode::Identifier operation_mode = AESencryption::Cipher::OperationMode::Identifier::CBC;
-    bool show_metrics = false;
-
-    // Validation flags
-    bool is_valid = false;
-    std::string error_message;
-
-    // Validation method
-    bool validate();
-
-    // Convert to crypto objects - the integration point
-    // Consider: Throws std::runtime_error
-    AESencryption::Key create_key() const;
-    AESencryption::Cipher::OperationMode create_optmode() const;
+private:
+    int          argc_;
+    const char** argv_;
+    std::unordered_map<std::string, std::string> options_;
 };
 
-// Argument parser - Component A
-class ArgumentParser {
-private:
-    int argc;
-    const char** argv;
-    CryptoConfig config;
-
+// Abstract base: each concrete config subclass implements validate().
+class BaseCryptoConfig {
 public:
-    ArgumentParser(int argc_, const char** argv_);
+    virtual ~BaseCryptoConfig() = default;
+    virtual bool validate(const ArgumentParser& parser) = 0;
 
-    // Main parsing method
-    CryptoConfig parse();
-    CryptoConfig get_config() const;
+    bool        is_valid = false;
+    std::string error_message;
+};
 
-private:
-    void print_help() const;
+// Concrete config for the BMP/AES encryptor tool.
+class BmpCryptoConfig : public BaseCryptoConfig {
+public:
+    enum class Operation { ENCRYPT, DECRYPT, GENERATE_KEY };
+
+    bool validate(const ArgumentParser& parser) override;
+    void print_help(const ArgumentParser& parser) const;
+
+    // Factory methods
+    AESencryption::Key                           create_key()     const;
+    AESencryption::Cipher::OperationMode         create_optmode() const;
+
+    // Fields
+    Operation                                        operation      = Operation::ENCRYPT;
+    std::filesystem::path                            key_file, input_file, output_file, mode_file;
+    AESencryption::Key::LengthBits                   key_length     = AESencryption::Key::LengthBits::_128;
+    AESencryption::Cipher::OperationMode::Identifier operation_mode = AESencryption::Cipher::OperationMode::Identifier::CBC;
+    bool                                             show_metrics   = false;
 };
 
 } // namespace CLIConfig

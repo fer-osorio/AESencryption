@@ -1,183 +1,191 @@
 #include "../include/cli_config.hpp"
+#include <iostream>
 
 using namespace CLIConfig;
 
-bool CryptoConfig::validate() {
-    // Check required fields based on operation
-    switch (this->operation) {
+// ── ArgumentParser ────────────────────────────────────────────────────────────
+
+ArgumentParser::ArgumentParser(int argc, const char** argv)
+    : argc_(argc), argv_(argv) {}
+
+void ArgumentParser::parse() {
+    for (int i = 1; i < argc_; ++i) {
+        std::string arg(argv_[i]);
+        if (arg.size() < 2 || arg[0] != '-' || arg[1] != '-')
+            continue;   // skip positional/non-flag tokens
+
+        bool next_is_value = (i + 1 < argc_) &&
+                             !(std::string(argv_[i + 1]).size() >= 2 &&
+                               argv_[i + 1][0] == '-' && argv_[i + 1][1] == '-');
+        if (next_is_value) {
+            options_[arg] = argv_[++i];
+        } else {
+            options_[arg] = "";   // boolean flag — present but no value
+        }
+    }
+}
+
+bool ArgumentParser::has(const std::string& flag) const {
+    return options_.count(flag) > 0;
+}
+
+std::string ArgumentParser::get(const std::string& flag) const {
+    auto it = options_.find(flag);
+    if (it == options_.end())
+        throw std::out_of_range("Missing required flag: " + flag);
+    return it->second;
+}
+
+std::string ArgumentParser::getOr(const std::string& flag,
+                                   const std::string& fallback) const {
+    auto it = options_.find(flag);
+    return (it != options_.end()) ? it->second : fallback;
+}
+
+const char* ArgumentParser::program_name() const {
+    return (argc_ > 0) ? argv_[0] : "";
+}
+
+// ── BmpCryptoConfig ───────────────────────────────────────────────────────────
+
+bool BmpCryptoConfig::validate(const ArgumentParser& parser) {
+    if (parser.has("--help")) {
+        print_help(parser);
+        is_valid = false;
+        return false;
+    }
+
+    // Operation (last flag checked first so precedence matches intent)
+    if      (parser.has("--generate-key")) operation = Operation::GENERATE_KEY;
+    else if (parser.has("--decrypt"))      operation = Operation::DECRYPT;
+    else if (parser.has("--encrypt"))      operation = Operation::ENCRYPT;
+    // else: default is ENCRYPT
+
+    // File paths
+    key_file    = parser.getOr("--key",       "");
+    input_file  = parser.getOr("--input",     "");
+    output_file = parser.getOr("--output",    "");
+    mode_file   = parser.getOr("--mode-data", "");
+
+    // Operation mode
+    std::string mode_str = parser.getOr("--mode", "");
+    if (!mode_str.empty()) {
+        if      (mode_str == "ECB") operation_mode = AESencryption::Cipher::OperationMode::Identifier::ECB;
+        else if (mode_str == "CBC") operation_mode = AESencryption::Cipher::OperationMode::Identifier::CBC;
+        else if (mode_str == "OFB") operation_mode = AESencryption::Cipher::OperationMode::Identifier::OFB;
+        else if (mode_str == "CTR") operation_mode = AESencryption::Cipher::OperationMode::Identifier::CTR;
+        else {
+            error_message = "Invalid mode: " + mode_str + ". Use ECB, CBC, OFB, or CTR.";
+            is_valid = false;
+            return false;
+        }
+    }
+
+    // Key length
+    std::string kl_str = parser.getOr("--key-length", "");
+    if (!kl_str.empty()) {
+        try {
+            int bits = std::stoi(kl_str);
+            if      (bits == 128) key_length = AESencryption::Key::LengthBits::_128;
+            else if (bits == 192) key_length = AESencryption::Key::LengthBits::_192;
+            else if (bits == 256) key_length = AESencryption::Key::LengthBits::_256;
+            else {
+                error_message = "Invalid key length: " + kl_str + ". Use 128, 192, or 256.";
+                is_valid = false;
+                return false;
+            }
+        } catch (const std::exception&) {
+            error_message = "Invalid key length: " + kl_str + ". Use 128, 192, or 256.";
+            is_valid = false;
+            return false;
+        }
+    }
+
+    // Boolean flags
+    show_metrics = parser.has("--show-metrics");
+
+    // Structural validation
+    switch (operation) {
         case Operation::ENCRYPT:
         case Operation::DECRYPT:
-            if (this->key_file.empty()) {
-                this->error_message = "Key file is required for encryption/decryption";
+            if (key_file.empty()) {
+                error_message = "Key file is required for encryption/decryption";
                 return false;
             }
-            if (this->input_file.empty()) {
-                this->error_message = "Input file is required";
+            if (input_file.empty()) {
+                error_message = "Input file is required";
                 return false;
             }
-            if (this->output_file.empty()) {
-                this->error_message = "Output file is required";
+            if (output_file.empty()) {
+                error_message = "Output file is required";
                 return false;
             }
-            if(this->operation == Operation::DECRYPT){
-                if(this->mode_file.empty() && this->operation_mode != AESencryption::Cipher::OperationMode::Identifier::ECB){
-                    this->error_message = "Missing initial vector, nonce, counter or oder required data";
+            if (operation == Operation::DECRYPT) {
+                if (mode_file.empty() &&
+                    operation_mode != AESencryption::Cipher::OperationMode::Identifier::ECB) {
+                    error_message = "Missing initial vector, nonce, counter or oder required data";
                     return false;
                 }
             }
             break;
         case Operation::GENERATE_KEY:
-            if (this->output_file.empty()) {
-                this->error_message = "Output file is required for key generation";
+            if (output_file.empty()) {
+                error_message = "Output file is required for key generation";
                 return false;
             }
             break;
     }
-    if(this->show_metrics){
-        if (this->input_file.empty()) {
-            this->error_message = "Input file is required";
+    if (show_metrics) {
+        if (input_file.empty()) {
+            error_message = "Input file is required";
             return false;
         }
-        if (this->output_file.empty()) {
-            this->error_message = "Output file is required";
+        if (output_file.empty()) {
+            error_message = "Output file is required";
             return false;
         }
     }
-    this->is_valid = true;
+
+    is_valid = true;
     return true;
 }
 
-AESencryption::Key CryptoConfig::create_key() const {
-    if (!this->is_valid) {
-        throw std::runtime_error("Cannot create key from invalid configuration");
-    }
-    if (this->operation == Operation::GENERATE_KEY) {
-        // Generate new random key (constructor to be implemented)
-        return AESencryption::Key(this->key_length);
-    } else {
-        // Load key from file
-        try{
-            return AESencryption::Key(this->key_file.c_str());
-        } catch(const std::exception& exp){
-            throw;
-        }
-    }
-}
-
-AESencryption::Cipher::OperationMode CryptoConfig::create_optmode() const{
-    if(!this->is_valid){
-        throw std::runtime_error("Cannot create operation mode object from invalid configuration");
-    }
-    if(!this->mode_file.empty()){
-        try{
-            return AESencryption::Cipher::OperationMode::loadFromFile(this->mode_file);
-        } catch(const std::exception& e){
-            throw;
-        }
-    }
-    return AESencryption::Cipher::OperationMode(this->operation_mode);
-}
-
-ArgumentParser::ArgumentParser(int argc_, const char** argv_) : argc(argc_), argv(argv_) {}
-
-CryptoConfig ArgumentParser::parse() {
-    if (argc < 2) {
-        this->config.error_message = "No arguments provided. Use --help for usage information.";
-        this->config.is_valid = false;
-        return this->config;
-    }
-
-    // Parse arguments
-    for (int i = 1; i < argc; i++) {
-        std::string arg(argv[i]);
-
-        // Options that require an additional argument
-        if (arg == "--key" && i + 1 < argc) {
-            this->config.key_file = argv[++i];
-        }
-        else if (arg == "--input" && i + 1 < argc) {
-            this->config.input_file = argv[++i];
-        }
-        else if (arg == "--output" && i + 1 < argc) {
-            this->config.output_file = argv[++i];
-        }
-        else if (arg == "--mode-data" && i + 1 < argc) {
-            this->config.mode_file = argv[++i];
-        }
-        else if (arg == "--mode" && i + 1 < argc) {
-            std::string mode(argv[++i]);
-            if (mode == "ECB") {
-                this->config.operation_mode = AESencryption::Cipher::OperationMode::Identifier::ECB;
-            } else if (mode == "CBC") {
-                this->config.operation_mode = AESencryption::Cipher::OperationMode::Identifier::CBC;
-            } else if (mode == "OFB") {
-                this->config.operation_mode = AESencryption::Cipher::OperationMode::Identifier::OFB;
-            } else if (mode == "CTR") {
-                this->config.operation_mode = AESencryption::Cipher::OperationMode::Identifier::CTR;
-            } else {
-                this->config.error_message = "Invalid mode: " + mode + ". Use ECB, CBC, OFB, or CTR.";
-                this->config.is_valid = false;
-                return this->config;
-            }
-        }
-        else if (arg == "--key-length" && i + 1 < argc) {
-            int bits = std::stoi(argv[++i]);
-            if (bits == 128) {
-                this->config.key_length = AESencryption::Key::LengthBits::_128;
-            } else if (bits == 192) {
-                this->config.key_length = AESencryption::Key::LengthBits::_192;
-            } else if (bits == 256) {
-                this->config.key_length = AESencryption::Key::LengthBits::_256;
-                } else {
-                this->config.error_message = "Invalid key length: " + std::to_string(bits) +
-                                     ". Use 128, 192, or 256.";
-                this->config.is_valid = false;
-                return this->config;
-            }
-        }   // Options that do not require an additional argument
-        else if (arg == "--generate-key") {
-            this->config.operation = CryptoConfig::Operation::GENERATE_KEY;
-        }
-        else if (arg == "--encrypt") {
-            this->config.operation = CryptoConfig::Operation::ENCRYPT;
-        }
-        else if (arg == "--decrypt") {
-            this->config.operation = CryptoConfig::Operation::DECRYPT;
-        }
-        else if (arg == "--show-metrics") {
-            this->config.show_metrics = true;
-        }
-        else if (arg == "--help") {
-            print_help();
-            this->config.is_valid = false;
-            return this->config;
-        }
-        else {
-            this->config.error_message = "Unknown argument: " + arg;
-            this->config.is_valid = false;
-            return this->config;
-        }
-    }
-
-    // Validate the configuration
-    this->config.validate();
-    return this->config;
-}
-
-CryptoConfig ArgumentParser::get_config() const {
-    return this->config;
-}
-
-void ArgumentParser::print_help() const{
-    std::cout << this->argv[0] << ". AES Encryption Tool\n\n"
+void BmpCryptoConfig::print_help(const ArgumentParser& parser) const {
+    const char* prog = parser.program_name();
+    std::cout << prog << ". AES Encryption Tool\n\n"
               << "Usage:\n"
-              << "\tEncryption\t" << this->argv[0] << " --encrypt --key <keyfile> --input <file> --output <file> [options]\n"
-              << "\tDecryption\t" << this->argv[0] << " --decrypt --key <keyfile> --input <file> --output <file> --mode-data <file> [options]\n"
-              << "\tKey Generation:\t" << this->argv[0] << " --generate-key --key-length <bits> --output <file>\n\n"
+              << "\tEncryption\t"   << prog << " --encrypt --key <keyfile> --input <file> --output <file> [options]\n"
+              << "\tDecryption\t"   << prog << " --decrypt --key <keyfile> --input <file> --output <file> --mode-data <file> [options]\n"
+              << "\tKey Generation:\t" << prog << " --generate-key --key-length <bits> --output <file>\n\n"
               << "Options:\n"
               << "\t--key-length <bits>      Key length: 128, 192, or 256 (default: 128)\n"
               << "\t--mode <ECB|CBC|OFB|CTR> Operation mode (default: CBC)\n"
               << "\t--mode-data <file>       Required data for specific operation mode\n"
               << "\t--show-metrics           Show statistical metrics from input and output\n"
               << "\t--help                   Show this help message\n";
+}
+
+AESencryption::Key BmpCryptoConfig::create_key() const {
+    if (!is_valid)
+        throw std::runtime_error("Cannot create key from invalid configuration");
+    if (operation == Operation::GENERATE_KEY)
+        return AESencryption::Key(key_length);
+    try {
+        return AESencryption::Key(key_file.c_str());
+    } catch (const std::exception&) {
+        throw;
+    }
+}
+
+AESencryption::Cipher::OperationMode BmpCryptoConfig::create_optmode() const {
+    if (!is_valid)
+        throw std::runtime_error("Cannot create operation mode object from invalid configuration");
+    if (!mode_file.empty()) {
+        try {
+            return AESencryption::Cipher::OperationMode::loadFromFile(mode_file);
+        } catch (const std::exception&) {
+            throw;
+        }
+    }
+    return AESencryption::Cipher::OperationMode(operation_mode);
 }
