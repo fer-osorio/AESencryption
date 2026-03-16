@@ -53,7 +53,7 @@ public:
 	* @param output_path The path to save the file to.
 	* @throws runtime_error if saving fail.
 	*/
-	virtual void save(const std::filesystem::path& output_path) const;
+	virtual void save(const std::filesystem::path& output_path = "") const;
 
 	/**
 	* @brief Applies an encryption algorithm to the file's data.

@@ -29,7 +29,10 @@ void FileBase::load() {
 
 void FileBase::save(const std::filesystem::path& output_path) const{
     std::ofstream file;
-    file.open(this->file_path, std::ios::binary);
+    if(output_path.empty())
+        file.open(this->file_path, std::ios::binary);
+    else
+        file.open(output_path, std::ios::binary);
     if(!file.is_open()) {
         throw std::runtime_error(
             "In member function bool FileBase::save(const std::filesystem::path& output_path) const: Could not open file."
