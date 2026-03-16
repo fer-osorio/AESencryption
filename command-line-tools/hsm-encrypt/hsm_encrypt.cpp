@@ -26,21 +26,20 @@ static void print_usage(const char* prog) {
         << "                   e.g. /usr/lib64/softhsm/libsofthsm2.so\n"
         << "  --token  LABEL   Token label\n"
         << "  --pin    PIN     User PIN\n"
-        << "  --mode   MODE    Operation mode: ecb | cbc | ofb | ctr\n"
+        << "  --mode   MODE    Operation mode: ecb | cbc | ctr\n"
         << "  --keybits N      Key length in bits: 128 | 192 | 256\n"
         << "  --key    LABEL   Key label in the HSM\n"
         << "  --input  FILE    Input file path\n"
         << "  --output FILE    Output file path\n"
         << "\nOptional:\n"
         << "  --decrypt        Decrypt instead of encrypt (default: encrypt)\n"
-        << "  --iv     HEX     16-byte IV as 32 hex characters (CBC/OFB/CTR)\n"
+        << "  --iv     HEX     16-byte IV as 32 hex characters (CBC/CTR)\n"
         << "                   If omitted, a random IV is generated and printed\n";
 }
 
 static Cipher::OperationMode::Identifier parse_mode(const std::string& s) {
     if (s == "ecb") return Cipher::OperationMode::Identifier::ECB;
     if (s == "cbc") return Cipher::OperationMode::Identifier::CBC;
-    if (s == "ofb") return Cipher::OperationMode::Identifier::OFB;
     if (s == "ctr") return Cipher::OperationMode::Identifier::CTR;
     throw std::invalid_argument("Unknown mode: " + s);
 }
