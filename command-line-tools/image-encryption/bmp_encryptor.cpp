@@ -12,15 +12,18 @@ using namespace File;
 
 int main(int argc, const char* argv[]){
     // Parsing arguments. Converting user intput to valid arguments for this program.
-    const CryptoConfig cryp_conf= ArgumentParser(argc,argv).parse();
+    ArgumentParser parser(argc, argv);
+    parser.parse();
+    BmpCryptoConfig cryp_conf;
+    cryp_conf.validate(parser);
     if(!cryp_conf.is_valid){
         std::cerr << cryp_conf.error_message;
         return 1;
     }
 
     try{
-        if(cryp_conf.operation == CryptoConfig::Operation::ENCRYPT
-            || cryp_conf.operation == CryptoConfig::Operation::DECRYPT){
+        if(cryp_conf.operation == BmpCryptoConfig::Operation::ENCRYPT
+            || cryp_conf.operation == BmpCryptoConfig::Operation::DECRYPT){
             Bitmap bmp(cryp_conf.input_file);
             Cipher::OperationMode optmode = cryp_conf.create_optmode();
             Cipher cipher(cryp_conf.create_key(), optmode);
@@ -31,8 +34,8 @@ int main(int argc, const char* argv[]){
             if(cryp_conf.show_metrics){
                 input_rand = std::make_unique<DataRandomness>(bmp.calculate_randomness());
             }
-            if(cryp_conf.operation == CryptoConfig::Operation::ENCRYPT) bmp.apply_encryption(cipher);
-            if(cryp_conf.operation == CryptoConfig::Operation::DECRYPT) bmp.apply_decryption(cipher);
+            if(cryp_conf.operation == BmpCryptoConfig::Operation::ENCRYPT) bmp.apply_encryption(cipher);
+            if(cryp_conf.operation == BmpCryptoConfig::Operation::DECRYPT) bmp.apply_decryption(cipher);
             if(cryp_conf.show_metrics){
                 output_rand = std::make_unique<DataRandomness>(bmp.calculate_randomness());
                 output_metrics_results(*input_rand, *output_rand);
@@ -45,7 +48,7 @@ int main(int argc, const char* argv[]){
             // Return with success status
             return 0;
         }
-        if(cryp_conf.operation == CryptoConfig::Operation::GENERATE_KEY){
+        if(cryp_conf.operation == BmpCryptoConfig::Operation::GENERATE_KEY){
             Key key(cryp_conf.key_length);
             key.save(cryp_conf.output_file.c_str());
             return 0;
