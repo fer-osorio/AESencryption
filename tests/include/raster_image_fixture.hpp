@@ -1,0 +1,32 @@
+#ifndef RASTER_IMAGE_FIXTURE_HPP
+#define RASTER_IMAGE_FIXTURE_HPP
+
+#include <filesystem>
+#include <cstdint>
+
+namespace fs = std::filesystem;
+
+struct RasterImageFixture {
+    fs::path testDataDir     = fs::path("tests/data/raster_image");
+    fs::path validPngPath    = testDataDir / "valid_10x10.png";
+    fs::path smallPngPath    = testDataDir / "small_2x2.png";
+    fs::path largePngPath    = testDataDir / "large_100x100.png";
+    fs::path corruptPath     = testDataDir / "corrupt.png";
+    fs::path emptyPath       = testDataDir / "empty.png";
+    fs::path nonexistentPath = testDataDir / "does_not_exist.png";
+    fs::path validJpegPath   = testDataDir / "valid_10x10.jpg";
+
+    RasterImageFixture();
+    ~RasterImageFixture();
+
+    static void createValidPng(const fs::path& path, int width, int height);
+
+private:
+    void setupTestEnvironment();
+    void cleanupTestEnvironment();
+    void createCorruptFile(const fs::path& path);
+    void createEmptyFile(const fs::path& path);
+    void createValidJpeg(const fs::path& path, int width, int height, int quality = 90);
+};
+
+#endif // RASTER_IMAGE_FIXTURE_HPP
