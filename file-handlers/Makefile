@@ -16,7 +16,10 @@ SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Local includes (in addition to common includes)
-INCLUDES = -I$(PROJECT_ROOT)/file-handlers/$(INCDIR) -I$(PROJECT_ROOT)/$(INCDIR) -I$(PROJECT_ROOT)/metrics-analysis/$(INCDIR)
+INCLUDES = -I$(PROJECT_ROOT)/file-handlers/$(INCDIR) \
+           -I$(PROJECT_ROOT)/$(INCDIR) \
+           -I$(PROJECT_ROOT)/metrics-analysis/$(INCDIR) \
+           -I$(PROJECT_ROOT)/third-party/stb
 
 # Dependencies on other modules
 DEPS = $(LIBDIR)/libaesencryption_cpp.a $(LIBDIR)/libmetricsanalysis.a
@@ -41,6 +44,12 @@ dependencies:
 # Library target
 $(TARGET_LIB): check-deps $(OBJECTS) | $(LIBDIR) $(OBJDIR)
 	$(call create_static_lib,$@,$(OBJECTS))
+
+# Compile stb implementation without strict warnings (third-party code)
+$(OBJDIR)/stb_impl.o: $(SRCDIR)/stb_impl.cpp | $(OBJDIR)
+	$(call print_building,"C++ object stb:\n\t\t$@")
+	@$(CXX) $(CXX_STANDARD) -I$(PROJECT_ROOT)/third-party/stb -w -MMD -MP -c $< -o $@
+	$(call print_success,"Compiled:\n\t\t$@")
 
 # Compilation rule for C++ files
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
