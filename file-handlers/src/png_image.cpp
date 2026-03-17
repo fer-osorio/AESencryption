@@ -8,6 +8,13 @@ PNG::PNG(const std::filesystem::path& path)
     : RasterImage(path) {}
 
 void PNG::save(const std::filesystem::path& output_path) const {
+    if (this->data.empty()) {
+        throw std::logic_error(
+            "In member function "
+            "void PNG::save(const std::filesystem::path& output_path) const"
+            ": Trying to save empty png."
+        );
+    }
     const auto& out = output_path.empty() ? this->file_path : output_path;
     int result = stbi_write_png(
         out.string().c_str(),
