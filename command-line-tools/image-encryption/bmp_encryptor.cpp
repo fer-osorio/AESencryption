@@ -10,6 +10,44 @@ using namespace AESencryption;
 using namespace CLIConfig;
 using namespace File;
 
+class BmpCryptoConfig : public CLIConfig::FileCryptoConfig {
+public:
+    bool validate(const CLIConfig::ArgumentParser& parser) override {
+        if (!FileCryptoConfig::validate(parser)) return false;
+        show_metrics = parser.has("--show-metrics");
+        if (show_metrics) {
+            if (input_file.empty()) {
+                error_message = "Input file is required";
+                is_valid = false;
+                return false;
+            }
+            if (output_file.empty()) {
+                error_message = "Output file is required";
+                is_valid = false;
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void print_help(const CLIConfig::ArgumentParser& parser) const override {
+        const char* prog = parser.program_name();
+        std::cout << prog << ". AES Encryption Tool\n\n"
+                  << "Usage:\n"
+                  << "\tEncryption\t"   << prog << " --encrypt --key <keyfile> --input <file> --output <file> [options]\n"
+                  << "\tDecryption\t"   << prog << " --decrypt --key <keyfile> --input <file> --output <file> --mode-data <file> [options]\n"
+                  << "\tKey Generation:\t" << prog << " --generate-key --key-length <bits> --output <file>\n\n"
+                  << "Options:\n"
+                  << "\t--key-length <bits>      Key length: 128, 192, or 256 (default: 128)\n"
+                  << "\t--mode <ECB|CBC|OFB|CTR> Operation mode (default: CBC)\n"
+                  << "\t--mode-data <file>       Required data for specific operation mode\n"
+                  << "\t--show-metrics           Show statistical metrics from input and output\n"
+                  << "\t--help                   Show this help message\n";
+    }
+
+    bool show_metrics = false;
+};
+
 int main(int argc, const char* argv[]){
     // Parsing arguments. Converting user intput to valid arguments for this program.
     ArgumentParser parser(argc, argv);

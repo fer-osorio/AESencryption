@@ -38,13 +38,13 @@ public:
     std::string error_message;
 };
 
-// Concrete config for the BMP/AES encryptor tool.
-class BmpCryptoConfig : public BaseCryptoConfig {
+// Concrete config for generic file encryption tools.
+class FileCryptoConfig : public BaseCryptoConfig {
 public:
     enum class Operation { ENCRYPT, DECRYPT, GENERATE_KEY };
 
     bool validate(const ArgumentParser& parser) override;
-    void print_help(const ArgumentParser& parser) const;
+    virtual void print_help(const ArgumentParser& parser) const;
 
     // Factory methods
     AESencryption::Key                           create_key()     const;
@@ -55,7 +55,6 @@ public:
     std::filesystem::path                            key_file, input_file, output_file, mode_file;
     AESencryption::Key::LengthBits                   key_length     = AESencryption::Key::LengthBits::_128;
     AESencryption::Cipher::OperationMode::Identifier operation_mode = AESencryption::Cipher::OperationMode::Identifier::CBC;
-    bool                                             show_metrics   = false;
 };
 
 } // namespace CLIConfig

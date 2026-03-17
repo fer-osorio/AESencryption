@@ -104,7 +104,7 @@ bool test_valid_encryption_arguments() {
     // Parse arguments
     CLIConfig::ArgumentParser parser(argc, argv);
     parser.parse();
-    CLIConfig::BmpCryptoConfig config;
+    CLIConfig::FileCryptoConfig config;
     config.validate(parser);
 
     // Test: Configuration should be valid
@@ -112,7 +112,7 @@ bool test_valid_encryption_arguments() {
     success &= ASSERT_TRUE(config.error_message.empty(), "No error message should be present");
 
     // Test: Configuration values match arguments
-    success &= ASSERT_TRUE(config.operation == CLIConfig::BmpCryptoConfig::Operation::ENCRYPT,
+    success &= ASSERT_TRUE(config.operation == CLIConfig::FileCryptoConfig::Operation::ENCRYPT,
                 "Operation should be ENCRYPT");
     success &= ASSERT_TRUE(config.key_file == "test_key.bin", "Key file should match argument");
     success &= ASSERT_TRUE(config.input_file == "plaintext.txt", "Input file should match argument");
@@ -147,7 +147,7 @@ bool test_argument_to_crypto_type_conversion() {
 
         CLIConfig::ArgumentParser parser(argc, argv);
         parser.parse();
-        CLIConfig::BmpCryptoConfig config;
+        CLIConfig::FileCryptoConfig config;
         config.validate(parser);
 
         success &= ASSERT_TRUE(config.operation_mode == AESencryption::Cipher::OperationMode::Identifier::ECB,
@@ -169,7 +169,7 @@ bool test_argument_to_crypto_type_conversion() {
 
         CLIConfig::ArgumentParser parser(argc, argv);
         parser.parse();
-        CLIConfig::BmpCryptoConfig config;
+        CLIConfig::FileCryptoConfig config;
         config.validate(parser);
 
         success &= ASSERT_TRUE(config.is_valid,
@@ -204,7 +204,7 @@ bool test_invalid_arguments_prevent_crypto_initialization() {
 
         CLIConfig::ArgumentParser parser(argc, argv);
         parser.parse();
-        CLIConfig::BmpCryptoConfig config;
+        CLIConfig::FileCryptoConfig config;
         config.validate(parser);
 
         success &= ASSERT_TRUE(!config.is_valid, "Invalid key length should mark config invalid");
@@ -228,7 +228,7 @@ bool test_invalid_arguments_prevent_crypto_initialization() {
 
         CLIConfig::ArgumentParser parser(argc, argv);
         parser.parse();
-        CLIConfig::BmpCryptoConfig config;
+        CLIConfig::FileCryptoConfig config;
         config.validate(parser);
 
         success &= ASSERT_TRUE(!config.is_valid, "Invalid mode should mark config invalid");
@@ -238,7 +238,7 @@ bool test_invalid_arguments_prevent_crypto_initialization() {
 
     // Test: Attempting to create key from invalid config should throw
     {
-        CLIConfig::BmpCryptoConfig invalid_config;
+        CLIConfig::FileCryptoConfig invalid_config;
         invalid_config.is_valid = false;
         invalid_config.error_message = "Test error";
 
@@ -273,7 +273,7 @@ bool test_missing_required_arguments() {
 
         CLIConfig::ArgumentParser parser(argc, argv);
         parser.parse();
-        CLIConfig::BmpCryptoConfig config;
+        CLIConfig::FileCryptoConfig config;
         config.validate(parser);
 
         success &= ASSERT_TRUE(!config.is_valid, "Missing key file should invalidate config");
@@ -295,7 +295,7 @@ bool test_missing_required_arguments() {
 
         CLIConfig::ArgumentParser parser(argc, argv);
         parser.parse();
-        CLIConfig::BmpCryptoConfig config;
+        CLIConfig::FileCryptoConfig config;
         config.validate(parser);
 
         success &= ASSERT_TRUE(!config.is_valid, "Missing input file should invalidate config");
@@ -311,7 +311,7 @@ bool test_missing_required_arguments() {
 
         CLIConfig::ArgumentParser parser(argc, argv);
         parser.parse();
-        CLIConfig::BmpCryptoConfig config;
+        CLIConfig::FileCryptoConfig config;
         config.validate(parser);
 
         success &= ASSERT_TRUE(!config.is_valid, "No arguments should invalidate config");
@@ -339,7 +339,7 @@ bool test_default_values() {
 
     CLIConfig::ArgumentParser parser(argc, argv);
     parser.parse();
-    CLIConfig::BmpCryptoConfig config;
+    CLIConfig::FileCryptoConfig config;
     config.validate(parser);
 
     success &= ASSERT_TRUE(config.is_valid, "Config should be valid with defaults");
@@ -372,11 +372,11 @@ bool test_config_creates_functional_crypto_objects() {
 
     CLIConfig::ArgumentParser parser(argc, argv);
     parser.parse();
-    CLIConfig::BmpCryptoConfig config;
+    CLIConfig::FileCryptoConfig config;
     config.validate(parser);
 
     success &= ASSERT_TRUE(config.is_valid, "Key generation config should be valid");
-    success &= ASSERT_TRUE(config.operation == CLIConfig::BmpCryptoConfig::Operation::GENERATE_KEY,
+    success &= ASSERT_TRUE(config.operation == CLIConfig::FileCryptoConfig::Operation::GENERATE_KEY,
                 "Operation should be GENERATE_KEY");
     success &= ASSERT_TRUE(config.key_length == AESencryption::Key::LengthBits::_256,
                 "Key length should be 256");
@@ -407,10 +407,10 @@ bool test_argument_format_variations() {
 
         CLIConfig::ArgumentParser parser(argc, argv);
         parser.parse();
-        CLIConfig::BmpCryptoConfig config;
+        CLIConfig::FileCryptoConfig config;
         config.validate(parser);
 
-        success &= ASSERT_TRUE(config.operation == CLIConfig::BmpCryptoConfig::Operation::DECRYPT,
+        success &= ASSERT_TRUE(config.operation == CLIConfig::FileCryptoConfig::Operation::DECRYPT,
                     "Program option --decrypt should affect operation detection");
     }
 

@@ -46,9 +46,9 @@ const char* ArgumentParser::program_name() const {
     return (argc_ > 0) ? argv_[0] : "";
 }
 
-// ── BmpCryptoConfig ───────────────────────────────────────────────────────────
+// ── FileCryptoConfig ──────────────────────────────────────────────────────────
 
-bool BmpCryptoConfig::validate(const ArgumentParser& parser) {
+bool FileCryptoConfig::validate(const ArgumentParser& parser) {
     if (parser.has("--help")) {
         print_help(parser);
         is_valid = false;
@@ -101,9 +101,6 @@ bool BmpCryptoConfig::validate(const ArgumentParser& parser) {
         }
     }
 
-    // Boolean flags
-    show_metrics = parser.has("--show-metrics");
-
     // Structural validation
     switch (operation) {
         case Operation::ENCRYPT:
@@ -135,22 +132,12 @@ bool BmpCryptoConfig::validate(const ArgumentParser& parser) {
             }
             break;
     }
-    if (show_metrics) {
-        if (input_file.empty()) {
-            error_message = "Input file is required";
-            return false;
-        }
-        if (output_file.empty()) {
-            error_message = "Output file is required";
-            return false;
-        }
-    }
 
     is_valid = true;
     return true;
 }
 
-void BmpCryptoConfig::print_help(const ArgumentParser& parser) const {
+void FileCryptoConfig::print_help(const ArgumentParser& parser) const {
     const char* prog = parser.program_name();
     std::cout << prog << ". AES Encryption Tool\n\n"
               << "Usage:\n"
@@ -161,11 +148,10 @@ void BmpCryptoConfig::print_help(const ArgumentParser& parser) const {
               << "\t--key-length <bits>      Key length: 128, 192, or 256 (default: 128)\n"
               << "\t--mode <ECB|CBC|OFB|CTR> Operation mode (default: CBC)\n"
               << "\t--mode-data <file>       Required data for specific operation mode\n"
-              << "\t--show-metrics           Show statistical metrics from input and output\n"
               << "\t--help                   Show this help message\n";
 }
 
-AESencryption::Key BmpCryptoConfig::create_key() const {
+AESencryption::Key FileCryptoConfig::create_key() const {
     if (!is_valid)
         throw std::runtime_error("Cannot create key from invalid configuration");
     if (operation == Operation::GENERATE_KEY)
@@ -177,7 +163,7 @@ AESencryption::Key BmpCryptoConfig::create_key() const {
     }
 }
 
-AESencryption::Cipher::OperationMode BmpCryptoConfig::create_optmode() const {
+AESencryption::Cipher::OperationMode FileCryptoConfig::create_optmode() const {
     if (!is_valid)
         throw std::runtime_error("Cannot create operation mode object from invalid configuration");
     if (!mode_file.empty()) {
