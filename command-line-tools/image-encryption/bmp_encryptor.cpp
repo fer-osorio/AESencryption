@@ -53,6 +53,10 @@ int main(int argc, const char* argv[]){
     ArgumentParser parser(argc, argv);
     parser.parse();
     BmpCryptoConfig cryp_conf;
+    if(argc < 2) {
+        cryp_conf.print_help(parser);
+        return 1;
+    }
     cryp_conf.validate(parser);
     if(!cryp_conf.is_valid){
         std::cerr << cryp_conf.error_message;
