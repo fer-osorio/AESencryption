@@ -42,7 +42,8 @@ INCLUDES = \
     -I$(PROJECT_ROOT)/include \
     -I$(PROJECT_ROOT)/data-encryption/include \
     -I$(PROJECT_ROOT)/metrics-analysis/include \
-    -I$(PROJECT_ROOT)/hsm/include
+    -I$(PROJECT_ROOT)/hsm/include \
+    -I$(PROJECT_ROOT)/third-party/stb
 
 LDFLAGS += -L$(PROJECT_ROOT)/lib
 LIBS = -lcryptocli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetricsanalysis -ltest_vectors -lhsm -ldl
@@ -132,8 +133,10 @@ check-deps:
 # Build dependencies (optional - for convenience)
 dependencies:
 	$(call print_info,"Building project dependencies...")
+	@$(MAKE) -C $(PROJECT_ROOT)/test-framework
 	@$(MAKE) -C $(PROJECT_ROOT)/data-encryption
 	@$(MAKE) -C $(PROJECT_ROOT)/src
+	@$(MAKE) -C $(PROJECT_ROOT)/hsm
 	@$(MAKE) -C $(PROJECT_ROOT)/metrics-analysis
 	@$(MAKE) -C $(PROJECT_ROOT)/file-handlers
 	@$(MAKE) -C $(PROJECT_ROOT)/crypto-cli
