@@ -6,11 +6,13 @@
 
 namespace fs = std::filesystem;
 
+// Number of bytes written by the fixture's binary test asset.
+static constexpr size_t FILE_BASE_FIXTURE_FILE_SIZE = 64;
+
 struct FileBaseFixture {
     fs::path testDataDir     = fs::path("tests/data/file_base");
-    fs::path validPngPath    = testDataDir / "valid_10x10.png";
-    fs::path nonexistentPath = testDataDir / "does_not_exist.png";
-    fs::path emptyDirPath    = testDataDir / "empty_subdir";
+    fs::path validFilePath   = testDataDir / "valid_64bytes.bin";
+    fs::path nonexistentPath = testDataDir / "does_not_exist.bin";
 
     FileBaseFixture();
     ~FileBaseFixture();
@@ -18,7 +20,7 @@ struct FileBaseFixture {
 private:
     void setupTestEnvironment();
     void cleanupTestEnvironment();
-    void createValidPng(const fs::path& path, int width, int height);
+    void createBinaryFile(const fs::path& path, size_t size);
 };
 
 #endif // FILE_BASE_FIXTURE_HPP

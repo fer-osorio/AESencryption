@@ -1,14 +1,12 @@
 #include "../include/file_base_fixture.hpp"
-#include "../../third-party/stb/stb_image_write.h"
-#include <vector>
+#include <fstream>
 
 FileBaseFixture::FileBaseFixture() { setupTestEnvironment(); }
 FileBaseFixture::~FileBaseFixture()  { cleanupTestEnvironment(); }
 
 void FileBaseFixture::setupTestEnvironment() {
     fs::create_directories(testDataDir);
-    fs::create_directories(emptyDirPath);
-    createValidPng(validPngPath, 10, 10);
+    createBinaryFile(validFilePath, FILE_BASE_FIXTURE_FILE_SIZE);
 }
 
 void FileBaseFixture::cleanupTestEnvironment() {
@@ -20,15 +18,9 @@ void FileBaseFixture::cleanupTestEnvironment() {
     }
 }
 
-void FileBaseFixture::createValidPng(const fs::path& path, int width, int height) {
-    // Build a known-content RGB image: pixel(x,y) = (x*25, y*25, 128)
-    std::vector<uint8_t> pixels(width * height * 3);
-    for (int y = 0; y < height; y++)
-        for (int x = 0; x < width; x++) {
-            int idx = (y * width + x) * 3;
-            pixels[idx]     = static_cast<uint8_t>(x * 25);
-            pixels[idx + 1] = static_cast<uint8_t>(y * 25);
-            pixels[idx + 2] = 128;
-        }
-    stbi_write_png(path.string().c_str(), width, height, 3, pixels.data(), width * 3);
+void FileBaseFixture::createBinaryFile(const fs::path& path, size_t size) {
+    // Write bytes 0x00, 0x01, 0x02, ... (mod 256) — known, deterministic content.
+    std::ofstream f(path, std::ios::binary);
+    for (size_t i = 0; i < size; i++)
+        f.put(static_cast<char>(i & 0xFF));
 }
