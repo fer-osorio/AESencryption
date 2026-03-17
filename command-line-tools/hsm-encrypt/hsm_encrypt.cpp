@@ -4,6 +4,7 @@
 #include "../../include/cipher.hpp"
 #include "../../include/key.hpp"
 #include "../../file-handlers/include/file_base.hpp"
+#include "../../crypto-cli/include/cli_config.hpp"
 
 #include <iostream>
 #include <string>
@@ -17,25 +18,6 @@ using namespace AESencryption;
 using namespace AESencryption::HSM;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-static void print_usage(const char* prog) {
-    std::cerr
-        << "Usage: " << prog << " [options]\n"
-        << "\nRequired:\n"
-        << "  --lib    PATH    PKCS#11 library path\n"
-        << "                   e.g. /usr/lib64/pkcs11/libsofthsm2.so\n"
-        << "  --token  LABEL   Token label\n"
-        << "  --pin    PIN     User PIN\n"
-        << "  --mode   MODE    Operation mode: ecb | cbc | ctr\n"
-        << "  --keybits N      Key length in bits: 128 | 192 | 256\n"
-        << "  --key    LABEL   Key label in the HSM\n"
-        << "  --input  FILE    Input file path\n"
-        << "  --output FILE    Output file path\n"
-        << "\nOptional:\n"
-        << "  --decrypt        Decrypt instead of encrypt (default: encrypt)\n"
-        << "  --iv     HEX     16-byte IV as 32 hex characters (CBC/CTR)\n"
-        << "                   If omitted, a random IV is generated and printed\n";
-}
 
 static Cipher::OperationMode::Identifier parse_mode(const std::string& s) {
     if (s == "ecb") return Cipher::OperationMode::Identifier::ECB;
@@ -65,6 +47,89 @@ static std::vector<uint8_t> parse_hex_iv(const std::string& hex) {
     return iv;
 }
 
+// ── HSMCryptoConfig ───────────────────────────────────────────────────────────
+
+class HSMCryptoConfig : public CLIConfig::BaseCryptoConfig {
+public:
+    bool validate(const CLIConfig::ArgumentParser& parser) override;
+    void print_help(const CLIConfig::ArgumentParser& parser) const;
+
+    std::string lib_path, token, pin, key_label, input_file, output_file;
+    std::string iv_hex;
+    bool        decrypt        = false;
+    Cipher::OperationMode::Identifier operation_mode = Cipher::OperationMode::Identifier::CBC;
+    Key::LengthBits                   key_length     = Key::LengthBits::_128;
+};
+
+bool HSMCryptoConfig::validate(const CLIConfig::ArgumentParser& parser) {
+    lib_path    = parser.getOr("--lib",     "");
+    token       = parser.getOr("--token",   "");
+    pin         = parser.getOr("--pin",     "");
+    key_label   = parser.getOr("--key",     "");
+    input_file  = parser.getOr("--input",   "");
+    output_file = parser.getOr("--output",  "");
+    iv_hex      = parser.getOr("--iv",      "");
+    decrypt     = parser.has("--decrypt");
+
+    // Check required fields
+    for (auto& [name, val] : std::vector<std::pair<std::string, std::string>>{
+            {"--lib",     lib_path},  {"--token",   token},
+            {"--pin",     pin},       {"--key",     key_label},
+            {"--input",   input_file},{"--output",  output_file}}) {
+        if (val.empty()) {
+            error_message = "Missing required argument: " + name;
+            is_valid = false;
+            return false;
+        }
+    }
+
+    std::string mode_str    = parser.getOr("--mode",    "");
+    std::string keybits_str = parser.getOr("--keybits", "");
+
+    if (mode_str.empty()) {
+        error_message = "Missing required argument: --mode";
+        is_valid = false;
+        return false;
+    }
+    if (keybits_str.empty()) {
+        error_message = "Missing required argument: --keybits";
+        is_valid = false;
+        return false;
+    }
+
+    try {
+        operation_mode = parse_mode(mode_str);
+        key_length     = parse_keybits(keybits_str);
+    } catch (const std::exception& e) {
+        error_message = e.what();
+        is_valid = false;
+        return false;
+    }
+
+    is_valid = true;
+    return true;
+}
+
+void HSMCryptoConfig::print_help(const CLIConfig::ArgumentParser& parser) const {
+    const char* prog = parser.program_name();
+    std::cerr
+        << "Usage: " << prog << " [options]\n"
+        << "\nRequired:\n"
+        << "  --lib    PATH    PKCS#11 library path\n"
+        << "                   e.g. /usr/lib64/pkcs11/libsofthsm2.so\n"
+        << "  --token  LABEL   Token label\n"
+        << "  --pin    PIN     User PIN\n"
+        << "  --mode   MODE    Operation mode: ecb | cbc | ctr\n"
+        << "  --keybits N      Key length in bits: 128 | 192 | 256\n"
+        << "  --key    LABEL   Key label in the HSM\n"
+        << "  --input  FILE    Input file path\n"
+        << "  --output FILE    Output file path\n"
+        << "\nOptional:\n"
+        << "  --decrypt        Decrypt instead of encrypt (default: encrypt)\n"
+        << "  --iv     HEX     16-byte IV as 32 hex characters (CBC/CTR)\n"
+        << "                   If omitted, a random IV is generated and printed\n";
+}
+
 static std::string bytes_to_hex(const std::vector<uint8_t>& bytes) {
     std::ostringstream oss;
     for (auto b : bytes)
@@ -80,69 +145,37 @@ static bool mode_needs_iv(Cipher::OperationMode::Identifier m) {
 // ── main ──────────────────────────────────────────────────────────────────────
 
 int main(int argc, const char* argv[]) {
-    if (argc < 2) { print_usage(argv[0]); return 1; }
-
-    std::string lib_path, token_label, pin, mode_str, keybits_str,
-                key_label, input_path, output_path, iv_hex;
-    bool decrypt = false;
-
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        auto next = [&]() -> std::string {
-            if (i + 1 >= argc)
-                throw std::invalid_argument("Missing value for " + arg);
-            return argv[++i];
-        };
-        if      (arg == "--lib")     lib_path     = next();
-        else if (arg == "--token")   token_label  = next();
-        else if (arg == "--pin")     pin          = next();
-        else if (arg == "--mode")    mode_str     = next();
-        else if (arg == "--keybits") keybits_str  = next();
-        else if (arg == "--key")     key_label    = next();
-        else if (arg == "--input")   input_path   = next();
-        else if (arg == "--output")  output_path  = next();
-        else if (arg == "--iv")      iv_hex       = next();
-        else if (arg == "--decrypt") decrypt      = true;
-        else { std::cerr << "Unknown argument: " << arg << "\n"; return 1; }
-    }
-
-    // Validate required arguments.
-    for (auto& [name, val] : std::vector<std::pair<std::string,std::string>>{
-            {"--lib",    lib_path},    {"--token",   token_label},
-            {"--pin",    pin},         {"--mode",    mode_str},
-            {"--keybits",keybits_str}, {"--key",     key_label},
-            {"--input",  input_path},  {"--output",  output_path}}) {
-        if (val.empty()) {
-            std::cerr << "Missing required argument: " << name << "\n";
-            print_usage(argv[0]);
-            return 1;
-        }
+    CLIConfig::ArgumentParser parser(argc, argv);
+    parser.parse();
+    HSMCryptoConfig config;
+    config.validate(parser);
+    if (!config.is_valid) {
+        std::cerr << config.error_message << "\n";
+        config.print_help(parser);
+        return 1;
     }
 
     try {
-        auto mode     = parse_mode(mode_str);
-        auto keybits  = parse_keybits(keybits_str);
-
         // ── Session & cipher setup ────────────────────────────────────────────
-        HSMSession session(lib_path, token_label, pin);
-        HSMCipher  cipher(session, mode);
+        HSMSession session(config.lib_path, config.token, config.pin);
+        HSMCipher  cipher(session, config.operation_mode);
 
         // ── Key: reuse existing or generate new ───────────────────────────────
         HSMKeyHandle key;
         try {
-            key = cipher.findKey(key_label);
-            std::cout << "Using existing HSM key: " << key_label << "\n";
+            key = cipher.findKey(config.key_label);
+            std::cout << "Using existing HSM key: " << config.key_label << "\n";
         } catch (const std::runtime_error&) {
-            key = cipher.generateKey(keybits, key_label);
-            std::cout << "Generated new HSM key:  " << key_label << "\n";
+            key = cipher.generateKey(config.key_length, config.key_label);
+            std::cout << "Generated new HSM key:  " << config.key_label << "\n";
         }
         cipher.setActiveKey(key);
 
         // ── IV handling ───────────────────────────────────────────────────────
-        if (mode_needs_iv(mode)) {
+        if (mode_needs_iv(config.operation_mode)) {
             std::vector<uint8_t> iv;
-            if (!iv_hex.empty()) {
-                iv = parse_hex_iv(iv_hex);
+            if (!config.iv_hex.empty()) {
+                iv = parse_hex_iv(config.iv_hex);
             } else {
                 // Generate a random IV via the HSM's RNG.
                 iv.resize(16);
@@ -158,20 +191,20 @@ int main(int argc, const char* argv[]) {
         }
 
         // ── File I/O via FileBase ─────────────────────────────────────────────
-        File::FileBase file(input_path);
+        File::FileBase file(config.input_file);
         file.load();
 
-        if (decrypt) {
+        if (config.decrypt) {
             file.apply_decryption(cipher);
-            std::cout << "Decrypted: " << input_path
-                      << " -> " << output_path << "\n";
+            std::cout << "Decrypted: " << config.input_file
+                      << " -> " << config.output_file << "\n";
         } else {
             file.apply_encryption(cipher);
-            std::cout << "Encrypted: " << input_path
-                      << " -> " << output_path << "\n";
+            std::cout << "Encrypted: " << config.input_file
+                      << " -> " << config.output_file << "\n";
         }
 
-        file.save(output_path);
+        file.save(config.output_file);
 
     } catch (const PKCS11Exception& e) {
         std::cerr << "[PKCS#11 error] " << e.what() << "\n";

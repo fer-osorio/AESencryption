@@ -103,14 +103,16 @@ bool test_valid_encryption_arguments() {
 
     // Parse arguments
     CLIConfig::ArgumentParser parser(argc, argv);
-    CLIConfig::CryptoConfig config = parser.parse();
+    parser.parse();
+    CLIConfig::FileCryptoConfig config;
+    config.validate(parser);
 
     // Test: Configuration should be valid
     success &= ASSERT_TRUE(config.is_valid, "Configuration should be valid with all required arguments");
     success &= ASSERT_TRUE(config.error_message.empty(), "No error message should be present");
 
     // Test: Configuration values match arguments
-    success &= ASSERT_TRUE(config.operation == CLIConfig::CryptoConfig::Operation::ENCRYPT,
+    success &= ASSERT_TRUE(config.operation == CLIConfig::FileCryptoConfig::Operation::ENCRYPT,
                 "Operation should be ENCRYPT");
     success &= ASSERT_TRUE(config.key_file == "test_key.bin", "Key file should match argument");
     success &= ASSERT_TRUE(config.input_file == "plaintext.txt", "Input file should match argument");
@@ -144,7 +146,9 @@ bool test_argument_to_crypto_type_conversion() {
             .build(argc);
 
         CLIConfig::ArgumentParser parser(argc, argv);
-        CLIConfig::CryptoConfig config = parser.parse();
+        parser.parse();
+        CLIConfig::FileCryptoConfig config;
+        config.validate(parser);
 
         success &= ASSERT_TRUE(config.operation_mode == AESencryption::Cipher::OperationMode::Identifier::ECB,
                     "String 'ECB' should convert to OperationMode::Identifier::ECB");
@@ -164,7 +168,9 @@ bool test_argument_to_crypto_type_conversion() {
             .build(argc);
 
         CLIConfig::ArgumentParser parser(argc, argv);
-        CLIConfig::CryptoConfig config = parser.parse();
+        parser.parse();
+        CLIConfig::FileCryptoConfig config;
+        config.validate(parser);
 
         success &= ASSERT_TRUE(config.is_valid,
                     "Key length " + std::to_string(bits) + " should be valid");
@@ -197,7 +203,9 @@ bool test_invalid_arguments_prevent_crypto_initialization() {
             .build(argc);
 
         CLIConfig::ArgumentParser parser(argc, argv);
-        CLIConfig::CryptoConfig config = parser.parse();
+        parser.parse();
+        CLIConfig::FileCryptoConfig config;
+        config.validate(parser);
 
         success &= ASSERT_TRUE(!config.is_valid, "Invalid key length should mark config invalid");
         success &= ASSERT_TRUE(!config.error_message.empty(), "Error message should be provided");
@@ -219,7 +227,9 @@ bool test_invalid_arguments_prevent_crypto_initialization() {
             .build(argc);
 
         CLIConfig::ArgumentParser parser(argc, argv);
-        CLIConfig::CryptoConfig config = parser.parse();
+        parser.parse();
+        CLIConfig::FileCryptoConfig config;
+        config.validate(parser);
 
         success &= ASSERT_TRUE(!config.is_valid, "Invalid mode should mark config invalid");
         success &= ASSERT_TRUE(config.error_message.find("XTS") != std::string::npos,
@@ -228,7 +238,7 @@ bool test_invalid_arguments_prevent_crypto_initialization() {
 
     // Test: Attempting to create key from invalid config should throw
     {
-        CLIConfig::CryptoConfig invalid_config;
+        CLIConfig::FileCryptoConfig invalid_config;
         invalid_config.is_valid = false;
         invalid_config.error_message = "Test error";
 
@@ -262,7 +272,9 @@ bool test_missing_required_arguments() {
             .build(argc);
 
         CLIConfig::ArgumentParser parser(argc, argv);
-        CLIConfig::CryptoConfig config = parser.parse();
+        parser.parse();
+        CLIConfig::FileCryptoConfig config;
+        config.validate(parser);
 
         success &= ASSERT_TRUE(!config.is_valid, "Missing key file should invalidate config");
         success &= ASSERT_TRUE(config.error_message.find("key") != std::string::npos ||
@@ -282,7 +294,9 @@ bool test_missing_required_arguments() {
             .build(argc);
 
         CLIConfig::ArgumentParser parser(argc, argv);
-        CLIConfig::CryptoConfig config = parser.parse();
+        parser.parse();
+        CLIConfig::FileCryptoConfig config;
+        config.validate(parser);
 
         success &= ASSERT_TRUE(!config.is_valid, "Missing input file should invalidate config");
         success &= ASSERT_TRUE(config.error_message.find("input") != std::string::npos ||
@@ -296,7 +310,9 @@ bool test_missing_required_arguments() {
         const char* argv[] = {"aes-encryption"};
 
         CLIConfig::ArgumentParser parser(argc, argv);
-        CLIConfig::CryptoConfig config = parser.parse();
+        parser.parse();
+        CLIConfig::FileCryptoConfig config;
+        config.validate(parser);
 
         success &= ASSERT_TRUE(!config.is_valid, "No arguments should invalidate config");
     }
@@ -322,7 +338,9 @@ bool test_default_values() {
         .build(argc);
 
     CLIConfig::ArgumentParser parser(argc, argv);
-    CLIConfig::CryptoConfig config = parser.parse();
+    parser.parse();
+    CLIConfig::FileCryptoConfig config;
+    config.validate(parser);
 
     success &= ASSERT_TRUE(config.is_valid, "Config should be valid with defaults");
     success &= ASSERT_TRUE(config.operation_mode == AESencryption::Cipher::OperationMode::Identifier::CBC,
@@ -353,10 +371,12 @@ bool test_config_creates_functional_crypto_objects() {
         .build(argc);
 
     CLIConfig::ArgumentParser parser(argc, argv);
-    CLIConfig::CryptoConfig config = parser.parse();
+    parser.parse();
+    CLIConfig::FileCryptoConfig config;
+    config.validate(parser);
 
     success &= ASSERT_TRUE(config.is_valid, "Key generation config should be valid");
-    success &= ASSERT_TRUE(config.operation == CLIConfig::CryptoConfig::Operation::GENERATE_KEY,
+    success &= ASSERT_TRUE(config.operation == CLIConfig::FileCryptoConfig::Operation::GENERATE_KEY,
                 "Operation should be GENERATE_KEY");
     success &= ASSERT_TRUE(config.key_length == AESencryption::Key::LengthBits::_256,
                 "Key length should be 256");
@@ -386,9 +406,11 @@ bool test_argument_format_variations() {
             .build(argc);
 
         CLIConfig::ArgumentParser parser(argc, argv);
-        CLIConfig::CryptoConfig config = parser.parse();
+        parser.parse();
+        CLIConfig::FileCryptoConfig config;
+        config.validate(parser);
 
-        success &= ASSERT_TRUE(config.operation == CLIConfig::CryptoConfig::Operation::DECRYPT,
+        success &= ASSERT_TRUE(config.operation == CLIConfig::FileCryptoConfig::Operation::DECRYPT,
                     "Program option --decrypt should affect operation detection");
     }
 
