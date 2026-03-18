@@ -117,11 +117,13 @@ bool test_SaveOperations(RasterImageFixture& fixture) {
         bool dataChanged = ASSERT_TRUE(reloaded.get_data() != original,
                                        "Save to original path persists the change");
 
-        // Restore for other tests
+        // Verify if decryption works
         reloaded.apply_decryption(xor_enc);
+        bool dataRecoverd = ASSERT_TRUE(reloaded.get_data() == original,
+                                       "Decryption returns original data");
         reloaded.save();
 
-        return dataChanged;
+        return dataChanged && dataRecoverd;
     }, "Save with empty path writes back to file_path");
 
     // Test 3: Save to invalid directory throws
