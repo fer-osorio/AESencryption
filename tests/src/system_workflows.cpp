@@ -2,7 +2,7 @@
 // File: system/test_file_encryption_workflows.cpp
 
 #include "../../test-framework/include/test_framework.hpp"
-#include "../include/bitmap_fixture.hpp"
+#include "../include/raster_image_fixture.hpp"
 #include "../include/system_workflows.hpp"
 #include <filesystem>
 #include <fstream>
@@ -99,6 +99,8 @@ void SystemTests::setupTestEnvironment(FileFormat ff){
         // Encrypted and decrypted file paths
         this->encryptedOriginalValidPath += "." + SystemUtils::toFileExtension(ff);
         this->decryptedOriginalValidPath += "." + SystemUtils::toFileExtension(ff);
+        this->encryptedOriginalLargePath += "." + SystemUtils::toFileExtension(ff);
+        this->decryptedOriginalLargePath += "." + SystemUtils::toFileExtension(ff);
     }
     switch(ff){
         case FileFormat::UNKNOWN:
@@ -106,10 +108,14 @@ void SystemTests::setupTestEnvironment(FileFormat ff){
             auto generator = [](size_t i) noexcept -> uint8_t{
                     return i & 0xFF;                                            // Equivalent to i % 256
             };
-            SystemUtils::create_binary_file(this->originalValidPath, generator, 1024);  // Building valid file
-            SystemUtils::create_binary_file(this->originalLargePath, generator, 1024*1024*3); // Building large file
-            break;
+            SystemUtils::create_binary_file(
+                this->originalValidPath, generator, 1024 // Building valid file
+            );
+            SystemUtils::create_binary_file(
+                this->originalLargePath, generator, 1024*1024*3 // Building large file
+            );
             }
+            break;
         case FileFormat::TEXT: {
             SystemUtils::create_text_file(                                      // Building valid file
                 this->originalValidPath,
@@ -126,12 +132,16 @@ void SystemTests::setupTestEnvironment(FileFormat ff){
                 "\n\t~ Erwin's famous and final speech as he leads the Survey Corps on a suicide charge."
             );
             const std::vector<char> large_file_content(1024*1024*3, 'z');       // Building large file
-            SystemUtils::create_text_file(this->originalLargePath, std::string(large_file_content.data(), large_file_content.size()) );
+            SystemUtils::create_text_file(
+                this->originalLargePath,
+                std::string(large_file_content.data(),
+                large_file_content.size())
+            );
             }
             break;
         case FileFormat::BITMAP:
-            BitmapTestFixture::createValidBitmap(this->originalValidPath, 32, 32);      // Building valid file
-            BitmapTestFixture::createValidBitmap(this->originalLargePath, 1024, 1024);  // Building large file
+            RasterImageFixture::createValidBmp(this->originalValidPath, 32, 32);      // Building valid file
+            RasterImageFixture::createValidBmp(this->originalLargePath, 4096, 4096);  // Building large file
             break;
     }
 }
@@ -147,7 +157,8 @@ void SystemTests::cleanupTestEnvironment(){
     }
 }
 
-SystemTests::SystemTests(const std::string executable_path_, FileFormat ff): executable_path(executable_path_), ff_(ff) {
+SystemTests::SystemTests(const std::string executable_path_, FileFormat ff):
+    executable_path(executable_path_), ff_(ff) {
     this->setupTestEnvironment(ff);
 }
 
@@ -162,7 +173,8 @@ bool SystemTests::test_file_encryption_workflow() {
 
     // Step 2: Generate encryption key
     std::string gen_key_cmd =
-        this->executable_path + " --generate-key --key-length 256 --output " + this->keyPath.string();
+        this->executable_path + " --generate-key --key-length 256 --output " +
+        this->keyPath.string();
     int result1 = SystemUtils::execute_cli_command(
         gen_key_cmd
     );
@@ -175,8 +187,9 @@ bool SystemTests::test_file_encryption_workflow() {
 
     // Step 3: Encrypt the file
     std::string encrypt_cmd =
-        this->executable_path + " --encrypt --mode CBC --key " + this->keyPath.string() +
-        " --input " + this->originalValidPath.string() + " --output " + this->encryptedOriginalValidPath.string();
+        this->executable_path + " --encrypt --mode CBC --key " +
+        this->keyPath.string() + " --input " + this->originalValidPath.string()
+        + " --output " + this->encryptedOriginalValidPath.string();
     int result2 = SystemUtils::execute_cli_command(
         encrypt_cmd
     );
@@ -189,11 +202,16 @@ bool SystemTests::test_file_encryption_workflow() {
     );
 
     // Step 4: Verify encrypted file is different from original
-    std::vector<uint8_t> test_content = SystemUtils::read_file(this->originalValidPath, this->ff_ != FileFormat::TEXT);
-    std::vector<uint8_t> encrypted_content = SystemUtils::read_file(this->encryptedOriginalValidPath, this->ff_ != FileFormat::TEXT);
+    std::vector<uint8_t> test_content = SystemUtils::read_file(
+        this->originalValidPath, this->ff_ != FileFormat::TEXT
+    );
+    std::vector<uint8_t> encrypted_content = SystemUtils::read_file(
+        this->encryptedOriginalValidPath, this->ff_ != FileFormat::TEXT
+    );
 
     success &= ASSERT_TRUE(
-        encrypted_content != test_content, "Encrypted content should differ from original"
+        encrypted_content != test_content,
+        "Encrypted content should differ from original"
     );
 
     // Step 5: Decrypt the file
@@ -210,11 +228,14 @@ bool SystemTests::test_file_encryption_workflow() {
         result3 == 0, "File decryption should succeed"
     );
     success &= ASSERT_TRUE(
-        std::filesystem::exists(this->decryptedOriginalValidPath), "Decrypted file should be created"
+        std::filesystem::exists(this->decryptedOriginalValidPath),
+        "Decrypted file should be created"
     );
 
     // Step 6: Verify decrypted content matches original
-    std::vector<uint8_t> decrypted_content = SystemUtils::read_file(this->decryptedOriginalValidPath, this->ff_ != FileFormat::TEXT);
+    std::vector<uint8_t> decrypted_content = SystemUtils::read_file(
+        this->decryptedOriginalValidPath, this->ff_ != FileFormat::TEXT
+    );
 
     success &= ASSERT_TRUE(
         decrypted_content == test_content, "Decrypted content should match original"
@@ -227,9 +248,12 @@ bool SystemTests::test_file_encryption_workflow() {
         if (test_content.size() == decrypted_content.size()) {
             for (size_t i = 0; i < test_content.size(); i++) {
                 if (test_content[i] != decrypted_content[i]) {
-                    std::cout << "First mismatch at byte " << i << std::endl;
-                    std::cout << "Original: " << std::hex << static_cast<int>(test_content[i]) << std::endl;
-                    std::cout << "Decrypted: " << std::hex << static_cast<int>(decrypted_content[i]) << std::endl;
+                    std::cout << "First mismatch at byte " <<
+                        i << std::endl;
+                    std::cout << "Original: " << std::hex <<
+                        static_cast<int>(test_content[i]) << std::endl;
+                    std::cout << "Decrypted: " << std::hex<<
+                        static_cast<int>(decrypted_content[i]) << std::endl;
                     break;
                 }
             }
@@ -249,10 +273,12 @@ bool SystemTests::test_error_scenarios() {
 
     // Generate two different keys
     SystemUtils::execute_cli_command(
-        this->executable_path + " --generate-key --output " + this->keyPath.string()
+        this->executable_path + " --generate-key --output " +
+        this->keyPath.string()
     );
     SystemUtils::execute_cli_command(
-        this->executable_path + " --generate-key --output " + second_key.string()
+        this->executable_path + " --generate-key --output " +
+        second_key.string()
     );
 
     // Encrypt with key1
@@ -261,12 +287,14 @@ bool SystemTests::test_error_scenarios() {
         " --input " + this->originalValidPath.string() +
         " --output " + this->encryptedOriginalValidPath.string();
     success &= ASSERT_TRUE(
-        SystemUtils::execute_cli_command(encrypt_cmd) == 0, "Encryption should succeed"
+        SystemUtils::execute_cli_command(encrypt_cmd) == 0,
+        "Encryption should succeed"
     );
 
     // Try to decrypt with second_key (should fail or produce garbage)
-    std::string decrypt_cmd = this->executable_path + " --decrypt --key " + second_key.string() +
-        " --input " + this->encryptedOriginalValidPath.string() +
+    std::string decrypt_cmd = this->executable_path + " --decrypt --key "
+        + second_key.string() + " --input " +
+        this->encryptedOriginalValidPath.string() +
         " --output " + this->decryptedOriginalValidPath.string();
     int decrypt_result = SystemUtils::execute_cli_command(
         decrypt_cmd
@@ -279,14 +307,19 @@ bool SystemTests::test_error_scenarios() {
         std::vector<uint8_t> decrypted_content = SystemUtils::read_file(
             this->decryptedOriginalValidPath.string(), this->ff_ != FileFormat::TEXT
         );
-        success &= ASSERT_TRUE(decrypted_content != original_content, "Wrong key should not produce correct plaintext");
+        success &= ASSERT_TRUE(
+            decrypted_content != original_content, "Wrong key should not produce correct plaintext"
+        );
     } else {
-        success &= ASSERT_TRUE(decrypt_result != 0, "Decryption with wrong key should fail");
+        success &= ASSERT_TRUE(
+            decrypt_result != 0, "Decryption with wrong key should fail"
+        );
     }
 
     // Test 2: Non-existent file
     int nonexistent_result = SystemUtils::execute_cli_command(
-        this->executable_path + " --encrypt --input " + this->nonexistentPath.string() + " --output nonexistent_out.bin"
+        this->executable_path + " --encrypt --input " +
+        this->nonexistentPath.string() + " --output nonexistent_out.bin"
     );
     success &= ASSERT_TRUE(nonexistent_result != 0, "Encrypting non-existent file should fail");
 
@@ -329,7 +362,7 @@ bool SystemTests::test_large_file_performance() {
     if(encrypt_result == 0) {
         success &= ASSERT_TRUE(
             encrypt_duration.count() < 10000,
-            "3MB encryption should complete within 10 seconds (lasted " +
+            "48MB encryption should complete within 10 seconds (lasted " +
             std::to_string(encrypt_duration.count()) + " milliseconds)"
         );
     }
@@ -354,7 +387,7 @@ bool SystemTests::test_large_file_performance() {
     if(decrypt_result == 0) {
         success &= ASSERT_TRUE(
             decrypt_duration.count() < 10000,
-            "3MB decryption should complete within 10 seconds (lasted " +
+            "48MB decryption should complete within 10 seconds (lasted " +
             std::to_string(decrypt_duration.count()) + " milliseconds)"
         );
     }
