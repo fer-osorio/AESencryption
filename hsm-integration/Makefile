@@ -6,7 +6,7 @@ include ../config.mk
 MODULE_NAME  = $(notdir $(CURDIR))
 PROJECT_ROOT := $(call find-project-root)
 LIBDIR       = $(PROJECT_ROOT)/lib
-TARGET_LIB   = $(LIBDIR)/libhsm.a
+TARGET_LIB   = $(LIBDIR)/libciphfortis_hsm.a
 
 # Object directory
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))

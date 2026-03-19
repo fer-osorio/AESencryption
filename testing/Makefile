@@ -7,7 +7,7 @@ include ../config.mk
 MODULE_NAME = $(notdir $(CURDIR))
 PROJECT_ROOT := $(call find-project-root)
 LIBDIR = $(PROJECT_ROOT)/lib
-TARGET_LIB = $(LIBDIR)/libtest_vectors.a
+TARGET_LIB = $(LIBDIR)/libciphfortis_testing.a
 
 # Local source directory and object directory
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))

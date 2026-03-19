@@ -6,7 +6,7 @@ include ../config.mk
 MODULE_NAME = $(notdir $(CURDIR))
 PROJECT_ROOT := $(call find-project-root)
 LIBDIR = $(PROJECT_ROOT)/lib
-TARGET_LIB = $(LIBDIR)/libcryptocli.a
+TARGET_LIB = $(LIBDIR)/libciphfortis_cli.a
 
 # Local source directory and object directory
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
@@ -19,10 +19,10 @@ OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 INCLUDES = -I$(PROJECT_ROOT)/cli-tools/$(INCDIR) -I$(PROJECT_ROOT)/core-crypto/$(INCDIR)
 
 # Dependencies on other modules
-DEPS = $(LIBDIR)/libaesencryption_cpp.a
+DEPS = $(LIBDIR)/libciphfortis_core.a
 
 # External libraries needed
-LIBS = -L$(LIBDIR) -laesencryption_cpp
+LIBS = -L$(LIBDIR) -lciphfortis_core
 
 # Default target
 all: $(TARGET_LIB)

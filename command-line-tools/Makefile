@@ -22,16 +22,16 @@ INCLUDES = \
     -I$(PROJECT_ROOT)/hsm-integration/include
 
 LDFLAGS += -L$(PROJECT_ROOT)/lib
-LIBS = -lcryptocli -lfilehandlers -laesencryption_cpp  -laesencryption_c  -lmetricsanalysis -lhsm -ldl
+LIBS = -lciphfortis_cli -lciphfortis_files -lciphfortis_core -lciphfortis_aes -lciphfortis_analysis -lciphfortis_hsm -ldl
 
 # Define required dependencies (library files)
 DEPS = \
-    $(PROJECT_ROOT)/lib/libaesencryption_c.a \
-    $(PROJECT_ROOT)/lib/libaesencryption_cpp.a \
-    $(PROJECT_ROOT)/lib/libfilehandlers.a \
-    $(PROJECT_ROOT)/lib/libmetricsanalysis.a \
-    $(PROJECT_ROOT)/lib/libcryptocli.a \
-    $(PROJECT_ROOT)/lib/libhsm.a
+    $(PROJECT_ROOT)/lib/libciphfortis_aes.a \
+    $(PROJECT_ROOT)/lib/libciphfortis_core.a \
+    $(PROJECT_ROOT)/lib/libciphfortis_files.a \
+    $(PROJECT_ROOT)/lib/libciphfortis_analysis.a \
+    $(PROJECT_ROOT)/lib/libciphfortis_cli.a \
+    $(PROJECT_ROOT)/lib/libciphfortis_hsm.a
 
 # Source files
 SOURCES = $(call find_local_sources,cpp)

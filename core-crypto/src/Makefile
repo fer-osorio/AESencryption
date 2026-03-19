@@ -6,7 +6,7 @@ include ../../config.mk
 MODULE_NAME = core
 PROJECT_ROOT := $(call find-project-root)
 LIBDIR = $(PROJECT_ROOT)/lib
-TARGET_LIB = $(LIBDIR)/libaesencryption_cpp.a
+TARGET_LIB = $(LIBDIR)/libciphfortis_core.a
 
 # Local source directory and object directory
 SRCDIR = core
@@ -20,10 +20,10 @@ SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Dependencies on other modules
-DEPS = $(LIBDIR)/libaesencryption_c.a
+DEPS = $(LIBDIR)/libciphfortis_aes.a
 
 # External libraries needed
-LIBS = -laesencryption_c
+LIBS = -lciphfortis_aes
 
 # Default target
 all: $(TARGET_LIB)
