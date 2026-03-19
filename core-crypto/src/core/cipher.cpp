@@ -1,6 +1,6 @@
-#include"../../data-encryption/include/constants.h"
-#include"../../data-encryption/include/AES.h"
-#include"../../data-encryption/include/operation_modes.h"
+#include"../../aes/include/constants.h"
+#include"../../aes/include/AES.h"
+#include"../../aes/include/operation_modes.h"
 #include"../../include/cipher.hpp"
 #include"../utils/print_bytes.hpp"
 #include<cstring>

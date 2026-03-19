@@ -1,12 +1,12 @@
-#include "../../test-framework/include/test_framework.hpp"
-#include "../../data-encryption/include/constants.h"
-#include "../../data-encryption/include/block.h"
-#include "../../data-encryption/include/key_expansion.h"
-#include "../../data-encryption/include/AES.h"
-#include "../../data-encryption/include/operation_modes.h"
-#include "../../include/cipher.hpp"
-#include "../../include/key.hpp"
-#include "../../test-framework/include/test-vectors/sp800_38a_modes.hpp"
+#include "../../testing/include/test_framework.hpp"
+#include "../../core-crypto/aes/include/constants.h"
+#include "../../core-crypto/aes/include/block.h"
+#include "../../core-crypto/aes/include/key_expansion.h"
+#include "../../core-crypto/aes/include/AES.h"
+#include "../../core-crypto/aes/include/operation_modes.h"
+#include "../../core-crypto/include/cipher.hpp"
+#include "../../core-crypto/include/key.hpp"
+#include "../../testing/include/test-vectors/sp800_38a_modes.hpp"
 #include <cstring>
 
 namespace TV = TestVectors::AES;

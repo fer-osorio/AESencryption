@@ -1,8 +1,8 @@
 // Unit test suite for FileBase contracts, exercised directly via File::FileBase
 #include "../../file-handlers/include/file_base.hpp"
 #include "../include/file_base_fixture.hpp"
-#include "../../test-framework/include/test_framework.hpp"
-#include "../../include/encryptor.hpp"
+#include "../../testing/include/test_framework.hpp"
+#include "../../core-crypto/include/encryptor.hpp"
 #include <filesystem>
 
 namespace fs = std::filesystem;

@@ -1,4 +1,4 @@
-# CLI/Makefile
+# analysis/Makefile
 include ../common.mk
 include ../config.mk
 
@@ -6,40 +6,23 @@ include ../config.mk
 MODULE_NAME = $(notdir $(CURDIR))
 PROJECT_ROOT := $(call find-project-root)
 LIBDIR = $(PROJECT_ROOT)/lib
-TARGET_LIB = $(LIBDIR)/libcryptocli.a
+TARGET_LIB = $(LIBDIR)/libmetricsanalysis.a
 
 # Local source directory and object directory
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
+
+# Local includes
+INCLUDES = -I$(PROJECT_ROOT)/analysis/$(INCDIR)
 
 # Source files
 SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
-# Local includes (in addition to common includes)
-INCLUDES = -I$(PROJECT_ROOT)/crypto-cli/$(INCDIR) -I$(PROJECT_ROOT)/$(INCDIR)
-
-# Dependencies on other modules
-DEPS = $(LIBDIR)/libaesencryption_cpp.a
-
-# External libraries needed
-LIBS = -L$(LIBDIR) -laesencryption_cpp
-
 # Default target
 all: $(TARGET_LIB)
 
-# Check dependencies
-check-deps:
-	$(call check_dependencies)
-
-# Build dependencies (optional - for convenience)
-dependencies:
-	$(call print_info,"Building project dependencies...")
-	@$(MAKE) -C $(PROJECT_ROOT)/src
-	$(call print_success,"All dependencies built successfully")
-
-
 # Library target
-$(TARGET_LIB): check-deps $(OBJECTS) | $(LIBDIR) $(OBJDIR)
+$(TARGET_LIB): $(OBJECTS) | $(LIBDIR) $(OBJDIR)
 	$(call create_static_lib,$@,$(OBJECTS))
 
 # Compilation rule for C++ files
@@ -54,10 +37,9 @@ $(OBJDIR) $(LIBDIR):
 clean:
 	$(call clean_standard)
 	@rm -f $(TARGET_LIB)
-	$(call print_success,"Cleaned CLI module")
+	$(call print_success,"Cleaned analysis module")
 
 # Dependency inclusion
 $(eval $(include_deps))
 
-# Module-specific targets
-.PHONY: all clean check-deps dependencies
+.PHONY: all clean

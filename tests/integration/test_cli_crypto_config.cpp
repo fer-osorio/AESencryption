@@ -1,6 +1,6 @@
-#include "../../test-framework/include/test_framework.hpp"
-#include "../../crypto-cli/include/cli_config.hpp"
-#include "../../include/cipher.hpp"
+#include "../../testing/include/test_framework.hpp"
+#include "../../cli-tools/include/cli_config.hpp"
+#include "../../core-crypto/include/cipher.hpp"
 
 namespace TestHelpers {
     // Helper to create argv array for testing

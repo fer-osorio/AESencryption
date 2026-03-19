@@ -1,6 +1,6 @@
-#include "../../test-framework/include/test_framework.hpp"
-#include "../../test-framework/include/test-vectors/sp800_38a_modes.hpp"
-#include "../../include/cipher.hpp"
+#include "../../testing/include/test_framework.hpp"
+#include "../../testing/include/test-vectors/sp800_38a_modes.hpp"
+#include "../../core-crypto/include/cipher.hpp"
 
 namespace TV = TestVectors::AES;
 namespace SP = TestVectors::AES::SP800_38A;

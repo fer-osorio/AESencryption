@@ -13,7 +13,7 @@ OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
 
 # Includes: module headers + PKCS#11 header via pkg-config (fallback to system path)
 PKCS11_INC := $(shell pkg-config --cflags p11-kit-1 2>/dev/null || echo "-I/usr/include/p11-kit-1")
-INCLUDES    = -I$(PROJECT_ROOT)/hsm/$(INCDIR) -I$(PROJECT_ROOT)/include $(PKCS11_INC)
+INCLUDES    = -I$(PROJECT_ROOT)/hsm-integration/$(INCDIR) -I$(PROJECT_ROOT)/core-crypto/include $(PKCS11_INC)
 
 # Source files and objects
 SOURCES = $(wildcard $(SRCDIR)/*.cpp)

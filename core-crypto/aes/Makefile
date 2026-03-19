@@ -1,6 +1,6 @@
 # data-encryption/Makefile - Pure C AES implementation
-include ../common.mk
-include ../config.mk
+include ../../common.mk
+include ../../config.mk
 
 # Module configuration
 MODULE_NAME = $(notdir $(CURDIR))
@@ -12,7 +12,7 @@ TARGET_LIB = $(LIBDIR)/libaesencryption_c.a
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
 
 # Local includes (private headers)
-INCLUDES = -I$(PROJECT_ROOT)/data-encryption/$(INCDIR)
+INCLUDES = -I$(PROJECT_ROOT)/core-crypto/aes/$(INCDIR)
 
 # Source files and objects
 SOURCES = $(wildcard $(SRCDIR)/*.c)

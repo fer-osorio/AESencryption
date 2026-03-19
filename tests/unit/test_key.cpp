@@ -1,5 +1,5 @@
 #include "../include/test_framework.hpp"
-#include "../../include/key.hpp"
+#include "../../core-crypto/include/key.hpp"
 #include <vector>
 #include <fstream>
 #include <cstdio>  // For remove()

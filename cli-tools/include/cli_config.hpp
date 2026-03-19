@@ -2,7 +2,7 @@
 #ifndef CLI_CONFIG_HPP
 #define CLI_CONFIG_HPP
 
-#include "../../include/cipher.hpp"
+#include "../../core-crypto/include/cipher.hpp"
 #include <filesystem>
 #include <stdexcept>
 #include <string>

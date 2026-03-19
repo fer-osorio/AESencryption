@@ -17,8 +17,8 @@ OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Local includes (in addition to common includes)
 INCLUDES = -I$(PROJECT_ROOT)/file-handlers/$(INCDIR) \
-           -I$(PROJECT_ROOT)/$(INCDIR) \
-           -I$(PROJECT_ROOT)/metrics-analysis/$(INCDIR) \
+           -I$(PROJECT_ROOT)/core-crypto/$(INCDIR) \
+           -I$(PROJECT_ROOT)/analysis/$(INCDIR) \
            -I$(PROJECT_ROOT)/third-party/stb
 
 # Dependencies on other modules
@@ -37,8 +37,8 @@ check-deps:
 # Build dependencies (optional - for convenience)
 dependencies:
 	$(call print_info,"Building project dependencies...")
-	@$(MAKE) -C $(PROJECT_ROOT)/src
-	@$(MAKE) -C $(PROJECT_ROOT)/metrics-analysis
+	@$(MAKE) -C $(PROJECT_ROOT)/core-crypto/src
+	@$(MAKE) -C $(PROJECT_ROOT)/analysis
 	$(call print_success,"All dependencies built successfully")
 
 # Library target

@@ -1,7 +1,7 @@
-#include "../../test-framework/include/test-encryption/detail/block_cipher_tester.hpp"
-#include "../../data-encryption/include/block.h"
-#include "../../data-encryption/include/key_expansion.h"
-#include "../../data-encryption/include/AES.h"
+#include "../../testing/include/test-encryption/detail/block_cipher_tester.hpp"
+#include "../../core-crypto/aes/include/block.h"
+#include "../../core-crypto/aes/include/key_expansion.h"
+#include "../../core-crypto/aes/include/AES.h"
 
 static KeyExpansion_t* (*allocateKeyExapansion)(size_t)      = KeyExpansionCreateZero;
 static void            (*freeKeyExpansion)(KeyExpansion_t**) = KeyExpansionDestroy;

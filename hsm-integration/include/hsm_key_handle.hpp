@@ -3,7 +3,7 @@
 
 #include <string>
 #include <p11-kit-1/p11-kit/pkcs11.h>
-#include "../../include/key.hpp" // for Key::LengthBits — reuse existing enum
+#include "../../core-crypto/include/key.hpp" // for Key::LengthBits — reuse existing enum
 
 namespace CipherFortis {
 namespace HSM {

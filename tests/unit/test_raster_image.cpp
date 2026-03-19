@@ -2,8 +2,8 @@
 #include "../../file-handlers/include/png_image.hpp"
 #include "../../file-handlers/include/jpeg_image.hpp"
 #include "../include/raster_image_fixture.hpp"
-#include "../../test-framework/include/test_framework.hpp"
-#include "../../include/encryptor.hpp"
+#include "../../testing/include/test_framework.hpp"
+#include "../../core-crypto/include/encryptor.hpp"
 #include <filesystem>
 
 namespace fs = std::filesystem;

@@ -1,6 +1,6 @@
 # src/Makefile - Main C++ implementation
-include ../common.mk
-include ../config.mk
+include ../../common.mk
+include ../../config.mk
 
 # Local configuration
 MODULE_NAME = core
@@ -13,7 +13,7 @@ SRCDIR = core
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
 
 # Local includes
-INCLUDES = -I./utils/ -I$(PROJECT_ROOT)/data-encryption/include -I$(PROJECT_ROOT)/include
+INCLUDES = -I./utils/ -I$(PROJECT_ROOT)/core-crypto/aes/include -I$(PROJECT_ROOT)/core-crypto/include
 
 # Source files
 SOURCES = $(wildcard $(SRCDIR)/*.cpp)
@@ -34,7 +34,7 @@ check-deps:
 
 dependencies:
 	$(call print_info,"Building project dependencies...")
-	@$(MAKE) -C $(PROJECT_ROOT)/data-encryption
+	@$(MAKE) -C $(PROJECT_ROOT)/core-crypto/aes
 	$(call print_success,"All dependencies built successfully")
 
 # Library target

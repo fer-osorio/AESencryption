@@ -29,10 +29,10 @@ SRCDIR ?= src
 INCDIR ?= include
 
 # Common include paths
-COMMON_INCLUDES = -I$(PROJECT_ROOT)/include \
-                  -I$(PROJECT_ROOT)/data-encryption/include \
+COMMON_INCLUDES = -I$(PROJECT_ROOT)/core-crypto/include \
+                  -I$(PROJECT_ROOT)/core-crypto/aes/include \
                   -I$(PROJECT_ROOT)/file-handlers/include \
-                  -I$(PROJECT_ROOT)/metrics-analysis/include
+                  -I$(PROJECT_ROOT)/analysis/include
 
 # Utility functions
 define print_success

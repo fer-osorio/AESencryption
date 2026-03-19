@@ -1,8 +1,8 @@
 #ifndef HSM_CIPHER_HPP
 #define HSM_CIPHER_HPP
 
-#include "../../include/encryptor.hpp"
-#include "../../include/cipher.hpp"
+#include "../../core-crypto/include/encryptor.hpp"
+#include "../../core-crypto/include/cipher.hpp"
 #include "hsm_session.hpp"
 #include "hsm_key_handle.hpp"
 
