@@ -29,7 +29,7 @@
 #include <memory>
 #include <stdexcept>
 
-using namespace AESencryption;
+using namespace CipherFortis;
 using namespace CLIConfig;
 using namespace File;
 

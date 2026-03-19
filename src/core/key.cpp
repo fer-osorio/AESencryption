@@ -6,7 +6,7 @@
 #include"../../include/key.hpp"
 #include"../utils/print_bytes.hpp"
 
-using namespace AESencryption;
+using namespace CipherFortis;
 
 static size_t fromLenBitsToLenBytes(Key::LengthBits lenbits){
     return size_t(lenbits)/8;
@@ -132,7 +132,7 @@ size_t Key::getLenBytes() const{
     return this->lenBytes;
 }
 
-std::ostream& AESencryption::operator<<(std::ostream& ost, const Key& k) {
+std::ostream& CipherFortis::operator<<(std::ostream& ost, const Key& k) {
     ost << "\tKey size: " << static_cast<int>(k.lenBits) << " bits, " << k.lenBytes << " bytes, Nk = " << (k.lenBytes >> 2) << " words\n";
     ost << "\tKey: ";
     print_bytes_as_hex(ost, k.data, k.lenBytes);

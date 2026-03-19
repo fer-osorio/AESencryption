@@ -5,7 +5,7 @@
 #include <cstdio>  // For remove()
 #include <map>
 
-#define AESKEYLEN AESencryption::Key::LengthBits
+#define AESKEYLEN CipherFortis::Key::LengthBits
 
 namespace KeyhppTestVectors{
     // Standard AES test keys
@@ -117,7 +117,7 @@ bool test_key_construction_from_length(AESKEYLEN keyLenBits) {
     bool success = true;
 
     // Test Key generation
-    AESencryption::Key key(keyLenBits);
+    CipherFortis::Key key(keyLenBits);
     size_t keylensizet = keyLengths_Sizet.find(keyLenBits)->second;
     size_t sizeInBytes = keylensizet/8;
 
@@ -134,7 +134,7 @@ bool test_key_construction_from_vector(AESKEYLEN keyLenBits) {
     bool success = true;
 
     // Test 128-bit key from vector
-    AESencryption::Key key(keytest.getKey(), keytest.getKeyLenBits());
+    CipherFortis::Key key(keytest.getKey(), keytest.getKeyLenBits());
     size_t keylensizet = keyLengths_Sizet.find(keyLenBits)->second;
     size_t sizeInBytes = keylensizet/8;
 
@@ -154,7 +154,7 @@ bool test_key_construction_errors(AESKEYLEN keyLenBits) {
     std::vector<uint8_t> short_key = {0x01, 0x02, 0x03, 0x04}; // Only 4 bytes
 
     try {
-        AESencryption::Key key(short_key, keyLenBits);
+        CipherFortis::Key key(short_key, keyLenBits);
         success &= ASSERT_TRUE(false, "Constructor should throw exception for insufficient key size");
     } catch (const std::exception& e) {
         success &= ASSERT_TRUE(true, "Constructor properly threw exception for insufficient key size");
@@ -163,14 +163,14 @@ bool test_key_construction_errors(AESKEYLEN keyLenBits) {
     // Test mismatched vector size and declared length
     if(keyLenBits != AESKEYLEN::_256) {
         try {
-            AESencryption::Key key(keytest.getKey(), AESKEYLEN::_256);
+            CipherFortis::Key key(keytest.getKey(), AESKEYLEN::_256);
             success &= ASSERT_TRUE(false, "Constructor should throw exception for size mismatch");
         } catch (const std::exception& e) {
             success &= ASSERT_TRUE(true, "Constructor properly threw exception for size mismatch");
         }
     }else {
         try {
-            AESencryption::Key key(keytest.getKey(), AESKEYLEN::_256);
+            CipherFortis::Key key(keytest.getKey(), AESKEYLEN::_256);
             success &= ASSERT_TRUE(true, "Constructor should not throw exception for size match");
         } catch (const std::exception& e) {
             success &= ASSERT_TRUE(false, "Constructor should not throw exception for size match");
@@ -184,8 +184,8 @@ bool test_key_construction_errors(AESKEYLEN keyLenBits) {
 bool test_key_copy_construction(AESKEYLEN keyLenBits) {
     TEST_SUITE("Key Copy Construction");
     KeyhppTest keytest(keyLenBits);
-    AESencryption::Key original(keytest.getKey(), keytest.getKeyLenBits());
-    AESencryption::Key copy(original);
+    CipherFortis::Key original(keytest.getKey(), keytest.getKeyLenBits());
+    CipherFortis::Key copy(original);
     bool success = true;
 
     // Test that copy has same properties
@@ -211,8 +211,8 @@ bool test_key_copy_construction(AESKEYLEN keyLenBits) {
 bool test_key_assignment(AESKEYLEN keyLenBits) {
     TEST_SUITE("Key Assignment Operator");
     KeyhppTest keytest(keyLenBits);
-    AESencryption::Key key1(keytest.getKey(), keytest.getKeyLenBits());
-    AESencryption::Key key2(
+    CipherFortis::Key key1(keytest.getKey(), keytest.getKeyLenBits());
+    CipherFortis::Key key2(
         keytest.getKeyLenBits() != AESKEYLEN::_256 ? AESKEYLEN::_256 : AESKEYLEN::_192  // Different size
     );
     bool success = true;
@@ -243,20 +243,20 @@ bool test_key_equality(AESKEYLEN keyLenBits) {
     bool success = true;
 
     // Test keys with same data are equal
-    AESencryption::Key key1(keytest.getKey(), keytest.getKeyLenBits());
-    AESencryption::Key key2(keytest.getKey(), keytest.getKeyLenBits());
+    CipherFortis::Key key1(keytest.getKey(), keytest.getKeyLenBits());
+    CipherFortis::Key key2(keytest.getKey(), keytest.getKeyLenBits());
 
     success &= ASSERT_TRUE(key1 == key2, "Keys with same data should be equal");
 
     // Test keys with different data are not equal
     const std::vector<uint8_t>& key3data = keyLenBits != AESKEYLEN::_192 ? KeyhppTestVectors::key_192 : KeyhppTestVectors::key_128;
     const AESKEYLEN key3Len = keyLenBits != AESKEYLEN::_192 ? AESKEYLEN::_192 : AESKEYLEN::_128;
-    AESencryption::Key key3(key3data, key3Len);
+    CipherFortis::Key key3(key3data, key3Len);
     success &= ASSERT_TRUE(!(key1 == key3), "Keys with different data should not be equal");
 
     // Test keys with different lengths are not equal
-    AESencryption::Key key4(keyLenBits != AESKEYLEN::_192 ? AESKEYLEN::_192 : AESKEYLEN::_128);
-    AESencryption::Key key5(keyLenBits);
+    CipherFortis::Key key4(keyLenBits != AESKEYLEN::_192 ? AESKEYLEN::_192 : AESKEYLEN::_128);
+    CipherFortis::Key key5(keyLenBits);
     success &= ASSERT_TRUE(!(key4 == key5), "Keys with different lengths should not be equal");
 
     PRINT_RESULTS();
@@ -269,11 +269,11 @@ bool test_key_save_and_load(AESKEYLEN keyLenBits) {
     bool success = true;
 
     // Save 128-bit key
-    AESencryption::Key original(keytest.getKey(), keytest.getKeyLenBits());
+    CipherFortis::Key original(keytest.getKey(), keytest.getKeyLenBits());
     original.save(keytest.getFileName());
 
     // Load it back
-    AESencryption::Key loaded(keytest.getFileName());
+    CipherFortis::Key loaded(keytest.getFileName());
 
     success &= ASSERT_TRUE(original == loaded, "Loaded key should equal original");
     success &= ASSERT_EQUAL(
@@ -296,7 +296,7 @@ bool test_key_load_errors(AESKEYLEN keyLenBits) {
 
     // Test loading from non-existent file
     try {
-        AESencryption::Key key("non_existent_file.bin");
+        CipherFortis::Key key("non_existent_file.bin");
         success &= ASSERT_TRUE(false, "Loading from non-existent file should throw exception");
     } catch (const std::exception& e) {
         success &= ASSERT_TRUE(true, "Loading from non-existent file properly threw exception");
@@ -313,7 +313,7 @@ bool test_key_load_errors(AESKEYLEN keyLenBits) {
     ofs1.close();
 
     try {
-        AESencryption::Key key(wrong_header_file);
+        CipherFortis::Key key(wrong_header_file);
         success &= ASSERT_TRUE(false, "Loading file with wrong header should throw exception");
     } catch (const std::exception& e) {
         success &= ASSERT_TRUE(true, "Loading file with wrong header properly threw exception");
@@ -330,7 +330,7 @@ bool test_key_load_errors(AESKEYLEN keyLenBits) {
     ofs2.close();
 
     try {
-        AESencryption::Key key(invalid_length_file);
+        CipherFortis::Key key(invalid_length_file);
         success &= ASSERT_TRUE(false, "Loading file with invalid key length should throw exception");
     } catch (const std::exception& e) {
         success &= ASSERT_TRUE(true, "Loading file with invalid key length properly threw exception");
@@ -347,7 +347,7 @@ bool test_key_load_errors(AESKEYLEN keyLenBits) {
     ofs3.close();
 
     try {
-        AESencryption::Key key(truncated_file);
+        CipherFortis::Key key(truncated_file);
         // This might succeed or fail depending on implementation
         // The test validates that the constructor handles this case
         success &= ASSERT_TRUE(true, "Truncated file was handled");
@@ -366,9 +366,9 @@ bool test_key_memory_management(AESKEYLEN keyLenBits) {
 
     // Test that multiple keys can coexist
     {
-        AESencryption::Key key1(AESKEYLEN::_128);
-        AESencryption::Key key2(AESKEYLEN::_192);
-        AESencryption::Key key3(AESKEYLEN::_256);
+        CipherFortis::Key key1(AESKEYLEN::_128);
+        CipherFortis::Key key2(AESKEYLEN::_192);
+        CipherFortis::Key key3(AESKEYLEN::_256);
 
         success &= ASSERT_TRUE(key1.getLenBytes() == 16, "Key1 should maintain correct size");
         success &= ASSERT_TRUE(key2.getLenBytes() == 24, "Key2 should maintain correct size");
@@ -377,7 +377,7 @@ bool test_key_memory_management(AESKEYLEN keyLenBits) {
 
     // Test that keys can be created and destroyed in a loop
     for (int i = 0; i < 1024; ++i) {
-        AESencryption::Key temp(keyLenBits);
+        CipherFortis::Key temp(keyLenBits);
     }
     success &= ASSERT_TRUE(true, "Multiple create/destroy cycles completed successfully");
 

@@ -5,7 +5,7 @@
 #include <p11-kit-1/p11-kit/pkcs11.h>
 #include "../../include/key.hpp" // for Key::LengthBits — reuse existing enum
 
-namespace AESencryption {
+namespace CipherFortis {
 namespace HSM {
 
 class HSMKeyHandle {
@@ -37,6 +37,6 @@ private:
 };
 
 } // namespace HSM
-} // namespace AESencryption
+} // namespace CipherFortis
 
 #endif // HSM_KEY_HANDLE_HPP

@@ -12,10 +12,10 @@
 namespace TV = TestVectors::AES;
 namespace SP = TestVectors::AES::SP800_38A;
 
-#define AESKEY AESencryption::Key
-#define AESENC_KEYLEN AESencryption::Key::LengthBits
-#define AESCIPHER AESencryption::Cipher
-#define AESENC_OPTMODE AESencryption::Cipher::OperationMode::Identifier
+#define AESKEY CipherFortis::Key
+#define AESENC_KEYLEN CipherFortis::Key::LengthBits
+#define AESCIPHER CipherFortis::Cipher
+#define AESENC_OPTMODE CipherFortis::Cipher::OperationMode::Identifier
 
 bool test_specific_exception_code_mapping(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
 bool test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode);
@@ -105,7 +105,7 @@ bool test_key_expansion_initialization(AESENC_KEYLEN klb, AESENC_OPTMODE mode) {
     size_t ke_lenbytes = getKeyExpansionLengthBytesfromKeylenBits(static_cast<enum KeylenBits_t>(keylen));
     std::vector<uint8_t> dumm(keylen/8, 1);
     AESKEY key(dumm, klb);
-    AESencryption::Cipher cipher(key, AESCIPHER::OperationMode(mode));
+    CipherFortis::Cipher cipher(key, AESCIPHER::OperationMode(mode));
 
     success &= ASSERT_TRUE(
         cipher.isKeyExpansionInitialized(),
@@ -179,7 +179,7 @@ bool test_consistency_with_c_implementation(AESENC_KEYLEN klb, AESENC_OPTMODE mo
 
         // C++ wrapper implementation
         AESKEY cpp_key(example->getKey(), klb);
-        AESencryption::Cipher cpp_cipher(cpp_key, AESCIPHER::OperationMode(mode));
+        CipherFortis::Cipher cpp_cipher(cpp_key, AESCIPHER::OperationMode(mode));
 
         enum ExceptionCode c_result = [&]() -> enum ExceptionCode{
             switch(mode){

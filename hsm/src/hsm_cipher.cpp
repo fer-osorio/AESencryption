@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <stdexcept>
 
-namespace AESencryption {
+namespace CipherFortis {
 namespace HSM {
 
 // ---------------------------------------------------------------------------
@@ -267,4 +267,4 @@ void HSMCipher::decryption(
 }
 
 } // namespace HSM
-} // namespace AESencryption
+} // namespace CipherFortis

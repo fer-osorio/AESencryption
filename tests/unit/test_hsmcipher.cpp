@@ -21,9 +21,9 @@ namespace TV  = TestVectors::AES;
 namespace SP  = TestVectors::AES::SP800_38A;
 namespace F97 = TestVectors::AES::FIPS197::Cipher;
 
-using AESencryption::Key;
-using AESencryption::Cipher;
-using namespace AESencryption::HSM;
+using CipherFortis::Key;
+using CipherFortis::Cipher;
+using namespace CipherFortis::HSM;
 
 static const std::string LIB_PATH    = "/usr/lib64/pkcs11/libsofthsm2.so";
 static const std::string TOKEN_LABEL = "AESdev";

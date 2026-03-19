@@ -14,8 +14,8 @@
 #include <sstream>
 #include <cstring>
 
-using namespace AESencryption;
-using namespace AESencryption::HSM;
+using namespace CipherFortis;
+using namespace CipherFortis::HSM;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

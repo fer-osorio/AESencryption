@@ -7,36 +7,36 @@
 #include<chrono>
 #include<fstream>
 
-struct AESencryption::InitVector{
+struct CipherFortis::InitVector{
     uint8_t data[BLOCK_SIZE];
 };
 
 
 // Custom exception classes for better error categorization
-class AESencryption::AESException : public std::runtime_error {
+class CipherFortis::AESException : public std::runtime_error {
 public:
     explicit AESException(const std::string& message) : std::runtime_error(message) {}
 };
 
-class AESencryption::KeyExpansionException : public AESException {
+class CipherFortis::KeyExpansionException : public AESException {
 public:
     explicit KeyExpansionException(const std::string& message)
         : AESException("Key expansion error: " + message) {}
 };
 
-class AESencryption::EncryptionException : public AESException {
+class CipherFortis::EncryptionException : public AESException {
 public:
     explicit EncryptionException(const std::string& message)
         : AESException("Encryption error: " + message) {}
 };
 
-class AESencryption::DecryptionException : public AESException {
+class CipherFortis::DecryptionException : public AESException {
 public:
     explicit DecryptionException(const std::string& message)
         : AESException("Decryption error: " + message) {}
 };
 
-using namespace AESencryption;
+using namespace CipherFortis;
 
 // Error code to exception mapping
 static void handleExceptionCode(enum ExceptionCode code, const std::string& operation) {
@@ -345,7 +345,7 @@ Cipher& Cipher::operator = (const Cipher& c) {
     return *this;
 }
 
-std::ostream& AESencryption::operator<<(std::ostream& ost, const Cipher& c) {
+std::ostream& CipherFortis::operator<<(std::ostream& ost, const Cipher& c) {
     ost << "AES::Cipher object information:\n";
     ost << c.key;
     ost << "\tNr: " << c.config.getNr() << " rounds\n";

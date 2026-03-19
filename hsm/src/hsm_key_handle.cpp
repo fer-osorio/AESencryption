@@ -1,6 +1,6 @@
 #include "../include/hsm_key_handle.hpp"
 
-namespace AESencryption {
+namespace CipherFortis {
 namespace HSM {
 
 HSMKeyHandle::HSMKeyHandle(
@@ -16,4 +16,4 @@ HSMKeyHandle::HSMKeyHandle(
 {}
 
 } // namespace HSM
-} // namespace AESencryption
+} // namespace CipherFortis

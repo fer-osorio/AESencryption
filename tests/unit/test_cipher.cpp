@@ -5,11 +5,11 @@
 namespace TV = TestVectors::AES;
 namespace SP = TestVectors::AES::SP800_38A;
 
-#define AESKEY AESencryption::Key
-#define AESKEY_LENBITS AESencryption::Key::LengthBits
+#define AESKEY CipherFortis::Key
+#define AESKEY_LENBITS CipherFortis::Key::LengthBits
 
-#define AESCIPHER AESencryption::Cipher
-#define AESCIPHER_OPTMODE AESencryption::Cipher::OperationMode::Identifier
+#define AESCIPHER CipherFortis::Cipher
+#define AESCIPHER_OPTMODE CipherFortis::Cipher::OperationMode::Identifier
 
 bool test_successful_operations(AESKEY_LENBITS ks, AESCIPHER_OPTMODE cm);
 bool test_empty_vector_exceptions(AESKEY_LENBITS ks, AESCIPHER_OPTMODE cm);
@@ -263,7 +263,7 @@ bool test_cbc_mode_iv_handling(AESKEY_LENBITS ks) {
     bool success = true;
 
     try {
-        AESencryption::Key cbc_key(ks);
+        CipherFortis::Key cbc_key(ks);
         AESCIPHER cbc_cipher(
             cbc_key, AESCIPHER::OperationMode(AESCIPHER_OPTMODE::CBC)
         );

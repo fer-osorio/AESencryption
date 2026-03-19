@@ -10,7 +10,7 @@
 #include <string>
 #include <cstdint>
 
-namespace AESencryption {
+namespace CipherFortis {
 namespace HSM {
 
 class HSMCipher : public Encryptor {
@@ -74,6 +74,6 @@ private:
 };
 
 } // namespace HSM
-} // namespace AESencryption
+} // namespace CipherFortis
 
 #endif // HSM_CIPHER_HPP
