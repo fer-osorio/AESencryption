@@ -15,18 +15,18 @@
 
 const std::filesystem::path findProjectRoot();
 
-#define BMP_ENCRYPTOR "bin/command-line-tools/image-encryption/bmp_encryptor"
+#define IMAGE_ENCRYPTOR "bin/command-line-tools/image-encryption/image_encryptor"
 
 namespace cltt = CommandLineToolsTest;
 
 int main() {
-    std::cout << "=== System/E2E Testing for AES File Encryption Tool ===" << std::endl;
+    std::cout << "=== System/E2E Testing for AES Image Encryption Tool ===" << std::endl;
 
-    std::filesystem::path bmp_encryptor_path = findProjectRoot() / BMP_ENCRYPTOR;
+    std::filesystem::path image_encryptor_path = findProjectRoot() / IMAGE_ENCRYPTOR;
     bool allTestsSucceed = true;
 
     try{
-        cltt::SystemTests st(bmp_encryptor_path.string(), cltt::FileFormat::BITMAP);
+        cltt::SystemTests st(image_encryptor_path.string(), cltt::FileFormat::BITMAP);
         allTestsSucceed &= st.test_file_encryption_workflow();
         allTestsSucceed &= st.test_error_scenarios();
         allTestsSucceed &= st.test_large_file_performance();

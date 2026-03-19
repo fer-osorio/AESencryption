@@ -1,6 +1,9 @@
 # Include common functions and utilities
 include ../common.mk
-BUILD_TYPE ?= test
+ifneq ($(BUILD_TYPE),debug)
+	BUILD_TYPE = test
+endif
+$(info $(BUILD_TYPE))
 include ../config.mk
 
 # Local configuration. Since this is the test module, local configuration is fundamentally different.

@@ -34,6 +34,18 @@ void RasterImageFixture::createValidPng(const fs::path& path, int width, int hei
     stbi_write_png(path.string().c_str(), width, height, 3, pixels.data(), width * 3);
 }
 
+void RasterImageFixture::createValidBmp(const fs::path& path, int width, int height) {
+    std::vector<uint8_t> pixels(width * height * 3);
+    for (int y = 0; y < height; y++)
+        for (int x = 0; x < width; x++) {
+            int idx = (y * width + x) * 3;
+            pixels[idx]     = static_cast<uint8_t>(x * 25);
+            pixels[idx + 1] = static_cast<uint8_t>(y * 25);
+            pixels[idx + 2] = 128;
+        }
+    stbi_write_bmp(path.string().c_str(), width, height, 3, pixels.data());
+}
+
 void RasterImageFixture::createValidJpeg(const fs::path& path, int width, int height, int quality) {
     std::vector<uint8_t> pixels(width * height * 3);
     for (int y = 0; y < height; y++)

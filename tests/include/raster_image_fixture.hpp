@@ -2,7 +2,6 @@
 #define RASTER_IMAGE_FIXTURE_HPP
 
 #include <filesystem>
-#include <cstdint>
 
 namespace fs = std::filesystem;
 
@@ -20,6 +19,7 @@ struct RasterImageFixture {
     ~RasterImageFixture();
 
     static void createValidPng(const fs::path& path, int width, int height);
+    static void createValidBmp(const fs::path& path, int width, int height);
 
 private:
     void setupTestEnvironment();
