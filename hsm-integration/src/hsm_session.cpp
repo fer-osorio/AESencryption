@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <vector>
 
-namespace AESencryption {
+namespace CipherFortis {
 namespace HSM {
 
 // ---------------------------------------------------------------------------
@@ -140,4 +140,4 @@ HSMSession::HSMSession(HSMSession&& other) noexcept
 }
 
 } // namespace HSM
-} // namespace AESencryption
+} // namespace CipherFortis

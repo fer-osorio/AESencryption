@@ -1,6 +1,6 @@
-#include "../../test-framework/include/test_framework.hpp"
-#include "../../crypto-cli/include/cli_config.hpp"
-#include "../../include/cipher.hpp"
+#include "../../testing/include/test_framework.hpp"
+#include "../../cli-tools/include/cli_config.hpp"
+#include "../../core-crypto/include/cipher.hpp"
 
 namespace TestHelpers {
     // Helper to create argv array for testing
@@ -119,9 +119,9 @@ bool test_valid_encryption_arguments() {
     success &= ASSERT_TRUE(config.output_file == "encrypted.bin", "Output file should match argument");
 
     // Test: Enum conversions are correct
-    success &= ASSERT_TRUE(config.operation_mode == AESencryption::Cipher::OperationMode::Identifier::CBC,
+    success &= ASSERT_TRUE(config.operation_mode == CipherFortis::Cipher::OperationMode::Identifier::CBC,
                 "Operation mode should be CBC");
-    success &= ASSERT_TRUE(config.key_length == AESencryption::Key::LengthBits::_256,
+    success &= ASSERT_TRUE(config.key_length == CipherFortis::Key::LengthBits::_256,
                 "Key length should be 256 bits");
 
     PRINT_RESULTS();
@@ -150,7 +150,7 @@ bool test_argument_to_crypto_type_conversion() {
         CLIConfig::FileCryptoConfig config;
         config.validate(parser);
 
-        success &= ASSERT_TRUE(config.operation_mode == AESencryption::Cipher::OperationMode::Identifier::ECB,
+        success &= ASSERT_TRUE(config.operation_mode == CipherFortis::Cipher::OperationMode::Identifier::ECB,
                     "String 'ECB' should convert to OperationMode::Identifier::ECB");
     }
 
@@ -243,7 +243,7 @@ bool test_invalid_arguments_prevent_crypto_initialization() {
         invalid_config.error_message = "Test error";
 
         try {
-            AESencryption::Key key = invalid_config.create_key();
+            CipherFortis::Key key = invalid_config.create_key();
             success &= ASSERT_TRUE(false, "Creating key from invalid config should throw exception");
         } catch (const std::runtime_error& e) {
             success &= ASSERT_TRUE(true, "Invalid config properly throws exception");
@@ -343,9 +343,9 @@ bool test_default_values() {
     config.validate(parser);
 
     success &= ASSERT_TRUE(config.is_valid, "Config should be valid with defaults");
-    success &= ASSERT_TRUE(config.operation_mode == AESencryption::Cipher::OperationMode::Identifier::CBC,
+    success &= ASSERT_TRUE(config.operation_mode == CipherFortis::Cipher::OperationMode::Identifier::CBC,
                 "Default operation mode should be CBC");
-    success &= ASSERT_TRUE(config.key_length == AESencryption::Key::LengthBits::_128,
+    success &= ASSERT_TRUE(config.key_length == CipherFortis::Key::LengthBits::_128,
                 "Default key length should be 128 bits");
 
     PRINT_RESULTS();
@@ -378,7 +378,7 @@ bool test_config_creates_functional_crypto_objects() {
     success &= ASSERT_TRUE(config.is_valid, "Key generation config should be valid");
     success &= ASSERT_TRUE(config.operation == CLIConfig::FileCryptoConfig::Operation::GENERATE_KEY,
                 "Operation should be GENERATE_KEY");
-    success &= ASSERT_TRUE(config.key_length == AESencryption::Key::LengthBits::_256,
+    success &= ASSERT_TRUE(config.key_length == CipherFortis::Key::LengthBits::_256,
                 "Key length should be 256");
 
     // Test that configuration values can create crypto objects

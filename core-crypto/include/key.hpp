@@ -6,7 +6,7 @@
 #include<stdint.h>
 #include<vector>
 
-namespace AESencryption {
+namespace CipherFortis {
 
 struct Key;									// -Declaring struct Key and class Cipher to use them as arguments in functions
 std::ostream& operator << (std::ostream& ost, const Key& k);

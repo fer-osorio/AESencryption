@@ -1,10 +1,10 @@
-#include "../../hsm/include/hsm_session.hpp"
-#include "../../hsm/include/hsm_cipher.hpp"
-#include "../../hsm/include/hsm_key_handle.hpp"
-#include "../../include/cipher.hpp"
-#include "../../include/key.hpp"
+#include "../../hsm-integration/include/hsm_session.hpp"
+#include "../../hsm-integration/include/hsm_cipher.hpp"
+#include "../../hsm-integration/include/hsm_key_handle.hpp"
+#include "../../core-crypto/include/cipher.hpp"
+#include "../../core-crypto/include/key.hpp"
 #include "../../file-handlers/include/file_base.hpp"
-#include "../../crypto-cli/include/cli_config.hpp"
+#include "../../cli-tools/include/cli_config.hpp"
 
 #include <iostream>
 #include <string>
@@ -14,8 +14,8 @@
 #include <sstream>
 #include <cstring>
 
-using namespace AESencryption;
-using namespace AESencryption::HSM;
+using namespace CipherFortis;
+using namespace CipherFortis::HSM;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

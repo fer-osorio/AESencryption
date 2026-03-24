@@ -2,7 +2,7 @@
 #ifndef CLI_CONFIG_HPP
 #define CLI_CONFIG_HPP
 
-#include "../../include/cipher.hpp"
+#include "../../core-crypto/include/cipher.hpp"
 #include <filesystem>
 #include <stdexcept>
 #include <string>
@@ -47,14 +47,14 @@ public:
     virtual void print_help(const ArgumentParser& parser) const;
 
     // Factory methods
-    AESencryption::Key                           create_key()     const;
-    AESencryption::Cipher::OperationMode         create_optmode() const;
+    CipherFortis::Key                           create_key()     const;
+    CipherFortis::Cipher::OperationMode         create_optmode() const;
 
     // Fields
     Operation                                        operation      = Operation::ENCRYPT;
     std::filesystem::path                            key_file, input_file, output_file, mode_file;
-    AESencryption::Key::LengthBits                   key_length     = AESencryption::Key::LengthBits::_128;
-    AESencryption::Cipher::OperationMode::Identifier operation_mode = AESencryption::Cipher::OperationMode::Identifier::CBC;
+    CipherFortis::Key::LengthBits                   key_length     = CipherFortis::Key::LengthBits::_128;
+    CipherFortis::Cipher::OperationMode::Identifier operation_mode = CipherFortis::Cipher::OperationMode::Identifier::CBC;
 };
 
 } // namespace CLIConfig

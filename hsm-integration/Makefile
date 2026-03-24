@@ -1,23 +1,23 @@
-# test-framework/Makefile - NIST AES test vectors library
+# hsm/Makefile
 include ../common.mk
-BUILD_TYPE ?= test
 include ../config.mk
 
 # Module configuration
-MODULE_NAME = $(notdir $(CURDIR))
+MODULE_NAME  = $(notdir $(CURDIR))
 PROJECT_ROOT := $(call find-project-root)
-LIBDIR = $(PROJECT_ROOT)/lib
-TARGET_LIB = $(LIBDIR)/libtest_vectors.a
+LIBDIR       = $(PROJECT_ROOT)/lib
+TARGET_LIB   = $(LIBDIR)/libciphfortis_hsm.a
 
-# Local source directory and object directory
+# Object directory
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
 
-# Local includes (private headers)
-INCLUDES = -I$(PROJECT_ROOT)/test-framework/$(INCDIR) -I$(PROJECT_ROOT)/test-framework/$(INCDIR)/test-vectors
+# Includes: module headers + PKCS#11 header via pkg-config (fallback to system path)
+PKCS11_INC := $(shell pkg-config --cflags p11-kit-1 2>/dev/null || echo "-I/usr/include/p11-kit-1")
+INCLUDES    = -I$(PROJECT_ROOT)/hsm-integration/$(INCDIR) -I$(PROJECT_ROOT)/core-crypto/include $(PKCS11_INC)
 
 # Source files and objects
-SOURCES = $(wildcard $(SRCDIR)/test-vectors/*.cpp)
-OBJECTS = $(call sources_to_objects,$(SOURCES),$(OBJDIR),cpp)
+SOURCES = $(wildcard $(SRCDIR)/*.cpp)
+OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Default target
 all: $(TARGET_LIB)
@@ -27,7 +27,7 @@ $(TARGET_LIB): $(OBJECTS) | $(LIBDIR) $(OBJDIR)
 	$(call create_static_lib,$@,$(OBJECTS))
 
 # Compilation rule for C++ files
-$(OBJDIR)/%.o: $(SRCDIR)/test-vectors/%.cpp | $(OBJDIR)
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
 	$(call compile_cpp_rule,$<,$@)
 
 # Directory creation

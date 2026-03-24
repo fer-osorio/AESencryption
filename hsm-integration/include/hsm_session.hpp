@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <p11-kit-1/p11-kit/pkcs11.h>
 
-namespace AESencryption {
+namespace CipherFortis {
 namespace HSM {
 
 // Thrown when any PKCS#11 function returns a code other than CKR_OK.
@@ -52,6 +52,6 @@ private:
 };
 
 } // namespace HSM
-} // namespace AESencryption
+} // namespace CipherFortis
 
 #endif // HSM_SESSION_HPP

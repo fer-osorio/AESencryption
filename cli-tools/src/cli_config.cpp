@@ -70,10 +70,10 @@ bool FileCryptoConfig::validate(const ArgumentParser& parser) {
     // Operation mode
     std::string mode_str = parser.getOr("--mode", "");
     if (!mode_str.empty()) {
-        if      (mode_str == "ECB") operation_mode = AESencryption::Cipher::OperationMode::Identifier::ECB;
-        else if (mode_str == "CBC") operation_mode = AESencryption::Cipher::OperationMode::Identifier::CBC;
-        else if (mode_str == "OFB") operation_mode = AESencryption::Cipher::OperationMode::Identifier::OFB;
-        else if (mode_str == "CTR") operation_mode = AESencryption::Cipher::OperationMode::Identifier::CTR;
+        if      (mode_str == "ECB") operation_mode = CipherFortis::Cipher::OperationMode::Identifier::ECB;
+        else if (mode_str == "CBC") operation_mode = CipherFortis::Cipher::OperationMode::Identifier::CBC;
+        else if (mode_str == "OFB") operation_mode = CipherFortis::Cipher::OperationMode::Identifier::OFB;
+        else if (mode_str == "CTR") operation_mode = CipherFortis::Cipher::OperationMode::Identifier::CTR;
         else {
             error_message = "Invalid mode: " + mode_str + ". Use ECB, CBC, OFB, or CTR.";
             is_valid = false;
@@ -86,9 +86,9 @@ bool FileCryptoConfig::validate(const ArgumentParser& parser) {
     if (!kl_str.empty()) {
         try {
             int bits = std::stoi(kl_str);
-            if      (bits == 128) key_length = AESencryption::Key::LengthBits::_128;
-            else if (bits == 192) key_length = AESencryption::Key::LengthBits::_192;
-            else if (bits == 256) key_length = AESencryption::Key::LengthBits::_256;
+            if      (bits == 128) key_length = CipherFortis::Key::LengthBits::_128;
+            else if (bits == 192) key_length = CipherFortis::Key::LengthBits::_192;
+            else if (bits == 256) key_length = CipherFortis::Key::LengthBits::_256;
             else {
                 error_message = "Invalid key length: " + kl_str + ". Use 128, 192, or 256.";
                 is_valid = false;
@@ -119,7 +119,7 @@ bool FileCryptoConfig::validate(const ArgumentParser& parser) {
             }
             if (operation == Operation::DECRYPT) {
                 if (mode_file.empty() &&
-                    operation_mode != AESencryption::Cipher::OperationMode::Identifier::ECB) {
+                    operation_mode != CipherFortis::Cipher::OperationMode::Identifier::ECB) {
                     error_message = "Missing initial vector, nonce, counter or oder required data";
                     return false;
                 }
@@ -151,27 +151,27 @@ void FileCryptoConfig::print_help(const ArgumentParser& parser) const {
               << "\t--help                   Show this help message\n";
 }
 
-AESencryption::Key FileCryptoConfig::create_key() const {
+CipherFortis::Key FileCryptoConfig::create_key() const {
     if (!is_valid)
         throw std::runtime_error("Cannot create key from invalid configuration");
     if (operation == Operation::GENERATE_KEY)
-        return AESencryption::Key(key_length);
+        return CipherFortis::Key(key_length);
     try {
-        return AESencryption::Key(key_file.c_str());
+        return CipherFortis::Key(key_file.c_str());
     } catch (const std::exception&) {
         throw;
     }
 }
 
-AESencryption::Cipher::OperationMode FileCryptoConfig::create_optmode() const {
+CipherFortis::Cipher::OperationMode FileCryptoConfig::create_optmode() const {
     if (!is_valid)
         throw std::runtime_error("Cannot create operation mode object from invalid configuration");
     if (!mode_file.empty()) {
         try {
-            return AESencryption::Cipher::OperationMode::loadFromFile(mode_file);
+            return CipherFortis::Cipher::OperationMode::loadFromFile(mode_file);
         } catch (const std::exception&) {
             throw;
         }
     }
-    return AESencryption::Cipher::OperationMode(operation_mode);
+    return CipherFortis::Cipher::OperationMode(operation_mode);
 }

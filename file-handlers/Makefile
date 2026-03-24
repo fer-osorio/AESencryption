@@ -6,7 +6,7 @@ include ../config.mk
 MODULE_NAME = $(notdir $(CURDIR))
 PROJECT_ROOT := $(call find-project-root)
 LIBDIR = $(PROJECT_ROOT)/lib
-TARGET_LIB = $(LIBDIR)/libfilehandlers.a
+TARGET_LIB = $(LIBDIR)/libciphfortis_files.a
 
 # Local source directory and object directory
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
@@ -17,15 +17,15 @@ OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Local includes (in addition to common includes)
 INCLUDES = -I$(PROJECT_ROOT)/file-handlers/$(INCDIR) \
-           -I$(PROJECT_ROOT)/$(INCDIR) \
-           -I$(PROJECT_ROOT)/metrics-analysis/$(INCDIR) \
+           -I$(PROJECT_ROOT)/core-crypto/$(INCDIR) \
+           -I$(PROJECT_ROOT)/analysis/$(INCDIR) \
            -I$(PROJECT_ROOT)/third-party/stb
 
 # Dependencies on other modules
-DEPS = $(LIBDIR)/libaesencryption_cpp.a $(LIBDIR)/libmetricsanalysis.a
+DEPS = $(LIBDIR)/libciphfortis_core.a $(LIBDIR)/libciphfortis_analysis.a
 
 # External libraries needed
-LIBS = -L$(LIBDIR) -laesencryption_cpp -lmetricsanalysis
+LIBS = -L$(LIBDIR) -lciphfortis_core -lciphfortis_analysis
 
 # Default target
 all: $(TARGET_LIB)
@@ -37,8 +37,8 @@ check-deps:
 # Build dependencies (optional - for convenience)
 dependencies:
 	$(call print_info,"Building project dependencies...")
-	@$(MAKE) -C $(PROJECT_ROOT)/src
-	@$(MAKE) -C $(PROJECT_ROOT)/metrics-analysis
+	@$(MAKE) -C $(PROJECT_ROOT)/core-crypto/src
+	@$(MAKE) -C $(PROJECT_ROOT)/analysis
 	$(call print_success,"All dependencies built successfully")
 
 # Library target

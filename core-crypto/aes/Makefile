@@ -1,18 +1,18 @@
-# data-encryption/Makefile - Pure C AES implementation
-include ../common.mk
-include ../config.mk
+# core-crypto/aes/Makefile - Pure C AES implementation
+include ../../common.mk
+include ../../config.mk
 
 # Module configuration
 MODULE_NAME = $(notdir $(CURDIR))
 PROJECT_ROOT := $(call find-project-root)
 LIBDIR = $(PROJECT_ROOT)/lib
-TARGET_LIB = $(LIBDIR)/libaesencryption_c.a
+TARGET_LIB = $(LIBDIR)/libciphfortis_aes.a
 
 # Local source directory and object directory
 OBJDIR = $(PROJECT_ROOT)/obj/$(notdir $(CURDIR))
 
 # Local includes (private headers)
-INCLUDES = -I$(PROJECT_ROOT)/data-encryption/$(INCDIR)
+INCLUDES = -I$(PROJECT_ROOT)/core-crypto/aes/$(INCDIR)
 
 # Source files and objects
 SOURCES = $(wildcard $(SRCDIR)/*.c)

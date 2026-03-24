@@ -1,10 +1,10 @@
-#include"../../test-framework/include/test_framework.hpp"
-#include"../../data-encryption/include/constants.h"
-#include"../../data-encryption/include/block.h"
-#include"../../data-encryption/include/key_expansion.h"
-#include"../../data-encryption/include/AES.h"              // For encryptBlock/decryptBlock
-#include"../../data-encryption/include/operation_modes.h"
-#include"../../test-framework/include/test-vectors/sp800_38a_modes.hpp"
+#include"../../testing/include/test_framework.hpp"
+#include"../../core-crypto/aes/include/constants.h"
+#include"../../core-crypto/aes/include/block.h"
+#include"../../core-crypto/aes/include/key_expansion.h"
+#include"../../core-crypto/aes/include/AES.h"              // For encryptBlock/decryptBlock
+#include"../../core-crypto/aes/include/operation_modes.h"
+#include"../../testing/include/test-vectors/sp800_38a_modes.hpp"
 #include<cstring>
 
 namespace TV = TestVectors::AES;

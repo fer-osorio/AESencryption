@@ -1,14 +1,15 @@
-# AES Encryption Library
+# CipherFortis
 
 A modular C/C++ library for file encryption using AES (Advanced Encryption Standard) with built-in encryption quality analysis through statistical metrics.
 
 ## Features
 
 - **AES encryption** supporting 128, 192, and 256-bit keys
-- **Multiple operation modes**: ECB, CBC (more planned)
-- **File format support**: BMP images, text files, generic binary files
+- **Multiple operation modes**: ECB, CBC, OFB, CTR
+- **File format support**: BMP images, PNG, JPEG, text files, generic binary files
 - **Encryption quality metrics**: Entropy, Chi-Square, correlation analysis
 - **NIST-compliant implementation** with comprehensive test vectors
+- **HSM integration** via PKCS#11 for hardware-backed key management
 - **Modular architecture** for easy extension to new file formats
 - **Command-line tools** for immediate use
 
@@ -19,15 +20,15 @@ A modular C/C++ library for file encryption using AES (Advanced Encryption Stand
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd AESencryption
+cd CipherFortis
 
 # Build all components (requires GCC/G++ and Make)
 make
 
 # Build specific components
-make data-encryption  # Core AES implementation (C)
-make core             # C++ wrapper classes
-make tests            # Test suite
+make core-aes        # Core AES implementation (C)
+make core            # C++ wrapper classes
+make tests           # Test suite
 
 # Run tests
 cd tests
@@ -38,23 +39,23 @@ make run-all
 
 ```bash
 # Generate a 256-bit key
-./bin/command-line-tools/image-encryption/bmp_encryptor \
+./bin/command-line-tools/image-encryption/image_encryptor \
     --generate-key --key-length 256 --output my_key.bin
 
-# Encrypt a bitmap image (CBC mode)
-./bin/command-line-tools/image-encryption/bmp_encryptor \
+# Encrypt an image (CBC mode)
+./bin/command-line-tools/image-encryption/image_encryptor \
     --encrypt \
     --key my_key.bin \
-    --input tests/test-files/Baboon.bmp \
-    --output encrypted.bmp \
+    --input photo.png \
+    --output encrypted.png \
     --mode CBC
 
 # Decrypt the image
-./bin/command-line-tools/image-encryption/bmp_encryptor \
+./bin/command-line-tools/image-encryption/image_encryptor \
     --decrypt \
     --key my_key.bin \
-    --input encrypted.bmp \
-    --output decrypted.bmp \
+    --input encrypted.png \
+    --output decrypted.png \
     --mode-data <mode_data_file>
 ```
 
@@ -62,19 +63,18 @@ make run-all
 
 ```cpp
 #include "cipher.hpp"
-#include "bitmap.hpp"
 
 // Create a cipher with 256-bit key and CBC mode
-AESencryption::Cipher cipher(
-    AESencryption::Key::LengthBits::_256,
-    AESencryption::Cipher::OperationMode::Identifier::CBC
+CipherFortis::Cipher cipher(
+    CipherFortis::Key::LengthBits::_256,
+    CipherFortis::Cipher::OperationMode::Identifier::CBC
 );
 
-// Load and encrypt a bitmap
-File::Bitmap image("input.bmp");
+// Load and encrypt a file
+File::RasterImage image("input.png");
 image.load();
 image.apply_encryption(cipher);
-image.save("encrypted.bmp");
+image.save("encrypted.png");
 
 // Analyze encryption quality
 DataRandomness metrics = image.calculate_randomness();
@@ -84,18 +84,21 @@ std::cout << "Entropy: " << metrics.getEntropy() << std::endl;
 ## Project Structure
 
 ```
-AESencryption/
-├── data-encryption/      # Core AES implementation (C)
-├── src/                  # C++ wrapper classes (Key, Cipher)
-├── file-handlers/        # File format support (BMP, text, binary)
-├── metrics-analysis/     # Statistical quality analysis
-├── crypto-cli/           # CLI configuration and argument parsing
+CipherFortis/
+├── core-crypto/
+│   ├── aes/              # Core AES implementation (C): ECB, CBC, OFB, CTR
+│   ├── include/          # Public C++ API: Cipher, Key, Encryptor
+│   └── src/              # C++ wrapper implementation
+├── file-handlers/        # File format support (BMP, PNG, JPEG, text, binary)
+├── analysis/             # Statistical encryption quality analysis
+├── cli-tools/            # CLI configuration and argument parsing
+├── hsm-integration/      # PKCS#11 HSM adapter
 ├── command-line-tools/   # Ready-to-use encryption tools
-├── tests/                # Comprehensive test suite
+├── testing/              # NIST test vectors and test framework
+├── tests/                # Test suite
 │   ├── unit/             # Unit tests
 │   ├── integration/      # Integration tests
 │   └── system/           # End-to-end workflow tests
-├── include/              # Public API headers
 └── lib/                  # Compiled static libraries (generated)
 ```
 
@@ -121,7 +124,7 @@ make BUILD_TYPE=profile   # Profiling build
 ```bash
 make all                 # Build everything
 make clean               # Clean all build artifacts
-make data-encryption     # Build only core AES (C library)
+make core-aes            # Build only core AES (C library)
 make core                # Build C++ wrapper
 make file-handlers       # Build file format handlers
 make tests               # Build test suite
@@ -137,16 +140,6 @@ make command-line-tools  # Build CLI tools
 - **[Encryption Quality Metrics](docs/ENCRYPTION_QUALITY.md)** - Understanding statistical analysis
 - **[Testing Strategy](docs/TESTING.md)** - Test suite organization and NIST compliance
 - **[API Reference](docs/api/)** - Generated API documentation (Doxygen)
-
-### Module Documentation (coming soon)
-
-Each module contains its own README with specific usage examples:
-
-- [`data-encryption/README.md`](data-encryption/README.md) - Core AES C API
-- [`src/README.md`](src/README.md) - C++ wrapper classes
-- [`file-handlers/README.md`](file-handlers/README.md) - File format API
-- [`metrics-analysis/README.md`](metrics-analysis/README.md) - Statistical analysis
-- [`tests/README.md`](tests/README.md) - Running and extending tests
 
 ## Requirements
 
@@ -204,12 +197,12 @@ For integration into other projects:
 
 ```bash
 # Add to your project's include path
--I/path/to/AESencryption/include
--I/path/to/AESencryption/data-encryption/include
--I/path/to/AESencryption/file-handlers/include
+-I/path/to/CipherFortis/core-crypto/include
+-I/path/to/CipherFortis/core-crypto/aes/include
+-I/path/to/CipherFortis/file-handlers/include
 
 # Link against libraries
--L/path/to/AESencryption/lib -laesencryption_cpp -laesencryption_c -lfilehandlers
+-L/path/to/CipherFortis/lib -lciphfortis_core -lciphfortis_aes -lciphfortis_files
 ```
 
 ## Testing
@@ -231,7 +224,7 @@ make run-system
 Test coverage includes:
 
 - ✅ NIST FIPS 197 test vectors (key expansion, encryption/decryption)
-- ✅ NIST SP 800-38A test vectors (ECB, CBC modes)
+- ✅ NIST SP 800-38A test vectors (ECB, CBC, OFB, CTR modes)
 - ✅ File format handling edge cases
 - ✅ End-to-end encryption workflows
 
@@ -240,8 +233,6 @@ Test coverage includes:
 ### Current Focus
 
 - [ ] Complete cross-platform support (macOS, Windows)
-- [ ] Additional file format support (PNG, JPEG)
-- [ ] More operation modes (CTR, GCM)
 - [ ] Performance optimizations
 
 ### Future Goals
@@ -260,7 +251,7 @@ This project is currently in early development. Contributions, suggestions, and 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
 3. Make your changes and test thoroughly
-4. Commit with clear messages: `git commit -m 'Add amazing feature'`
+4. Commit with clear messages following Angular convention (see `docs/angular_commit_convention.md`)
 5. Push to your fork: `git push origin feature/amazing-feature`
 6. Open a Pull Request
 

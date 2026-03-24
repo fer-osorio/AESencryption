@@ -4,7 +4,7 @@
 #include"key.hpp"
 #include"encryptor.hpp"
 
-namespace AESencryption {
+namespace CipherFortis {
 
 // Forward declarations of custom exceptions
 class AESException;

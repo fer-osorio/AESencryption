@@ -1,16 +1,16 @@
-#include "../../test-framework/include/test_framework.hpp"
-#include "../../test-framework/include/test-vectors/fips197_cipher.hpp"
-#include "../../test-framework/include/test-vectors/sp800_38a_modes.hpp"
+#include "../../testing/include/test_framework.hpp"
+#include "../../testing/include/test-vectors/fips197_cipher.hpp"
+#include "../../testing/include/test-vectors/sp800_38a_modes.hpp"
 
-#include "../../hsm/include/hsm_session.hpp"
-#include "../../hsm/include/hsm_cipher.hpp"
-#include "../../hsm/include/hsm_key_handle.hpp"
-#include "../../include/cipher.hpp"
-#include "../../include/key.hpp"
+#include "../../hsm-integration/include/hsm_session.hpp"
+#include "../../hsm-integration/include/hsm_cipher.hpp"
+#include "../../hsm-integration/include/hsm_key_handle.hpp"
+#include "../../core-crypto/include/cipher.hpp"
+#include "../../core-crypto/include/key.hpp"
 
 extern "C" {
-#include "../../data-encryption/include/operation_modes.h"
-#include "../../data-encryption/include/key_expansion.h"
+#include "../../core-crypto/aes/include/operation_modes.h"
+#include "../../core-crypto/aes/include/key_expansion.h"
 }
 
 #include <vector>
@@ -21,9 +21,9 @@ namespace TV  = TestVectors::AES;
 namespace SP  = TestVectors::AES::SP800_38A;
 namespace F97 = TestVectors::AES::FIPS197::Cipher;
 
-using AESencryption::Key;
-using AESencryption::Cipher;
-using namespace AESencryption::HSM;
+using CipherFortis::Key;
+using CipherFortis::Cipher;
+using namespace CipherFortis::HSM;
 
 static const std::string LIB_PATH    = "/usr/lib64/pkcs11/libsofthsm2.so";
 static const std::string TOKEN_LABEL = "AESdev";

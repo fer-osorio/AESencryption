@@ -21,15 +21,15 @@
  *                       --output <file>
  */
 
-#include "../../include/cipher.hpp"
+#include "../../core-crypto/include/cipher.hpp"
 #include "../../file-handlers/include/image_factory.hpp"
-#include "../../crypto-cli/include/cli_config.hpp"
+#include "../../cli-tools/include/cli_config.hpp"
 
 #include <iostream>
 #include <memory>
 #include <stdexcept>
 
-using namespace AESencryption;
+using namespace CipherFortis;
 using namespace CLIConfig;
 using namespace File;
 
