@@ -25,3 +25,13 @@ include(GTest)
 
 include(CTest)
 enable_testing()
+
+add_subdirectory(third-party)
+add_subdirectory(core-crypto)
+add_subdirectory(analysis)
+add_subdirectory(cli-tools)
+add_subdirectory(file-handlers)
+add_subdirectory(hsm-integration)
+add_subdirectory(testing)
+add_subdirectory(command-line-tools)
+add_subdirectory(tests)
