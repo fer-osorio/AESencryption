@@ -1,8 +1,8 @@
 #include "../include/file_base_fixture.hpp"
 #include <fstream>
 
-FileBaseFixture::FileBaseFixture() { setupTestEnvironment(); }
-FileBaseFixture::~FileBaseFixture()  { cleanupTestEnvironment(); }
+void FileBaseFixture::SetUp()    { setupTestEnvironment(); }
+void FileBaseFixture::TearDown() { cleanupTestEnvironment(); }
 
 void FileBaseFixture::setupTestEnvironment() {
     fs::create_directories(testDataDir);
