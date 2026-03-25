@@ -2,7 +2,6 @@
 
 #include <gtest/gtest.h>
 #include "../include/system_workflows.hpp"
-#include <iostream>
 
 namespace cltt = CommandLineToolsTest;
 
