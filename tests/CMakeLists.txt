@@ -9,7 +9,7 @@ target_include_directories(ciphfortis_test_fixtures PUBLIC
 )
 target_link_libraries(ciphfortis_test_fixtures
     PUBLIC  ciphfortis_files ciphfortis_core ciphfortis_aes
-            ciphfortis_analysis ciphfortis_testing
+            ciphfortis_analysis ciphfortis_testing GTest::gtest
     PRIVATE ciphfortis::compile_options
 )
 
@@ -19,7 +19,7 @@ function(add_ciphfortis_test)
 
     add_executable(${ARG_NAME} ${ARG_SOURCES})
     target_link_libraries(${ARG_NAME} PRIVATE
-        ciphfortis_testing GTest::gtest
+        ciphfortis_testing GTest::gtest_main
         ciphfortis::compile_options
         ${ARG_EXTRA_LIBS}
     )
@@ -27,10 +27,10 @@ function(add_ciphfortis_test)
         RUNTIME_OUTPUT_DIRECTORY
             ${CMAKE_BINARY_DIR}/tests/bin/${ARG_LABEL}
     )
-    add_test(NAME ${ARG_NAME} COMMAND ${ARG_NAME})
-    set_tests_properties(${ARG_NAME} PROPERTIES
-        LABELS            ${ARG_LABEL}
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests
+    gtest_discover_tests(${ARG_NAME}
+        PROPERTIES
+            LABELS            ${ARG_LABEL}
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests
     )
 endfunction()
 
@@ -69,6 +69,9 @@ add_ciphfortis_test(NAME test_image_encryptorcpp SOURCES system/test_image_encry
     LABEL system
     EXTRA_LIBS ciphfortis_files ciphfortis_core ciphfortis_aes
                ciphfortis_analysis ciphfortis_test_fixtures)
+target_compile_definitions(test_image_encryptorcpp PRIVATE
+    IMAGE_ENCRYPTOR_PATH="$<TARGET_FILE:image-encryptor>"
+)
 
 # ── Convenience targets ───────────────────────────────────────────────────────
 add_custom_target(run-unit
