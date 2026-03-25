@@ -1,80 +1,22 @@
-// System/E2E Testing Examples for AES File Encryption Tool
+// System/E2E Testing for AES Image Encryption Tool
 
+#include <gtest/gtest.h>
 #include "../include/system_workflows.hpp"
 #include <iostream>
-#include <filesystem>
-#include <limits.h>             // For PATH_MAX
-
-#ifdef __linux__
-    #include <unistd.h>         // For readlink
-#elif __APPLE__ || __MACH__
-    #include <mach-o/dyld.h>    // For _NSGetExecutablePath
-#elif _WIN32 || _WIN64
-    #include <windows.h>        // For GetModuleFileNameA
-#endif
-
-const std::filesystem::path findProjectRoot();
-
-#define IMAGE_ENCRYPTOR "bin/command-line-tools/image-encryption/image_encryptor"
 
 namespace cltt = CommandLineToolsTest;
 
-int main() {
-    std::cout << "=== System/E2E Testing for AES Image Encryption Tool ===" << std::endl;
-
-    std::filesystem::path image_encryptor_path = findProjectRoot() / IMAGE_ENCRYPTOR;
-    bool allTestsSucceed = true;
-
-    try{
-        cltt::SystemTests st(image_encryptor_path.string(), cltt::FileFormat::BITMAP);
-        allTestsSucceed &= st.test_file_encryption_workflow();
-        allTestsSucceed &= st.test_error_scenarios();
-        allTestsSucceed &= st.test_large_file_performance();
-    } catch(const std::exception& e){
-        std::cerr << e.what();
-        return 1;
-    }
-
-    if(allTestsSucceed){
-        std::cout << "\n===================== All System Tests Succeed =====================" << std::endl;
-        return 0;
-    } else{
-        std::cout << "\n===================== Some System Tests Failed =====================" << std::endl;
-        return 1;
-    }
+TEST(SystemTest, FileEncryptionWorkflow) {
+    cltt::SystemTests st(IMAGE_ENCRYPTOR_PATH, cltt::FileFormat::BITMAP);
+    EXPECT_TRUE(st.test_file_encryption_workflow());
 }
 
-const std::filesystem::path findProjectRoot() {
-    char buffpath[PATH_MAX];
-    bool pathRetrieveFailed = false;
-    #ifdef __linux__
-        ssize_t len = readlink(                                                 // Gets this executable path
-            "/proc/self/exe", buffpath, sizeof(buffpath) - 1                    // "/proc/self/exe" is a symbolic link to this executable
-        );
-        if (len != -1) {
-            buffpath[len] = 0;
-        } else pathRetrieveFailed = true;
-    #elif __APPLE__ || __MACH__
-        if(_NSGetExecutablePath(path_buffer, &size) != 0) {
-            pathRetrieveFailed = true;
-        }
-    #elif _WIN32 || _WIN64
-        DWORD length = GetModuleFileNameW(NULL, buffpath, PATH_MAX);
-        if(length <= 0) pathRetrieveFailed = true;
-    #endif
+TEST(SystemTest, ErrorScenarios) {
+    cltt::SystemTests st(IMAGE_ENCRYPTOR_PATH, cltt::FileFormat::BITMAP);
+    EXPECT_TRUE(st.test_error_scenarios());
+}
 
-    if (pathRetrieveFailed){
-        return {};                                                              // Failure: Executable path not found.
-    }
-
-    std::filesystem::path executablePath(buffpath);
-    std::filesystem::path currentPath = executablePath.parent_path();
-    while (currentPath.has_parent_path()) {
-        if (std::filesystem::exists(currentPath / "common.mk") ||
-            std::filesystem::exists(currentPath / ".git/config")) {
-            return currentPath;
-        }
-        currentPath = currentPath.parent_path();
-    }
-    return {}; // Not found
+TEST(SystemTest, LargeFilePerformance) {
+    cltt::SystemTests st(IMAGE_ENCRYPTOR_PATH, cltt::FileFormat::BITMAP);
+    EXPECT_TRUE(st.test_large_file_performance());
 }
