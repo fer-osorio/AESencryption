@@ -372,7 +372,7 @@ bool SystemTests::test_large_file_performance() {
         " --decrypt --mode CBC --key " + this->keyPath.string() +
         " --input " + this->encryptedOriginalLargePath.string() +
         " --output " + this->decryptedOriginalLargePath.string() +
-        " --mode-data " + this->encryptedOriginalValidPath.string() + ".optmode";
+        " --mode-data " + this->encryptedOriginalLargePath.string() + ".optmode";
 
     // Time the decryption
     auto decrypt_start = std::chrono::high_resolution_clock::now();
