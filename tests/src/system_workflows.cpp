@@ -1,8 +1,9 @@
 // System/E2E Testing Examples for AES File Encryption Tool
 // File: system/test_file_encryption_workflows.cpp
 
-#include "../../testing/include/test_framework.hpp"
-#include "../include/raster_image_fixture.hpp"
+#include "../include/raster_image_fixture.hpp"  // pulls in <gtest/gtest.h> with 1-arg ASSERT_TRUE
+#undef ASSERT_TRUE                               // remove GTest's version before the custom framework
+#include "../../testing/include/test_framework.hpp"  // restores 2-arg ASSERT_TRUE(cond, msg)
 #include "../include/system_workflows.hpp"
 #include <filesystem>
 #include <fstream>

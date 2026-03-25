@@ -7,6 +7,10 @@
 namespace fs = std::filesystem;
 
 class RasterImageFixture : public ::testing::Test {
+public:
+    static void createValidPng(const fs::path& path, int width, int height);
+    static void createValidBmp(const fs::path& path, int width, int height);
+
 protected:
     fs::path testDataDir     = fs::path("tests/data/raster_image");
     fs::path validPngPath    = testDataDir / "valid_10x10.png";
@@ -19,9 +23,6 @@ protected:
 
     void SetUp() override;
     void TearDown() override;
-
-    static void createValidPng(const fs::path& path, int width, int height);
-    static void createValidBmp(const fs::path& path, int width, int height);
 
 private:
     void setupTestEnvironment();
