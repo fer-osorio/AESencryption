@@ -1,5 +1,6 @@
-#include <gtest/gtest.h>
 #include "../../testing/include/test-encryption/detail/block_cipher_tester.hpp"
+#undef ASSERT_TRUE // remove test_framework's version before the GTest's version
+#include <gtest/gtest.h>
 #include "../../core-crypto/aes/include/block.h"
 #include "../../core-crypto/aes/include/key_expansion.h"
 #include "../../core-crypto/aes/include/AES.h"
