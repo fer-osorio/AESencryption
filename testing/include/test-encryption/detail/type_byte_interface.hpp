@@ -60,7 +60,7 @@
  * @see block_cipher_tester.hpp for usage in Tester class
  */
 
-#include "../../test_framework.hpp"
+#include <gtest/gtest.h>
 #include <iostream>
 #include <functional>
 
@@ -185,44 +185,36 @@ namespace CryptoTest {
          *
          * @see validateFunctions() to check if all pointers initialized
          */
-        bool validateBaseByteOperations(KE* keBuffer, BT* blockBuffer, size_t keySize = 128) const {
+        void validateBaseByteOperations(KE* keBuffer, BT* blockBuffer, size_t keySize = 128) const {
             if (!validateFunctions()) {
-                std::cerr << "ERROR: Function pointers not initialized\n";
-                return false;
+                FAIL() << "Function pointers not initialized";
+                return;
             }
 
             if (!keBuffer || !blockBuffer) {
-                std::cerr << "ERROR: Null buffers provided\n";
-                return false;
+                FAIL() << "Null buffers provided";
+                return;
             }
 
-            TEST_SUITE("Base Byte Operations Validation");
+            SCOPED_TRACE("Base Byte Operations Validation");
 
             // Test KeyExpansion operations
             const unsigned char zeroKeyExpansion[240] = {0};
 
             int buildResult = this->buildKeyExpansionFromBytes_(keBuffer, keySize, zeroKeyExpansion);
-            ASSERT_EQUAL(
-                0, buildResult, "Build KeyExpansion from bytes should succeed"
-            );
+            EXPECT_EQ(0, buildResult) << "Build KeyExpansion from bytes should succeed";
 
             if (buildResult == 0) {
-                ASSERT_TRUE(
-                    this->compareKeyExpansionBytes_(keBuffer, keySize, zeroKeyExpansion),
-                    "Built KeyExpansion should match source bytes"
-                );
+                EXPECT_TRUE(this->compareKeyExpansionBytes_(keBuffer, keySize, zeroKeyExpansion))
+                    << "Built KeyExpansion should match source bytes";
             }
 
             // Test error handling
             buildResult = this->buildKeyExpansionFromBytes_(nullptr, keySize, zeroKeyExpansion);
-            ASSERT_TRUE(
-                buildResult != 0, "Build should reject null output pointer"
-            );
+            EXPECT_NE(0, buildResult) << "Build should reject null output pointer";
 
             buildResult = this->buildKeyExpansionFromBytes_(keBuffer, 17, zeroKeyExpansion);  // Invalid size
-            ASSERT_TRUE(
-                buildResult != 0, "Build should reject invalid key size"
-            );
+            EXPECT_NE(0, buildResult) << "Build should reject invalid key size";
 
             // Test Block operations
             const unsigned char testBlock[16] = {
@@ -231,33 +223,16 @@ namespace CryptoTest {
             };
 
             buildResult = this->buildBlockFromBytes_(blockBuffer, testBlock);
-            ASSERT_EQUAL(
-                0, buildResult, "Build Block from bytes should succeed"
-            );
+            EXPECT_EQ(0, buildResult) << "Build Block from bytes should succeed";
 
             if (buildResult == 0) {
-                ASSERT_TRUE(
-                    this->compareBlockBytes_(blockBuffer, testBlock),
-                    "Round-trip: built Block should match source bytes"
-                );
+                EXPECT_TRUE(this->compareBlockBytes_(blockBuffer, testBlock))
+                    << "Round-trip: built Block should match source bytes";
             }
 
             // Test error handling
             buildResult = this->buildBlockFromBytes_(nullptr, testBlock);
-            ASSERT_TRUE(
-                buildResult != 0, "Build should reject null output pointer"
-            );
-
-            PRINT_RESULTS();
-
-            if (!SUITE_PASSED()) {
-                std::cout << "\n"
-                << "⚠️  WARNING: Byte operation validation failed\n"
-                << "This suggests issues in your comparison/builder functions.\n"
-                << "Fix these before running cryptographic tests.\n";
-            }
-
-            return SUITE_PASSED();
+            EXPECT_NE(0, buildResult) << "Build should reject null output pointer";
         }
 
     public:
@@ -265,7 +240,7 @@ namespace CryptoTest {
         virtual bool validateFunctions() const = 0;
 
         // Pure virtual for derived classes to implement full operation validation
-        virtual bool validateByteOperations(KE* keBuffer, BT* blockBuffer, size_t keySize = 128) const = 0;
+        virtual void validateByteOperations(KE* keBuffer, BT* blockBuffer, size_t keySize = 128) const = 0;
     };
 
     namespace BlockCipher {
@@ -337,8 +312,8 @@ namespace CryptoTest {
              * freeBlock(&block);
              * @endcode
              */
-            bool validateByteOperations(KE* keBuffer, BT* blockBuffer, size_t keySize = 128) const override {
-                return this->validateBaseByteOperations(keBuffer, blockBuffer, keySize);
+            void validateByteOperations(KE* keBuffer, BT* blockBuffer, size_t keySize = 128) const override {
+                this->validateBaseByteOperations(keBuffer, blockBuffer, keySize);
             }
 
             virtual ~TypeByteInterface() = default;
@@ -401,13 +376,11 @@ namespace CryptoTest {
              * @note All buffers must be pre-allocated and valid
              * @note This method does NOT allocate or free buffers
              */
-            bool validateByteOperations(KE* keBuffer, BT* blockBuffer, IV* ivBuffer, size_t keySize = 128) const override {
+            void validateByteOperations(KE* keBuffer, BT* blockBuffer, IV* ivBuffer, size_t keySize = 128) const override {
                 // First validate base operations (KE and Block)
-                bool baseValid = this->validateBaseByteOperations(keBuffer, blockBuffer, keySize);
+                this->validateBaseByteOperations(keBuffer, blockBuffer, keySize);
 
-                if (!baseValid) return false;
-
-                TEST_SUITE("IV Byte Operation Validation");
+                SCOPED_TRACE("IV Byte Operation Validation");
 
                 const unsigned char testIV[16] = {
                     0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
@@ -415,22 +388,15 @@ namespace CryptoTest {
                 };
 
                 int buildResult = this->buildIVFromBytes_(ivBuffer, testIV);
-                ASSERT_EQUAL(0, buildResult, "Build IV from bytes should succeed");
+                EXPECT_EQ(0, buildResult) << "Build IV from bytes should succeed";
 
                 if (buildResult == 0) {
-                    ASSERT_TRUE(
-                        this->compareIVBytes_(ivBuffer, testIV),
-                        "Built IV should match source bytes"
-                    );
+                    EXPECT_TRUE(this->compareIVBytes_(ivBuffer, testIV))
+                        << "Built IV should match source bytes";
                 }
 
                 buildResult = this->buildIVFromBytes_(nullptr, testIV);
-                ASSERT_TRUE(
-                    buildResult != 0, "Build should reject null output pointer"
-                );
-
-                PRINT_RESULTS();
-                return SUITE_PASSED();
+                EXPECT_NE(0, buildResult) << "Build should reject null output pointer";
             }
         };
     }
