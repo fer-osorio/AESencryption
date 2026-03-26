@@ -22,6 +22,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(CompilerWarnings)
 include(BuildTypes)
 include(GTest)
+include(Cppcheck)
+include(ClangTidy)
 
 include(CTest)
 enable_testing()
