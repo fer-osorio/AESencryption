@@ -22,17 +22,14 @@ A modular C/C++ library for file encryption using AES (Advanced Encryption Stand
 git clone <repository-url>
 cd CipherFortis
 
-# Build all components (requires GCC/G++ and Make)
-make
+# Configure and build (test preset — default for development)
+cmake --preset test
+cmake --build --preset test
 
-# Build specific components
-make core-aes        # Core AES implementation (C)
-make core            # C++ wrapper classes
-make tests           # Test suite
-
-# Run tests
-cd tests
-make run-all
+# Other presets
+cmake --preset debug   && cmake --build --preset debug
+cmake --preset release && cmake --build --preset release
+cmake --preset profile && cmake --build --preset profile
 ```
 
 ### Encrypting Your First File
@@ -104,31 +101,24 @@ CipherFortis/
 
 ## Build System
 
-The project uses a hierarchical Makefile system:
+The project uses CMake with four presets defined in `CMakePresets.json`. Build
+output lands in `build/<preset>/` (not in the source tree).
 
-- **`config.mk`**: Compiler settings, optimization levels, build types
-- **`common.mk`**: Shared functions and utilities
-- **Module Makefiles**: Each module has its own Makefile
+### Presets
 
-### Build Types
+| Preset    | Flags                                        |
+|-----------|----------------------------------------------|
+| `debug`   | `-O0 -ggdb3` + ASan/LSan/UBSan               |
+| `test`    | `-O0 -g --coverage` (lcov/gcov)              |
+| `profile` | `-O2 -pg -fno-omit-frame-pointer`            |
+| `release` | `-O3 -DNDEBUG -march=native -flto`           |
 
-```bash
-make BUILD_TYPE=debug     # Debug build with sanitizers (default)
-make BUILD_TYPE=release   # Optimized release build
-make BUILD_TYPE=test      # Test build with coverage analysis
-make BUILD_TYPE=profile   # Profiling build
-```
-
-### Build Targets
+### Quality Gates
 
 ```bash
-make all                 # Build everything
-make clean               # Clean all build artifacts
-make core-aes            # Build only core AES (C library)
-make core                # Build C++ wrapper
-make file-handlers       # Build file format handlers
-make tests               # Build test suite
-make command-line-tools  # Build CLI tools
+cmake --build --preset test --target coverage   # HTML coverage report
+cmake --build --preset test --target lint-c     # cppcheck (C sources)
+cmake --build --preset test --target lint-cxx   # clang-tidy (C++ sources)
 ```
 
 ## Documentation (coming soon)
@@ -145,37 +135,11 @@ make command-line-tools  # Build CLI tools
 
 ### Build Requirements
 
-- **Compiler**: GCC 7+ or Clang 6+ (C11 and C++17 support)
-- **Build tools**: GNU Make 4.0+
-- **Platform**: Linux (primary), macOS and Windows support in progress
-
-#### Debug Build Dependencies (default)
-The default `BUILD_TYPE=debug` enables memory sanitizers which require additional runtime libraries:
-
-**Debian/Ubuntu:**
-```bash
-sudo apt-get install libasan6 libubsan1 liblsan0
-```
-
-**Fedora/RHEL:**
-```bash
-sudo dnf install libasan libubsan liblsan
-```
-
-**Arch Linux:**
-```bash
-# Included with gcc package
-```
-
-**Alternative:** Build without sanitizers:
-```bash
-make BUILD_TYPE=release  # No sanitizer dependencies needed
-```
-
-### Optional Tools
-
-- **Valgrind** (for memory testing)
-- **lcov** (for coverage reports)
+- **Compiler**: GCC 7+ or Clang 6+
+- **Build tools**: CMake ≥ 3.25
+- **Test coverage**: lcov + genhtml (optional, `test` preset only)
+- **Static analysis**: cppcheck, clang-tidy (optional)
+- **HSM support**: SoftHSM2 + p11-kit (optional, skipped automatically if absent)
 
 ## Platform Support
 
@@ -187,22 +151,10 @@ make BUILD_TYPE=release  # No sanitizer dependencies needed
 
 ## Installation
 
-This project is currently designed for **local use** rather than system-wide installation:
-
-1. Build the project in place: `make`
-2. Use binaries from `./bin/` directory
-3. Link against libraries in `./lib/` directory
-
-For integration into other projects:
+Build output lands in `build/<preset>/` (not the source tree). To install:
 
 ```bash
-# Add to your project's include path
--I/path/to/CipherFortis/core-crypto/include
--I/path/to/CipherFortis/core-crypto/aes/include
--I/path/to/CipherFortis/file-handlers/include
-
-# Link against libraries
--L/path/to/CipherFortis/lib -lciphfortis_core -lciphfortis_aes -lciphfortis_files
+cmake --install build/test --prefix /tmp/ciphfortis-test
 ```
 
 ## Testing
@@ -210,15 +162,10 @@ For integration into other projects:
 The project includes extensive testing with NIST test vectors:
 
 ```bash
-cd tests
-make dependencies      # Build required libraries
-make all               # Build all tests
-make run-all           # Run all test suites
-
-# Run specific test categories
-make run-unit
-make run-integration
-make run-system
+ctest --preset test --output-on-failure       # all tests
+ctest --preset test -L unit                   # unit only
+ctest --preset test -L integration            # integration only
+ctest --preset test -L system                 # system only
 ```
 
 Test coverage includes:
@@ -259,7 +206,7 @@ This project is currently in early development. Contributions, suggestions, and 
 
 - Add tests for new functionality
 - Update documentation for API changes
-- Ensure `make run-all` passes in the tests directory
+- Ensure `ctest --preset test` passes
 
 ## License
 
