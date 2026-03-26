@@ -436,26 +436,23 @@ enum ExceptionCode decryptOFB(const uint8_t*const input, size_t size, const uint
   return NoException;
 }
 
-union Counter{
+struct Counter{
   uint8_t  uint08_[BLOCK_SIZE];
-  uint64_t uint64_[2];
 };
 
-static void CounterWriteFromBytes(union Counter* output, const uint8_t*const input){
+static void CounterWriteFromBytes(struct Counter* output, const uint8_t*const input){
   for(size_t i = 0; i <BLOCK_SIZE; i++){
     output->uint08_[i] = input[i];
   }
 }
 
-static void CounterIncrease(union Counter*const counter){
-  if(counter->uint64_[0] == 0xFFFFFFFFFFFFFFFF){
-    counter->uint64_[0] = 0; ++counter->uint64_[1];
-    return;
-  }
-  ++counter->uint64_[0];
+static void CounterIncrease(struct Counter*const counter){
+    for(int i = BLOCK_SIZE - 1, carry = 1; i >= 0 && carry != 0; i--){
+        carry = ++counter->uint08_[i] == 0 ? 1 : 0;
+    }
 }
 
-static void applyCTRencryptionStepMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, union Counter*const counter, Block_t*const buffer, struct OutputStream* os){
+static void applyCTRencryptionStepMoveForward(const KeyExpansion_t* ke_p, struct InputStream* is, struct Counter*const counter, Block_t*const buffer, struct OutputStream* os){
   BlockFromBytes(buffer, counter->uint08_);
   encryptBlock(buffer, ke_p, buffer, false);
   BytesXORBlockTo(is->currentPossition, buffer, os->currentPossition);
@@ -466,7 +463,7 @@ static void applyCTRencryptionStepMoveForward(const KeyExpansion_t* ke_p, struct
 
 static void encryptCTR__(const KeyExpansion_t* ke_p, const uint8_t* counter00, struct InputStream* is, struct OutputStream* os){
   Block_t* buffer = BlockCreateZero();
-  union Counter counter;
+  struct Counter counter;
   CounterWriteFromBytes(&counter, counter00);
   for(size_t i = 0; i < is->info.sizeInBlocks; i++){
     applyCTRencryptionStepMoveForward(ke_p, is, &counter, buffer, os);
