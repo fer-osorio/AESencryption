@@ -1,9 +1,8 @@
 // System/E2E Testing Examples for AES File Encryption Tool
 // File: system/test_file_encryption_workflows.cpp
 
-#include "../include/raster_image_fixture.hpp"  // pulls in <gtest/gtest.h> with 1-arg ASSERT_TRUE
-#undef ASSERT_TRUE                               // remove GTest's version before the custom framework
-#include "../../testing/include/test_framework.hpp"  // restores 2-arg ASSERT_TRUE(cond, msg)
+#include "../include/raster_image_fixture.hpp"  // pulls in <gtest/gtest.h>
+#include <gtest/gtest.h>
 #include "../include/system_workflows.hpp"
 #include <filesystem>
 #include <fstream>
@@ -169,7 +168,6 @@ SystemTests::~SystemTests(){
 
 // SYSTEM TEST 1: Complete Text File Encryption Workflow
 bool SystemTests::test_file_encryption_workflow() {
-    TEST_SUITE("File Encryption E2E Workflow");
     bool success = true;
 
     // Step 2: Generate encryption key
@@ -179,12 +177,12 @@ bool SystemTests::test_file_encryption_workflow() {
     int result1 = SystemUtils::execute_cli_command(
         gen_key_cmd
     );
-    success &= ASSERT_TRUE(
-        result1 == 0, "Key generation should succeed"
-    );
-    success &= ASSERT_TRUE(
-        std::filesystem::exists(this->keyPath), "Key file should be created"
-    );
+    EXPECT_EQ(0, result1) << "Key generation should succeed";
+    success &= (result1 == 0);
+
+    bool keyCreated = std::filesystem::exists(this->keyPath);
+    EXPECT_TRUE(keyCreated) << "Key file should be created";
+    success &= keyCreated;
 
     // Step 3: Encrypt the file
     std::string encrypt_cmd =
@@ -195,12 +193,12 @@ bool SystemTests::test_file_encryption_workflow() {
         encrypt_cmd
     );
 
-    success &= ASSERT_TRUE(
-        result2 == 0, "File encryption should succeed"
-    );
-    success &= ASSERT_TRUE(
-        std::filesystem::exists(this->encryptedOriginalValidPath), "Encrypted file should be created"
-    );
+    EXPECT_EQ(0, result2) << "File encryption should succeed";
+    success &= (result2 == 0);
+
+    bool encryptedCreated = std::filesystem::exists(this->encryptedOriginalValidPath);
+    EXPECT_TRUE(encryptedCreated) << "Encrypted file should be created";
+    success &= encryptedCreated;
 
     // Step 4: Verify encrypted file is different from original
     std::vector<uint8_t> test_content = SystemUtils::read_file(
@@ -210,10 +208,9 @@ bool SystemTests::test_file_encryption_workflow() {
         this->encryptedOriginalValidPath, this->ff_ != FileFormat::TEXT
     );
 
-    success &= ASSERT_TRUE(
-        encrypted_content != test_content,
-        "Encrypted content should differ from original"
-    );
+    bool contentDiffers = (encrypted_content != test_content);
+    EXPECT_TRUE(contentDiffers) << "Encrypted content should differ from original";
+    success &= contentDiffers;
 
     // Step 5: Decrypt the file
     std::string decrypt_cmd =
@@ -225,24 +222,23 @@ bool SystemTests::test_file_encryption_workflow() {
         decrypt_cmd
     );
 
-    success &= ASSERT_TRUE(
-        result3 == 0, "File decryption should succeed"
-    );
-    success &= ASSERT_TRUE(
-        std::filesystem::exists(this->decryptedOriginalValidPath),
-        "Decrypted file should be created"
-    );
+    EXPECT_EQ(0, result3) << "File decryption should succeed";
+    success &= (result3 == 0);
+
+    bool decryptedCreated = std::filesystem::exists(this->decryptedOriginalValidPath);
+    EXPECT_TRUE(decryptedCreated) << "Decrypted file should be created";
+    success &= decryptedCreated;
 
     // Step 6: Verify decrypted content matches original
     std::vector<uint8_t> decrypted_content = SystemUtils::read_file(
         this->decryptedOriginalValidPath, this->ff_ != FileFormat::TEXT
     );
 
-    success &= ASSERT_TRUE(
-        decrypted_content == test_content, "Decrypted content should match original"
-    );
+    bool contentMatches = (decrypted_content == test_content);
+    EXPECT_TRUE(contentMatches) << "Decrypted content should match original";
+    success &= contentMatches;
 
-    if(!(decrypted_content == test_content)){
+    if (!contentMatches) {
         std::cout << "Original size: " << test_content.size() << std::endl;
         std::cout << "Decrypted size: " << decrypted_content.size() << std::endl;
 
@@ -261,13 +257,11 @@ bool SystemTests::test_file_encryption_workflow() {
         }
     }
 
-    PRINT_RESULTS();
     return success;
 }
 
 // SYSTEM TEST 2: Error Handling and Edge Cases
 bool SystemTests::test_error_scenarios() {
-    TEST_SUITE("Error Scenario E2E Tests");
     bool success = true;
 
     const fs::path second_key = this->testDataDir / "second_key.bin";
@@ -287,10 +281,9 @@ bool SystemTests::test_error_scenarios() {
         this->executable_path + " --encrypt --key " + this->keyPath.string() +
         " --input " + this->originalValidPath.string() +
         " --output " + this->encryptedOriginalValidPath.string();
-    success &= ASSERT_TRUE(
-        SystemUtils::execute_cli_command(encrypt_cmd) == 0,
-        "Encryption should succeed"
-    );
+    bool encryptSucceeded = (SystemUtils::execute_cli_command(encrypt_cmd) == 0);
+    EXPECT_TRUE(encryptSucceeded) << "Encryption should succeed";
+    success &= encryptSucceeded;
 
     // Try to decrypt with second_key (should fail or produce garbage)
     std::string decrypt_cmd = this->executable_path + " --decrypt --key "
@@ -308,13 +301,13 @@ bool SystemTests::test_error_scenarios() {
         std::vector<uint8_t> decrypted_content = SystemUtils::read_file(
             this->decryptedOriginalValidPath.string(), this->ff_ != FileFormat::TEXT
         );
-        success &= ASSERT_TRUE(
-            decrypted_content != original_content, "Wrong key should not produce correct plaintext"
-        );
+        bool wrongKeyProducesGarbage = (decrypted_content != original_content);
+        EXPECT_TRUE(wrongKeyProducesGarbage) << "Wrong key should not produce correct plaintext";
+        success &= wrongKeyProducesGarbage;
     } else {
-        success &= ASSERT_TRUE(
-            decrypt_result != 0, "Decryption with wrong key should fail"
-        );
+        bool wrongKeyFails = (decrypt_result != 0);
+        EXPECT_TRUE(wrongKeyFails) << "Decryption with wrong key should fail";
+        success &= wrongKeyFails;
     }
 
     // Test 2: Non-existent file
@@ -322,21 +315,23 @@ bool SystemTests::test_error_scenarios() {
         this->executable_path + " --encrypt --input " +
         this->nonexistentPath.string() + " --output nonexistent_out.bin"
     );
-    success &= ASSERT_TRUE(nonexistent_result != 0, "Encrypting non-existent file should fail");
+    bool nonexistentFails = (nonexistent_result != 0);
+    EXPECT_TRUE(nonexistentFails) << "Encrypting non-existent file should fail";
+    success &= nonexistentFails;
 
     // Test 3: Invalid key file
     int invalid_key_result = SystemUtils::execute_cli_command(
         this->executable_path + " --encrypt --key invalid.key --input " + this->originalValidPath.string() + " --output out.aes"
     );
-    success &= ASSERT_TRUE(invalid_key_result != 0, "Using invalid key file should fail");
+    bool invalidKeyFails = (invalid_key_result != 0);
+    EXPECT_TRUE(invalidKeyFails) << "Using invalid key file should fail";
+    success &= invalidKeyFails;
 
-    PRINT_RESULTS();
     return success;
 }
 
 // SYSTEM TEST 3: Performance and Large File Handling
 bool SystemTests::test_large_file_performance() {
-    TEST_SUITE("Large File Performance E2E Tests");
     bool success = true;
 
     // Generate key
@@ -357,15 +352,16 @@ bool SystemTests::test_large_file_performance() {
     auto encrypt_end = std::chrono::high_resolution_clock::now();
     auto encrypt_duration = std::chrono::duration_cast<std::chrono::milliseconds>(encrypt_end - start_time);
 
-    success &= ASSERT_TRUE(
-        encrypt_result == 0, "Large file encryption should succeed"
-    );
-    if(encrypt_result == 0) {
-        success &= ASSERT_TRUE(
-            encrypt_duration.count() < 10000,
-            "48MB encryption should complete within 10 seconds (lasted " +
-            std::to_string(encrypt_duration.count()) + " milliseconds)"
-        );
+    bool encryptSucceeded = (encrypt_result == 0);
+    EXPECT_TRUE(encryptSucceeded) << "Large file encryption should succeed";
+    success &= encryptSucceeded;
+
+    if (encryptSucceeded) {
+        bool encryptFast = (encrypt_duration.count() < 10000);
+        EXPECT_TRUE(encryptFast)
+            << "48MB encryption should complete within 10 seconds (lasted "
+            << encrypt_duration.count() << " milliseconds)";
+        success &= encryptFast;
     }
 
     std::string decrypt_cmd = this->executable_path +
@@ -382,25 +378,25 @@ bool SystemTests::test_large_file_performance() {
     auto decrypt_end = std::chrono::high_resolution_clock::now();
     auto decrypt_duration = std::chrono::duration_cast<std::chrono::milliseconds>(decrypt_end - decrypt_start);
 
-    success &= ASSERT_TRUE(
-        decrypt_result == 0, "Large file decryption should succeed"
-    );
-    if(decrypt_result == 0) {
-        success &= ASSERT_TRUE(
-            decrypt_duration.count() < 10000,
-            "48MB decryption should complete within 10 seconds (lasted " +
-            std::to_string(decrypt_duration.count()) + " milliseconds)"
-        );
+    bool decryptSucceeded = (decrypt_result == 0);
+    EXPECT_TRUE(decryptSucceeded) << "Large file decryption should succeed";
+    success &= decryptSucceeded;
+
+    if (decryptSucceeded) {
+        bool decryptFast = (decrypt_duration.count() < 10000);
+        EXPECT_TRUE(decryptFast)
+            << "48MB decryption should complete within 10 seconds (lasted "
+            << decrypt_duration.count() << " milliseconds)";
+        success &= decryptFast;
     }
 
     // Verify integrity
     auto original_size = std::filesystem::file_size(this->originalLargePath);
     auto decrypted_size = std::filesystem::file_size(this->decryptedOriginalLargePath);
 
-    success &= ASSERT_TRUE(
-        original_size == decrypted_size, "Large file should maintain size after roundtrip"
-    );
+    bool sizeMatches = (original_size == decrypted_size);
+    EXPECT_TRUE(sizeMatches) << "Large file should maintain size after roundtrip";
+    success &= sizeMatches;
 
-    PRINT_RESULTS();
     return success;
 }
