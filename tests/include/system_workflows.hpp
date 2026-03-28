@@ -63,6 +63,9 @@ public:
 
 	// SYSTEM TEST 3: Performance and Large File Handling
 	bool test_large_file_performance();
+
+	// SYSTEM TEST 4: JPEG encryption saves output as PNG
+	bool test_jpeg_encryption_saves_as_png();
 }; // class SystemTests
 
 } // namespace CommandLineToolsTest

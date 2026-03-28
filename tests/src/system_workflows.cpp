@@ -331,6 +331,59 @@ bool SystemTests::test_error_scenarios() {
     return success;
 }
 
+// SYSTEM TEST 4: JPEG encryption saves output as PNG
+bool SystemTests::test_jpeg_encryption_saves_as_png() {
+    bool success = true;
+
+    // Generate key
+    std::string gen_key_cmd =
+        this->executable_path + " --generate-key --output " +
+        this->keyPath.string();
+    SystemUtils::execute_cli_command(gen_key_cmd);
+
+    // Create a JPEG input
+    const fs::path jpegInput  = this->testDataDir / "jpeg_input.jpg";
+    const fs::path encJpg     = this->testDataDir / "enc.jpg";
+    const fs::path encPng     = this->testDataDir / "enc.png";
+    const fs::path decJpg     = this->testDataDir / "dec.jpg";
+
+    RasterImageFixture::createValidJpeg(jpegInput, 32, 32);
+
+    // Encrypt — tool should redirect output to enc.png
+    std::string encrypt_cmd =
+        this->executable_path + " --key " + this->keyPath.string() +
+        " --input " + jpegInput.string() +
+        " --output " + encJpg.string() +
+        " --iv 00112233445566778899AABBCCDDEEFF";
+    int enc_result = SystemUtils::execute_cli_command(encrypt_cmd);
+    EXPECT_EQ(0, enc_result) << "JPEG encryption should succeed";
+    success &= (enc_result == 0);
+
+    bool pngCreated = fs::exists(encPng);
+    EXPECT_TRUE(pngCreated) << "Encrypted output should be saved as .png";
+    success &= pngCreated;
+
+    bool jpgNotCreated = !fs::exists(encJpg);
+    EXPECT_TRUE(jpgNotCreated) << "No .jpg output should be created";
+    success &= jpgNotCreated;
+
+    // Decrypt the PNG back to JPEG
+    std::string decrypt_cmd =
+        this->executable_path + " --decrypt --key " + this->keyPath.string() +
+        " --input " + encPng.string() +
+        " --output " + decJpg.string() +
+        " --iv 00112233445566778899AABBCCDDEEFF";
+    int dec_result = SystemUtils::execute_cli_command(decrypt_cmd);
+    EXPECT_EQ(0, dec_result) << "Decryption of PNG to JPEG should succeed";
+    success &= (dec_result == 0);
+
+    bool decCreated = fs::exists(decJpg);
+    EXPECT_TRUE(decCreated) << "Decrypted JPEG should be created";
+    success &= decCreated;
+
+    return success;
+}
+
 // SYSTEM TEST 3: Performance and Large File Handling
 bool SystemTests::test_large_file_performance() {
     bool success = true;
