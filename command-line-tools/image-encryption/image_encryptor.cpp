@@ -2,9 +2,9 @@
  * @file image_encryptor.cpp
  * @brief AES image encryption tool supporting BMP, PNG, and JPEG formats.
  *
- * This program is a generalisation of bmp_encryptor. It encrypts or decrypts
- * image files using AES in ECB, CBC, OFB, or CTR mode, dispatching to the
- * correct File::FileBase subclass based on the input file extension.
+ * This program encrypts or decrypts image files using AES in ECB, CBC, OFB,
+ * or CTR mode, dispatching to the correct File::FileBase subclass based on
+ * the input file extension.
  *
  * Round-trip fidelity by format:
  *   BMP  — lossless container; encrypt → decrypt restores the original exactly.
@@ -13,10 +13,10 @@
  *          The program warns the user before proceeding.
  *
  * Usage:
- *   Encryption:     image_encryptor --encrypt --key <file> --input <img>
- *                       --output <img> [--mode ECB|CBC|OFB|CTR]
+ *   Encryption:     image_encryptor --key <file> --input <img> --output <img>
+ *                       [--mode ECB|CBC|OFB|CTR] [--iv <32 hex chars>]
  *   Decryption:     image_encryptor --decrypt --key <file> --input <img>
- *                       --output <img> --mode-data <file>
+ *                       --output <img> --iv <32 hex chars>
  *   Key generation: image_encryptor --generate-key --key-length <bits>
  *                       --output <file>
  */
@@ -26,71 +26,158 @@
 #include "../../cli-tools/include/cli_config.hpp"
 
 #include <iostream>
+#include <iomanip>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
+#include <vector>
 
 using namespace CipherFortis;
 using namespace CLIConfig;
 using namespace File;
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+static std::vector<uint8_t> parse_hex_iv(const std::string& hex) {
+    if (hex.size() != 32)
+        throw std::invalid_argument("IV must be exactly 32 hex characters (16 bytes)");
+    std::vector<uint8_t> iv(16);
+    for (size_t i = 0; i < 16; ++i) {
+        unsigned int byte;
+        std::istringstream ss(hex.substr(i * 2, 2));
+        if (!(ss >> std::hex >> byte))
+            throw std::invalid_argument("Invalid hex in IV: " + hex);
+        iv[i] = static_cast<uint8_t>(byte);
+    }
+    return iv;
+}
+
+static std::string bytes_to_hex(const uint8_t* data, size_t len) {
+    std::ostringstream oss;
+    for (size_t i = 0; i < len; ++i)
+        oss << std::hex << std::uppercase << std::setfill('0') << std::setw(2)
+            << static_cast<unsigned>(data[i]);
+    return oss.str();
+}
+
+static bool mode_needs_iv(Cipher::OperationMode::Identifier m) {
+    return m != Cipher::OperationMode::Identifier::ECB;
+}
+
 // ── ImageCryptoConfig ─────────────────────────────────────────────────────────
 
-/**
- * @class ImageCryptoConfig
- * @brief Thin FileCryptoConfig subclass for the multi-format image encryptor.
- *
- * The only additions over the base class are:
- *   - A customised help text that names the supported formats.
- *   - A JPEG lossy-codec warning emitted during validate().
- *
- * All validation logic and factory methods (create_key, create_optmode)
- * are inherited unchanged from FileCryptoConfig.
- */
-class ImageCryptoConfig : public CLIConfig::FileCryptoConfig {
+class ImageCryptoConfig : public CLIConfig::BaseCryptoConfig {
 public:
-    bool validate(const CLIConfig::ArgumentParser& parser) override {
-        if (!FileCryptoConfig::validate(parser)) return false;
+    bool validate(const CLIConfig::ArgumentParser& parser) override;
+    void print_help(const CLIConfig::ArgumentParser& parser) const;
 
-        // Warn the user when the input is a JPEG and the operation is
-        // encrypt or decrypt — the lossy codec will corrupt the encrypted
-        // bytes on re-encode, so decryption cannot recover the original.
-        if (operation != Operation::GENERATE_KEY && image_is_lossy(input_file)) {
-            std::cerr
-                << "Warning: '" << input_file.filename().string() << "' is a JPEG.\n"
-                << "  JPEG uses lossy compression. Encrypted bytes will be altered\n"
-                << "  by the codec on save, so decryption will NOT restore the\n"
-                << "  original image. The visual encryption effect is still visible.\n"
-                << "  Use BMP or PNG for a lossless round-trip.\n\n";
+    bool        decrypt      = false;
+    bool        generate_key = false;
+    std::string key_file, input_file, output_file, iv_hex;
+    Key::LengthBits                   key_length     = Key::LengthBits::_128;
+    Cipher::OperationMode::Identifier operation_mode = Cipher::OperationMode::Identifier::CBC;
+};
+
+bool ImageCryptoConfig::validate(const CLIConfig::ArgumentParser& parser) {
+    if (parser.has("--help")) {
+        print_help(parser);
+        is_valid = false;
+        return false;
+    }
+
+    generate_key = parser.has("--generate-key");
+    decrypt      = parser.has("--decrypt");
+    iv_hex       = parser.getOr("--iv", "");
+
+    // Key length
+    std::string kl_str = parser.getOr("--key-length", "128");
+    if      (kl_str == "128") key_length = Key::LengthBits::_128;
+    else if (kl_str == "192") key_length = Key::LengthBits::_192;
+    else if (kl_str == "256") key_length = Key::LengthBits::_256;
+    else {
+        error_message = "Invalid key length: " + kl_str + ". Use 128, 192, or 256.";
+        is_valid = false;
+        return false;
+    }
+
+    // Operation mode
+    std::string mode_str = parser.getOr("--mode", "CBC");
+    if      (mode_str == "ECB") operation_mode = Cipher::OperationMode::Identifier::ECB;
+    else if (mode_str == "CBC") operation_mode = Cipher::OperationMode::Identifier::CBC;
+    else if (mode_str == "OFB") operation_mode = Cipher::OperationMode::Identifier::OFB;
+    else if (mode_str == "CTR") operation_mode = Cipher::OperationMode::Identifier::CTR;
+    else {
+        error_message = "Invalid mode: " + mode_str + ". Use ECB, CBC, OFB, or CTR.";
+        is_valid = false;
+        return false;
+    }
+
+    if (generate_key) {
+        output_file = parser.getOr("--output", "");
+        if (output_file.empty()) {
+            error_message = "Missing required argument: --output";
+            is_valid = false;
+            return false;
         }
-
+        is_valid = true;
         return true;
     }
 
-    void print_help(const CLIConfig::ArgumentParser& parser) const override {
-        const char* prog = parser.program_name();
-        std::cout
-            << prog << " — AES Image Encryption Tool\n"
-            << "Supported formats: BMP, PNG, JPEG (.jpg / .jpeg)\n\n"
-            << "Usage:\n"
-            << "  Encryption:     " << prog
-                << " --encrypt --key <keyfile> --input <img> --output <img> [options]\n"
-            << "  Decryption:     " << prog
-                << " --decrypt --key <keyfile> --input <img> --output <img>"
-                << " --mode-data <file> [options]\n"
-            << "  Key generation: " << prog
-                << " --generate-key --key-length <bits> --output <file>\n\n"
-            << "Options:\n"
-            << "  --key-length <bits>        Key length in bits: 128, 192, or 256 (default: 128)\n"
-            << "  --mode <ECB|CBC|OFB|CTR>   Operation mode (default: CBC)\n"
-            << "  --mode-data <file>         Saved operation-mode data (IV/counter);\n"
-            << "                             required for decryption in CBC, OFB, CTR\n"
-            << "  --help                     Show this help message\n\n"
-            << "Notes:\n"
-            << "  BMP and PNG support lossless round-trips (encrypt then decrypt\n"
-            << "  recovers the original). JPEG is lossy: decryption will not\n"
-            << "  restore the original image.\n";
+    // Encrypt / decrypt path
+    key_file    = parser.getOr("--key",    "");
+    input_file  = parser.getOr("--input",  "");
+    output_file = parser.getOr("--output", "");
+
+    for (auto& [name, val] : std::vector<std::pair<std::string, std::string>>{
+            {"--key", key_file}, {"--input", input_file}, {"--output", output_file}}) {
+        if (val.empty()) {
+            error_message = "Missing required argument: " + name;
+            is_valid = false;
+            return false;
+        }
     }
-};
+
+    // Warn if the input is a JPEG
+    if (image_is_lossy(input_file)) {
+        std::cerr
+            << "Warning: '" << std::filesystem::path(input_file).filename().string()
+            << "' is a JPEG.\n"
+            << "  JPEG uses lossy compression. Encrypted bytes will be altered\n"
+            << "  by the codec on save, so decryption will NOT restore the\n"
+            << "  original image. The visual encryption effect is still visible.\n"
+            << "  Use BMP or PNG for a lossless round-trip.\n\n";
+    }
+
+    is_valid = true;
+    return true;
+}
+
+void ImageCryptoConfig::print_help(const CLIConfig::ArgumentParser& parser) const {
+    const char* prog = parser.program_name();
+    std::cout
+        << prog << " — AES Image Encryption Tool\n"
+        << "Supported formats: BMP, PNG, JPEG (.jpg / .jpeg)\n\n"
+        << "Usage:\n"
+        << "  Encryption:     " << prog
+            << " --key <keyfile> --input <img> --output <img> [options]\n"
+        << "  Decryption:     " << prog
+            << " --decrypt --key <keyfile> --input <img> --output <img>"
+            << " --iv <hex> [options]\n"
+        << "  Key generation: " << prog
+            << " --generate-key --key-length <bits> --output <file>\n\n"
+        << "Options:\n"
+        << "  --decrypt                  Decrypt instead of encrypt (default: encrypt)\n"
+        << "  --key-length <bits>        Key length in bits: 128, 192, or 256 (default: 128)\n"
+        << "  --mode <ECB|CBC|OFB|CTR>   Operation mode (default: CBC)\n"
+        << "  --iv <32 hex chars>        16-byte IV as 32 hex characters (CBC/OFB/CTR);\n"
+        << "                             if omitted on encrypt, a random IV is generated\n"
+        << "                             and printed to stdout\n"
+        << "  --help                     Show this help message\n\n"
+        << "Notes:\n"
+        << "  BMP and PNG support lossless round-trips (encrypt then decrypt\n"
+        << "  recovers the original). JPEG is lossy: decryption will not\n"
+        << "  restore the original image.\n";
+}
 
 // ── main ──────────────────────────────────────────────────────────────────────
 
@@ -113,7 +200,7 @@ int main(int argc, const char* argv[]) {
 
     try {
         // ── Key generation ────────────────────────────────────────────────────
-        if (config.operation == ImageCryptoConfig::Operation::GENERATE_KEY) {
+        if (config.generate_key) {
             Key key(config.key_length);
             key.save(config.output_file.c_str());
             std::cout << "Key saved to: " << config.output_file << "\n";
@@ -121,29 +208,33 @@ int main(int argc, const char* argv[]) {
         }
 
         // ── Encrypt / Decrypt ─────────────────────────────────────────────────
-        std::unique_ptr<FileBase> image = make_image(config.input_file);
-        Cipher::OperationMode optmode  = config.create_optmode();
-        Cipher cipher(config.create_key(), optmode);
+        Key key(config.key_file.c_str());
+        Cipher::OperationMode optmode(config.operation_mode);
 
+        if (!config.iv_hex.empty()) {
+            optmode.setInitialVector(parse_hex_iv(config.iv_hex));
+        } else if (mode_needs_iv(config.operation_mode)) {
+            // Auto-generated IV: print it so the user can reuse it for decryption
+            const uint8_t* iv_ptr = optmode.getIVpointerData();
+            std::cout << "Generated IV (save for decryption): "
+                      << bytes_to_hex(iv_ptr, 16) << "\n";
+        }
+
+        std::unique_ptr<FileBase> image = make_image(config.input_file);
+        Cipher cipher(key, optmode);
         image->load();
 
-        if (config.operation == ImageCryptoConfig::Operation::ENCRYPT) {
-            image->apply_encryption(cipher);
-            std::cout << "Encrypted: " << config.input_file
-                      << " -> "        << config.output_file << "\n";
-        } else {
+        if (config.decrypt) {
             image->apply_decryption(cipher);
             std::cout << "Decrypted: " << config.input_file
+                      << " -> "        << config.output_file << "\n";
+        } else {
+            image->apply_encryption(cipher);
+            std::cout << "Encrypted: " << config.input_file
                       << " -> "        << config.output_file << "\n";
         }
 
         image->save(config.output_file);
-
-        // Save operation-mode data (IV / counter) when not loaded from file,
-        // so the user has everything needed for a later decryption call.
-        if (config.mode_file.empty()) {
-            optmode.save(config.output_file.string() + ".optmode");
-        }
 
     } catch (const std::invalid_argument& e) {
         std::cerr << "Error: " << e.what() << "\n";
