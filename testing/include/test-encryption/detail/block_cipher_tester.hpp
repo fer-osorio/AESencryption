@@ -23,7 +23,7 @@
 
 #include "../../test-vectors/fips197_key_expansion.hpp"
 #include "../../test-vectors/fips197_cipher.hpp"
-#include "../../test_framework.hpp"
+#include <gtest/gtest.h>
 #include "memory_callbacks.hpp"
 #include "type_byte_interface.hpp"
 #include <cstddef>
@@ -216,21 +216,18 @@ namespace CryptoTest {
              * @see TypeByteInterface::validateByteOperations()
              * @see MemoryCallbacks::validateMemoryCallbacks()
              */
-            bool validateInfrastructure() const {
-                bool memValid = memoryCallbacks_.validateMemoryCallbacks();
+            void validateInfrastructure() const {
+                memoryCallbacks_.validateMemoryCallbacks();
 
                 KeyExpansionType* ke    = memoryCallbacks_.allocateKeyExpansion(128);
                 BlockType*        block = memoryCallbacks_.allocateBlock();
 
-                bool byteValid = false;
                 if (ke && block) {
-                    byteValid = byteInterface_.validateByteOperations(ke, block);
+                    byteInterface_.validateByteOperations(ke, block);
                 }
 
                 if (ke)    memoryCallbacks_.freeKeyExpansion(&ke);
                 if (block) memoryCallbacks_.freeBlock(&block);
-
-                return memValid && byteValid;
             }
 
             /**
@@ -257,7 +254,7 @@ namespace CryptoTest {
                 )> builder,
                 KeyExpansionType* const keBuffer
             ) {
-                TEST_SUITE("AES Key Expansion Tests");
+                SCOPED_TRACE("AES Key Expansion Tests");
 
                 int buildStatus = builder(
                     tv.getKey().data(),
@@ -266,33 +263,23 @@ namespace CryptoTest {
                 );
 
                 // Test key expansion building status
-                if (!ASSERT_TRUE(
-                    buildStatus == 0,
-                    "Key expansion should succeed"
-                )) {
-                    PRINT_RESULTS();
-                    return false;  // Critical failure, exit early
-                }
+                EXPECT_EQ(0, buildStatus) << "Key expansion should succeed";
+                if (buildStatus != 0) return false;  // Critical failure, exit early
 
                 // Verify expanded key matches reference
-                ASSERT_TRUE(
-                    this->byteInterface_.compareKeyExpansionBytes(
-                        keBuffer,
-                        static_cast<size_t>(tv.getKeySize()),
-                        tv.getExpectedExpansion().data()
-                    ),
-                    "Expanded key should match reference expanded key"
+                bool matchesRef = this->byteInterface_.compareKeyExpansionBytes(
+                    keBuffer,
+                    static_cast<size_t>(tv.getKeySize()),
+                    tv.getExpectedExpansion().data()
                 );
+                EXPECT_TRUE(matchesRef) << "Expanded key should match reference expanded key";
 
                 // Test invalid key length handling
                 buildStatus = builder(tv.getKey().data(), 17, keBuffer);
-                ASSERT_TRUE(
-                    buildStatus != 0,
-                    "Invalid key length should return error code"
-                );
+                bool rejectsInvalid = (buildStatus != 0);
+                EXPECT_TRUE(rejectsInvalid) << "Invalid key length should return error code";
 
-                PRINT_RESULTS();
-                return SUITE_PASSED();
+                return matchesRef && rejectsInvalid;
             }
 
             /**
@@ -320,7 +307,7 @@ namespace CryptoTest {
                 BlockType* const inputBlockBuffer,
                 BlockType* const outputBlockBuffer
             ) {
-                TEST_SUITE("AES Block Encryption Tests");
+                SCOPED_TRACE("AES Block Encryption Tests");
 
                 // Prepare test environment
                 this->byteInterface_.buildKeyExpansionFromBytes(
@@ -331,23 +318,18 @@ namespace CryptoTest {
                 this->byteInterface_.buildBlockFromBytes(inputBlockBuffer, tv.getInput().data());
 
                 // Test single block encryption
-                ASSERT_TRUE(
-                    encryptor(inputBlockBuffer, keBuffer, outputBlockBuffer) == 0,
-                    "AES block encryption should succeed"
-                );
-                ASSERT_TRUE(
-                    this->byteInterface_.compareBlockBytes(outputBlockBuffer, tv.getExpectedOutput().data()),
-                    "Encrypted block should match test vector"
-                );
+                bool encryptSucceeded = (encryptor(inputBlockBuffer, keBuffer, outputBlockBuffer) == 0);
+                EXPECT_TRUE(encryptSucceeded) << "AES block encryption should succeed";
+
+                bool outputMatches = this->byteInterface_.compareBlockBytes(
+                    outputBlockBuffer, tv.getExpectedOutput().data());
+                EXPECT_TRUE(outputMatches) << "Encrypted block should match test vector";
 
                 // Test null pointer handling
-                ASSERT_TRUE(
-                    encryptor(nullptr, keBuffer, outputBlockBuffer) != 0,
-                    "Null input should return error"
-                );
+                bool rejectsNull = (encryptor(nullptr, keBuffer, outputBlockBuffer) != 0);
+                EXPECT_TRUE(rejectsNull) << "Null input should return error";
 
-                PRINT_RESULTS();
-                return SUITE_PASSED();
+                return encryptSucceeded && outputMatches && rejectsNull;
             }
 
             /**
@@ -375,7 +357,7 @@ namespace CryptoTest {
                 BlockType* const inputBlockBuffer,
                 BlockType* const outputBlockBuffer
             ) {
-                TEST_SUITE("AES Block Decryption Tests");
+                SCOPED_TRACE("AES Block Decryption Tests");
 
                 // Prepare test environment
                 this->byteInterface_.buildKeyExpansionFromBytes(
@@ -386,23 +368,18 @@ namespace CryptoTest {
                 this->byteInterface_.buildBlockFromBytes(inputBlockBuffer, tv.getInput().data());
 
                 // Test single block decryption
-                ASSERT_TRUE(
-                    decryptor(inputBlockBuffer, keBuffer, outputBlockBuffer) == 0,
-                    "AES block decryption should succeed"
-                );
-                ASSERT_TRUE(
-                    this->byteInterface_.compareBlockBytes(outputBlockBuffer, tv.getExpectedOutput().data()),
-                    "Decrypted block should match test vector"
-                );
+                bool decryptSucceeded = (decryptor(inputBlockBuffer, keBuffer, outputBlockBuffer) == 0);
+                EXPECT_TRUE(decryptSucceeded) << "AES block decryption should succeed";
+
+                bool outputMatches = this->byteInterface_.compareBlockBytes(
+                    outputBlockBuffer, tv.getExpectedOutput().data());
+                EXPECT_TRUE(outputMatches) << "Decrypted block should match test vector";
 
                 // Test null pointer handling
-                ASSERT_TRUE(
-                    decryptor(nullptr, keBuffer, outputBlockBuffer) != 0,
-                    "Null input should return error"
-                );
+                bool rejectsNull = (decryptor(nullptr, keBuffer, outputBlockBuffer) != 0);
+                EXPECT_TRUE(rejectsNull) << "Null input should return error";
 
-                PRINT_RESULTS();
-                return SUITE_PASSED();
+                return decryptSucceeded && outputMatches && rejectsNull;
             }
 
             /**
@@ -441,7 +418,7 @@ namespace CryptoTest {
                 BlockType* const encryptedBlockBuffer,
                 BlockType* const decryptedBlockBuffer
             ) {
-                TEST_SUITE("AES Encryption/Decryption Roundtrip Tests");
+                SCOPED_TRACE("AES Encryption/Decryption Roundtrip Tests");
 
                 // Prepare test environment with plaintext direction test vector
                 cp::TestVector encryptTV(tv.getKeySize(), TestVectors::AES::Direction::Encrypt);
@@ -455,26 +432,21 @@ namespace CryptoTest {
 
                 // Perform encryption
                 int encryptStatus = encryptor(inputBlockBuffer, keBuffer, encryptedBlockBuffer);
-                ASSERT_TRUE(
-                    encryptStatus == 0,
-                    "Encryption step should succeed"
-                );
+                bool encryptSucceeded = (encryptStatus == 0);
+                EXPECT_TRUE(encryptSucceeded) << "Encryption step should succeed";
 
                 // Perform decryption
                 int decryptStatus = decryptor(encryptedBlockBuffer, keBuffer, decryptedBlockBuffer);
-                ASSERT_TRUE(
-                    decryptStatus == 0,
-                    "Decryption step should succeed"
-                );
+                bool decryptSucceeded = (decryptStatus == 0);
+                EXPECT_TRUE(decryptSucceeded) << "Decryption step should succeed";
 
                 // Verify round-trip integrity
-                ASSERT_TRUE(
-                    this->byteInterface_.compareBlockBytes(decryptedBlockBuffer, encryptTV.getInput().data()),
-                    "Roundtrip encryption/decryption should preserve original plaintext"
-                );
+                bool roundtripPreserved = this->byteInterface_.compareBlockBytes(
+                    decryptedBlockBuffer, encryptTV.getInput().data());
+                EXPECT_TRUE(roundtripPreserved)
+                    << "Roundtrip encryption/decryption should preserve original plaintext";
 
-                PRINT_RESULTS();
-                return SUITE_PASSED();
+                return encryptSucceeded && decryptSucceeded && roundtripPreserved;
             }
 
             /**
@@ -623,6 +595,7 @@ namespace CryptoTest {
              *       and block size to avoid reallocation between test runs
              * @note User is responsible for allocating buffers before calling and freeing after
              */
+            [[deprecated("Use runTestSuite() with MemoryCallbacks instead")]]
             bool runTestSuiteWithBuffers(
                 TestVectors::AES::KeySize keySize,
                 std::function<int(const unsigned char* const, size_t, KeyExpansionType*)> keyBuilder,

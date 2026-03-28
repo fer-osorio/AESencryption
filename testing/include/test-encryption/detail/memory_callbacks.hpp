@@ -14,7 +14,7 @@
 #ifndef CRYPTO_TEST_DETAIL_MEMORY_CALLBACKS_HPP
 #define CRYPTO_TEST_DETAIL_MEMORY_CALLBACKS_HPP
 
-#include "../../test_framework.hpp"
+#include <gtest/gtest.h>
 #include <functional>
 #include <cstddef>
 
@@ -113,12 +113,12 @@ namespace CryptoTest {
          * }
          * @endcode
          */
-        bool validateBaseMemoryCallbacks() const {
-            TEST_SUITE("Basic Memory Callback Validation");
+        void validateBaseMemoryCallbacks() const {
+            SCOPED_TRACE("Basic Memory Callback Validation");
 
             if (!this->validateBaseFunctions()) {
-                std::cerr << "ERROR: Memory callbacks struct is not fully initialized" << std::endl;
-                return false;
+                FAIL() << "Memory callbacks struct is not fully initialized";
+                return;
             }
 
             // Test KeyExpansion allocation for all three key sizes
@@ -128,9 +128,7 @@ namespace CryptoTest {
 
                 std::string msg = "KeyExpansion allocation for " + std::to_string(keySize) +
                 "-bit key should return non-null";
-                ASSERT_NOT_NULL(
-                    testKE, msg.c_str()
-                );
+                EXPECT_NE(nullptr, testKE) << msg;
 
                 if (testKE) {
                     // Note: We cannot use sizeof() on opaque/incomplete types
@@ -139,43 +137,35 @@ namespace CryptoTest {
 
                     // Test deallocation
                     this->freeKeyExpansion_(&testKE);
-                    ASSERT_TRUE(
-                        testKE == nullptr,
-                        "KeyExpansion free should nullify pointer"
-                    );
+                    EXPECT_EQ(nullptr, testKE)
+                        << "KeyExpansion free should nullify pointer";
                 }
             }
 
             // Test that free handles already-null pointer gracefully
             KE* testKE = nullptr;
             this->freeKeyExpansion_(&testKE);
-            ASSERT_TRUE(
-                testKE == nullptr,
-                "KeyExpansion free should handle null pointer gracefully"
-            );
+            EXPECT_EQ(nullptr, testKE)
+                << "KeyExpansion free should handle null pointer gracefully";
 
             // Test Block allocation
             BT* testBlock = this->allocateBlock_();
-            ASSERT_NOT_NULL(
-                testBlock,
-                "Block allocation should return non-null"
-            );
+            EXPECT_NE(nullptr, testBlock)
+                << "Block allocation should return non-null";
 
             if (testBlock) {
                 // Note: Cannot use sizeof() on incomplete types
                 // Block allocation function is responsible for correct sizing
 
                 this->freeBlock_(&testBlock);
-                ASSERT_TRUE(testBlock == nullptr,
-                "Block free should nullify pointer");
+                EXPECT_EQ(nullptr, testBlock)
+                    << "Block free should nullify pointer";
             }
 
             testBlock = nullptr;
             this->freeBlock_(&testBlock);
-            ASSERT_TRUE(
-                testBlock == nullptr,
-                "Block free should handle null pointer gracefully"
-            );
+            EXPECT_EQ(nullptr, testBlock)
+                << "Block free should handle null pointer gracefully";
 
             // Test multiple simultaneous allocations
             KE* ke128 = this->allocateKeyExpansion_(128);
@@ -183,39 +173,21 @@ namespace CryptoTest {
             BT* b1 = this->allocateBlock_();
             BT* b2 = this->allocateBlock_();
 
-            ASSERT_NOT_NULL(ke128, "AES-128 KeyExpansion allocation");
-            ASSERT_NOT_NULL(ke256, "AES-256 KeyExpansion allocation");
-            ASSERT_NOT_NULL(b1, "First Block allocation");
-            ASSERT_NOT_NULL(b2, "Second Block allocation");
+            EXPECT_NE(nullptr, ke128) << "AES-128 KeyExpansion allocation";
+            EXPECT_NE(nullptr, ke256) << "AES-256 KeyExpansion allocation";
+            EXPECT_NE(nullptr, b1) << "First Block allocation";
+            EXPECT_NE(nullptr, b2) << "Second Block allocation";
 
-            ASSERT_TRUE(
-                ke128 != ke256,
-                "Different KeyExpansion allocations should return different pointers"
-            );
-            ASSERT_TRUE(
-                b1 != b2,
-                "Multiple Block allocations should return different pointers"
-            );
+            EXPECT_NE(ke128, ke256)
+                << "Different KeyExpansion allocations should return different pointers";
+            EXPECT_NE(b1, b2)
+                << "Multiple Block allocations should return different pointers";
 
             // Clean up
             if (ke128) this->freeKeyExpansion_(&ke128);
             if (ke256) this->freeKeyExpansion_(&ke256);
             if (b1) this->freeBlock_(&b1);
             if (b2) this->freeBlock_(&b2);
-
-            PRINT_RESULTS();
-
-            if (!SUITE_PASSED()) {
-                std::cout << "\n"
-                << "=================================================================\n"
-                << "WARNING: Memory callback validation failed!\n"
-                << "This suggests bugs in your allocation/deallocation functions.\n"
-                << "Please fix these issues before running cryptographic tests.\n"
-                << "=================================================================\n"
-                << std::endl;
-            }
-
-            return SUITE_PASSED();
         }
 
     public:
@@ -229,14 +201,13 @@ namespace CryptoTest {
 
         /**
          * @brief Validate memory management operations (optional sanity check)
-         * @return true if basic allocation/deallocation tests pass
          *
          * Pure virtual - derived classes should call validateBaseMemoryCallbacks()
          * and add any additional validation for their specialized types.
          *
          * @see validateBaseMemoryCallbacks() for base implementation
          */
-        virtual bool validateMemoryCallbacks() const = 0;
+        virtual void validateMemoryCallbacks() const = 0;
     };
 
     // ========== Block Cipher Memory Callbacks ==========
@@ -286,12 +257,11 @@ namespace CryptoTest {
 
             /**
              * @brief Validate memory management operations (optional sanity check)
-             * @return true if basic allocation/deallocation tests pass
              *
              * * @see validateBaseMemoryCallbacks() for base implementation
              */
-            bool validateMemoryCallbacks() const override{
-                return this->validateBaseMemoryCallbacks();
+            void validateMemoryCallbacks() const override {
+                this->validateBaseMemoryCallbacks();
             }
 
             virtual ~MemoryCallbacks() = default;
@@ -351,64 +321,43 @@ namespace CryptoTest {
 
             /**
              * @brief Validate memory management operations (optional sanity check)
-             * @return true if basic allocation/deallocation tests pass
              *
              * * @see validateBaseMemoryCallbacks() for base implementation
              */
-            bool validateMemoryCallbacks() const override {
-                bool baseValid = this->validateBaseMemoryCallbacks();
+            void validateMemoryCallbacks() const override {
+                this->validateBaseMemoryCallbacks();
 
-                TEST_SUITE("Initial Vector Memory Callback Validation");
+                SCOPED_TRACE("Initial Vector Memory Callback Validation");
 
                 // Test Initial Vector allocation
                 IV* testIV = this->allocateIV_();
-                ASSERT_NOT_NULL(
-                    testIV,
-                    "Initial Vector allocation should return non-null"
-                );
+                EXPECT_NE(nullptr, testIV)
+                    << "Initial Vector allocation should return non-null";
                 if (testIV) {
                     // Note: Cannot use sizeof() on incomplete types
                     // Initial Vector allocation function is responsible for correct sizing
                     this->freeIV_(&testIV);
-                    ASSERT_TRUE(testIV == nullptr,
-                    "Initial Vector free should nullify pointer");
+                    EXPECT_EQ(nullptr, testIV)
+                        << "Initial Vector free should nullify pointer";
                 }
 
                 testIV = nullptr;
                 this->freeIV_(&testIV);
-                ASSERT_TRUE(
-                    testIV == nullptr,
-                    "Initial Vector free should handle null pointer gracefully"
-                );
+                EXPECT_EQ(nullptr, testIV)
+                    << "Initial Vector free should handle null pointer gracefully";
 
                 // Test multiple simultaneous allocations
                 IV* iv1 = this->allocateIV_();
                 IV* iv2 = this->allocateIV_();
-                ASSERT_NOT_NULL(iv1, "First Initial Vector allocation");
-                ASSERT_NOT_NULL(iv2, "Second Initial Vector allocation");
+                EXPECT_NE(nullptr, iv1) << "First Initial Vector allocation";
+                EXPECT_NE(nullptr, iv2) << "Second Initial Vector allocation";
 
-                ASSERT_TRUE(
-                    iv1 != iv2,
-                    "Multiple Initial Vector allocations should return different pointers"
-                );
+                EXPECT_NE(iv1, iv2)
+                    << "Multiple Initial Vector allocations should return different pointers";
 
                 // Clean up
                 if (iv1) this->freeIV_(&iv1);
                 if (iv2) this->freeIV_(&iv2);
-
-                PRINT_RESULTS();
-
-                if (!SUITE_PASSED()) {
-                    std::cout << "\n"
-                    << "=================================================================\n"
-                    << "WARNING: Memory callback validation for initial vector failed!\n"
-                    << "This suggests bugs in your allocation/deallocation functions.\n"
-                    << "Please fix these issues before running cryptographic tests.\n"
-                    << "=================================================================\n"
-                    << std::endl;
-                }
-
-                return SUITE_PASSED() && baseValid;
             }
         };
 

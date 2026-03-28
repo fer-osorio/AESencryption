@@ -3,8 +3,8 @@
 #include <fstream>
 #include <vector>
 
-RasterImageFixture::RasterImageFixture() { setupTestEnvironment(); }
-RasterImageFixture::~RasterImageFixture()  { cleanupTestEnvironment(); }
+void RasterImageFixture::SetUp()    { setupTestEnvironment(); }
+void RasterImageFixture::TearDown() { cleanupTestEnvironment(); }
 
 void RasterImageFixture::setupTestEnvironment() {
     fs::create_directories(testDataDir);

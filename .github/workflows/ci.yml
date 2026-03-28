@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtest-dev lcov cppcheck clang-tidy \
+                                  libp11-kit-dev
+      - name: Configure
+        run: cmake --preset test
+      - name: Build
+        run: cmake --build --preset test
+      - name: Test
+        run: ctest --preset test --output-on-failure
+      - name: Coverage
+        run: cmake --build --preset test --target coverage
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: build/test/coverage-report/
+
+  build-debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtest-dev libp11-kit-dev
+      - name: Configure & Build
+        run: cmake --preset debug && cmake --build --preset debug
+
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtest-dev libp11-kit-dev
+      - name: Configure & Build
+        run: cmake --preset release && cmake --build --preset release
+
+  build-profile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtest-dev libp11-kit-dev
+      - name: Configure & Build
+        run: cmake --preset profile && cmake --build --preset profile

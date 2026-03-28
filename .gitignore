@@ -38,3 +38,7 @@
 
 # Directories for binaries
 **/bin/
+
+# CMake build directories
+build/
+cmake-build-*/
