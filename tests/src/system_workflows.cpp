@@ -186,9 +186,10 @@ bool SystemTests::test_file_encryption_workflow() {
 
     // Step 3: Encrypt the file
     std::string encrypt_cmd =
-        this->executable_path + " --encrypt --mode CBC --key " +
+        this->executable_path + " --mode CBC --key " +
         this->keyPath.string() + " --input " + this->originalValidPath.string()
-        + " --output " + this->encryptedOriginalValidPath.string();
+        + " --output " + this->encryptedOriginalValidPath.string()
+        + " --iv 00112233445566778899AABBCCDDEEFF";
     int result2 = SystemUtils::execute_cli_command(
         encrypt_cmd
     );
@@ -217,7 +218,7 @@ bool SystemTests::test_file_encryption_workflow() {
         this->executable_path + " --decrypt --mode CBC --key " + this->keyPath.string() +
         " --input " + this->encryptedOriginalValidPath.string() +
         " --output " + this->decryptedOriginalValidPath.string() +
-        " --mode-data " + this->encryptedOriginalValidPath.string() + ".optmode";
+        " --iv 00112233445566778899AABBCCDDEEFF";
     int result3 = SystemUtils::execute_cli_command(
         decrypt_cmd
     );
@@ -278,7 +279,7 @@ bool SystemTests::test_error_scenarios() {
 
     // Encrypt with key1
     std::string encrypt_cmd =
-        this->executable_path + " --encrypt --key " + this->keyPath.string() +
+        this->executable_path + " --key " + this->keyPath.string() +
         " --input " + this->originalValidPath.string() +
         " --output " + this->encryptedOriginalValidPath.string();
     bool encryptSucceeded = (SystemUtils::execute_cli_command(encrypt_cmd) == 0);
@@ -312,7 +313,7 @@ bool SystemTests::test_error_scenarios() {
 
     // Test 2: Non-existent file
     int nonexistent_result = SystemUtils::execute_cli_command(
-        this->executable_path + " --encrypt --input " +
+        this->executable_path + " --input " +
         this->nonexistentPath.string() + " --output nonexistent_out.bin"
     );
     bool nonexistentFails = (nonexistent_result != 0);
@@ -321,7 +322,7 @@ bool SystemTests::test_error_scenarios() {
 
     // Test 3: Invalid key file
     int invalid_key_result = SystemUtils::execute_cli_command(
-        this->executable_path + " --encrypt --key invalid.key --input " + this->originalValidPath.string() + " --output out.aes"
+        this->executable_path + " --key invalid.key --input " + this->originalValidPath.string() + " --output out.aes"
     );
     bool invalidKeyFails = (invalid_key_result != 0);
     EXPECT_TRUE(invalidKeyFails) << "Using invalid key file should fail";
@@ -340,9 +341,10 @@ bool SystemTests::test_large_file_performance() {
     );
 
 
-    std::string encrypt_cmd = this->executable_path + " --encrypt --mode CBC --key " + this->keyPath.string() +
+    std::string encrypt_cmd = this->executable_path + " --mode CBC --key " + this->keyPath.string() +
         " --input " + this->originalLargePath.string() +
-        " --output " + this->encryptedOriginalLargePath.string();
+        " --output " + this->encryptedOriginalLargePath.string() +
+        " --iv 00112233445566778899AABBCCDDEEFF";
 
     // Time the encryption
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -368,7 +370,7 @@ bool SystemTests::test_large_file_performance() {
         " --decrypt --mode CBC --key " + this->keyPath.string() +
         " --input " + this->encryptedOriginalLargePath.string() +
         " --output " + this->decryptedOriginalLargePath.string() +
-        " --mode-data " + this->encryptedOriginalLargePath.string() + ".optmode";
+        " --iv 00112233445566778899AABBCCDDEEFF";
 
     // Time the decryption
     auto decrypt_start = std::chrono::high_resolution_clock::now();
