@@ -137,17 +137,6 @@ bool ImageCryptoConfig::validate(const CLIConfig::ArgumentParser& parser) {
         }
     }
 
-    // Warn if the input is a JPEG
-    if (image_is_lossy(input_file)) {
-        std::cerr
-            << "Warning: '" << std::filesystem::path(input_file).filename().string()
-            << "' is a JPEG.\n"
-            << "  JPEG uses lossy compression. Encrypted bytes will be altered\n"
-            << "  by the codec on save, so decryption will NOT restore the\n"
-            << "  original image. The visual encryption effect is still visible.\n"
-            << "  Use BMP or PNG for a lossless round-trip.\n\n";
-    }
-
     is_valid = true;
     return true;
 }
@@ -175,8 +164,8 @@ void ImageCryptoConfig::print_help(const CLIConfig::ArgumentParser& parser) cons
         << "  --help                     Show this help message\n\n"
         << "Notes:\n"
         << "  BMP and PNG support lossless round-trips (encrypt then decrypt\n"
-        << "  recovers the original). JPEG is lossy: decryption will not\n"
-        << "  restore the original image.\n";
+        << "  recovers the original). JPEG will be saved as PNG (lossless)\n"
+        << "  to preserve encrypted pixels.\n";
 }
 
 // ── main ──────────────────────────────────────────────────────────────────────
@@ -218,6 +207,13 @@ int main(int argc, const char* argv[]) {
             const uint8_t* iv_ptr = optmode.getIVpointerData();
             std::cout << "Generated IV (save for decryption): "
                       << bytes_to_hex(iv_ptr, 16) << "\n";
+        }
+
+        if (!config.decrypt && image_is_lossy(config.input_file)) {
+            config.output_file = std::filesystem::path(config.output_file)
+                                     .replace_extension(".png").string();
+            std::cout << "Note: JPEG input will be saved as PNG to preserve encrypted pixels.\n"
+                      << "      Output: " << config.output_file << "\n";
         }
 
         std::unique_ptr<FileBase> image = make_image(config.input_file);
