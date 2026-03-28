@@ -10,6 +10,7 @@ class RasterImageFixture : public ::testing::Test {
 public:
     static void createValidPng(const fs::path& path, int width, int height);
     static void createValidBmp(const fs::path& path, int width, int height);
+    static void createValidJpeg(const fs::path& path, int width, int height, int quality = 90);
 
 protected:
     fs::path testDataDir     = fs::path("tests/data/raster_image");
@@ -29,7 +30,6 @@ private:
     void cleanupTestEnvironment();
     void createCorruptFile(const fs::path& path);
     void createEmptyFile(const fs::path& path);
-    void createValidJpeg(const fs::path& path, int width, int height, int quality = 90);
 };
 
 #endif // RASTER_IMAGE_FIXTURE_HPP
