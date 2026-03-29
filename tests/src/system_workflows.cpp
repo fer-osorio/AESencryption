@@ -384,6 +384,62 @@ bool SystemTests::test_jpeg_encryption_saves_as_png() {
     return success;
 }
 
+// SYSTEM TEST 5: Metadata round-trip
+bool SystemTests::test_metadata_round_trip() {
+    bool success = true;
+
+    const fs::path metaPath    = this->testDataDir / "meta.json";
+    const fs::path encryptedPath = testDataDir / ("meta_enc." + SystemUtils::toFileExtension(ff_));
+    const fs::path decryptedPath = testDataDir / ("meta_dec." + SystemUtils::toFileExtension(ff_));
+
+    // Generate key
+    std::string gen_key_cmd =
+        this->executable_path + " --generate-key --output " + this->keyPath.string();
+    SystemUtils::execute_cli_command(gen_key_cmd);
+
+    // Encrypt with --metadata (no --iv; random IV generated and saved to JSON)
+    std::string encrypt_cmd =
+        this->executable_path + " --key " + this->keyPath.string() +
+        " --input " + this->originalValidPath.string() +
+        " --output " + encryptedPath.string() +
+        " --metadata " + metaPath.string();
+    int enc_result = SystemUtils::execute_cli_command(encrypt_cmd);
+    EXPECT_EQ(0, enc_result) << "Metadata encrypt should succeed";
+    success &= (enc_result == 0);
+
+    bool metaCreated = fs::exists(metaPath);
+    EXPECT_TRUE(metaCreated) << "Metadata JSON file should be created";
+    success &= metaCreated;
+
+    bool encCreated = fs::exists(encryptedPath);
+    EXPECT_TRUE(encCreated) << "Encrypted file should be created";
+    success &= encCreated;
+
+    // Decrypt with --metadata (no --iv; IV and mode loaded from JSON)
+    std::string decrypt_cmd =
+        this->executable_path + " --decrypt --key " + this->keyPath.string() +
+        " --input " + encryptedPath.string() +
+        " --output " + decryptedPath.string() +
+        " --metadata " + metaPath.string();
+    int dec_result = SystemUtils::execute_cli_command(decrypt_cmd);
+    EXPECT_EQ(0, dec_result) << "Metadata decrypt should succeed";
+    success &= (dec_result == 0);
+
+    bool decCreated = fs::exists(decryptedPath);
+    EXPECT_TRUE(decCreated) << "Decrypted file should be created";
+    success &= decCreated;
+
+    if (decCreated) {
+        std::vector<uint8_t> original  = SystemUtils::read_file(this->originalValidPath, true);
+        std::vector<uint8_t> decrypted = SystemUtils::read_file(decryptedPath, true);
+        bool contentMatches = (original == decrypted);
+        EXPECT_TRUE(contentMatches) << "Decrypted content should match original";
+        success &= contentMatches;
+    }
+
+    return success;
+}
+
 // SYSTEM TEST 3: Performance and Large File Handling
 bool SystemTests::test_large_file_performance() {
     bool success = true;
