@@ -65,7 +65,7 @@ bool FileCryptoConfig::validate(const ArgumentParser& parser) {
     key_file    = parser.getOr("--key",       "");
     input_file  = parser.getOr("--input",     "");
     output_file = parser.getOr("--output",    "");
-    mode_file   = parser.getOr("--mode-data", "");
+    metadata_file = parser.getOr("--metadata", "");
 
     // Operation mode
     std::string mode_str = parser.getOr("--mode", "");
@@ -118,7 +118,7 @@ bool FileCryptoConfig::validate(const ArgumentParser& parser) {
                 return false;
             }
             if (operation == Operation::DECRYPT) {
-                if (mode_file.empty() &&
+                if (metadata_file.empty() &&
                     operation_mode != CipherFortis::Cipher::OperationMode::Identifier::ECB) {
                     error_message = "Missing initial vector, nonce, counter or oder required data";
                     return false;
@@ -142,12 +142,12 @@ void FileCryptoConfig::print_help(const ArgumentParser& parser) const {
     std::cout << prog << ". AES Encryption Tool\n\n"
               << "Usage:\n"
               << "\tEncryption\t"   << prog << " --encrypt --key <keyfile> --input <file> --output <file> [options]\n"
-              << "\tDecryption\t"   << prog << " --decrypt --key <keyfile> --input <file> --output <file> --mode-data <file> [options]\n"
+              << "\tDecryption\t"   << prog << " --decrypt --key <keyfile> --input <file> --output <file> --metadata <file> [options]\n"
               << "\tKey Generation:\t" << prog << " --generate-key --key-length <bits> --output <file>\n\n"
               << "Options:\n"
               << "\t--key-length <bits>      Key length: 128, 192, or 256 (default: 128)\n"
               << "\t--mode <ECB|CBC|OFB|CTR> Operation mode (default: CBC)\n"
-              << "\t--mode-data <file>       Required data for specific operation mode\n"
+              << "\t--metadata <file>        JSON file to save/load mode and IV for round-trip\n"
               << "\t--help                   Show this help message\n";
 }
 
@@ -166,9 +166,9 @@ CipherFortis::Key FileCryptoConfig::create_key() const {
 CipherFortis::Cipher::OperationMode FileCryptoConfig::create_optmode() const {
     if (!is_valid)
         throw std::runtime_error("Cannot create operation mode object from invalid configuration");
-    if (!mode_file.empty()) {
+    if (!metadata_file.empty()) {
         try {
-            return CipherFortis::Cipher::OperationMode::loadFromFile(mode_file);
+            return CipherFortis::Cipher::OperationMode::loadFromFile(metadata_file);
         } catch (const std::exception&) {
             throw;
         }
