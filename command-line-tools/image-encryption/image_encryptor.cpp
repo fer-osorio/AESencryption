@@ -25,6 +25,7 @@
 #include "../../file-handlers/include/image_factory.hpp"
 #include "../../cli-tools/include/cli_config.hpp"
 
+#include <fstream>
 #include <iostream>
 #include <iomanip>
 #include <memory>
@@ -73,7 +74,7 @@ public:
 
     bool        decrypt      = false;
     bool        generate_key = false;
-    std::string key_file, input_file, output_file, iv_hex;
+    std::string key_file, input_file, output_file, iv_hex, metadata_file;
     Key::LengthBits                   key_length     = Key::LengthBits::_128;
     Cipher::OperationMode::Identifier operation_mode = Cipher::OperationMode::Identifier::CBC;
 };
@@ -85,9 +86,10 @@ bool ImageCryptoConfig::validate(const CLIConfig::ArgumentParser& parser) {
         return false;
     }
 
-    generate_key = parser.has("--generate-key");
-    decrypt      = parser.has("--decrypt");
-    iv_hex       = parser.getOr("--iv", "");
+    generate_key  = parser.has("--generate-key");
+    decrypt       = parser.has("--decrypt");
+    iv_hex        = parser.getOr("--iv", "");
+    metadata_file = parser.getOr("--metadata", "");
 
     // Key length
     std::string kl_str = parser.getOr("--key-length", "128");
@@ -161,11 +163,43 @@ void ImageCryptoConfig::print_help(const CLIConfig::ArgumentParser& parser) cons
         << "  --iv <32 hex chars>        16-byte IV as 32 hex characters (CBC/OFB/CTR);\n"
         << "                             if omitted on encrypt, a random IV is generated\n"
         << "                             and printed to stdout\n"
+        << "  --metadata <file>          JSON file to save IV+mode on encrypt,\n"
+        << "                             or load IV+mode on decrypt (replaces --iv)\n"
         << "  --help                     Show this help message\n\n"
         << "Notes:\n"
         << "  BMP and PNG support lossless round-trips (encrypt then decrypt\n"
         << "  recovers the original). JPEG will be saved as PNG (lossless)\n"
         << "  to preserve encrypted pixels.\n";
+}
+
+// ── Metadata helpers ──────────────────────────────────────────────────────────
+
+static void write_metadata(const std::string& path,
+                            const std::string& mode, const std::string& iv_hex) {
+    std::ofstream f(path);
+    if (!f) throw std::runtime_error("Cannot open metadata file for writing: " + path);
+    f << "{\n  \"mode\": \"" << mode << "\"";
+    if (!iv_hex.empty())
+        f << ",\n  \"iv\": \"" << iv_hex << "\"";
+    f << "\n}\n";
+}
+
+static void read_metadata(const std::string& path,
+                           std::string& mode, std::string& iv_hex) {
+    std::ifstream f(path);
+    if (!f) throw std::runtime_error("Cannot open metadata file: " + path);
+    std::string content((std::istreambuf_iterator<char>(f)),
+                         std::istreambuf_iterator<char>());
+    auto extract = [&](const std::string& key) -> std::string {
+        std::string search = "\"" + key + "\": \"";
+        auto pos = content.find(search);
+        if (pos == std::string::npos) return "";
+        pos += search.size();
+        auto end = content.find("\"", pos);
+        return (end != std::string::npos) ? content.substr(pos, end - pos) : "";
+    };
+    mode   = extract("mode");
+    iv_hex = extract("iv");
 }
 
 // ── main ──────────────────────────────────────────────────────────────────────
@@ -197,6 +231,17 @@ int main(int argc, const char* argv[]) {
         }
 
         // ── Encrypt / Decrypt ─────────────────────────────────────────────────
+
+        // Load metadata before optmode creation so mode/IV override takes effect
+        if (config.decrypt && !config.metadata_file.empty()) {
+            std::string mode_str, iv_from_meta;
+            read_metadata(config.metadata_file, mode_str, iv_from_meta);
+            if (!mode_str.empty())
+                config.operation_mode = Cipher::OperationMode::string_to_identifier(mode_str);
+            if (config.iv_hex.empty())
+                config.iv_hex = iv_from_meta;
+        }
+
         Key key(config.key_file.c_str());
         Cipher::OperationMode optmode(config.operation_mode);
 
@@ -231,6 +276,15 @@ int main(int argc, const char* argv[]) {
         }
 
         image->save(config.output_file);
+
+        if (!config.decrypt && !config.metadata_file.empty()) {
+            std::string iv_hex_out;
+            if (mode_needs_iv(config.operation_mode))
+                iv_hex_out = bytes_to_hex(optmode.getIVpointerData(), 16);
+            write_metadata(config.metadata_file,
+                           Cipher::OperationMode::identifier_to_string(config.operation_mode),
+                           iv_hex_out);
+        }
 
     } catch (const std::invalid_argument& e) {
         std::cerr << "Error: " << e.what() << "\n";
