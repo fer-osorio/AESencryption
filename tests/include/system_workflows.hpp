@@ -66,6 +66,9 @@ public:
 
 	// SYSTEM TEST 4: JPEG encryption saves output as PNG
 	bool test_jpeg_encryption_saves_as_png();
+
+	// SYSTEM TEST 5: Metadata round-trip (encrypt with --metadata, decrypt with --metadata)
+	bool test_metadata_round_trip();
 }; // class SystemTests
 
 } // namespace CommandLineToolsTest
