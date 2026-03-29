@@ -6,6 +6,7 @@
 #include "../../file-handlers/include/file_base.hpp"
 #include "../../cli-tools/include/cli_config.hpp"
 
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -55,7 +56,7 @@ public:
     void print_help(const CLIConfig::ArgumentParser& parser) const;
 
     std::string lib_path, token, pin, key_label, input_file, output_file;
-    std::string iv_hex;
+    std::string iv_hex, metadata_file;
     bool        decrypt        = false;
     Cipher::OperationMode::Identifier operation_mode = Cipher::OperationMode::Identifier::CBC;
     Key::LengthBits                   key_length     = Key::LengthBits::_128;
@@ -68,8 +69,9 @@ bool HSMCryptoConfig::validate(const CLIConfig::ArgumentParser& parser) {
     key_label   = parser.getOr("--key",     "");
     input_file  = parser.getOr("--input",   "");
     output_file = parser.getOr("--output",  "");
-    iv_hex      = parser.getOr("--iv",      "");
-    decrypt     = parser.has("--decrypt");
+    iv_hex        = parser.getOr("--iv",       "");
+    metadata_file = parser.getOr("--metadata", "");
+    decrypt       = parser.has("--decrypt");
 
     // Check required fields
     for (auto& [name, val] : std::vector<std::pair<std::string, std::string>>{
@@ -127,7 +129,37 @@ void HSMCryptoConfig::print_help(const CLIConfig::ArgumentParser& parser) const 
         << "\nOptional:\n"
         << "  --decrypt        Decrypt instead of encrypt (default: encrypt)\n"
         << "  --iv     HEX     16-byte IV as 32 hex characters (CBC/CTR)\n"
-        << "                   If omitted, a random IV is generated and printed\n";
+        << "                   If omitted, a random IV is generated and printed\n"
+        << "  --metadata FILE  JSON file to save IV+mode on encrypt,\n"
+        << "                   or load IV+mode on decrypt (replaces --iv)\n";
+}
+
+static void write_metadata(const std::string& path,
+                            const std::string& mode, const std::string& iv_hex) {
+    std::ofstream f(path);
+    if (!f) throw std::runtime_error("Cannot open metadata file for writing: " + path);
+    f << "{\n  \"mode\": \"" << mode << "\"";
+    if (!iv_hex.empty())
+        f << ",\n  \"iv\": \"" << iv_hex << "\"";
+    f << "\n}\n";
+}
+
+static void read_metadata(const std::string& path,
+                           std::string& mode, std::string& iv_hex) {
+    std::ifstream f(path);
+    if (!f) throw std::runtime_error("Cannot open metadata file: " + path);
+    std::string content((std::istreambuf_iterator<char>(f)),
+                         std::istreambuf_iterator<char>());
+    auto extract = [&](const std::string& key) -> std::string {
+        std::string search = "\"" + key + "\": \"";
+        auto pos = content.find(search);
+        if (pos == std::string::npos) return "";
+        pos += search.size();
+        auto end = content.find("\"", pos);
+        return (end != std::string::npos) ? content.substr(pos, end - pos) : "";
+    };
+    mode   = extract("mode");
+    iv_hex = extract("iv");
 }
 
 static std::string bytes_to_hex(const std::vector<uint8_t>& bytes) {
@@ -156,6 +188,16 @@ int main(int argc, const char* argv[]) {
     }
 
     try {
+        // ── Load metadata for decrypt if provided ─────────────────────────────
+        if (config.decrypt && !config.metadata_file.empty()) {
+            std::string mode_str, iv_from_meta;
+            read_metadata(config.metadata_file, mode_str, iv_from_meta);
+            if (!mode_str.empty())
+                config.operation_mode = Cipher::OperationMode::string_to_identifier(mode_str);
+            if (config.iv_hex.empty())
+                config.iv_hex = iv_from_meta;
+        }
+
         // ── Session & cipher setup ────────────────────────────────────────────
         HSMSession session(config.lib_path, config.token, config.pin);
         HSMCipher  cipher(session, config.operation_mode);
@@ -172,6 +214,7 @@ int main(int argc, const char* argv[]) {
         cipher.setActiveKey(key);
 
         // ── IV handling ───────────────────────────────────────────────────────
+        std::vector<uint8_t> iv_used;
         if (mode_needs_iv(config.operation_mode)) {
             std::vector<uint8_t> iv;
             if (!config.iv_hex.empty()) {
@@ -188,6 +231,7 @@ int main(int argc, const char* argv[]) {
                           << bytes_to_hex(iv) << "\n";
             }
             cipher.setIV(iv);
+            iv_used = iv;
         }
 
         // ── File I/O via FileBase ─────────────────────────────────────────────
@@ -205,6 +249,12 @@ int main(int argc, const char* argv[]) {
         }
 
         file.save(config.output_file);
+
+        if (!config.decrypt && !config.metadata_file.empty()) {
+            write_metadata(config.metadata_file,
+                           Cipher::OperationMode::identifier_to_string(config.operation_mode),
+                           bytes_to_hex(iv_used));
+        }
 
     } catch (const PKCS11Exception& e) {
         std::cerr << "[PKCS#11 error] " << e.what() << "\n";

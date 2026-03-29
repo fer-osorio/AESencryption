@@ -186,9 +186,10 @@ bool SystemTests::test_file_encryption_workflow() {
 
     // Step 3: Encrypt the file
     std::string encrypt_cmd =
-        this->executable_path + " --encrypt --mode CBC --key " +
+        this->executable_path + " --mode CBC --key " +
         this->keyPath.string() + " --input " + this->originalValidPath.string()
-        + " --output " + this->encryptedOriginalValidPath.string();
+        + " --output " + this->encryptedOriginalValidPath.string()
+        + " --iv 00112233445566778899AABBCCDDEEFF";
     int result2 = SystemUtils::execute_cli_command(
         encrypt_cmd
     );
@@ -217,7 +218,7 @@ bool SystemTests::test_file_encryption_workflow() {
         this->executable_path + " --decrypt --mode CBC --key " + this->keyPath.string() +
         " --input " + this->encryptedOriginalValidPath.string() +
         " --output " + this->decryptedOriginalValidPath.string() +
-        " --mode-data " + this->encryptedOriginalValidPath.string() + ".optmode";
+        " --iv 00112233445566778899AABBCCDDEEFF";
     int result3 = SystemUtils::execute_cli_command(
         decrypt_cmd
     );
@@ -278,7 +279,7 @@ bool SystemTests::test_error_scenarios() {
 
     // Encrypt with key1
     std::string encrypt_cmd =
-        this->executable_path + " --encrypt --key " + this->keyPath.string() +
+        this->executable_path + " --key " + this->keyPath.string() +
         " --input " + this->originalValidPath.string() +
         " --output " + this->encryptedOriginalValidPath.string();
     bool encryptSucceeded = (SystemUtils::execute_cli_command(encrypt_cmd) == 0);
@@ -312,7 +313,7 @@ bool SystemTests::test_error_scenarios() {
 
     // Test 2: Non-existent file
     int nonexistent_result = SystemUtils::execute_cli_command(
-        this->executable_path + " --encrypt --input " +
+        this->executable_path + " --input " +
         this->nonexistentPath.string() + " --output nonexistent_out.bin"
     );
     bool nonexistentFails = (nonexistent_result != 0);
@@ -321,11 +322,120 @@ bool SystemTests::test_error_scenarios() {
 
     // Test 3: Invalid key file
     int invalid_key_result = SystemUtils::execute_cli_command(
-        this->executable_path + " --encrypt --key invalid.key --input " + this->originalValidPath.string() + " --output out.aes"
+        this->executable_path + " --key invalid.key --input " + this->originalValidPath.string() + " --output out.aes"
     );
     bool invalidKeyFails = (invalid_key_result != 0);
     EXPECT_TRUE(invalidKeyFails) << "Using invalid key file should fail";
     success &= invalidKeyFails;
+
+    return success;
+}
+
+// SYSTEM TEST 4: JPEG encryption saves output as PNG
+bool SystemTests::test_jpeg_encryption_saves_as_png() {
+    bool success = true;
+
+    // Generate key
+    std::string gen_key_cmd =
+        this->executable_path + " --generate-key --output " +
+        this->keyPath.string();
+    SystemUtils::execute_cli_command(gen_key_cmd);
+
+    // Create a JPEG input
+    const fs::path jpegInput  = this->testDataDir / "jpeg_input.jpg";
+    const fs::path encJpg     = this->testDataDir / "enc.jpg";
+    const fs::path encPng     = this->testDataDir / "enc.png";
+    const fs::path decJpg     = this->testDataDir / "dec.jpg";
+
+    RasterImageFixture::createValidJpeg(jpegInput, 32, 32);
+
+    // Encrypt — tool should redirect output to enc.png
+    std::string encrypt_cmd =
+        this->executable_path + " --key " + this->keyPath.string() +
+        " --input " + jpegInput.string() +
+        " --output " + encJpg.string() +
+        " --iv 00112233445566778899AABBCCDDEEFF";
+    int enc_result = SystemUtils::execute_cli_command(encrypt_cmd);
+    EXPECT_EQ(0, enc_result) << "JPEG encryption should succeed";
+    success &= (enc_result == 0);
+
+    bool pngCreated = fs::exists(encPng);
+    EXPECT_TRUE(pngCreated) << "Encrypted output should be saved as .png";
+    success &= pngCreated;
+
+    bool jpgNotCreated = !fs::exists(encJpg);
+    EXPECT_TRUE(jpgNotCreated) << "No .jpg output should be created";
+    success &= jpgNotCreated;
+
+    // Decrypt the PNG back to JPEG
+    std::string decrypt_cmd =
+        this->executable_path + " --decrypt --key " + this->keyPath.string() +
+        " --input " + encPng.string() +
+        " --output " + decJpg.string() +
+        " --iv 00112233445566778899AABBCCDDEEFF";
+    int dec_result = SystemUtils::execute_cli_command(decrypt_cmd);
+    EXPECT_EQ(0, dec_result) << "Decryption of PNG to JPEG should succeed";
+    success &= (dec_result == 0);
+
+    bool decCreated = fs::exists(decJpg);
+    EXPECT_TRUE(decCreated) << "Decrypted JPEG should be created";
+    success &= decCreated;
+
+    return success;
+}
+
+// SYSTEM TEST 5: Metadata round-trip
+bool SystemTests::test_metadata_round_trip() {
+    bool success = true;
+
+    const fs::path metaPath    = this->testDataDir / "meta.json";
+    const fs::path encryptedPath = testDataDir / ("meta_enc." + SystemUtils::toFileExtension(ff_));
+    const fs::path decryptedPath = testDataDir / ("meta_dec." + SystemUtils::toFileExtension(ff_));
+
+    // Generate key
+    std::string gen_key_cmd =
+        this->executable_path + " --generate-key --output " + this->keyPath.string();
+    SystemUtils::execute_cli_command(gen_key_cmd);
+
+    // Encrypt with --metadata (no --iv; random IV generated and saved to JSON)
+    std::string encrypt_cmd =
+        this->executable_path + " --key " + this->keyPath.string() +
+        " --input " + this->originalValidPath.string() +
+        " --output " + encryptedPath.string() +
+        " --metadata " + metaPath.string();
+    int enc_result = SystemUtils::execute_cli_command(encrypt_cmd);
+    EXPECT_EQ(0, enc_result) << "Metadata encrypt should succeed";
+    success &= (enc_result == 0);
+
+    bool metaCreated = fs::exists(metaPath);
+    EXPECT_TRUE(metaCreated) << "Metadata JSON file should be created";
+    success &= metaCreated;
+
+    bool encCreated = fs::exists(encryptedPath);
+    EXPECT_TRUE(encCreated) << "Encrypted file should be created";
+    success &= encCreated;
+
+    // Decrypt with --metadata (no --iv; IV and mode loaded from JSON)
+    std::string decrypt_cmd =
+        this->executable_path + " --decrypt --key " + this->keyPath.string() +
+        " --input " + encryptedPath.string() +
+        " --output " + decryptedPath.string() +
+        " --metadata " + metaPath.string();
+    int dec_result = SystemUtils::execute_cli_command(decrypt_cmd);
+    EXPECT_EQ(0, dec_result) << "Metadata decrypt should succeed";
+    success &= (dec_result == 0);
+
+    bool decCreated = fs::exists(decryptedPath);
+    EXPECT_TRUE(decCreated) << "Decrypted file should be created";
+    success &= decCreated;
+
+    if (decCreated) {
+        std::vector<uint8_t> original  = SystemUtils::read_file(this->originalValidPath, true);
+        std::vector<uint8_t> decrypted = SystemUtils::read_file(decryptedPath, true);
+        bool contentMatches = (original == decrypted);
+        EXPECT_TRUE(contentMatches) << "Decrypted content should match original";
+        success &= contentMatches;
+    }
 
     return success;
 }
@@ -340,9 +450,10 @@ bool SystemTests::test_large_file_performance() {
     );
 
 
-    std::string encrypt_cmd = this->executable_path + " --encrypt --mode CBC --key " + this->keyPath.string() +
+    std::string encrypt_cmd = this->executable_path + " --mode CBC --key " + this->keyPath.string() +
         " --input " + this->originalLargePath.string() +
-        " --output " + this->encryptedOriginalLargePath.string();
+        " --output " + this->encryptedOriginalLargePath.string() +
+        " --iv 00112233445566778899AABBCCDDEEFF";
 
     // Time the encryption
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -368,7 +479,7 @@ bool SystemTests::test_large_file_performance() {
         " --decrypt --mode CBC --key " + this->keyPath.string() +
         " --input " + this->encryptedOriginalLargePath.string() +
         " --output " + this->decryptedOriginalLargePath.string() +
-        " --mode-data " + this->encryptedOriginalLargePath.string() + ".optmode";
+        " --iv 00112233445566778899AABBCCDDEEFF";
 
     // Time the decryption
     auto decrypt_start = std::chrono::high_resolution_clock::now();

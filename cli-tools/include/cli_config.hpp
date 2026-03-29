@@ -52,7 +52,7 @@ public:
 
     // Fields
     Operation                                        operation      = Operation::ENCRYPT;
-    std::filesystem::path                            key_file, input_file, output_file, mode_file;
+    std::filesystem::path                            key_file, input_file, output_file, metadata_file;
     CipherFortis::Key::LengthBits                   key_length     = CipherFortis::Key::LengthBits::_128;
     CipherFortis::Cipher::OperationMode::Identifier operation_mode = CipherFortis::Cipher::OperationMode::Identifier::CBC;
 };
